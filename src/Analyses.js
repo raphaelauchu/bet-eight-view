@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
+const NHL_API = 'https://api.allorigins.win/raw?url=https://api-web.nhle.com/v1';
 
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
@@ -117,7 +117,7 @@ function CarteMatch({ match, classement, mode }) {
 
   return (
     <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-      
+
       {/* Header avec logos */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
