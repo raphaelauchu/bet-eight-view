@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getMatchsAujourdhui } from './hockey';
 import { getCotesHockey } from './cotes';
 
 function StatCard({ title, value, change, positive }) {
@@ -13,18 +12,13 @@ function StatCard({ title, value, change, positive }) {
 }
 
 function Dashboard() {
-  const [matchs, setMatchs] = useState([]);
   const [cotes, setCotes] = useState([]);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     async function chargerDonnees() {
       try {
-        const [dataMatchs, dataCotes] = await Promise.all([
-          getMatchsAujourdhui(),
-          getCotesHockey(),
-        ]);
-        setMatchs(dataMatchs);
+        const dataCotes = await getCotesHockey();
         setCotes(dataCotes);
       } catch (err) {
         console.error('Erreur:', err);
@@ -57,16 +51,12 @@ function Dashboard() {
         ) : (
           cotes.map((match, index) => (
             <div key={index} style={{ borderTop: index === 0 ? 'none' : '1px solid #333', padding: '16px 0' }}>
-              
-              {/* Nom du match */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ fontWeight: 'bold' }}>{match.away_team} @ {match.home_team}</span>
                 <span style={{ color: '#888', fontSize: '13px' }}>
                   {new Date(match.commence_time).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-
-              {/* Cotes par bookmaker */}
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {match.bookmakers?.slice(0, 4).map((bookmaker, i) => (
                   <div key={i} style={{ backgroundColor: '#252525', borderRadius: '8px', padding: '10px 16px', minWidth: '140px' }}>
@@ -86,8 +76,6 @@ function Dashboard() {
           ))
         )}
       </div>
-
-
 
       {/* Paris récents */}
       <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px' }}>
