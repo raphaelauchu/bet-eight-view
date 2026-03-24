@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const NHL_API = 'https://api.allorigins.win/raw?url=https://api-web.nhle.com/v1';
+const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
 
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',

@@ -1,11 +1,10 @@
-const NHL_API = 'https://api.allorigins.win/raw?url=https://api-web.nhle.com/v1';
+const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
 
 export async function getMatchsAujourdhui() {
   try {
     const aujourdhui = new Date().toISOString().split('T')[0];
     const response = await fetch(`${NHL_API}/schedule/${aujourdhui}`);
     const data = await response.json();
-    console.log('Data reçue:', data);
     return data.gameWeek?.[0]?.games || [];
   } catch (err) {
     console.error('Erreur:', err);
