@@ -2,6 +2,41 @@ import React, { useState, useEffect } from 'react';
 
 const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
 
+const LOGOS_NHL = {
+  'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
+  'BUF': 'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',
+  'DET': 'https://assets.nhle.com/logos/nhl/svg/DET_light.svg',
+  'FLA': 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg',
+  'MTL': 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg',
+  'OTT': 'https://assets.nhle.com/logos/nhl/svg/OTT_light.svg',
+  'TBL': 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg',
+  'TOR': 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg',
+  'CAR': 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg',
+  'CBJ': 'https://assets.nhle.com/logos/nhl/svg/CBJ_light.svg',
+  'NJD': 'https://assets.nhle.com/logos/nhl/svg/NJD_light.svg',
+  'NYI': 'https://assets.nhle.com/logos/nhl/svg/NYI_light.svg',
+  'NYR': 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg',
+  'PHI': 'https://assets.nhle.com/logos/nhl/svg/PHI_light.svg',
+  'WSH': 'https://assets.nhle.com/logos/nhl/svg/WSH_light.svg',
+  'ARI': 'https://assets.nhle.com/logos/nhl/svg/ARI_light.svg',
+  'CHI': 'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg',
+  'COL': 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg',
+  'DAL': 'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg',
+  'MIN': 'https://assets.nhle.com/logos/nhl/svg/MIN_light.svg',
+  'NSH': 'https://assets.nhle.com/logos/nhl/svg/NSH_light.svg',
+  'STL': 'https://assets.nhle.com/logos/nhl/svg/STL_light.svg',
+  'WPG': 'https://assets.nhle.com/logos/nhl/svg/WPG_light.svg',
+  'ANA': 'https://assets.nhle.com/logos/nhl/svg/ANA_light.svg',
+  'CGY': 'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg',
+  'EDM': 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg',
+  'LAK': 'https://assets.nhle.com/logos/nhl/svg/LAK_light.svg',
+  'SJS': 'https://assets.nhle.com/logos/nhl/svg/SJS_light.svg',
+  'SEA': 'https://assets.nhle.com/logos/nhl/svg/SEA_light.svg',
+  'VGK': 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg',
+  'VAN': 'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg',
+  'UTA': 'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',
+};
+
 const ONGLETS = [
   { id: 'victoire', label: '🏆 Probabilité victoire' },
   { id: 'differentiel', label: '⚡ Différentiel de buts' },
@@ -82,8 +117,16 @@ function CarteMatch({ match, classement, mode }) {
 
   return (
     <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
+      
+      {/* Header avec logos */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-        <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom1} @ {nom2}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom1}</span>
+          <span style={{ color: '#6366f1', fontWeight: 'bold' }}>@</span>
+          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom2}</span>
+          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+        </div>
         <span style={{ color: '#888', fontSize: '13px' }}>{heure}</span>
       </div>
 
