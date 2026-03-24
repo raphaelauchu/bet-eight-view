@@ -3,6 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
+import Analyses from './Analyses';
 import { supabase } from './supabase';
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
           {utilisateur && (
             <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#6366f1' : 'white' }}>Dashboard</span>
           )}
+          <span onClick={() => setPage('analyses')} style={{ cursor: 'pointer', color: page === 'analyses' ? '#6366f1' : 'white' }}>Analyses</span>
           <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#6366f1' : 'white' }}>Pricing</span>
           {utilisateur ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -76,6 +78,7 @@ function App() {
         </div>
       )}
 
+      {page === 'analyses' && <Analyses />}
       {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
 
       {page === 'dashboard' && utilisateur && <Dashboard />}
