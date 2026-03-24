@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
+import Pricing from './Pricing';
 import { supabase } from './supabase';
 
 function App() {
@@ -45,7 +46,7 @@ function App() {
           {utilisateur && (
             <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#6366f1' : 'white' }}>Dashboard</span>
           )}
-          <span style={{ cursor: 'pointer' }}>Pricing</span>
+          <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#6366f1' : 'white' }}>Pricing</span>
           {utilisateur ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <span style={{ color: '#888', fontSize: '14px' }}>{utilisateur.email}</span>
@@ -74,6 +75,8 @@ function App() {
           </button>
         </div>
       )}
+
+      {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
 
       {page === 'dashboard' && utilisateur && <Dashboard />}
       {page === 'dashboard' && !utilisateur && (
