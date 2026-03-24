@@ -87,24 +87,7 @@ function Dashboard() {
         )}
       </div>
 
-      {/* Matchs NHL du jour */}
-      <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px', marginBottom: '32px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px' }}>📅 Horaire du jour</h3>
-        {matchs.length === 0 ? (
-          <p style={{ color: '#888' }}>Aucun match aujourd'hui.</p>
-        ) : (
-          matchs.map((match, index) => (
-            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: index === 0 ? 'none' : '1px solid #333' }}>
-              <span>{match.awayTeam?.placeName?.default} {match.awayTeam?.commonName?.default}</span>
-              <span style={{ color: '#6366f1', fontWeight: 'bold' }}>VS</span>
-              <span>{match.homeTeam?.placeName?.default} {match.homeTeam?.commonName?.default}</span>
-              <span style={{ color: '#888', fontSize: '14px' }}>
-                {new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
+
 
       {/* Paris récents */}
       <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px' }}>
