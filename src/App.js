@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Dashboard from './Dashboard';
+import HockeyTicker from './HockeyTicker';
 
 function App() {
   const [page, setPage] = useState('home');
@@ -16,6 +17,9 @@ function App() {
           <span style={{ cursor: 'pointer', backgroundColor: '#6366f1', padding: '8px 16px', borderRadius: '8px' }}>Se connecter</span>
         </div>
       </div>
+
+      {/* Ticker NHL */}
+      <HockeyTicker />
 
       {/* Pages */}
       {page === 'home' && (

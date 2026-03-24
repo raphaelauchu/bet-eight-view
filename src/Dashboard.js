@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getMatchsAujourdhui } from './hockey';
+import { getCotesHockey } from './cotes';
 
 function StatCard({ title, value, change, positive }) {
   return (
@@ -13,20 +14,25 @@ function StatCard({ title, value, change, positive }) {
 
 function Dashboard() {
   const [matchs, setMatchs] = useState([]);
+  const [cotes, setCotes] = useState([]);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
-    async function chargerMatchs() {
+    async function chargerDonnees() {
       try {
-        const data = await getMatchsAujourdhui();
-        setMatchs(data);
+        const [dataMatchs, dataCotes] = await Promise.all([
+          getMatchsAujourdhui(),
+          getCotesHockey(),
+        ]);
+        setMatchs(dataMatchs);
+        setCotes(dataCotes);
       } catch (err) {
-        console.error('Erreur NHL API:', err);
+        console.error('Erreur:', err);
       } finally {
         setChargement(false);
       }
     }
-    chargerMatchs();
+    chargerDonnees();
   }, []);
 
   return (
@@ -41,12 +47,50 @@ function Dashboard() {
         <StatCard title="ROI moyen" value="7.2%" change="+1.1% vs mois dernier" positive={true} />
       </div>
 
+      {/* Matchs NHL avec cotes */}
+      <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px', marginBottom: '32px' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '16px' }}>🏒 Matchs NHL — Cotes en direct</h3>
+        {chargement ? (
+          <p style={{ color: '#888' }}>Chargement...</p>
+        ) : cotes.length === 0 ? (
+          <p style={{ color: '#888' }}>Aucune cote disponible.</p>
+        ) : (
+          cotes.map((match, index) => (
+            <div key={index} style={{ borderTop: index === 0 ? 'none' : '1px solid #333', padding: '16px 0' }}>
+              
+              {/* Nom du match */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{ fontWeight: 'bold' }}>{match.away_team} @ {match.home_team}</span>
+                <span style={{ color: '#888', fontSize: '13px' }}>
+                  {new Date(match.commence_time).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+
+              {/* Cotes par bookmaker */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                {match.bookmakers?.slice(0, 4).map((bookmaker, i) => (
+                  <div key={i} style={{ backgroundColor: '#252525', borderRadius: '8px', padding: '10px 16px', minWidth: '140px' }}>
+                    <p style={{ color: '#6366f1', fontSize: '12px', margin: '0 0 8px', fontWeight: 'bold' }}>
+                      {bookmaker.title}
+                    </p>
+                    {bookmaker.markets?.[0]?.outcomes?.map((outcome, j) => (
+                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                        <span style={{ fontSize: '13px', color: '#ccc' }}>{outcome.name}</span>
+                        <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: 'bold' }}>{outcome.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Matchs NHL du jour */}
       <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px', marginBottom: '32px' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '16px' }}>🏒 Matchs NHL aujourd'hui</h3>
-        {chargement ? (
-          <p style={{ color: '#888' }}>Chargement des matchs...</p>
-        ) : matchs.length === 0 ? (
+        <h3 style={{ marginTop: 0, marginBottom: '16px' }}>📅 Horaire du jour</h3>
+        {matchs.length === 0 ? (
           <p style={{ color: '#888' }}>Aucun match aujourd'hui.</p>
         ) : (
           matchs.map((match, index) => (
@@ -62,7 +106,7 @@ function Dashboard() {
         )}
       </div>
 
-      {/* Tableau de paris récents */}
+      {/* Paris récents */}
       <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px' }}>
         <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Paris récents</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
