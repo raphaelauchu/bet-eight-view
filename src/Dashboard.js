@@ -29,13 +29,11 @@ function Dashboard() {
   async function chargerParis() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('User connecté:', user?.id);
       const { data, error } = await supabase
         .from('paris')
         .select('*')
         .eq('user_id', user.id)
         .order('date_pari', { ascending: false });
-      console.log('Paris chargés:', data, 'Erreur:', error);
       if (!error) setParis(data || []);
     } catch (err) {
       console.error('Erreur chargement:', err);
@@ -47,8 +45,7 @@ function Dashboard() {
     if (!nouveauPari.match || !nouveauPari.mise || !nouveauPari.cote) return;
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Ajout pari pour user:', user?.id);
-      const { data, error } = await supabase.from('paris').insert({
+      const { error } = await supabase.from('paris').insert({
         user_id: user.id,
         match: nouveauPari.match,
         mise: parseFloat(nouveauPari.mise),
@@ -59,8 +56,8 @@ function Dashboard() {
         profit: 0,
         date_pari: new Date().toISOString(),
       });
-      console.log('Résultat ajout:', data, error);
       if (!error) {
+        setBankroll(prev => prev - parseFloat(nouveauPari.mise));
         setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey' });
         setAfficherFormulaire(false);
         chargerParis();
@@ -74,24 +71,62 @@ function Dashboard() {
 
   async function mettreAJourStatut(id, statut, mise, cote) {
     try {
-      const profit = statut === 'gagne' ? parseFloat((mise * cote - mise).toFixed(2)) : -parseFloat(mise);
-      console.log('Mise à jour statut:', id, statut, profit);
-      const { data, error } = await supabase
+      const profit = statut === 'gagne'
+        ? parseFloat((mise * cote - mise).toFixed(2))
+        : -parseFloat(mise);
+
+      const { error } = await supabase
         .from('paris')
         .update({ statut, profit })
         .eq('id', id);
-      console.log('Résultat update:', data, error);
-      if (error) alert('Erreur update: ' + error.message);
+
+      if (error) {
+        alert('Erreur: ' + error.message);
+        return;
+      }
+
+      if (statut === 'gagne') {
+        setBankroll(prev => prev + parseFloat(mise) + parseFloat((mise * cote - mise).toFixed(2)));
+      }
+      // Si perdu → rien, la mise a déjà été déduite à l'ajout
+
       chargerParis();
     } catch (err) {
       console.error('Erreur update:', err);
     }
   }
 
-  async function supprimerPari(id) {
+  async function remettreEnActif(id, mise, statut, profit) {
+    try {
+      const { error } = await supabase
+        .from('paris')
+        .update({ statut: 'actif', profit: 0 })
+        .eq('id', id);
+      if (error) {
+        alert('Erreur: ' + error.message);
+        return;
+      }
+      if (statut === 'gagne') {
+        // Enlever la mise + le profit car le pari redevient actif
+        setBankroll(prev => prev - parseFloat(mise) - parseFloat(profit));
+      }
+      // Si perdu → rien à faire, la bankroll reste pareille
+      chargerParis();
+    } catch (err) {
+      console.error('Erreur remise en actif:', err);
+    }
+  }
+
+  async function supprimerPari(id, statut, mise) {
     try {
       const { error } = await supabase.from('paris').delete().eq('id', id);
-      if (error) alert('Erreur suppression: ' + error.message);
+      if (error) {
+        alert('Erreur suppression: ' + error.message);
+        return;
+      }
+      if (statut === 'actif') {
+        setBankroll(prev => prev + parseFloat(mise));
+      }
       chargerParis();
     } catch (err) {
       console.error('Erreur suppression:', err);
@@ -208,7 +243,7 @@ function Dashboard() {
                 <button onClick={() => mettreAJourStatut(pari.id, 'perdu', pari.mise, pari.cote)} style={{ padding: '8px 16px', backgroundColor: '#7f1d1d', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
                   ✗ Perdu
                 </button>
-                <button onClick={() => supprimerPari(pari.id)} style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
+                <button onClick={() => supprimerPari(pari.id, pari.statut, pari.mise)} style={{ padding: '8px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
                   Supprimer
                 </button>
               </div>
@@ -229,13 +264,16 @@ function Dashboard() {
                 <p style={{ margin: 0, color: '#888', fontSize: '13px' }}>{pari.bookmaker} · Cote {pari.cote} · Mise ${pari.mise}</p>
                 <p style={{ margin: '4px 0 0', color: '#666', fontSize: '12px' }}>{new Date(pari.date_pari).toLocaleDateString('fr-CA')}</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <span style={{ color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: 'bold', fontSize: '18px' }}>
                   {pari.statut === 'gagne' ? `+$${parseFloat(pari.profit).toFixed(2)}` : `-$${parseFloat(pari.mise).toFixed(2)}`}
                 </span>
                 <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', backgroundColor: pari.statut === 'gagne' ? '#14532d' : '#7f1d1d', color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444' }}>
                   {pari.statut === 'gagne' ? '✓ Gagné' : '✗ Perdu'}
                 </span>
+                <button onClick={() => remettreEnActif(pari.id, pari.mise, pari.statut, pari.profit)} style={{ padding: '6px 12px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>
+                  ↩ Annuler
+                </button>
               </div>
             </div>
           ))}
