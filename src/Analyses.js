@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
+const NHL_API = process.env.NODE_ENV === 'production'
+  ? '/api/nhl?path='
+  : 'https://corsproxy.io/?https://api-web.nhle.com/v1/';
 
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
@@ -196,8 +198,8 @@ function Analyses() {
       try {
         const aujourdhui = new Date().toISOString().split('T')[0];
         const [resClassement, resMatchs] = await Promise.all([
-          fetch(`${NHL_API}/standings/now`),
-          fetch(`${NHL_API}/schedule/${aujourdhui}`),
+          fetch(`${NHL_API}standings/now`),
+          fetch(`${NHL_API}schedule/${aujourdhui}`),
         ]);
         const dataClassement = await resClassement.json();
         const dataMatchs = await resMatchs.json();

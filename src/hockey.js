@@ -1,9 +1,11 @@
-const NHL_API = 'https://corsproxy.io/?https://api-web.nhle.com/v1';
+const NHL_API = process.env.NODE_ENV === 'production' 
+  ? '/api/nhl?path=' 
+  : 'https://corsproxy.io/?https://api-web.nhle.com/v1/';
 
 export async function getMatchsAujourdhui() {
   try {
     const aujourdhui = new Date().toISOString().split('T')[0];
-    const response = await fetch(`${NHL_API}/schedule/${aujourdhui}`);
+    const response = await fetch(`${NHL_API}schedule/${aujourdhui}`);
     const data = await response.json();
     return data.gameWeek?.[0]?.games || [];
   } catch (err) {
@@ -14,7 +16,7 @@ export async function getMatchsAujourdhui() {
 
 export async function getStatsEquipe(equipeId) {
   try {
-    const response = await fetch(`${NHL_API}/standings/now`);
+    const response = await fetch(`${NHL_API}standings/now`);
     const data = await response.json();
     return data.standings?.find(e => e.teamId === equipeId) || null;
   } catch (err) {
@@ -24,7 +26,7 @@ export async function getStatsEquipe(equipeId) {
 
 export async function getScoreEnDirect(gameId) {
   try {
-    const response = await fetch(`${NHL_API}/gamecenter/${gameId}/landing`);
+    const response = await fetch(`${NHL_API}gamecenter/${gameId}/landing`);
     const data = await response.json();
     return {
       domicile: data.homeTeam,
