@@ -6,7 +6,7 @@ import Pricing from './Pricing';
 import Analyses from './Analyses';
 import { supabase } from './supabase';
 
-function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
+function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs }) {
   return (
     <div style={{ color: 'white', fontFamily: 'Arial' }}>
 
@@ -15,7 +15,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '20px', padding: '6px 16px', marginBottom: '32px', fontSize: '13px', color: '#a5b4fc' }}>
           <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-          Données NHL en temps réel · 15 matchs ce soir
+          Données NHL en temps réel · {nombreMatchs > 0 ? `${nombreMatchs} matchs ce soir` : 'Matchs en direct'}
         </div>
         <h1 style={{ fontSize: '64px', fontWeight: '900', margin: '0 0 24px', lineHeight: '1.1', letterSpacing: '-2px' }}>
           Analyse. Calcule.<br />
@@ -42,7 +42,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
             { valeur: '3', label: 'Modèles statistiques', couleur: '#6366f1' },
             { valeur: '32', label: 'Équipes NHL', couleur: '#22c55e' },
             { valeur: '40+', label: 'Bookmakers comparés', couleur: '#f59e0b' },
-            { valeur: '100%', label: 'Données officielles NHL', couleur: '#ec4899' },
+            { valeur: nombreMatchs > 0 ? `${nombreMatchs}` : '—', label: 'Matchs ce soir', couleur: '#ec4899' },
           ].map((stat, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '32px', fontWeight: '900', color: stat.couleur, letterSpacing: '-1px' }}>{stat.valeur}</div>
@@ -59,10 +59,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
           <h2 style={{ fontSize: '40px', fontWeight: '800', margin: '12px 0 16px', letterSpacing: '-1px' }}>Ton centre de contrôle</h2>
           <p style={{ color: '#9ca3af', fontSize: '16px', maxWidth: '500px', margin: '0 auto' }}>Suis tes paris, visualise ta performance et gère ta bankroll comme un professionnel.</p>
         </div>
-
-        {/* Mockup du dashboard */}
         <div style={{ backgroundColor: '#111827', borderRadius: '16px', border: '1px solid #1f2937', padding: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
-          {/* Mockup stats */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
             {[
               { label: 'Bankroll', valeur: '$1,840', couleur: '#a5b4fc' },
@@ -76,14 +73,12 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
               </div>
             ))}
           </div>
-          {/* Mockup graphique */}
           <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '20px', marginBottom: '16px', height: '120px', display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
             <div style={{ color: '#6b7280', fontSize: '12px', marginRight: '8px', alignSelf: 'center' }}>📈 Courbe de profit</div>
             {[30, 45, 35, 60, 55, 75, 65, 85, 70, 90, 80, 95].map((h, i) => (
               <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg, #6366f1, #8b5cf6)', borderRadius: '4px 4px 0 0', opacity: 0.7 + i * 0.02 }} />
             ))}
           </div>
-          {/* Mockup paris */}
           <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px' }}>
             <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '12px' }}>🎯 Paris actifs</div>
             {[
@@ -105,7 +100,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
         </div>
       </div>
 
-      {/* 3 features principales */}
+      {/* Features */}
       <div style={{ backgroundColor: '#111827', padding: '80px 32px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
@@ -114,60 +109,12 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
             {[
-              {
-                emoji: '📊',
-                tag: 'Analyses',
-                titre: 'Modèles statistiques NHL',
-                description: 'Probabilités de victoire, différentiel de buts et total de buts calculés avec les données officielles NHL. Chaque modèle expliqué en détail.',
-                couleur: '#6366f1',
-                bg: 'rgba(99,102,241,0.1)',
-                border: 'rgba(99,102,241,0.3)',
-              },
-              {
-                emoji: '💰',
-                tag: 'Cotes',
-                titre: 'Comparateur en temps réel',
-                description: 'Compare les cotes de Bet365, Betway, DraftKings et plus. Notre algorithme détecte automatiquement les value bets pour toi.',
-                couleur: '#22c55e',
-                bg: 'rgba(34,197,94,0.1)',
-                border: 'rgba(34,197,94,0.3)',
-              },
-              {
-                emoji: '🏒',
-                tag: 'NHL Live',
-                titre: 'Ticker et scores en direct',
-                description: 'Fil de matchs NHL en temps réel avec logos des équipes, scores en direct et heures de départ. Comme un vrai terminal financier.',
-                couleur: '#f59e0b',
-                bg: 'rgba(245,158,11,0.1)',
-                border: 'rgba(245,158,11,0.3)',
-              },
-              {
-                emoji: '📈',
-                tag: 'Performance',
-                titre: 'Suivi de bankroll avancé',
-                description: 'Courbe de profit, ROI, win rate et gestion de bankroll avec la méthode Kelly. Tous tes paris sauvegardés et analysés.',
-                couleur: '#ec4899',
-                bg: 'rgba(236,72,153,0.1)',
-                border: 'rgba(236,72,153,0.3)',
-              },
-              {
-                emoji: '🎯',
-                tag: 'Value Bets',
-                titre: 'Détection automatique',
-                description: 'Quand notre modèle voit une différence entre nos probabilités et les cotes des bookmakers, il te le signale automatiquement.',
-                couleur: '#8b5cf6',
-                bg: 'rgba(139,92,246,0.1)',
-                border: 'rgba(139,92,246,0.3)',
-              },
-              {
-                emoji: '🔒',
-                tag: 'Sécurité',
-                titre: 'Données privées et sécurisées',
-                description: 'Authentification sécurisée, données chiffrées et hébergées sur infrastructure sécurisée. Ton historique de paris reste privé.',
-                couleur: '#14b8a6',
-                bg: 'rgba(20,184,166,0.1)',
-                border: 'rgba(20,184,166,0.3)',
-              },
+              { emoji: '📊', tag: 'Analyses', titre: 'Modèles statistiques NHL', description: 'Probabilités de victoire, différentiel de buts et total de buts calculés avec les données officielles NHL. Chaque modèle expliqué en détail.', couleur: '#6366f1', bg: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.3)' },
+              { emoji: '💰', tag: 'Cotes', titre: 'Comparateur en temps réel', description: 'Compare les cotes de Bet365, Betway, DraftKings et plus. Notre algorithme détecte automatiquement les value bets pour toi.', couleur: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.3)' },
+              { emoji: '🏒', tag: 'NHL Live', titre: 'Ticker et scores en direct', description: 'Fil de matchs NHL en temps réel avec logos des équipes, scores en direct et heures de départ. Comme un vrai terminal financier.', couleur: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
+              { emoji: '📈', tag: 'Performance', titre: 'Suivi de bankroll avancé', description: 'Courbe de profit, ROI, win rate et gestion de bankroll avec la méthode Kelly. Tous tes paris sauvegardés et analysés.', couleur: '#ec4899', bg: 'rgba(236,72,153,0.1)', border: 'rgba(236,72,153,0.3)' },
+              { emoji: '🎯', tag: 'Value Bets', titre: 'Détection automatique', description: 'Quand notre modèle voit une différence entre nos probabilités et les cotes des bookmakers, il te le signale automatiquement.', couleur: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.3)' },
+              { emoji: '🔒', tag: 'Sécurité', titre: 'Données privées et sécurisées', description: 'Authentification sécurisée, données chiffrées et hébergées sur infrastructure sécurisée. Ton historique de paris reste privé.', couleur: '#14b8a6', bg: 'rgba(20,184,166,0.1)', border: 'rgba(20,184,166,0.3)' },
             ].map((f, i) => (
               <div key={i} style={{ backgroundColor: f.bg, borderRadius: '14px', padding: '28px', border: `1px solid ${f.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -249,6 +196,7 @@ function App() {
   const [page, setPage] = useState('home');
   const [utilisateur, setUtilisateur] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [nombreMatchs, setNombreMatchs] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -313,7 +261,7 @@ function App() {
       </div>
 
       {/* Ticker NHL */}
-      <HockeyTicker />
+      <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
 
       {/* Pages */}
       {page === 'home' && (
@@ -321,6 +269,7 @@ function App() {
           onCommencer={() => setShowAuth(true)}
           onVoirPricing={() => setPage('pricing')}
           onVoirAnalyses={() => setPage('analyses')}
+          nombreMatchs={nombreMatchs}
         />
       )}
       {page === 'analyses' && <Analyses />}

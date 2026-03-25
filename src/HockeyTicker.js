@@ -44,16 +44,26 @@ function getDateAujourdhui() {
   return `${year}-${month}-${day}`;
 }
 
-function HockeyTicker() {
+function getUrl(path) {
+  const estEnProduction = window.location.hostname !== 'localhost';
+  if (estEnProduction) {
+    return `/api/nhl?path=${path}`;
+  }
+  return `https://corsproxy.io/?${encodeURIComponent('https://api-web.nhle.com/v1/' + path)}`;
+}
+
+function HockeyTicker({ onMatchsCharge }) {
   const [matchs, setMatchs] = useState([]);
 
   useEffect(() => {
     async function charger() {
       try {
         const aujourdhui = getDateAujourdhui();
-        const response = await fetch(`/api/nhl?path=schedule/${aujourdhui}`);
+        const response = await fetch(getUrl(`schedule/${aujourdhui}`));
         const data = await response.json();
-        setMatchs(data.gameWeek?.[0]?.games || []);
+        const games = data.gameWeek?.[0]?.games || [];
+        setMatchs(games);
+        if (onMatchsCharge) onMatchsCharge(games.length);
       } catch (err) {
         console.error('Erreur ticker:', err);
       }
@@ -61,11 +71,13 @@ function HockeyTicker() {
     charger();
     const interval = setInterval(charger, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [onMatchsCharge]);
 
   if (matchs.length === 0) return null;
 
-  const contenu = [...matchs, ...matchs, ...matchs];
+  const nombreDuplications = Math.max(2, Math.ceil(20 / matchs.length));
+  const contenu = Array(nombreDuplications).fill(matchs).flat();
+  const duree = Math.max(20, matchs.length * 8);
 
   return (
     <div style={{
@@ -79,7 +91,7 @@ function HockeyTicker() {
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        animation: 'ticker 60s linear infinite',
+        animation: `ticker ${duree}s linear infinite`,
         whiteSpace: 'nowrap',
         gap: '0px',
       }}>
@@ -99,18 +111,13 @@ function HockeyTicker() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '0 24px',
+              padding: '0 32px',
               borderRight: '1px solid #222',
               height: '52px',
               cursor: 'pointer',
             }}>
-              <img
-                src={LOGOS_NHL[visiteur]}
-                alt={visiteur}
-                style={{ width: '28px', height: '28px', objectFit: 'contain' }}
-              />
+              <img src={LOGOS_NHL[visiteur]} alt={visiteur} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
               <span style={{ fontSize: '13px', color: '#ccc' }}>{visiteur}</span>
-
               {etat === 'LIVE' || etat === 'CRIT' ? (
                 <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: 'bold' }}>
                   {scoreVis} - {scoreDom}
@@ -118,13 +125,8 @@ function HockeyTicker() {
               ) : (
                 <span style={{ fontSize: '12px', color: '#6366f1' }}>{heure}</span>
               )}
-
               <span style={{ fontSize: '13px', color: '#ccc' }}>{domicile}</span>
-              <img
-                src={LOGOS_NHL[domicile]}
-                alt={domicile}
-                style={{ width: '28px', height: '28px', objectFit: 'contain' }}
-              />
+              <img src={LOGOS_NHL[domicile]} alt={domicile} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             </div>
           );
         })}
@@ -133,7 +135,7 @@ function HockeyTicker() {
       <style>{`
         @keyframes ticker {
           0% { transform: translateX(0); }
-          100% { transform: translateX(-33.33%); }
+          100% { transform: translateX(-${100 / nombreDuplications}%); }
         }
       `}</style>
     </div>

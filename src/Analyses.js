@@ -50,6 +50,14 @@ function getDateAujourdhui() {
   return `${year}-${month}-${day}`;
 }
 
+function getUrl(path) {
+  const estEnProduction = window.location.hostname !== 'localhost';
+  if (estEnProduction) {
+    return `/api/nhl?path=${path}`;
+  }
+  return `https://corsproxy.io/?${encodeURIComponent('https://api-web.nhle.com/v1/' + path)}`;
+}
+
 function StatEquipe({ nom, valeur, description }) {
   return (
     <div style={{ backgroundColor: '#252525', borderRadius: '8px', padding: '16px', flex: 1, minWidth: '140px' }}>
@@ -200,17 +208,10 @@ function Analyses() {
     async function charger() {
       try {
         const aujourdhui = getDateAujourdhui();
-        console.log('Date utilisée:', aujourdhui);
-
-        const [resClassement, resMatchs] = await Promise.all([
-          fetch(`/api/nhl?path=standings/now`),
-          fetch(`/api/nhl?path=schedule/${aujourdhui}`),
-        ]);
-
+        const resClassement = await fetch(getUrl('standings/now'));
+        const resMatchs = await fetch(getUrl(`schedule/${aujourdhui}`));
         const dataClassement = await resClassement.json();
         const dataMatchs = await resMatchs.json();
-
-        console.log('Matchs reçus:', dataMatchs);
         setClassement(dataClassement.standings || []);
         setMatchs(dataMatchs.gameWeek?.[0]?.games || []);
       } catch (err) {
@@ -222,7 +223,7 @@ function Analyses() {
     charger();
   }, []);
 
-  const explicationVictoire = "Ce modèle utilise les points au classement et le Win% de chaque équipe pour estimer la probabilité de victoire. Plus une équipe a de points et un Win% élevé, plus sa probabilité est haute. Dans les prochaines versions on va ajouter les Expected Goals (xG), le Corsi, et les performances à domicile/extérieur.";
+  const explicationVictoire = "Ce modèle utilise les points au classement et le Win% de chaque équipe pour estimer la probabilité de victoire. Plus une équipe a de points et un Win% élevé, plus sa probabilité est haute.";
   const explicationDiff = "Le différentiel prédit compare la moyenne de buts marqués et accordés par match. Un résultat positif favorise l'équipe visiteuse, négatif favorise l'équipe locale.";
   const explicationTotal = "Le total prédit = (Buts pour équipe 1 + Buts contre équipe 2 + Buts pour équipe 2 + Buts contre équipe 1) ÷ 2. Si notre total est supérieur à 5.5, le modèle recommande OVER, sinon UNDER.";
 
@@ -232,28 +233,13 @@ function Analyses() {
       <p style={{ color: '#888', marginBottom: '32px', fontSize: '14px' }}>
         Modèles statistiques basés sur les données officielles NHL en temps réel.
       </p>
-
       <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', flexWrap: 'wrap' }}>
         {ONGLETS.map(o => (
-          <button
-            key={o.id}
-            onClick={() => setOnglet(o.id)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: onglet === o.id ? '#6366f1' : '#1a1a1a',
-              color: 'white',
-              fontSize: '14px',
-              fontWeight: onglet === o.id ? 'bold' : 'normal',
-            }}
-          >
+          <button key={o.id} onClick={() => setOnglet(o.id)} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: onglet === o.id ? '#6366f1' : '#1a1a1a', color: 'white', fontSize: '14px', fontWeight: onglet === o.id ? 'bold' : 'normal' }}>
             {o.label}
           </button>
         ))}
       </div>
-
       {chargement ? (
         <p style={{ color: '#888' }}>Chargement des données NHL...</p>
       ) : matchs.length === 0 ? (
