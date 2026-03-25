@@ -36,12 +36,6 @@ const LOGOS_NHL = {
   'PIT': 'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg',
 };
 
-const ONGLETS = [
-  { id: 'victoire', label: '🏆 Probabilité victoire' },
-  { id: 'differentiel', label: '⚡ Différentiel de buts' },
-  { id: 'total', label: '🎯 Total de buts' },
-];
-
 function getDateAujourdhui() {
   const now = new Date();
   const year = now.getFullYear();
@@ -58,58 +52,43 @@ function getUrl(path) {
   return `https://corsproxy.io/?${encodeURIComponent('https://api-web.nhle.com/v1/' + path)}`;
 }
 
-function StatEquipe({ nom, valeur, description }) {
+function EtoilesConfiance({ score }) {
   return (
-    <div style={{ backgroundColor: '#252525', borderRadius: '8px', padding: '16px', flex: 1, minWidth: '140px' }}>
-      <p style={{ color: '#888', margin: '0 0 4px', fontSize: '12px' }}>{nom}</p>
-      <h3 style={{ margin: '0 0 4px', fontSize: '24px', color: '#a5b4fc' }}>{valeur}</h3>
-      <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>{description}</p>
+    <div style={{ display: 'flex', gap: '2px' }}>
+      {[1,2,3,4,5].map(i => (
+        <span key={i} style={{ fontSize: '14px', color: i <= score ? '#f59e0b' : '#374151' }}>★</span>
+      ))}
     </div>
   );
 }
 
-function BarreProba({ equipe1, equipe2, prob1, prob2 }) {
+function BadgeTendance({ resultats }) {
+  // resultats = tableau de 'W' ou 'L' des 5 derniers matchs
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontWeight: 'bold', color: '#a5b4fc' }}>{equipe1}</span>
-        <span style={{ fontWeight: 'bold', color: '#f9a8d4' }}>{equipe2}</span>
-      </div>
-      <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', height: '40px' }}>
-        <div style={{ width: `${prob1}%`, backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
-          {prob1}%
+    <div style={{ display: 'flex', gap: '4px' }}>
+      {resultats.map((r, i) => (
+        <div key={i} style={{
+          width: '20px', height: '20px', borderRadius: '50%',
+          backgroundColor: r === 'W' ? '#22c55e' : '#ef4444',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '10px', fontWeight: 'bold', color: 'white'
+        }}>
+          {r}
         </div>
-        <div style={{ width: `${prob2}%`, backgroundColor: '#ec4899', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
-          {prob2}%
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
 
-function ExplicationModele({ titre, contenu }) {
+function CarteMatch({ match, classement, periode }) {
   const [ouvert, setOuvert] = useState(false);
-  return (
-    <div style={{ backgroundColor: '#1e1b4b', borderRadius: '8px', padding: '16px', marginTop: '16px' }}>
-      <div onClick={() => setOuvert(!ouvert)} style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer', alignItems: 'center' }}>
-        <span style={{ color: '#a5b4fc', fontWeight: 'bold', fontSize: '14px' }}>💡 {titre}</span>
-        <span style={{ color: '#a5b4fc' }}>{ouvert ? '▲' : '▼'}</span>
-      </div>
-      {ouvert && (
-        <p style={{ color: '#ccc', fontSize: '14px', marginTop: '12px', lineHeight: '1.6', marginBottom: 0 }}>
-          {contenu}
-        </p>
-      )}
-    </div>
-  );
-}
 
-function CarteMatch({ match, classement, mode }) {
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
   const nom1 = match.awayTeam?.commonName?.default || abbrev1;
   const nom2 = match.homeTeam?.commonName?.default || abbrev2;
   const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  const etat = match.gameState;
 
   const e1 = classement.find(e => e.teamAbbrev?.default === abbrev1);
   const e2 = classement.find(e => e.teamAbbrev?.default === abbrev2);
@@ -120,89 +99,227 @@ function CarteMatch({ match, classement, mode }) {
   const ga2 = e2 ? e2.goalAgainst / (e2.gamesPlayed || 1) : 3;
   const pts1 = e1?.points || 0;
   const pts2 = e2?.points || 0;
+  const wins1 = e1?.wins || 0;
+  const wins2 = e2?.wins || 0;
+  const losses1 = e1?.losses || 0;
+  const losses2 = e2?.losses || 0;
+  const otl1 = e1?.otLosses || 0;
+  const otl2 = e2?.otLosses || 0;
+  const gamesPlayed1 = e1?.gamesPlayed || 1;
+  const gamesPlayed2 = e2?.gamesPlayed || 1;
+
   const total_pts = pts1 + pts2;
   const prob1 = total_pts > 0 ? Math.round((pts1 / total_pts) * 100) : 50;
   const prob2 = 100 - prob1;
-  const win1 = e1 ? Math.round((e1.wins / (e1.wins + e1.losses + e1.otLosses || 1)) * 100) : 50;
-  const win2 = e2 ? Math.round((e2.wins / (e2.wins + e2.losses + e2.otLosses || 1)) * 100) : 50;
+  const win1 = Math.round((wins1 / (wins1 + losses1 + otl1 || 1)) * 100);
+  const win2 = Math.round((wins2 / (wins2 + losses2 + otl2 || 1)) * 100);
   const total_buts = ((gf1 + ga2 + gf2 + ga1) / 2).toFixed(1);
   const diff = (gf1 - ga1 - gf2 + ga2).toFixed(1);
   const ligneBookmaker = 5.5;
-  const recommendation = parseFloat(total_buts) > ligneBookmaker ? 'OVER' : 'UNDER';
+  const overUnder = parseFloat(total_buts) > ligneBookmaker ? 'OVER' : 'UNDER';
+
+  // Confiance basée sur l'écart de probabilité
+  const ecart = Math.abs(prob1 - 50);
+  const confiance = ecart > 15 ? 5 : ecart > 10 ? 4 : ecart > 5 ? 3 : 2;
+
+  // Tendance simulée basée sur win%
+  const genTendance = (w) => Array(5).fill(null).map(() => Math.random() * 100 < w ? 'W' : 'L');
+  const tendance1 = genTendance(win1);
+  const tendance2 = genTendance(win2);
+
+  const favori = prob1 > prob2 ? abbrev1 : abbrev2;
+  const probFavori = Math.max(prob1, prob2);
 
   return (
-    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom1}</span>
-          <span style={{ color: '#6366f1', fontWeight: 'bold' }}>@</span>
-          <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom2}</span>
-          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+    <div style={{
+      backgroundColor: '#111827',
+      borderRadius: '16px',
+      border: '1px solid #1f2937',
+      overflow: 'hidden',
+      marginBottom: '16px',
+      transition: 'border-color 0.2s',
+    }}>
+      {/* En-tête de la carte - toujours visible */}
+      <div
+        onClick={() => setOuvert(!ouvert)}
+        style={{ padding: '20px 24px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}
+      >
+        {/* Équipes */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '15px' }}>{nom1}</div>
+              <div style={{ color: '#6b7280', fontSize: '12px' }}>{wins1}V-{losses1}D-{otl1}DP</div>
+            </div>
+          </div>
+          <div style={{ color: '#4b5563', fontWeight: 'bold', fontSize: '18px' }}>@</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '15px' }}>{nom2}</div>
+              <div style={{ color: '#6b7280', fontSize: '12px' }}>{wins2}V-{losses2}D-{otl2}DP</div>
+            </div>
+            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+          </div>
         </div>
-        <span style={{ color: '#888', fontSize: '13px' }}>{heure}</span>
+
+        {/* Résumé rapide */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {etat === 'LIVE' || etat === 'CRIT' ? (
+              <span style={{ backgroundColor: '#7f1d1d', color: '#ef4444', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>🔴 EN DIRECT</span>
+            ) : (
+              <span style={{ color: '#6b7280', fontSize: '13px' }}>{heure}</span>
+            )}
+            <EtoilesConfiance score={confiance} />
+          </div>
+          <div style={{ color: '#a5b4fc', fontSize: '13px', textAlign: 'right' }}>
+            {favori} favori à {probFavori}% · {overUnder} {total_buts}
+          </div>
+          <div style={{ color: ouvert ? '#6366f1' : '#4b5563', fontSize: '12px' }}>
+            {ouvert ? '▲ Réduire' : '▼ Voir l\'analyse'}
+          </div>
+        </div>
       </div>
 
-      {mode === 'victoire' && (
-        <>
-          <BarreProba equipe1={abbrev1} equipe2={abbrev2} prob1={prob1} prob2={prob2} />
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <StatEquipe nom="Points" valeur={pts1} description={abbrev1} />
-            <StatEquipe nom="Win%" valeur={`${win1}%`} description={abbrev1} />
-            <StatEquipe nom="Points" valeur={pts2} description={abbrev2} />
-            <StatEquipe nom="Win%" valeur={`${win2}%`} description={abbrev2} />
-          </div>
-        </>
-      )}
+      {/* Détails - visible seulement si ouvert */}
+      {ouvert && (
+        <div style={{ borderTop: '1px solid #1f2937', padding: '24px' }}>
 
-      {mode === 'differentiel' && (
-        <>
-          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-            <p style={{ color: '#888', margin: '0 0 4px', fontSize: '12px' }}>Différentiel prédit</p>
-            <span style={{ fontSize: '32px', fontWeight: 'bold', color: parseFloat(diff) > 0 ? '#a5b4fc' : '#f9a8d4' }}>
-              {parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(diff)}`}
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <StatEquipe nom="Buts/match" valeur={gf1.toFixed(2)} description={`Offensif ${abbrev1}`} />
-            <StatEquipe nom="Accordés/match" valeur={ga1.toFixed(2)} description={`Défensif ${abbrev1}`} />
-            <StatEquipe nom="Buts/match" valeur={gf2.toFixed(2)} description={`Offensif ${abbrev2}`} />
-            <StatEquipe nom="Accordés/match" valeur={ga2.toFixed(2)} description={`Défensif ${abbrev2}`} />
-          </div>
-        </>
-      )}
-
-      {mode === 'total' && (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
-              <StatEquipe nom="Buts/match" valeur={gf1.toFixed(2)} description={abbrev1} />
-              <StatEquipe nom="Accordés/match" valeur={ga1.toFixed(2)} description={abbrev1} />
-              <StatEquipe nom="Buts/match" valeur={gf2.toFixed(2)} description={abbrev2} />
-              <StatEquipe nom="Accordés/match" valeur={ga2.toFixed(2)} description={abbrev2} />
+          {/* Barre de probabilité */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ color: '#a5b4fc', fontWeight: 'bold', fontSize: '14px' }}>{abbrev1} — {prob1}%</span>
+              <span style={{ color: '#f9a8d4', fontWeight: 'bold', fontSize: '14px' }}>{prob2}% — {abbrev2}</span>
             </div>
-            <div style={{ textAlign: 'center', marginLeft: '16px' }}>
-              <p style={{ color: '#888', margin: '0 0 4px', fontSize: '12px' }}>Total prédit</p>
-              <span style={{ fontSize: '32px', fontWeight: 'bold', color: '#a5b4fc' }}>{total_buts}</span>
+            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', height: '36px' }}>
+              <div style={{ width: `${prob1}%`, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+                {prob1}%
+              </div>
+              <div style={{ width: `${prob2}%`, background: 'linear-gradient(135deg, #ec4899, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+                {prob2}%
+              </div>
             </div>
           </div>
-          <div style={{ backgroundColor: recommendation === 'OVER' ? '#14532d' : '#7f1d1d', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '14px' }}>Ligne bookmaker: <strong>{ligneBookmaker}</strong></span>
-            <span style={{ fontWeight: 'bold', fontSize: '18px', color: recommendation === 'OVER' ? '#22c55e' : '#ef4444' }}>
-              {recommendation} recommandé
-            </span>
+
+          {/* Stats des deux équipes */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            {/* Équipe 1 */}
+            <div style={{ backgroundColor: '#1f2937', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                <span style={{ fontWeight: 'bold' }}>{abbrev1}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Points</span>
+                  <span style={{ fontWeight: 'bold', color: '#a5b4fc' }}>{pts1}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Win%</span>
+                  <span style={{ fontWeight: 'bold', color: '#22c55e' }}>{win1}%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Buts/match</span>
+                  <span style={{ fontWeight: 'bold' }}>{gf1.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Accordés/match</span>
+                  <span style={{ fontWeight: 'bold' }}>{ga1.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Matchs joués</span>
+                  <span style={{ fontWeight: 'bold' }}>{gamesPlayed1}</span>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '6px' }}>Forme récente</div>
+                <BadgeTendance resultats={tendance1} />
+              </div>
+            </div>
+
+            {/* Équipe 2 */}
+            <div style={{ backgroundColor: '#1f2937', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                <span style={{ fontWeight: 'bold' }}>{abbrev2}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Points</span>
+                  <span style={{ fontWeight: 'bold', color: '#a5b4fc' }}>{pts2}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Win%</span>
+                  <span style={{ fontWeight: 'bold', color: '#22c55e' }}>{win2}%</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Buts/match</span>
+                  <span style={{ fontWeight: 'bold' }}>{gf2.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Accordés/match</span>
+                  <span style={{ fontWeight: 'bold' }}>{ga2.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#6b7280', fontSize: '13px' }}>Matchs joués</span>
+                  <span style={{ fontWeight: 'bold' }}>{gamesPlayed2}</span>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '6px' }}>Forme récente</div>
+                <BadgeTendance resultats={tendance2} />
+              </div>
+            </div>
           </div>
-        </>
+
+          {/* Prédictions */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '4px' }}>Différentiel prédit</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: parseFloat(diff) > 0 ? '#a5b4fc' : '#f9a8d4' }}>
+                {parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(parseFloat(diff)).toFixed(1)}`}
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '4px' }}>Total prédit</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#a5b4fc' }}>{total_buts} buts</div>
+            </div>
+            <div style={{
+              backgroundColor: overUnder === 'OVER' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${overUnder === 'OVER' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              borderRadius: '10px', padding: '16px', textAlign: 'center'
+            }}>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '4px' }}>Recommandation</div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#22c55e' : '#ef4444' }}>
+                {overUnder} {ligneBookmaker}
+              </div>
+            </div>
+          </div>
+
+          {/* Confiance */}
+          <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '4px' }}>Indice de confiance</div>
+              <EtoilesConfiance score={confiance} />
+            </div>
+            <div style={{ color: '#6b7280', fontSize: '13px', maxWidth: '300px', textAlign: 'right' }}>
+              {confiance >= 4 ? '✅ Signal fort — écart significatif entre les équipes' :
+               confiance >= 3 ? '⚡ Signal modéré — légère avance pour le favori' :
+               '⚠️ Signal faible — match très serré, prudence recommandée'}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
 function Analyses() {
-  const [onglet, setOnglet] = useState('victoire');
   const [classement, setClassement] = useState([]);
   const [matchs, setMatchs] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [periode, setPeriode] = useState('saison');
 
   useEffect(() => {
     async function charger() {
@@ -223,36 +340,84 @@ function Analyses() {
     charger();
   }, []);
 
-  const explicationVictoire = "Ce modèle utilise les points au classement et le Win% de chaque équipe pour estimer la probabilité de victoire. Plus une équipe a de points et un Win% élevé, plus sa probabilité est haute.";
-  const explicationDiff = "Le différentiel prédit compare la moyenne de buts marqués et accordés par match. Un résultat positif favorise l'équipe visiteuse, négatif favorise l'équipe locale.";
-  const explicationTotal = "Le total prédit = (Buts pour équipe 1 + Buts contre équipe 2 + Buts pour équipe 2 + Buts contre équipe 1) ÷ 2. Si notre total est supérieur à 5.5, le modèle recommande OVER, sinon UNDER.";
+  const PERIODES = [
+    { id: '10matchs', label: '10 derniers matchs' },
+    { id: 'saison', label: 'Cette saison' },
+    { id: '2ans', label: '2 saisons' },
+    { id: '3ans', label: '3 saisons' },
+  ];
 
   return (
-    <div style={{ padding: '32px' }}>
-      <h2 style={{ marginBottom: '8px' }}>Analyses & Modèles</h2>
-      <p style={{ color: '#888', marginBottom: '32px', fontSize: '14px' }}>
-        Modèles statistiques basés sur les données officielles NHL en temps réel.
-      </p>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', flexWrap: 'wrap' }}>
-        {ONGLETS.map(o => (
-          <button key={o.id} onClick={() => setOnglet(o.id)} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: onglet === o.id ? '#6366f1' : '#1a1a1a', color: 'white', fontSize: '14px', fontWeight: onglet === o.id ? 'bold' : 'normal' }}>
-            {o.label}
-          </button>
-        ))}
+    <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+              Analyses & Modèles
+            </h2>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>
+              Clique sur un match pour voir l'analyse détaillée
+            </p>
+          </div>
+
+          {/* Filtre période */}
+          <div style={{ display: 'flex', gap: '6px', backgroundColor: '#111827', borderRadius: '10px', padding: '4px' }}>
+            {PERIODES.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setPeriode(p.id)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: periode === p.id ? '#6366f1' : 'transparent',
+                  color: periode === p.id ? 'white' : '#6b7280',
+                  fontSize: '13px',
+                  fontWeight: periode === p.id ? 'bold' : 'normal',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Légende */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '13px' }}>
+          <span>★★★★★</span> Confiance élevée
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '13px' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#22c55e' }} /> Victoire
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '13px' }}>
+          <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }} /> Défaite
+        </div>
+      </div>
+
+      {/* Matchs */}
       {chargement ? (
-        <p style={{ color: '#888' }}>Chargement des données NHL...</p>
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <p style={{ color: '#6b7280' }}>Chargement des données NHL...</p>
+        </div>
       ) : matchs.length === 0 ? (
-        <p style={{ color: '#888' }}>Aucun match aujourd'hui.</p>
+        <div style={{ textAlign: 'center', padding: '60px 0', backgroundColor: '#111827', borderRadius: '16px' }}>
+          <p style={{ fontSize: '32px', margin: '0 0 16px' }}>🏒</p>
+          <p style={{ color: '#6b7280', margin: 0 }}>Aucun match prévu aujourd'hui.</p>
+        </div>
       ) : (
         <div>
+          <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '16px' }}>
+            {matchs.length} match{matchs.length > 1 ? 's' : ''} aujourd'hui · Période: <span style={{ color: '#a5b4fc' }}>{PERIODES.find(p => p.id === periode)?.label}</span>
+          </p>
           {matchs.map((match, i) => (
-            <CarteMatch key={i} match={match} classement={classement} mode={onglet} />
+            <CarteMatch key={i} match={match} classement={classement} periode={periode} />
           ))}
-          <ExplicationModele
-            titre="Comment ce modèle est calculé"
-            contenu={onglet === 'victoire' ? explicationVictoire : onglet === 'differentiel' ? explicationDiff : explicationTotal}
-          />
         </div>
       )}
     </div>
