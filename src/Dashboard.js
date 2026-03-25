@@ -12,11 +12,33 @@ function StatCard({ title, value, change, positive }) {
   );
 }
 
+const TYPES_PARIS = [
+  { value: 'moneyline', label: '🏆 Moneyline — Quelle équipe gagne' },
+  { value: 'differentiel', label: '⚡ Différentiel — Handicap/écart de buts' },
+  { value: 'total_buts', label: '🎯 Total buts — Over/Under' },
+  { value: 'but_joueur', label: '🏒 But d\'un joueur' },
+  { value: 'periode', label: '⏱ Période — Résultat d\'une période' },
+  { value: 'parlay', label: '🎰 Parlay — Combinaison de paris' },
+];
+
+function getPlaceholderSelection(type) {
+  switch (type) {
+    case 'moneyline': return 'ex: Canadiens gagnent';
+    case 'differentiel': return 'ex: Canadiens -1.5';
+    case 'total_buts': return 'ex: Over 5.5 buts';
+    case 'but_joueur': return 'ex: Connor McDavid marque';
+    case 'periode': return 'ex: MTL gagne la 1ère période';
+    case 'parlay': return 'ex: MTL + EDM + TOR gagnent';
+    default: return 'Décris ton pari';
+  }
+}
+
 function Dashboard() {
   const [paris, setParis] = useState([]);
   const [bankroll, setBankroll] = useState(1000);
   const [nouveauPari, setNouveauPari] = useState({
-    match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey'
+    match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey',
+    type_pari: 'moneyline', selection: ''
   });
   const [afficherFormulaire, setAfficherFormulaire] = useState(false);
   const [chargement, setChargement] = useState(true);
@@ -57,10 +79,12 @@ function Dashboard() {
         statut: 'actif',
         profit: 0,
         date_pari: new Date().toISOString(),
+        type_pari: nouveauPari.type_pari,
+        selection: nouveauPari.selection,
       });
       if (!error) {
         setBankroll(prev => prev - parseFloat(nouveauPari.mise));
-        setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey' });
+        setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '' });
         setAfficherFormulaire(false);
         chargerParis();
       } else {
@@ -119,26 +143,27 @@ function Dashboard() {
     }
   }
 
-  // Calcul des données pour le graphique
   function getDonneesGraphique() {
     const parisTraites = paris.filter(p => p.statut !== 'actif');
     const maintenant = new Date();
     const joursFiltre = filtreGraphique === '7j' ? 7 : filtreGraphique === '30j' ? 30 : 90;
     const dateDebut = new Date(maintenant - joursFiltre * 24 * 60 * 60 * 1000);
-
     const parisFiltres = parisTraites
       .filter(p => new Date(p.date_pari) >= dateDebut)
       .sort((a, b) => new Date(a.date_pari) - new Date(b.date_pari));
-
     let profitCumulatif = 0;
     return parisFiltres.map(p => {
       profitCumulatif += p.profit || 0;
       return {
         date: new Date(p.date_pari).toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }),
         profit: parseFloat(profitCumulatif.toFixed(2)),
-        match: p.match,
       };
     });
+  }
+
+  function getLabelType(type) {
+    const found = TYPES_PARIS.find(t => t.value === type);
+    return found ? found.label : type;
   }
 
   const parisActifs = paris.filter(p => p.statut === 'actif');
@@ -193,14 +218,7 @@ function Dashboard() {
                 labelStyle={{ color: '#888' }}
                 formatter={(value) => [`$${value}`, 'Profit cumulatif']}
               />
-              <Line
-                type="monotone"
-                dataKey="profit"
-                stroke="#6366f1"
-                strokeWidth={2}
-                dot={{ fill: '#6366f1', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
+              <Line type="monotone" dataKey="profit" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -230,11 +248,25 @@ function Dashboard() {
       {afficherFormulaire && (
         <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
           <h3 style={{ marginTop: 0 }}>Nouveau pari</h3>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
             <div style={{ flex: 2, minWidth: '200px' }}>
               <label style={{ color: '#888', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Match</label>
               <input style={inputStyle} placeholder="ex: MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
             </div>
+            <div style={{ flex: 2, minWidth: '200px' }}>
+              <label style={{ color: '#888', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Type de pari</label>
+              <select style={inputStyle} value={nouveauPari.type_pari} onChange={e => setNouveauPari({ ...nouveauPari, type_pari: e.target.value })}>
+                {TYPES_PARIS.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ color: '#888', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Sélection</label>
+            <input style={inputStyle} placeholder={getPlaceholderSelection(nouveauPari.type_pari)} value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '100px' }}>
               <label style={{ color: '#888', fontSize: '12px', display: 'block', marginBottom: '6px' }}>Mise ($)</label>
               <input style={inputStyle} type="number" placeholder="50" value={nouveauPari.mise} onChange={e => setNouveauPari({ ...nouveauPari, mise: e.target.value })} />
@@ -280,6 +312,8 @@ function Dashboard() {
             <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #333', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <p style={{ margin: '0 0 4px', fontWeight: 'bold' }}>{pari.match}</p>
+                <p style={{ margin: '0 0 4px', color: '#6366f1', fontSize: '13px' }}>{getLabelType(pari.type_pari)}</p>
+                {pari.selection && <p style={{ margin: '0 0 4px', color: '#ccc', fontSize: '13px' }}>→ {pari.selection}</p>}
                 <p style={{ margin: 0, color: '#888', fontSize: '13px' }}>{pari.bookmaker} · Cote {pari.cote} · Mise ${pari.mise}</p>
                 <p style={{ margin: '4px 0 0', color: '#22c55e', fontSize: '13px' }}>Profit potentiel: +${(pari.mise * pari.cote - pari.mise).toFixed(2)}</p>
               </div>
@@ -308,6 +342,8 @@ function Dashboard() {
             <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #333', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <p style={{ margin: '0 0 4px', fontWeight: 'bold' }}>{pari.match}</p>
+                <p style={{ margin: '0 0 4px', color: '#6366f1', fontSize: '13px' }}>{getLabelType(pari.type_pari)}</p>
+                {pari.selection && <p style={{ margin: '0 0 4px', color: '#ccc', fontSize: '13px' }}>→ {pari.selection}</p>}
                 <p style={{ margin: 0, color: '#888', fontSize: '13px' }}>{pari.bookmaker} · Cote {pari.cote} · Mise ${pari.mise}</p>
                 <p style={{ margin: '4px 0 0', color: '#666', fontSize: '12px' }}>{new Date(pari.date_pari).toLocaleDateString('fr-CA')}</p>
               </div>
@@ -336,13 +372,7 @@ function Dashboard() {
               <p style={{ color: '#888', margin: '0 0 8px', fontSize: '14px' }}>Bankroll actuelle</p>
               <h2 style={{ margin: '0 0 16px', color: '#a5b4fc' }}>${bankroll.toFixed(2)}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="number"
-                  placeholder="Montant"
-                  style={{ ...inputStyle, flex: 1 }}
-                  value={montantBankroll}
-                  onChange={e => setMontantBankroll(e.target.value)}
-                />
+                <input type="number" placeholder="Montant" style={{ ...inputStyle, flex: 1 }} value={montantBankroll} onChange={e => setMontantBankroll(e.target.value)} />
                 <button onClick={() => {
                   const montant = parseFloat(montantBankroll);
                   if (montant > 0) { setBankroll(prev => prev + montant); setMontantBankroll(''); }
