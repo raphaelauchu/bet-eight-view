@@ -35,7 +35,7 @@ function getPlaceholderSelection(type) {
 
 function Dashboard() {
   const [paris, setParis] = useState([]);
-  const [bankroll, setBankroll] = useState(1000);
+  const [bankroll, setBankrollState] = useState(1000);
   const [nouveauPari, setNouveauPari] = useState({
     match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey',
     type_pari: 'moneyline', selection: ''
@@ -47,22 +47,55 @@ function Dashboard() {
   const [filtreGraphique, setFiltreGraphique] = useState('30j');
 
   useEffect(() => {
-    chargerParis();
+    chargerDonnees();
   }, []);
 
-  async function chargerParis() {
+  async function chargerDonnees() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+
+      // Charger paris
+      const { data: dataParis, error: errorParis } = await supabase
         .from('paris')
         .select('*')
         .eq('user_id', user.id)
         .order('date_pari', { ascending: false });
-      if (!error) setParis(data || []);
+      if (!errorParis) setParis(dataParis || []);
+
+      // Charger bankroll
+      const { data: dataBankroll } = await supabase
+        .from('bankroll')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (dataBankroll) {
+        setBankrollState(dataBankroll.montant);
+      } else {
+        // Créer la bankroll si elle n'existe pas
+        await supabase.from('bankroll').insert({
+          user_id: user.id,
+          montant: 1000,
+        });
+        setBankrollState(1000);
+      }
     } catch (err) {
       console.error('Erreur chargement:', err);
     }
     setChargement(false);
+  }
+
+  async function mettreAJourBankroll(nouveauMontant) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setBankrollState(nouveauMontant);
+      await supabase
+        .from('bankroll')
+        .update({ montant: nouveauMontant, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+    } catch (err) {
+      console.error('Erreur bankroll:', err);
+    }
   }
 
   async function ajouterPari() {
@@ -83,10 +116,10 @@ function Dashboard() {
         selection: nouveauPari.selection,
       });
       if (!error) {
-        setBankroll(prev => prev - parseFloat(nouveauPari.mise));
+        await mettreAJourBankroll(bankroll - parseFloat(nouveauPari.mise));
         setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '' });
         setAfficherFormulaire(false);
-        chargerParis();
+        chargerDonnees();
       } else {
         alert('Erreur: ' + error.message);
       }
@@ -106,9 +139,9 @@ function Dashboard() {
         .eq('id', id);
       if (error) { alert('Erreur: ' + error.message); return; }
       if (statut === 'gagne') {
-        setBankroll(prev => prev + parseFloat(mise) + parseFloat((mise * cote - mise).toFixed(2)));
+        await mettreAJourBankroll(bankroll + parseFloat(mise) + parseFloat((mise * cote - mise).toFixed(2)));
       }
-      chargerParis();
+      chargerDonnees();
     } catch (err) {
       console.error('Erreur update:', err);
     }
@@ -122,9 +155,9 @@ function Dashboard() {
         .eq('id', id);
       if (error) { alert('Erreur: ' + error.message); return; }
       if (statut === 'gagne') {
-        setBankroll(prev => prev - parseFloat(mise) - parseFloat(profit));
+        await mettreAJourBankroll(bankroll - parseFloat(mise) - parseFloat(profit));
       }
-      chargerParis();
+      chargerDonnees();
     } catch (err) {
       console.error('Erreur remise en actif:', err);
     }
@@ -135,9 +168,9 @@ function Dashboard() {
       const { error } = await supabase.from('paris').delete().eq('id', id);
       if (error) { alert('Erreur suppression: ' + error.message); return; }
       if (statut === 'actif') {
-        setBankroll(prev => prev + parseFloat(mise));
+        await mettreAJourBankroll(bankroll + parseFloat(mise));
       }
-      chargerParis();
+      chargerDonnees();
     } catch (err) {
       console.error('Erreur suppression:', err);
     }
@@ -373,15 +406,15 @@ function Dashboard() {
               <h2 style={{ margin: '0 0 16px', color: '#a5b4fc' }}>${bankroll.toFixed(2)}</h2>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input type="number" placeholder="Montant" style={{ ...inputStyle, flex: 1 }} value={montantBankroll} onChange={e => setMontantBankroll(e.target.value)} />
-                <button onClick={() => {
+                <button onClick={async () => {
                   const montant = parseFloat(montantBankroll);
-                  if (montant > 0) { setBankroll(prev => prev + montant); setMontantBankroll(''); }
+                  if (montant > 0) { await mettreAJourBankroll(bankroll + montant); setMontantBankroll(''); }
                 }} style={{ padding: '10px 16px', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
                   Dépôt
                 </button>
-                <button onClick={() => {
+                <button onClick={async () => {
                   const montant = parseFloat(montantBankroll);
-                  if (montant > 0) { setBankroll(prev => prev - montant); setMontantBankroll(''); }
+                  if (montant > 0) { await mettreAJourBankroll(bankroll - montant); setMontantBankroll(''); }
                 }} style={{ padding: '10px 16px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
                   Retrait
                 </button>
