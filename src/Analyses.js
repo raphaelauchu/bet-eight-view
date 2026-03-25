@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-const NHL_API = process.env.NODE_ENV === 'production'
-  ? '/api/nhl?path='
-  : 'https://corsproxy.io/?https://api-web.nhle.com/v1/';
-
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
   'BUF': 'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',
@@ -37,6 +33,7 @@ const LOGOS_NHL = {
   'VGK': 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg',
   'VAN': 'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg',
   'UTA': 'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',
+  'PIT': 'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg',
 };
 
 const ONGLETS = [
@@ -44,6 +41,14 @@ const ONGLETS = [
   { id: 'differentiel', label: '⚡ Différentiel de buts' },
   { id: 'total', label: '🎯 Total de buts' },
 ];
+
+function getDateAujourdhui() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function StatEquipe({ nom, valeur, description }) {
   return (
@@ -119,10 +124,8 @@ function CarteMatch({ match, classement, mode }) {
 
   return (
     <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
-
-      {/* Header avec logos */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
           <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{nom1}</span>
           <span style={{ color: '#6366f1', fontWeight: 'bold' }}>@</span>
@@ -196,13 +199,18 @@ function Analyses() {
   useEffect(() => {
     async function charger() {
       try {
-        const aujourdhui = new Date().toISOString().split('T')[0];
+        const aujourdhui = getDateAujourdhui();
+        console.log('Date utilisée:', aujourdhui);
+
         const [resClassement, resMatchs] = await Promise.all([
-          fetch(`${NHL_API}standings/now`),
-          fetch(`${NHL_API}schedule/${aujourdhui}`),
+          fetch(`/api/nhl?path=standings/now`),
+          fetch(`/api/nhl?path=schedule/${aujourdhui}`),
         ]);
+
         const dataClassement = await resClassement.json();
         const dataMatchs = await resMatchs.json();
+
+        console.log('Matchs reçus:', dataMatchs);
         setClassement(dataClassement.standings || []);
         setMatchs(dataMatchs.gameWeek?.[0]?.games || []);
       } catch (err) {
@@ -225,7 +233,6 @@ function Analyses() {
         Modèles statistiques basés sur les données officielles NHL en temps réel.
       </p>
 
-      {/* Onglets */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', flexWrap: 'wrap' }}>
         {ONGLETS.map(o => (
           <button
@@ -247,7 +254,6 @@ function Analyses() {
         ))}
       </div>
 
-      {/* Contenu */}
       {chargement ? (
         <p style={{ color: '#888' }}>Chargement des données NHL...</p>
       ) : matchs.length === 0 ? (
