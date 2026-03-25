@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function StatCard({ title, value, change, positive }) {
   return (
@@ -21,6 +22,7 @@ function Dashboard() {
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState('actifs');
   const [montantBankroll, setMontantBankroll] = useState('');
+  const [filtreGraphique, setFiltreGraphique] = useState('30j');
 
   useEffect(() => {
     chargerParis();
@@ -74,22 +76,14 @@ function Dashboard() {
       const profit = statut === 'gagne'
         ? parseFloat((mise * cote - mise).toFixed(2))
         : -parseFloat(mise);
-
       const { error } = await supabase
         .from('paris')
         .update({ statut, profit })
         .eq('id', id);
-
-      if (error) {
-        alert('Erreur: ' + error.message);
-        return;
-      }
-
+      if (error) { alert('Erreur: ' + error.message); return; }
       if (statut === 'gagne') {
         setBankroll(prev => prev + parseFloat(mise) + parseFloat((mise * cote - mise).toFixed(2)));
       }
-      // Si perdu → rien, la mise a déjà été déduite à l'ajout
-
       chargerParis();
     } catch (err) {
       console.error('Erreur update:', err);
@@ -102,15 +96,10 @@ function Dashboard() {
         .from('paris')
         .update({ statut: 'actif', profit: 0 })
         .eq('id', id);
-      if (error) {
-        alert('Erreur: ' + error.message);
-        return;
-      }
+      if (error) { alert('Erreur: ' + error.message); return; }
       if (statut === 'gagne') {
-        // Enlever la mise + le profit car le pari redevient actif
         setBankroll(prev => prev - parseFloat(mise) - parseFloat(profit));
       }
-      // Si perdu → rien à faire, la bankroll reste pareille
       chargerParis();
     } catch (err) {
       console.error('Erreur remise en actif:', err);
@@ -120,10 +109,7 @@ function Dashboard() {
   async function supprimerPari(id, statut, mise) {
     try {
       const { error } = await supabase.from('paris').delete().eq('id', id);
-      if (error) {
-        alert('Erreur suppression: ' + error.message);
-        return;
-      }
+      if (error) { alert('Erreur suppression: ' + error.message); return; }
       if (statut === 'actif') {
         setBankroll(prev => prev + parseFloat(mise));
       }
@@ -133,6 +119,28 @@ function Dashboard() {
     }
   }
 
+  // Calcul des données pour le graphique
+  function getDonneesGraphique() {
+    const parisTraites = paris.filter(p => p.statut !== 'actif');
+    const maintenant = new Date();
+    const joursFiltre = filtreGraphique === '7j' ? 7 : filtreGraphique === '30j' ? 30 : 90;
+    const dateDebut = new Date(maintenant - joursFiltre * 24 * 60 * 60 * 1000);
+
+    const parisFiltres = parisTraites
+      .filter(p => new Date(p.date_pari) >= dateDebut)
+      .sort((a, b) => new Date(a.date_pari) - new Date(b.date_pari));
+
+    let profitCumulatif = 0;
+    return parisFiltres.map(p => {
+      profitCumulatif += p.profit || 0;
+      return {
+        date: new Date(p.date_pari).toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }),
+        profit: parseFloat(profitCumulatif.toFixed(2)),
+        match: p.match,
+      };
+    });
+  }
+
   const parisActifs = paris.filter(p => p.statut === 'actif');
   const parisTraites = paris.filter(p => p.statut !== 'actif');
   const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
@@ -140,6 +148,7 @@ function Dashboard() {
   const winRate = parisTraites.length > 0 ? Math.round((parisGagnes / parisTraites.length) * 100) : 0;
   const miseTotale = parisTraites.reduce((acc, p) => acc + (p.mise || 0), 0);
   const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : 0;
+  const donneesGraphique = getDonneesGraphique();
 
   const inputStyle = {
     width: '100%', padding: '10px', backgroundColor: '#252525',
@@ -157,6 +166,44 @@ function Dashboard() {
         <StatCard title="Profit net" value={`${profitTotal >= 0 ? '+' : ''}$${profitTotal.toFixed(2)}`} positive={profitTotal >= 0} />
         <StatCard title="ROI" value={`${roi}%`} positive={parseFloat(roi) >= 0} />
         <StatCard title="Win rate" value={`${winRate}%`} change={`${parisGagnes}/${parisTraites.length} paris`} positive={winRate >= 50} />
+      </div>
+
+      {/* Courbe de profit */}
+      <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '24px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>📈 Courbe de profit</h3>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['7j', '30j', '90j'].map(f => (
+              <button key={f} onClick={() => setFiltreGraphique(f)} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraphique === f ? '#6366f1' : '#252525', color: 'white', fontSize: '13px' }}>
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+        {donneesGraphique.length === 0 ? (
+          <p style={{ color: '#888', textAlign: 'center', padding: '40px 0' }}>Aucun pari traité pour cette période.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={donneesGraphique}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="date" stroke="#888" fontSize={12} />
+              <YAxis stroke="#888" fontSize={12} tickFormatter={v => `$${v}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
+                labelStyle={{ color: '#888' }}
+                formatter={(value) => [`$${value}`, 'Profit cumulatif']}
+              />
+              <Line
+                type="monotone"
+                dataKey="profit"
+                stroke="#6366f1"
+                strokeWidth={2}
+                dot={{ fill: '#6366f1', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Onglets */}
