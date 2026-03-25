@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getMatchsAujourdhui } from './hockey';
 
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
@@ -34,15 +33,30 @@ const LOGOS_NHL = {
   'VGK': 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg',
   'VAN': 'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg',
   'UTA': 'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',
+  'PIT': 'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg',
 };
+
+function getDateAujourdhui() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function HockeyTicker() {
   const [matchs, setMatchs] = useState([]);
 
   useEffect(() => {
     async function charger() {
-      const data = await getMatchsAujourdhui();
-      setMatchs(data);
+      try {
+        const aujourdhui = getDateAujourdhui();
+        const response = await fetch(`/api/nhl?path=schedule/${aujourdhui}`);
+        const data = await response.json();
+        setMatchs(data.gameWeek?.[0]?.games || []);
+      } catch (err) {
+        console.error('Erreur ticker:', err);
+      }
     }
     charger();
     const interval = setInterval(charger, 60000);
