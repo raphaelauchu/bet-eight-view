@@ -131,9 +131,9 @@ function CarrouselMeneurs({ meneurs }) {
   const [visible, setVisible] = useState(true);
 
   const categories = [
-    { id: 'buts', label: 'Top 5 Buteurs', unite: 'B', data: meneurs.buts?.slice(0, 5) || [] },
-    { id: 'passes', label: 'Top 5 Passeurs', unite: 'A', data: meneurs.passes?.slice(0, 5) || [] },
-    { id: 'points', label: 'Top 5 Pointeurs', unite: 'PTS', data: meneurs.points?.slice(0, 5) || [] },
+    { id: 'buts', label: 'Top 8 Buteurs', data: meneurs.buts?.slice(0, 8) || [] },
+    { id: 'passes', label: 'Top 8 Passeurs', data: meneurs.passes?.slice(0, 8) || [] },
+    { id: 'points', label: 'Top 8 Pointeurs', data: meneurs.points?.slice(0, 8) || [] },
   ];
 
   useEffect(() => {
@@ -266,7 +266,7 @@ function CarteMatch({ match, classement }) {
             <EtoilesConfiance score={confiance} />
           </div>
           <div style={{ color: '#f97316', fontSize: '13px' }}>{favori} favori {Math.max(prob1, prob2)}% · {overUnder} {total_buts}</div>
-          <div style={{ color: '#444', fontSize: '12px' }}>{ouvert ? 'Reduire' : 'Voir l\'analyse'}</div>
+          <div style={{ color: '#444', fontSize: '12px' }}>{ouvert ? 'Reduire' : "Voir l'analyse"}</div>
         </div>
       </div>
 
@@ -378,9 +378,9 @@ function Analyses() {
   async function chargerMeneurs() {
     try {
       const [r1, r2, r3] = await Promise.all([
-        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=5')),
-        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=5')),
-        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=5')),
+        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=8')),
+        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=8')),
+        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=8')),
       ]);
       const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
       const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({
@@ -419,7 +419,7 @@ function Analyses() {
     );
   }
 
-  // Etape 2 — Choix categorie avec carroussels
+  // Etape 2 — Choix categorie avec carrousels
   if (!categorie) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
@@ -479,7 +479,7 @@ function Analyses() {
               {ligueInfo.label} · {categorie === 'equipes' ? 'Statistiques Equipes' : 'Statistiques Joueurs'}
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>
-              {categorie === 'equipes' ? 'Clique sur un match pour voir l\'analyse' : 'Meneurs de la saison'}
+              {categorie === 'equipes' ? "Clique sur un match pour voir l'analyse" : 'Meneurs de la saison'}
             </p>
           </div>
         </div>
@@ -496,7 +496,7 @@ function Analyses() {
             <p style={{ color: '#666', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
           ) : matchs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', backgroundColor: '#111', borderRadius: '16px' }}>
-              <p style={{ color: '#666' }}>Aucun match prevu aujourd\'hui.</p>
+              <p style={{ color: '#666' }}>Aucun match prevu aujourd'hui.</p>
             </div>
           ) : matchs.map((match, i) => <CarteMatch key={i} match={match} classement={classement} />)}
         </div>
@@ -504,13 +504,13 @@ function Analyses() {
 
       {categorie === 'joueurs' && (
         <div>
-          {[['Top 5 Buteurs', 'buts'], ['Top 5 Passeurs', 'passes'], ['Top 5 Pointeurs', 'points']].map(([label, key], idx) => (
+          {[['Top 8 Buteurs', 'buts'], ['Top 8 Passeurs', 'passes'], ['Top 8 Pointeurs', 'points']].map(([label, key], idx) => (
             <div key={idx} style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', marginBottom: '20px', overflow: 'hidden' }}>
               <div style={{ padding: '14px 22px', borderBottom: '1px solid #222' }}>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{label}</h3>
               </div>
               {(meneurs[key] || []).map((j, i) => (
-                <div key={i} style={{ padding: '12px 22px', borderBottom: i < 4 ? '1px solid #1a1a1a' : 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div key={i} style={{ padding: '12px 22px', borderBottom: i < 7 ? '1px solid #1a1a1a' : 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '16px', width: '24px' }}>{i + 1}</span>
                   <img
                     src={getPhotoJoueur(j.playerId)}
