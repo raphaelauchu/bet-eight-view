@@ -43,11 +43,6 @@ const LIGUES = [
   { id: 'nba', label: 'NBA', disponible: false, logo: 'https://cdn.nba.com/logos/leagues/logo-nba.svg', description: 'Association nationale de basketball' },
 ];
 
-function getDateAujourdhui() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
 function getUrl(path) {
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
   if (estEnProduction) return `/api/nhl?path=${path}`;
@@ -56,6 +51,15 @@ function getUrl(path) {
 
 function getPhotoJoueur(playerId) {
   return `https://assets.nhle.com/mugs/${playerId}.png`;
+}
+
+function getDateStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('fr-CA', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function PointsIndicateur({ total, actif }) {
@@ -94,31 +98,27 @@ function CarrouselDivisions({ classement }) {
 
   if (listeDivisions.length === 0) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
-      <p style={{ color: '#666' }}>Chargement du classement...</p>
+      <p style={{ color: '#666' }}>Chargement...</p>
     </div>
   );
 
   const [nomDiv, equipes] = listeDivisions[indexActif];
-
   return (
     <div>
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#f97316' }}>Division {nomDiv}</h3>
           <span style={{ color: '#666', fontSize: '13px' }}>{indexActif + 1} / {listeDivisions.length}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {equipes.slice(0, 8).map((e, i) => {
-            const abbrev = e.teamAbbrev?.default;
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '10px 14px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
-                <span style={{ color: i < 3 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '14px', width: '20px', textAlign: 'center' }}>{i + 1}</span>
-                <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-                <span style={{ flex: 1, fontWeight: 'bold', fontSize: '14px' }}>{abbrev}</span>
-                <span style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{e.points} pts</span>
-              </div>
-            );
-          })}
+          {equipes.slice(0, 8).map((e, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '10px 14px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
+              <span style={{ color: i < 3 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '14px', width: '20px', textAlign: 'center' }}>{i + 1}</span>
+              <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+              <span style={{ flex: 1, fontWeight: 'bold', fontSize: '14px' }}>{e.teamAbbrev?.default}</span>
+              <span style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{e.points} pts</span>
+            </div>
+          ))}
         </div>
       </div>
       <PointsIndicateur total={listeDivisions.length} actif={indexActif} />
@@ -131,46 +131,33 @@ function CarrouselMeneurs({ meneurs }) {
   const [visible, setVisible] = useState(true);
 
   const categories = [
-    { id: 'buts', label: 'Top 8 Buteurs', data: meneurs.buts?.slice(0, 8) || [] },
-    { id: 'passes', label: 'Top 8 Passeurs', data: meneurs.passes?.slice(0, 8) || [] },
-    { id: 'points', label: 'Top 8 Pointeurs', data: meneurs.points?.slice(0, 8) || [] },
+    { label: 'Top 8 Buteurs', data: meneurs.buts?.slice(0, 8) || [] },
+    { label: 'Top 8 Passeurs', data: meneurs.passes?.slice(0, 8) || [] },
+    { label: 'Top 8 Pointeurs', data: meneurs.points?.slice(0, 8) || [] },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
-      setTimeout(() => {
-        setIndexActif(prev => (prev + 1) % categories.length);
-        setVisible(true);
-      }, 300);
+      setTimeout(() => { setIndexActif(prev => (prev + 1) % 3); setVisible(true); }, 300);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const cat = categories[indexActif];
-
   return (
     <div>
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{cat.label}</h3>
-          <span style={{ color: '#666', fontSize: '13px' }}>{indexActif + 1} / {categories.length}</span>
+          <span style={{ color: '#666', fontSize: '13px' }}>{indexActif + 1} / 3</span>
         </div>
-        {cat.data.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
-            <p style={{ color: '#666' }}>Chargement...</p>
-          </div>
-        ) : (
+        {cat.data.length === 0 ? <p style={{ color: '#666', textAlign: 'center' }}>Chargement...</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {cat.data.map((j, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '10px 14px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                 <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '14px', width: '20px', textAlign: 'center' }}>{i + 1}</span>
-                <img
-                  src={getPhotoJoueur(j.playerId)}
-                  alt={j.nom}
-                  style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }}
-                  onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }}
-                />
+                <img src={getPhotoJoueur(j.playerId)} alt={j.nom} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }} onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{j.nom}</div>
                   <div style={{ color: '#666', fontSize: '12px' }}>{j.equipe} · {j.position}</div>
@@ -181,7 +168,7 @@ function CarrouselMeneurs({ meneurs }) {
           </div>
         )}
       </div>
-      <PointsIndicateur total={categories.length} actif={indexActif} />
+      <PointsIndicateur total={3} actif={indexActif} />
     </div>
   );
 }
@@ -189,9 +176,7 @@ function CarrouselMeneurs({ meneurs }) {
 function EtoilesConfiance({ score }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ fontSize: '14px', color: i <= score ? '#f97316' : '#333' }}>★</span>
-      ))}
+      {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '14px', color: i <= score ? '#f97316' : '#333' }}>★</span>)}
     </div>
   );
 }
@@ -206,7 +191,7 @@ function BadgeTendance({ resultats }) {
   );
 }
 
-function CarteMatch({ match, classement }) {
+function CarteMatchEquipes({ match, classement }) {
   const [ouvert, setOuvert] = useState(false);
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
@@ -220,8 +205,7 @@ function CarteMatch({ match, classement }) {
   const ga1 = e1 ? e1.goalAgainst / (e1.gamesPlayed || 1) : 3;
   const gf2 = e2 ? e2.goalFor / (e2.gamesPlayed || 1) : 3;
   const ga2 = e2 ? e2.goalAgainst / (e2.gamesPlayed || 1) : 3;
-  const pts1 = e1?.points || 0;
-  const pts2 = e2?.points || 0;
+  const pts1 = e1?.points || 0; const pts2 = e2?.points || 0;
   const wins1 = e1?.wins || 0; const wins2 = e2?.wins || 0;
   const losses1 = e1?.losses || 0; const losses2 = e2?.losses || 0;
   const otl1 = e1?.otLosses || 0; const otl2 = e2?.otLosses || 0;
@@ -282,7 +266,6 @@ function CarteMatch({ match, classement }) {
               <div style={{ width: `${prob2}%`, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{prob2}%</div>
             </div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
             {[
               { abbrev: abbrev1, logo: LOGOS_NHL[abbrev1], pts: pts1, win: win1, gf: gf1, ga: ga1, gp: gp1, t: genT(win1) },
@@ -306,32 +289,239 @@ function CarteMatch({ match, classement }) {
               </div>
             ))}
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
             <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
               <div style={{ color: '#666', fontSize: '11px', marginBottom: '4px' }}>Differentiel predit</div>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>{parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(parseFloat(diff)).toFixed(1)}`}</div>
+              <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'white' }}>{parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(parseFloat(diff)).toFixed(1)}`}</div>
             </div>
             <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
               <div style={{ color: '#666', fontSize: '11px', marginBottom: '4px' }}>Total predit</div>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
+              <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
             </div>
             <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
               <div style={{ color: '#666', fontSize: '11px', marginBottom: '4px' }}>Recommandation</div>
-              <div style={{ fontSize: '16px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder} 5.5</div>
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ color: '#666', fontSize: '11px', marginBottom: '4px' }}>Indice de confiance</div>
-              <EtoilesConfiance score={confiance} />
-            </div>
-            <div style={{ color: '#666', fontSize: '13px', textAlign: 'right' }}>
-              {confiance >= 4 ? 'Signal fort' : confiance >= 3 ? 'Signal modere' : 'Match tres serre'}
+              <div style={{ fontSize: '15px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder} 5.5</div>
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function CarteMatchJoueurs({ match, onSelectJoueur }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [roster1, setRoster1] = useState([]);
+  const [roster2, setRoster2] = useState([]);
+  const [chargementRoster, setChargementRoster] = useState(false);
+  const [filtre, setFiltre] = useState('');
+
+  const abbrev1 = match.awayTeam?.abbrev;
+  const abbrev2 = match.homeTeam?.abbrev;
+  const nom1 = match.awayTeam?.commonName?.default || abbrev1;
+  const nom2 = match.homeTeam?.commonName?.default || abbrev2;
+  const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  const etat = match.gameState;
+
+  async function chargerRosters() {
+    if (roster1.length > 0) return;
+    setChargementRoster(true);
+    try {
+      const [r1, r2] = await Promise.all([
+        fetch(getUrl(`roster/${abbrev1}/current`)),
+        fetch(getUrl(`roster/${abbrev2}/current`)),
+      ]);
+      const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+      const formater = (data, equipe) => [
+        ...(data.forwards || []),
+        ...(data.defensemen || []),
+        ...(data.goalies || []),
+      ].map(j => ({
+        id: j.id,
+        nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(),
+        numero: j.sweaterNumber || '',
+        position: j.positionCode || '',
+        equipe,
+      }));
+      setRoster1(formater(d1, abbrev1));
+      setRoster2(formater(d2, abbrev2));
+    } catch (err) { console.error(err); }
+    setChargementRoster(false);
+  }
+
+  function handleOuvrir() {
+    setOuvert(!ouvert);
+    if (!ouvert) chargerRosters();
+  }
+
+  const tousJoueurs = [...roster1, ...roster2];
+  const joueursFiltres = filtre
+    ? tousJoueurs.filter(j =>
+        j.nom.toLowerCase().includes(filtre.toLowerCase()) ||
+        j.equipe.toLowerCase().includes(filtre.toLowerCase())
+      )
+    : tousJoueurs;
+
+  const inputStyle = { width: '100%', padding: '10px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
+
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '12px' }}>
+      <div onClick={handleOuvrir} style={{ padding: '18px 22px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
+            <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{nom1}</span>
+          </div>
+          <span style={{ color: '#444', fontWeight: 'bold' }}>@</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{nom2}</span>
+            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {etat === 'LIVE' || etat === 'CRIT'
+            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>EN DIRECT</span>
+            : <span style={{ color: '#666', fontSize: '13px' }}>{heure}</span>}
+          <span style={{ color: '#444', fontSize: '12px' }}>{ouvert ? 'Fermer' : 'Voir alignement'}</span>
+        </div>
+      </div>
+
+      {ouvert && (
+        <div style={{ borderTop: '1px solid #222', padding: '20px' }}>
+          {/* Filtre */}
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              style={inputStyle}
+              placeholder="Rechercher un joueur ou une equipe..."
+              value={filtre}
+              onChange={e => setFiltre(e.target.value)}
+            />
+          </div>
+
+          {chargementRoster ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {[
+                { equipe: abbrev1, logo: LOGOS_NHL[abbrev1], joueurs: joueursFiltres.filter(j => j.equipe === abbrev1) },
+                { equipe: abbrev2, logo: LOGOS_NHL[abbrev2], joueurs: joueursFiltres.filter(j => j.equipe === abbrev2) },
+              ].map((col, ci) => (
+                <div key={ci}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <img src={col.logo} alt={col.equipe} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                    <span style={{ fontWeight: 'bold', color: '#f97316' }}>{col.equipe}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {col.joueurs.map((j, i) => (
+                      <div
+                        key={i}
+                        onClick={() => onSelectJoueur(j)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
+                      >
+                        <img
+                          src={getPhotoJoueur(j.id)}
+                          alt={j.nom}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '1px solid #333' }}
+                          onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{j.nom}</div>
+                          <div style={{ color: '#666', fontSize: '11px' }}>#{j.numero} · {j.position}</div>
+                        </div>
+                        <span style={{ color: '#f97316', fontSize: '12px' }}>→</span>
+                      </div>
+                    ))}
+                    {col.joueurs.length === 0 && <p style={{ color: '#555', fontSize: '13px' }}>Aucun resultat</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PageMatchsSemaine({ classement, onSelectJoueur }) {
+  const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    chargerSemaine();
+  }, []);
+
+  async function chargerSemaine() {
+    setChargement(true);
+    const aujourdhui = new Date();
+    const jours = Array(7).fill(null).map((_, i) => {
+      const d = new Date(aujourdhui);
+      d.setDate(d.getDate() + i);
+      return getDateStr(d);
+    });
+
+    const resultats = {};
+    await Promise.all(jours.map(async (jour) => {
+      try {
+        const res = await fetch(getUrl(`schedule/${jour}`));
+        const data = await res.json();
+        const games = data.gameWeek?.[0]?.games || [];
+        if (games.length > 0) resultats[jour] = games;
+      } catch (err) { }
+    }));
+
+    setMatchsParJour(resultats);
+    const premierJour = Object.keys(resultats).sort()[0] || jours[0];
+    setJourActif(premierJour);
+    setChargement(false);
+  }
+
+  const jours = Object.keys(matchsParJour).sort();
+
+  return (
+    <div>
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement des matchs de la semaine...</p>
+      ) : (
+        <>
+          {/* Onglets jours */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {jours.map(jour => {
+              const d = new Date(jour);
+              const label = d.toLocaleDateString('fr-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+              const nbMatchs = matchsParJour[jour]?.length || 0;
+              const estAujourdhui = jour === getDateStr(new Date());
+              return (
+                <button
+                  key={jour}
+                  onClick={() => setJourActif(jour)}
+                  style={{
+                    padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                    backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a',
+                    color: jourActif === jour ? 'white' : '#888',
+                    fontSize: '13px', fontWeight: jourActif === jour ? 'bold' : 'normal',
+                    position: 'relative',
+                  }}
+                >
+                  {estAujourdhui ? 'Aujourd\'hui' : label}
+                  <span style={{ display: 'block', fontSize: '11px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nbMatchs} match{nbMatchs > 1 ? 's' : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Matchs du jour actif */}
+          <div>
+            {(matchsParJour[jourActif] || []).length === 0 ? (
+              <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match ce jour.</p>
+            ) : (
+              (matchsParJour[jourActif] || []).map((match, i) => (
+                <CarteMatchJoueurs key={i} match={match} onSelectJoueur={onSelectJoueur} />
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );
@@ -344,6 +534,7 @@ function Analyses() {
   const [matchs, setMatchs] = useState([]);
   const [chargement, setChargement] = useState(false);
   const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
+  const [joueurSelectionne, setJoueurSelectionne] = useState(null);
 
   useEffect(() => {
     if (ligue === 'nhl' && !categorie) chargerPreview();
@@ -351,7 +542,6 @@ function Analyses() {
 
   useEffect(() => {
     if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL();
-    if (ligue === 'nhl' && categorie === 'joueurs') chargerMeneurs();
   }, [ligue, categorie]);
 
   async function chargerPreview() {
@@ -366,7 +556,8 @@ function Analyses() {
   async function chargerDonneesNHL() {
     setChargement(true);
     try {
-      const aujourdhui = getDateAujourdhui();
+      const now = new Date();
+      const aujourdhui = getDateStr(now);
       const [r1, r2] = await Promise.all([fetch(getUrl('standings/now')), fetch(getUrl(`schedule/${aujourdhui}`))]);
       const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
       setClassement(d1.standings || []);
@@ -395,7 +586,40 @@ function Analyses() {
     } catch (err) { console.error(err); }
   }
 
-  // Etape 1 — Choix ligue
+  // Fiche joueur (étape 3 pour joueurs)
+  if (joueurSelectionne) {
+    return (
+      <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
+        <button onClick={() => setJoueurSelectionne(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', marginBottom: '24px' }}>Retour</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
+          <img
+            src={getPhotoJoueur(joueurSelectionne.id)}
+            alt={joueurSelectionne.nom}
+            style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }}
+            onError={e => { e.target.src = LOGOS_NHL[joueurSelectionne.equipe] || ''; }}
+          />
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '900', color: 'white' }}>{joueurSelectionne.nom}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img src={LOGOS_NHL[joueurSelectionne.equipe]} alt={joueurSelectionne.equipe} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+              <span style={{ color: '#666', fontSize: '14px' }}>#{joueurSelectionne.numero} · {joueurSelectionne.equipe} · {joueurSelectionne.position}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats placeholder — étape 2 */}
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '32px', textAlign: 'center' }}>
+          <h3 style={{ color: '#f97316', margin: '0 0 12px' }}>Fiche detaillee</h3>
+          <p style={{ color: '#666', margin: '0 0 24px' }}>Les stats avancees (5, 10, 20 derniers matchs, shots on goal, PPP, hits, blocks, shot chart) arrivent dans la prochaine mise a jour.</p>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', padding: '8px 20px' }}>
+            <span style={{ color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>Disponible dans la V2</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Étape 1 — Choix ligue
   if (!ligue) {
     return (
       <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px' }}>
@@ -419,7 +643,7 @@ function Analyses() {
     );
   }
 
-  // Etape 2 — Choix categorie avec carrousels
+  // Étape 2 — Choix catégorie
   if (!categorie) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
@@ -434,39 +658,29 @@ function Analyses() {
             </div>
           </div>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div style={{ backgroundColor: '#111', borderRadius: '20px', border: '2px solid #222', padding: '28px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '900', color: 'white' }}>Statistiques Equipes</h3>
               <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>Classement par division</p>
             </div>
-            <div style={{ flex: 1 }}>
-              <CarrouselDivisions classement={classement} />
-            </div>
-            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '24px', background: '#f97316', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>
-              Voir les analyses
-            </button>
+            <div style={{ flex: 1 }}><CarrouselDivisions classement={classement} /></div>
+            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '24px', background: '#f97316', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>Voir les analyses</button>
           </div>
-
           <div style={{ backgroundColor: '#111', borderRadius: '20px', border: '2px solid #222', padding: '28px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '900', color: 'white' }}>Statistiques Joueurs</h3>
               <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>Meneurs buts, passes et points</p>
             </div>
-            <div style={{ flex: 1 }}>
-              <CarrouselMeneurs meneurs={meneurs} />
-            </div>
-            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '24px', background: '#f97316', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>
-              Voir les props
-            </button>
+            <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
+            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '24px', background: '#f97316', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>Voir les matchs</button>
           </div>
         </div>
       </div>
     );
   }
 
-  // Etape 3 — Page d'analyse
+  // Étape 3 — Page d'analyse
   const ligueInfo = LIGUES.find(l => l.id === ligue);
   return (
     <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -479,7 +693,7 @@ function Analyses() {
               {ligueInfo.label} · {categorie === 'equipes' ? 'Statistiques Equipes' : 'Statistiques Joueurs'}
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>
-              {categorie === 'equipes' ? "Clique sur un match pour voir l'analyse" : 'Meneurs de la saison'}
+              {categorie === 'equipes' ? "Clique sur un match pour voir l'analyse" : "Clique sur un match pour voir l'alignement et les joueurs"}
             </p>
           </div>
         </div>
@@ -498,36 +712,12 @@ function Analyses() {
             <div style={{ textAlign: 'center', padding: '60px 0', backgroundColor: '#111', borderRadius: '16px' }}>
               <p style={{ color: '#666' }}>Aucun match prevu aujourd'hui.</p>
             </div>
-          ) : matchs.map((match, i) => <CarteMatch key={i} match={match} classement={classement} />)}
+          ) : matchs.map((match, i) => <CarteMatchEquipes key={i} match={match} classement={classement} />)}
         </div>
       )}
 
       {categorie === 'joueurs' && (
-        <div>
-          {[['Top 8 Buteurs', 'buts'], ['Top 8 Passeurs', 'passes'], ['Top 8 Pointeurs', 'points']].map(([label, key], idx) => (
-            <div key={idx} style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', marginBottom: '20px', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 22px', borderBottom: '1px solid #222' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{label}</h3>
-              </div>
-              {(meneurs[key] || []).map((j, i) => (
-                <div key={i} style={{ padding: '12px 22px', borderBottom: i < 7 ? '1px solid #1a1a1a' : 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '16px', width: '24px' }}>{i + 1}</span>
-                  <img
-                    src={getPhotoJoueur(j.playerId)}
-                    alt={j.nom}
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }}
-                    onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', color: 'white' }}>{j.nom}</div>
-                    <div style={{ color: '#666', fontSize: '12px' }}>{j.equipe} · {j.position}</div>
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#f97316' }}>{j.valeur}</div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        <PageMatchsSemaine classement={classement} onSelectJoueur={setJoueurSelectionne} />
       )}
     </div>
   );
