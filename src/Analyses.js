@@ -37,10 +37,38 @@ const LOGOS_NHL = {
 };
 
 const LIGUES = [
-  { id: 'nhl', label: '🏒 NHL', disponible: true },
-  { id: 'nfl', label: '🏈 NFL', disponible: false },
-  { id: 'mlb', label: '⚾ MLB', disponible: false },
-  { id: 'nba', label: '🏀 NBA', disponible: false },
+  {
+    id: 'nhl',
+    label: 'NHL',
+    disponible: true,
+    logo: 'https://assets.nhle.com/logos/nhl/svg/NHL_light.svg',
+    couleur: '#f97316',
+    description: 'Ligue nationale de hockey',
+  },
+  {
+    id: 'nfl',
+    label: 'NFL',
+    disponible: false,
+    logo: 'https://static.www.nfl.com/image/upload/v1554321393/league/nvfr7ogywskqrfaiu38m.svg',
+    couleur: '#1a3a6e',
+    description: 'Ligue nationale de football',
+  },
+  {
+    id: 'mlb',
+    label: 'MLB',
+    disponible: false,
+    logo: 'https://www.mlbstatic.com/team-logos/league-on-dark/1.svg',
+    couleur: '#c41230',
+    description: 'Ligue majeure de baseball',
+  },
+  {
+    id: 'nba',
+    label: 'NBA',
+    disponible: false,
+    logo: 'https://cdn.nba.com/logos/leagues/logo-nba.svg',
+    couleur: '#1d428a',
+    description: 'Association nationale de basketball',
+  },
 ];
 
 function getDateAujourdhui() {
@@ -73,12 +101,7 @@ function BadgeTendance({ resultats }) {
   return (
     <div style={{ display: 'flex', gap: '4px' }}>
       {resultats.map((r, i) => (
-        <div key={i} style={{
-          width: '20px', height: '20px', borderRadius: '50%',
-          backgroundColor: r === 'W' ? '#22c55e' : '#ef4444',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '10px', fontWeight: 'bold', color: 'white'
-        }}>
+        <div key={i} style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: r === 'W' ? '#22c55e' : '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white' }}>
           {r}
         </div>
       ))}
@@ -159,12 +182,8 @@ function CarteMatch({ match, classement }) {
             )}
             <EtoilesConfiance score={confiance} />
           </div>
-          <div style={{ color: '#fed7aa', fontSize: '13px', textAlign: 'right' }}>
-            {favori} favori à {probFavori}% · {overUnder} {total_buts}
-          </div>
-          <div style={{ color: ouvert ? '#f97316' : '#4b5563', fontSize: '12px' }}>
-            {ouvert ? '▲ Réduire' : '▼ Voir l\'analyse'}
-          </div>
+          <div style={{ color: '#fed7aa', fontSize: '13px' }}>{favori} favori à {probFavori}% · {overUnder} {total_buts}</div>
+          <div style={{ color: ouvert ? '#f97316' : '#4b5563', fontSize: '12px' }}>{ouvert ? '▲ Réduire' : '▼ Voir l\'analyse'}</div>
         </div>
       </div>
 
@@ -176,12 +195,8 @@ function CarteMatch({ match, classement }) {
               <span style={{ color: '#f9a8d4', fontWeight: 'bold', fontSize: '14px' }}>{prob2}% — {abbrev2}</span>
             </div>
             <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', height: '36px' }}>
-              <div style={{ width: `${prob1}%`, background: 'linear-gradient(135deg, #f97316, #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
-                {prob1}%
-              </div>
-              <div style={{ width: `${prob2}%`, background: 'linear-gradient(135deg, #ec4899, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
-                {prob2}%
-              </div>
+              <div style={{ width: `${prob1}%`, background: 'linear-gradient(135deg, #f97316, #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>{prob1}%</div>
+              <div style={{ width: `${prob2}%`, background: 'linear-gradient(135deg, #ec4899, #f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>{prob2}%</div>
             </div>
           </div>
 
@@ -266,7 +281,6 @@ function PageStatsEquipes({ classement, matchs, chargement }) {
           </button>
         ))}
       </div>
-
       {chargement ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
           <p style={{ color: '#6b7280' }}>Chargement des données NHL...</p>
@@ -278,12 +292,8 @@ function PageStatsEquipes({ classement, matchs, chargement }) {
         </div>
       ) : (
         <div>
-          <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '16px' }}>
-            {matchs.length} match{matchs.length > 1 ? 's' : ''} aujourd'hui
-          </p>
-          {matchs.map((match, i) => (
-            <CarteMatch key={i} match={match} classement={classement} mode={modele} />
-          ))}
+          <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '16px' }}>{matchs.length} match{matchs.length > 1 ? 's' : ''} aujourd'hui</p>
+          {matchs.map((match, i) => <CarteMatch key={i} match={match} classement={classement} mode={modele} />)}
         </div>
       )}
     </div>
@@ -292,12 +302,11 @@ function PageStatsEquipes({ classement, matchs, chargement }) {
 
 function PagePlayerProps() {
   const PROPS = [
-    { id: 'buts', label: '🥅 Buts', description: 'Probabilité qu\'un joueur marque' },
-    { id: 'points', label: '🏒 Points', description: 'Probabilité qu\'un joueur obtienne un point' },
-    { id: 'tirs', label: '🎯 Tirs', description: 'Nombre de tirs attendus' },
+    { id: 'buts', label: '🥅 Buts' },
+    { id: 'points', label: '🏒 Points' },
+    { id: 'tirs', label: '🎯 Tirs' },
   ];
   const [prop, setProp] = useState('buts');
-
   return (
     <div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
@@ -307,15 +316,10 @@ function PagePlayerProps() {
           </button>
         ))}
       </div>
-
       <div style={{ backgroundColor: '#111827', borderRadius: '16px', border: '1px solid #1f2937', padding: '48px', textAlign: 'center' }}>
         <p style={{ fontSize: '48px', margin: '0 0 16px' }}>🚧</p>
-        <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: '800' }}>
-          {PROPS.find(p => p.id === prop)?.label} — Bientôt disponible
-        </h3>
-        <p style={{ color: '#6b7280', margin: '0 0 24px', fontSize: '15px', maxWidth: '400px', margin: '0 auto 24px' }}>
-          Les statistiques avancées par joueur arrivent prochainement. On travaille à intégrer les données de performance individuelle NHL.
-        </p>
+        <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: '800' }}>{PROPS.find(p => p.id === prop)?.label} — Bientôt disponible</h3>
+        <p style={{ color: '#6b7280', margin: '0 auto 24px', fontSize: '15px', maxWidth: '400px' }}>Les statistiques avancées par joueur arrivent prochainement.</p>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '20px', padding: '8px 20px' }}>
           <span style={{ color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>Disponible dans la V2</span>
         </div>
@@ -357,35 +361,42 @@ function Analyses() {
   // Étape 1 — Choix de la ligue
   if (!ligue) {
     return (
-      <div style={{ padding: '48px 32px', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '48px' }}>
-          <h2 style={{ margin: '0 0 8px', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>Analyses & Modèles</h2>
-          <p style={{ color: '#6b7280', margin: 0 }}>Choisis ta ligue pour commencer</p>
+      <div style={{ minHeight: '80vh', padding: '0 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <h2 style={{ margin: '0 0 12px', fontSize: '36px', fontWeight: '900', letterSpacing: '-1px' }}>Analyses & Modèles</h2>
+          <p style={{ color: '#6b7280', margin: 0, fontSize: '16px' }}>Choisis ta ligue pour commencer</p>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
           {LIGUES.map(l => (
             <div
               key={l.id}
               onClick={() => l.disponible && setLigue(l.id)}
               style={{
                 backgroundColor: '#111827',
-                borderRadius: '16px',
+                borderRadius: '20px',
                 border: `2px solid ${l.disponible ? '#1f2937' : '#111827'}`,
-                padding: '32px 24px',
+                padding: '40px 24px',
                 textAlign: 'center',
                 cursor: l.disponible ? 'pointer' : 'not-allowed',
-                opacity: l.disponible ? 1 : 0.4,
+                opacity: l.disponible ? 1 : 0.35,
                 transition: 'all 0.2s',
                 position: 'relative',
               }}
             >
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>{l.label.split(' ')[0]}</div>
-              <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '8px' }}>{l.label.split(' ')[1]}</div>
+              <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <img
+                  src={l.logo}
+                  alt={l.label}
+                  style={{ maxHeight: '80px', maxWidth: '120px', objectFit: 'contain' }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+              </div>
+              <div style={{ fontWeight: '900', fontSize: '22px', marginBottom: '6px' }}>{l.label}</div>
+              <div style={{ color: '#6b7280', fontSize: '13px', marginBottom: '12px' }}>{l.description}</div>
               {l.disponible ? (
-                <span style={{ color: '#22c55e', fontSize: '12px' }}>● Disponible</span>
+                <span style={{ backgroundColor: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', fontSize: '12px', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>● Disponible</span>
               ) : (
-                <span style={{ color: '#4b5563', fontSize: '12px' }}>Bientôt</span>
+                <span style={{ backgroundColor: 'rgba(107,114,128,0.1)', border: '1px solid #374151', color: '#4b5563', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>Bientôt</span>
               )}
             </div>
           ))}
@@ -396,77 +407,53 @@ function Analyses() {
 
   // Étape 2 — Choix de la catégorie
   if (!categorie) {
+    const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
-      <div style={{ padding: '48px 32px', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '48px' }}>
+      <div style={{ minHeight: '80vh', padding: '0 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '56px' }}>
           <button onClick={() => setLigue(null)} style={{ backgroundColor: 'transparent', color: '#6b7280', border: '1px solid #1f2937', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
             ← Retour
           </button>
-          <div>
-            <h2 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-              🏒 NHL
-            </h2>
-            <p style={{ color: '#6b7280', margin: 0 }}>Choisis une catégorie d'analyse</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '40px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '900' }}>{ligueInfo.label}</h2>
+              <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>Choisis une catégorie d'analyse</p>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           {/* Stats Équipes */}
-          <div
-            onClick={() => setCategorie('equipes')}
-            style={{
-              backgroundColor: '#111827',
-              borderRadius: '16px',
-              border: '2px solid #1f2937',
-              padding: '40px 32px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-            <h3 style={{ margin: '0 0 12px', fontSize: '20px', fontWeight: '800' }}>Statistiques Équipes</h3>
-            <p style={{ color: '#6b7280', margin: '0 0 20px', fontSize: '14px', lineHeight: '1.6' }}>
-              Probabilité de victoire, différentiel de buts, total de buts et analyse comparative des équipes.
+          <div onClick={() => setCategorie('equipes')} style={{ backgroundColor: '#111827', borderRadius: '20px', border: '2px solid #1f2937', padding: '48px 32px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+            <div style={{ fontSize: '56px', marginBottom: '20px' }}>📊</div>
+            <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: '900' }}>Statistiques Équipes</h3>
+            <p style={{ color: '#6b7280', margin: '0 0 24px', fontSize: '14px', lineHeight: '1.7' }}>
+              Analyse comparative des équipes — probabilité de victoire, différentiel de buts et total prédit.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
               {['🏆 Probabilité victoire', '⚡ Différentiel de buts', '🎯 Total de buts'].map((item, i) => (
-                <div key={i} style={{ backgroundColor: 'rgba(249,115,22,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fed7aa', fontSize: '13px' }}>
-                  {item}
-                </div>
+                <div key={i} style={{ backgroundColor: 'rgba(249,115,22,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fed7aa', fontSize: '13px' }}>{item}</div>
               ))}
             </div>
-            <button style={{ marginTop: '20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>
+            <button style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>
               Voir les analyses →
             </button>
           </div>
 
           {/* Player Props */}
-          <div
-            onClick={() => setCategorie('joueurs')}
-            style={{
-              backgroundColor: '#111827',
-              borderRadius: '16px',
-              border: '2px solid #1f2937',
-              padding: '40px 32px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏒</div>
-            <h3 style={{ margin: '0 0 12px', fontSize: '20px', fontWeight: '800' }}>Statistiques Joueurs</h3>
-            <p style={{ color: '#6b7280', margin: '0 0 20px', fontSize: '14px', lineHeight: '1.6' }}>
-              Props individuels par joueur — buts, points, tirs et performances attendues.
+          <div onClick={() => setCategorie('joueurs')} style={{ backgroundColor: '#111827', borderRadius: '20px', border: '2px solid #1f2937', padding: '48px 32px', cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}>
+            <div style={{ fontSize: '56px', marginBottom: '20px' }}>🏒</div>
+            <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: '900' }}>Statistiques Joueurs</h3>
+            <p style={{ color: '#6b7280', margin: '0 0 24px', fontSize: '14px', lineHeight: '1.7' }}>
+              Props individuels par joueur — buts, points, tirs et performances attendues pour chaque match.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
               {['🥅 Buts par joueur', '🏒 Points par joueur', '🎯 Tirs par joueur'].map((item, i) => (
-                <div key={i} style={{ backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#a5b4fc', fontSize: '13px' }}>
-                  {item}
-                </div>
+                <div key={i} style={{ backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#a5b4fc', fontSize: '13px' }}>{item}</div>
               ))}
             </div>
-            <button style={{ marginTop: '20px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>
+            <button style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>
               Voir les props →
             </button>
           </div>
@@ -476,28 +463,27 @@ function Analyses() {
   }
 
   // Étape 3 — Page d'analyse
+  const ligueInfo = LIGUES.find(l => l.id === ligue);
   return (
     <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
         <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#6b7280', border: '1px solid #1f2937', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
           ← Retour
         </button>
-        <div>
-          <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800' }}>
-            🏒 NHL · {categorie === 'equipes' ? '📊 Statistiques Équipes' : '🏒 Statistiques Joueurs'}
-          </h2>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '13px' }}>
-            {categorie === 'equipes' ? 'Clique sur un match pour voir l\'analyse détaillée' : 'Props individuels par joueur'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+          <div>
+            <h2 style={{ margin: '0 0 2px', fontSize: '22px', fontWeight: '900' }}>
+              {ligueInfo.label} · {categorie === 'equipes' ? '📊 Statistiques Équipes' : '🏒 Statistiques Joueurs'}
+            </h2>
+            <p style={{ color: '#6b7280', margin: 0, fontSize: '13px' }}>
+              {categorie === 'equipes' ? 'Clique sur un match pour voir l\'analyse détaillée' : 'Props individuels par joueur'}
+            </p>
+          </div>
         </div>
       </div>
-
-      {categorie === 'equipes' && (
-        <PageStatsEquipes classement={classement} matchs={matchs} chargement={chargement} />
-      )}
-      {categorie === 'joueurs' && (
-        <PagePlayerProps />
-      )}
+      {categorie === 'equipes' && <PageStatsEquipes classement={classement} matchs={matchs} chargement={chargement} />}
+      {categorie === 'joueurs' && <PagePlayerProps />}
     </div>
   );
 }
