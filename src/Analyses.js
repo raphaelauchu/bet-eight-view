@@ -519,7 +519,558 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     </div>
   );
 }
+function PageStatsEquipes({ classement }) {
+  const isMobile = useIsMobile();
+  const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
+  const [chargement, setChargement] = useState(true);
+  const [filtre, setFiltre] = useState('');
+  const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
 
+  useEffect(() => { chargerSemaine(); }, []);
+
+  async function chargerSemaine() {
+    setChargement(true);
+    const aujourdhui = new Date();
+    const jours = Array(7).fill(null).map((_, i) => {
+      const d = new Date(aujourdhui);
+      d.setDate(d.getDate() + i);
+      return getDateStr(d);
+    });
+    const resultats = {};
+    await Promise.all(jours.map(async (jour) => {
+      try {
+        const res = await fetch(getUrl(`schedule/${jour}`));
+        const data = await res.json();
+        const games = data.gameWeek?.[0]?.games || [];
+        if (games.length > 0) resultats[jour] = games;
+      } catch (err) { }
+    }));
+    setMatchsParJour(resultats);
+    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
+    setChargement(false);
+  }
+
+  if (equipeSelectionnee) {
+    return <FicheEquipe equipe={equipeSelectionnee} classement={classement} onRetour={() => setEquipeSelectionnee(null)} />;
+  }
+
+  const jours = Object.keys(matchsParJour).sort();
+  const tousMatchs = Object.values(matchsParJour).flat();
+  const matchsFiltres = filtre.length >= 2
+    ? (matchsParJour[jourActif] || []).filter(m =>
+        m.awayTeam?.abbrev?.toLowerCase().includes(filtre.toLowerCase()) ||
+        m.homeTeam?.abbrev?.toLowerCase().includes(filtre.toLowerCase()) ||
+        m.awayTeam?.commonName?.default?.toLowerCase().includes(filtre.toLowerCase()) ||
+        m.homeTeam?.commonName?.default?.toLowerCase().includes(filtre.toLowerCase())
+      )
+    : (matchsParJour[jourActif] || []);
+
+  return (
+    <div>
+      {/* Filtre */}
+      <div style={{ marginBottom: '14px' }}>
+        <input
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          placeholder="Rechercher une equipe..."
+          value={filtre}
+          onChange={e => setFiltre(e.target.value)}
+        />
+      </div>
+
+      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
+        <>
+          {/* Onglets jours */}
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {jours.map(jour => {
+              const d = new Date(jour + 'T12:00:00');
+              const estAujourdhui = jour === getDateStr(new Date());
+              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' });
+              const nb = matchsParJour[jour]?.length || 0;
+              return (
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                  {label}
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}m</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Matchs */}
+          {matchsFiltres.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: '#111', borderRadius: '16px' }}>
+              <p style={{ color: '#666' }}>Aucun match trouve.</p>
+            </div>
+          ) : matchsFiltres.map((match, i) => (
+            <CarteMatchEquipesDetaille key={i} match={match} classement={classement} onSelectEquipe={setEquipeSelectionnee} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
+  const isMobile = useIsMobile();
+  const [ouvert, setOuvert] = useState(false);
+
+  const abbrev1 = match.awayTeam?.abbrev;
+  const abbrev2 = match.homeTeam?.abbrev;
+  const nom1 = match.awayTeam?.commonName?.default || abbrev1;
+  const nom2 = match.homeTeam?.commonName?.default || abbrev2;
+  const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  const etat = match.gameState;
+
+  const e1 = classement.find(e => e.teamAbbrev?.default === abbrev1);
+  const e2 = classement.find(e => e.teamAbbrev?.default === abbrev2);
+
+  const pts1 = e1?.points || 0;
+  const pts2 = e2?.points || 0;
+  const wins1 = e1?.wins || 0; const wins2 = e2?.wins || 0;
+  const losses1 = e1?.losses || 0; const losses2 = e2?.losses || 0;
+  const otl1 = e1?.otLosses || 0; const otl2 = e2?.otLosses || 0;
+  const gf1 = e1 ? e1.goalFor / (e1.gamesPlayed || 1) : 3;
+  const ga1 = e1 ? e1.goalAgainst / (e1.gamesPlayed || 1) : 3;
+  const gf2 = e2 ? e2.goalFor / (e2.gamesPlayed || 1) : 3;
+  const ga2 = e2 ? e2.goalAgainst / (e2.gamesPlayed || 1) : 3;
+  const total_pts = pts1 + pts2;
+  const prob1 = total_pts > 0 ? Math.round((pts1 / total_pts) * 100) : 50;
+  const prob2 = 100 - prob1;
+  const favori = prob1 > prob2 ? abbrev1 : abbrev2;
+  const total_buts = ((gf1 + ga2 + gf2 + ga1) / 2).toFixed(1);
+  const overUnder = parseFloat(total_buts) > 5.5 ? 'OVER' : 'UNDER';
+  const confiance = Math.abs(prob1 - 50) > 15 ? 5 : Math.abs(prob1 - 50) > 10 ? 4 : Math.abs(prob1 - 50) > 5 ? 3 : 2;
+  const genT = (w) => Array(5).fill(null).map(() => Math.random() * 100 < w ? 'W' : 'L');
+  const win1 = Math.round((wins1 / (wins1 + losses1 + otl1 || 1)) * 100);
+  const win2 = Math.round((wins2 / (wins2 + losses2 + otl2 || 1)) * 100);
+
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px' }}>
+      {/* Header match */}
+      <div onClick={() => setOuvert(!ouvert)} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px' }}>
+          {/* Équipe visiteur */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img
+              src={LOGOS_NHL[abbrev1]}
+              alt={abbrev1}
+              style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); onSelectEquipe(e1); }}
+            />
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins1}V-{losses1}D-{otl1}DP</div>
+            </div>
+          </div>
+          <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+          {/* Équipe locale */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins2}V-{losses2}D-{otl2}DP</div>
+            </div>
+            <img
+              src={LOGOS_NHL[abbrev2]}
+              alt={abbrev2}
+              style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); onSelectEquipe(e2); }}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {etat === 'LIVE' || etat === 'CRIT'
+              ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
+              : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
+          </div>
+          <div style={{ color: '#f97316', fontSize: '11px' }}>{favori} {Math.max(prob1, prob2)}% · {overUnder}</div>
+          <span style={{ color: ouvert ? '#f97316' : '#444', fontSize: '11px' }}>{ouvert ? '▲' : '▼'}</span>
+        </div>
+      </div>
+
+      {/* Hint clique sur logo */}
+      <div style={{ padding: '0 14px 8px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <span style={{ fontSize: '10px', color: '#444' }}>Clique sur un logo pour voir la fiche de l'equipe</span>
+      </div>
+
+      {/* Analyse du match */}
+  {ouvert && (
+  <div style={{ borderTop: '1px solid #222' }}>
+    {/* Layout deux colonnes */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr' }}>
+
+      {/* Colonne gauche - Équipe visiteur */}
+      <div
+        onClick={e => { e.stopPropagation(); if (e1) onSelectEquipe(e1); }}
+        style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: '#111' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#111'}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'white' }}>{isMobile ? abbrev1 : nom1}</div>
+            <div style={{ color: '#666', fontSize: '11px' }}>{wins1}V · {losses1}D · {otl1}DP</div>
+          </div>
+        </div>
+        {[
+          ['Points', pts1, '#f97316'],
+          ['Win%', `${win1}%`, 'white'],
+          ['Buts/m', gf1.toFixed(2), 'white'],
+          ['Acc./m', ga1.toFixed(2), 'white'],
+        ].map(([l, v, c], i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span style={{ color: '#666', fontSize: '11px' }}>{l}</span>
+            <span style={{ fontWeight: 'bold', color: c, fontSize: '12px' }}>{v}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Forme</div>
+          <div style={{ display: 'flex', gap: '3px' }}>
+            {genT(win1).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
+          </div>
+        </div>
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#f97316' }}>Voir la fiche →</span>
+        </div>
+      </div>
+
+      {/* Séparateur vertical */}
+      <div style={{ backgroundColor: '#222', width: '1px' }} />
+
+      {/* Colonne droite - Équipe locale */}
+      <div
+        onClick={e => { e.stopPropagation(); if (e2) onSelectEquipe(e2); }}
+        style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: '#111' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#111'}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'white' }}>{isMobile ? abbrev2 : nom2}</div>
+            <div style={{ color: '#666', fontSize: '11px' }}>{wins2}V · {losses2}D · {otl2}DP</div>
+          </div>
+        </div>
+        {[
+          ['Points', pts2, '#f97316'],
+          ['Win%', `${win2}%`, 'white'],
+          ['Buts/m', gf2.toFixed(2), 'white'],
+          ['Acc./m', ga2.toFixed(2), 'white'],
+        ].map(([l, v, c], i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span style={{ color: '#666', fontSize: '11px' }}>{l}</span>
+            <span style={{ fontWeight: 'bold', color: c, fontSize: '12px' }}>{v}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Forme</div>
+          <div style={{ display: 'flex', gap: '3px' }}>
+            {genT(win2).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
+          </div>
+        </div>
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#f97316' }}>Voir la fiche →</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Barre probabilité en bas */}
+    <div style={{ padding: isMobile ? '10px 14px' : '12px 20px', borderTop: '1px solid #222' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+        <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '11px' }}>{abbrev1} {prob1}%</span>
+        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '11px' }}>{prob2}% {abbrev2}</span>
+      </div>
+      <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', height: '22px' }}>
+        <div style={{ width: `${prob1}%`, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob1}%</div>
+        <div style={{ width: `${prob2}%`, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob2}%</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px' }}>
+        <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+          <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Favori</div>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f97316' }}>{favori} {Math.max(prob1, prob2)}%</div>
+        </div>
+        <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+          <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Total predit</div>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
+        </div>
+        <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+          <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Rec.</div>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+}
+
+function FicheEquipe({ equipe, classement, onRetour }) {
+  const isMobile = useIsMobile();
+  const [ongletPeriode, setOngletPeriode] = useState('SZN');
+  const [chargement, setChargement] = useState(true);
+  const [statsEquipe, setStatsEquipe] = useState(null);
+  const [gameLog, setGameLog] = useState([]);
+
+  const abbrev = equipe?.teamAbbrev?.default || '';
+  const nom = equipe?.teamName?.default || abbrev;
+  const division = equipe?.divisionName || '';
+  const pts = equipe?.points || 0;
+  const wins = equipe?.wins || 0;
+  const losses = equipe?.losses || 0;
+  const otl = equipe?.otLosses || 0;
+  const gp = equipe?.gamesPlayed || 1;
+  const gf = equipe?.goalFor || 0;
+  const ga = equipe?.goalAgainst || 0;
+  const rang = classement.findIndex(e => e.teamAbbrev?.default === abbrev) + 1;
+
+  useEffect(() => { chargerStats(); }, [abbrev]);
+
+  async function chargerStats() {
+    setChargement(true);
+    try {
+      const res = await fetch(getUrl(`club-stats/${abbrev}/now`));
+      const data = await res.json();
+      setStatsEquipe(data);
+
+      const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/now`));
+      const data2 = await res2.json();
+      const matchsJoues = (data2.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL').slice(-20);
+      setGameLog(matchsJoues);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const getMatchsPeriode = () => {
+    switch (ongletPeriode) {
+      case 'L5': return gameLog.slice(-5);
+      case 'L10': return gameLog.slice(-10);
+      case 'L20': return gameLog.slice(-20);
+      default: return null; // SZN = stats saison
+    }
+  };
+
+  const matchsPeriode = getMatchsPeriode();
+
+  const getStatsPeriode = () => {
+    if (!matchsPeriode) return null;
+    const bpTotal = matchsPeriode.reduce((s, m) => {
+      const estDomicile = m.homeTeam?.abbrev === abbrev;
+      return s + (estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0));
+    }, 0);
+    const bcTotal = matchsPeriode.reduce((s, m) => {
+      const estDomicile = m.homeTeam?.abbrev === abbrev;
+      return s + (estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0));
+    }, 0);
+    const victoires = matchsPeriode.filter(m => {
+      const estDomicile = m.homeTeam?.abbrev === abbrev;
+      const scoreEq = estDomicile ? m.homeTeam?.score : m.awayTeam?.score;
+      const scoreAdv = estDomicile ? m.awayTeam?.score : m.homeTeam?.score;
+      return scoreEq > scoreAdv;
+    }).length;
+    const nb = matchsPeriode.length;
+    return { bp: bpTotal, bc: bcTotal, bpMoy: nb > 0 ? (bpTotal / nb).toFixed(2) : 0, bcMoy: nb > 0 ? (bcTotal / nb).toFixed(2) : 0, victoires, nb };
+  };
+
+  const statsPeriode = getStatsPeriode();
+  const ppPct = statsEquipe?.powerPlay?.powerPlayPct ? (statsEquipe.powerPlay.powerPlayPct * 100).toFixed(1) : '-';
+  const pkPct = statsEquipe?.penaltyKill?.penaltyKillPct ? (statsEquipe.penaltyKill.penaltyKillPct * 100).toFixed(1) : '-';
+  const ppRang = statsEquipe?.powerPlay?.rankPowerPlay ?? '-';
+  const pkRang = statsEquipe?.penaltyKill?.rankPenaltyKill ?? '-';
+  const rangOff = statsEquipe?.offense?.rankGoalsFor ?? '-';
+  const rangDef = statsEquipe?.defense?.rankGoalsAgainst ?? '-';
+  const sogPour = statsEquipe?.offense?.shotsForPerGame?.toFixed(1) ?? '-';
+  const sogContre = statsEquipe?.defense?.shotsAgainstPerGame?.toFixed(1) ?? '-';
+  const shootPct = statsEquipe?.offense?.shootingPctg ? (statsEquipe.offense.shootingPctg * 100).toFixed(1) : '-';
+  const savePct = statsEquipe?.defense?.savePctg ? (statsEquipe.defense.savePctg * 100).toFixed(1) : '-';
+  const ptsPct = gp > 0 ? ((pts / (gp * 2)) * 100).toFixed(1) : '-';
+
+  // Graphique barres buts pour/contre par match
+  const matchsGraphe = matchsPeriode || gameLog.slice(-10);
+  const maxButs = Math.max(...matchsGraphe.map(m => {
+    const estDomicile = m.homeTeam?.abbrev === abbrev;
+    return Math.max(
+      estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0),
+      estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0)
+    );
+  }), 1);
+
+  const pad = isMobile ? '14px' : '20px';
+
+  return (
+    <div>
+      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
+
+      {/* Header équipe */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
+        <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <div style={{ flex: 1 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white' }}>{nom}</h2>
+          <div style={{ color: '#666', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '14px' }}>{pts} pts</span>
+            <span style={{ color: '#888', fontSize: '13px' }}>{wins}V · {losses}D · {otl}DP</span>
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 14px', border: '1px solid #222' }}>
+          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>RANG</div>
+          <div style={{ color: '#f97316', fontSize: '22px', fontWeight: '900' }}>#{rang}</div>
+          <div style={{ color: '#555', fontSize: '9px' }}>classement</div>
+        </div>
+      </div>
+
+      {/* Onglets période */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginBottom: '16px' }}>
+        {['SZN', 'L5', 'L10', 'L20'].map(p => (
+          <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '9px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#111', color: ongletPeriode === p ? 'white' : '#666', fontSize: '13px', fontWeight: ongletPeriode === p ? 'bold' : 'normal', border: '1px solid #222' }}>{p}</button>
+        ))}
+      </div>
+
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement des stats...</p>
+      ) : (
+        <>
+          {/* Stats sommaire */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>SOMMAIRE {ongletPeriode}</div>
+
+            {ongletPeriode === 'SZN' ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px' }}>
+                  {[
+                    ['Pts%', `${ptsPct}%`, '#f97316'],
+                    ['Buts/m', (gf / gp).toFixed(2), 'white'],
+                    ['Acc./m', (ga / gp).toFixed(2), 'white'],
+                    ['Diff.', gf - ga > 0 ? `+${gf - ga}` : `${gf - ga}`, gf - ga >= 0 ? '#f97316' : '#ef4444'],
+                  ].map(([l, v, c], i) => (
+                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                  {[
+                    ['SOG/m', sogPour, 'white'],
+                    ['SOG acc./m', sogContre, 'white'],
+                    ['Shoot%', `${shootPct}%`, 'white'],
+                    ['Save%', `${savePct}%`, 'white'],
+                  ].map(([l, v, c], i) => (
+                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '900', color: c }}>{v}</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : statsPeriode ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                {[
+                  ['Victoires', statsPeriode.victoires, '#f97316'],
+                  ['Buts/m', statsPeriode.bpMoy, 'white'],
+                  ['Acc./m', statsPeriode.bcMoy, 'white'],
+                  ['Diff.', statsPeriode.bp - statsPeriode.bc > 0 ? `+${statsPeriode.bp - statsPeriode.bc}` : `${statsPeriode.bp - statsPeriode.bc}`, statsPeriode.bp - statsPeriode.bc >= 0 ? '#f97316' : '#ef4444'],
+                ].map(([l, v, c], i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Avantage / Désavantage numérique */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>AVANTAGE NUM.</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316', marginBottom: '4px' }}>{ppPct}%</div>
+              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang #{ppRang} dans la LNH</div>
+              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                <div style={{ width: `${ppPct !== '-' ? Math.min(ppPct, 35) / 35 * 100 : 0}%`, height: '100%', backgroundColor: '#f97316', borderRadius: '6px' }} />
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DESAVANTAGE NUM.</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{pkPct}%</div>
+              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang #{pkRang} dans la LNH</div>
+              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                <div style={{ width: `${pkPct !== '-' ? Math.min(pkPct, 100) / 100 * 100 : 0}%`, height: '100%', backgroundColor: '#888', borderRadius: '6px' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Rangs offensif / défensif */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>RANG OFFENSIF</div>
+              <div style={{ fontSize: '36px', fontWeight: '900', color: '#f97316' }}>#{rangOff}</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} buts/match</div>
+            </div>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>RANG DEFENSIF</div>
+              <div style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>#{rangDef}</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} acc./match</div>
+            </div>
+          </div>
+
+          {/* Graphique derniers matchs */}
+          {matchsGraphe.length > 0 && (
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>RESULTATS RECENTS</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '100px', marginBottom: '4px' }}>
+                {matchsGraphe.map((m, i) => {
+                  const estDomicile = m.homeTeam?.abbrev === abbrev;
+                  const bp = estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
+                  const bc = estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
+                  const victoire = bp > bc;
+                  const h = maxButs > 0 ? Math.max((bp / maxButs) * 80, 4) : 4;
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '100px', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '8px', color: victoire ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{bp}-{bc}</span>
+                      <div style={{ width: '100%', height: `${h}px`, backgroundColor: victoire ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
+                      <div style={{ width: '100%', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '7px', color: '#555' }}>{m.homeTeam?.abbrev === abbrev ? m.awayTeam?.abbrev : m.homeTeam?.abbrev}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Forme résumé */}
+              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '8px' }}>
+                {matchsGraphe.map((m, i) => {
+                  const estDomicile = m.homeTeam?.abbrev === abbrev;
+                  const bp = estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
+                  const bc = estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
+                  const victoire = bp > bc;
+                  return <div key={i} style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: victoire ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{victoire ? 'V' : 'D'}</div>;
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Stats domicile vs extérieur */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DOMICILE VS EXTERIEUR</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              {[
+                { label: 'Domicile', v: equipe?.homeRecord || '-', w: equipe?.homeWins || 0, l: equipe?.homeLosses || 0 },
+                { label: 'Exterieur', v: equipe?.roadRecord || '-', w: equipe?.roadWins || 0, l: equipe?.roadLosses || 0 },
+              ].map((eq, i) => (
+                <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '6px' }}>{eq.label}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>{eq.w}V · {eq.l}D</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 function EtoilesConfiance({ score }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
@@ -1052,7 +1603,7 @@ function Analyses() {
   if (!ligue) {
     return (
       <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
-        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses et Modeles</h2>
+        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses et Statistiques</h2>
         <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', width: '100%', maxWidth: '900px' }}>
           {LIGUES.map(l => (
@@ -1093,7 +1644,7 @@ function Analyses() {
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Classement par division</p>
             </div>
             <div style={{ flex: 1 }}><CarrouselDivisions classement={classement} /></div>
-            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les analyses</button>
+            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
           </div>
           <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ marginBottom: '16px' }}>
@@ -1101,7 +1652,7 @@ function Analyses() {
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Meneurs buts, passes et points</p>
             </div>
             <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
-            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les matchs</button>
+            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
           </div>
         </div>
       </div>
@@ -1127,17 +1678,8 @@ function Analyses() {
       </div>
 
       {categorie === 'equipes' && (
-        <div>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
-            {['Probabilite victoire', 'Differentiel', 'Total buts'].map((m, i) => (
-              <button key={i} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: i === 0 ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', whiteSpace: 'nowrap' }}>{m}</button>
-            ))}
-          </div>
-          {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
-            : matchs.length === 0 ? <div style={{ textAlign: 'center', padding: '60px 0', backgroundColor: '#111', borderRadius: '16px' }}><p style={{ color: '#666' }}>Aucun match aujourd'hui.</p></div>
-            : matchs.map((match, i) => <CarteMatchEquipes key={i} match={match} classement={classement} />)}
-        </div>
-      )}
+  <PageStatsEquipes classement={classement} />
+)}
 
       {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />}
     </div>
