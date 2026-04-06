@@ -552,7 +552,15 @@ function PageStatsEquipes({ classement }) {
   }
 
   if (equipeSelectionnee) {
-    return <FicheEquipe equipe={equipeSelectionnee} classement={classement} onRetour={() => setEquipeSelectionnee(null)} />;
+   const matchActif = Object.values(matchsParJour).flat().find(m =>
+  m.awayTeam?.abbrev === equipeSelectionnee?.teamAbbrev?.default ||
+  m.homeTeam?.abbrev === equipeSelectionnee?.teamAbbrev?.default
+);
+const abbrevEq = equipeSelectionnee?.teamAbbrev?.default;
+const equipeAdverse = matchActif
+  ? classement.find(e => e.teamAbbrev?.default === (matchActif.awayTeam?.abbrev === abbrevEq ? matchActif.homeTeam?.abbrev : matchActif.awayTeam?.abbrev))
+  : null;
+return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onRetour={() => setEquipeSelectionnee(null)} />;
   }
 
   const jours = Object.keys(matchsParJour).sort();
@@ -806,15 +814,19 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
 
-function FicheEquipe({ equipe, classement, onRetour }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onRetour }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
+  const [ongletShot, setOngletShot] = useState('SZN');
+  const [typeShot, setTypeShot] = useState('POUR');
   const [chargement, setChargement] = useState(true);
   const [statsEquipe, setStatsEquipe] = useState(null);
+  const [statsAdverse, setStatsAdverse] = useState(null);
   const [gameLog, setGameLog] = useState([]);
 
   const abbrev = equipe?.teamAbbrev?.default || '';
-  const nom = equipe?.teamName?.default || abbrev;
+  const abbrevAdv = equipeAdverse?.teamAbbrev?.default || '';
+  const nom = equipe?.teamName?.default || equipe?.teamCommonName?.default || abbrev;
   const division = equipe?.divisionName || '';
   const pts = equipe?.points || 0;
   const wins = equipe?.wins || 0;
@@ -823,17 +835,37 @@ function FicheEquipe({ equipe, classement, onRetour }) {
   const gp = equipe?.gamesPlayed || 1;
   const gf = equipe?.goalFor || 0;
   const ga = equipe?.goalAgainst || 0;
-  const rang = classement.findIndex(e => e.teamAbbrev?.default === abbrev) + 1;
+  const rang = equipe?.leagueSequence || (classement.findIndex(e => e.teamAbbrev?.default === abbrev) + 1);
 
   useEffect(() => { chargerStats(); }, [abbrev]);
 
   async function chargerStats() {
     setChargement(true);
     try {
-      const res = await fetch(getUrl(`club-stats/${abbrev}/now`));
-      const data = await res.json();
-      setStatsEquipe(data);
+      // API stats équipe avec PP%, PK%, SOG
+     const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+const urlStats = estEnProduction
+  ? `/api/nhl?path=https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026`
+  : `https://corsproxy.io/?${encodeURIComponent('https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026')}`;
+const resStats = await fetch(urlStats);
+      const dataStats = await resStats.json();
+      const teamStats = dataStats.data?.find(t =>
+        t.teamFullName?.toLowerCase().includes(nom.split(' ').pop().toLowerCase()) ||
+        t.teamFullName?.toLowerCase().includes((equipe?.placeName?.default || '').toLowerCase())
+      );
+      setStatsEquipe(teamStats || null);
 
+      // Stats équipe adverse
+      if (abbrevAdv) {
+        const nomAdv = equipeAdverse?.teamName?.default || equipeAdverse?.teamCommonName?.default || abbrevAdv;
+        const teamStatsAdv = dataStats.data?.find(t =>
+          t.teamFullName?.toLowerCase().includes(nomAdv.split(' ').pop().toLowerCase()) ||
+          t.teamFullName?.toLowerCase().includes((equipeAdverse?.placeName?.default || '').toLowerCase())
+        );
+        setStatsAdverse(teamStatsAdv || null);
+      }
+
+      // Historique matchs
       const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/now`));
       const data2 = await res2.json();
       const matchsJoues = (data2.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL').slice(-20);
@@ -842,79 +874,194 @@ function FicheEquipe({ equipe, classement, onRetour }) {
     setChargement(false);
   }
 
-  const getMatchsPeriode = () => {
-    switch (ongletPeriode) {
+  const getMatchsPeriode = (periode) => {
+    switch (periode) {
       case 'L5': return gameLog.slice(-5);
       case 'L10': return gameLog.slice(-10);
       case 'L20': return gameLog.slice(-20);
-      default: return null; // SZN = stats saison
+      default: return null;
     }
   };
 
-  const matchsPeriode = getMatchsPeriode();
+  const matchsPeriode = getMatchsPeriode(ongletPeriode);
 
-  const getStatsPeriode = () => {
-    if (!matchsPeriode) return null;
-    const bpTotal = matchsPeriode.reduce((s, m) => {
-      const estDomicile = m.homeTeam?.abbrev === abbrev;
-      return s + (estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0));
-    }, 0);
-    const bcTotal = matchsPeriode.reduce((s, m) => {
-      const estDomicile = m.homeTeam?.abbrev === abbrev;
-      return s + (estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0));
-    }, 0);
-    const victoires = matchsPeriode.filter(m => {
-      const estDomicile = m.homeTeam?.abbrev === abbrev;
-      const scoreEq = estDomicile ? m.homeTeam?.score : m.awayTeam?.score;
-      const scoreAdv = estDomicile ? m.awayTeam?.score : m.homeTeam?.score;
-      return scoreEq > scoreAdv;
-    }).length;
-    const nb = matchsPeriode.length;
-    return { bp: bpTotal, bc: bcTotal, bpMoy: nb > 0 ? (bpTotal / nb).toFixed(2) : 0, bcMoy: nb > 0 ? (bcTotal / nb).toFixed(2) : 0, victoires, nb };
+  const getStatsPeriode = (matchs) => {
+    if (!matchs || matchs.length === 0) return null;
+    const nb = matchs.length;
+    const bp = matchs.reduce((s, m) => { const dom = m.homeTeam?.abbrev === abbrev; return s + (dom ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0)); }, 0);
+    const bc = matchs.reduce((s, m) => { const dom = m.homeTeam?.abbrev === abbrev; return s + (dom ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0)); }, 0);
+    const victoires = matchs.filter(m => { const dom = m.homeTeam?.abbrev === abbrev; return (dom ? m.homeTeam?.score : m.awayTeam?.score) > (dom ? m.awayTeam?.score : m.homeTeam?.score); }).length;
+    return { bp, bc, bpMoy: (bp / nb).toFixed(2), bcMoy: (bc / nb).toFixed(2), victoires, nb };
   };
 
-  const statsPeriode = getStatsPeriode();
-  const ppPct = statsEquipe?.powerPlay?.powerPlayPct ? (statsEquipe.powerPlay.powerPlayPct * 100).toFixed(1) : '-';
-  const pkPct = statsEquipe?.penaltyKill?.penaltyKillPct ? (statsEquipe.penaltyKill.penaltyKillPct * 100).toFixed(1) : '-';
-  const ppRang = statsEquipe?.powerPlay?.rankPowerPlay ?? '-';
-  const pkRang = statsEquipe?.penaltyKill?.rankPenaltyKill ?? '-';
-  const rangOff = statsEquipe?.offense?.rankGoalsFor ?? '-';
-  const rangDef = statsEquipe?.defense?.rankGoalsAgainst ?? '-';
-  const sogPour = statsEquipe?.offense?.shotsForPerGame?.toFixed(1) ?? '-';
-  const sogContre = statsEquipe?.defense?.shotsAgainstPerGame?.toFixed(1) ?? '-';
-  const shootPct = statsEquipe?.offense?.shootingPctg ? (statsEquipe.offense.shootingPctg * 100).toFixed(1) : '-';
-  const savePct = statsEquipe?.defense?.savePctg ? (statsEquipe.defense.savePctg * 100).toFixed(1) : '-';
-  const ptsPct = gp > 0 ? ((pts / (gp * 2)) * 100).toFixed(1) : '-';
+  const statsPeriode = getStatsPeriode(matchsPeriode);
 
-  // Graphique barres buts pour/contre par match
+  // Stats depuis API nhle.com
+  const ppPct = statsEquipe?.powerPlayPct ? (statsEquipe.powerPlayPct * 100).toFixed(1) : '-';
+  const pkPct = statsEquipe?.penaltyKillPct ? (statsEquipe.penaltyKillPct * 100).toFixed(1) : '-';
+  const sogPour = statsEquipe?.shotsForPerGame?.toFixed(1) ?? '-';
+  const sogContre = statsEquipe?.shotsAgainstPerGame?.toFixed(1) ?? '-';
+  const sogPourNum = statsEquipe?.shotsForPerGame ?? 0;
+  const sogContreNum = statsEquipe?.shotsAgainstPerGame ?? 0;
+  const faceoffPct = statsEquipe?.faceoffWinPct ? (statsEquipe.faceoffWinPct * 100).toFixed(1) : '-';
+  const ptsPct = statsEquipe?.pointPct ? (statsEquipe.pointPct * 100).toFixed(1) : ((pts / (gp * 2)) * 100).toFixed(1);
+
+  // Rangs calculés depuis classement
+  const toutesEquipesSorted = [...classement].sort((a, b) => (b.goalFor / (b.gamesPlayed || 1)) - (a.goalFor / (a.gamesPlayed || 1)));
+  const rangOff = toutesEquipesSorted.findIndex(e => e.teamAbbrev?.default === abbrev) + 1;
+  const toutesEquipesDefSorted = [...classement].sort((a, b) => (a.goalAgainst / (a.gamesPlayed || 1)) - (b.goalAgainst / (b.gamesPlayed || 1)));
+  const rangDef = toutesEquipesDefSorted.findIndex(e => e.teamAbbrev?.default === abbrev) + 1;
+
+  // Streak
+  const streak = equipe?.streakCode && equipe?.streakCount ? `${equipe.streakCode}${equipe.streakCount}` : '-';
+
+  // L10 depuis standings
+  const l10Wins = equipe?.l10Wins || 0;
+  const l10Losses = equipe?.l10Losses || 0;
+  const l10OtL = equipe?.l10OtLosses || 0;
+  const l10Gf = equipe?.l10GoalsFor || 0;
+  const l10Ga = equipe?.l10GoalsAgainst || 0;
+
+  // Zones shot chart
+ const getMatchsShotPeriode = () => {
+  if (ongletShot === 'SZN') return null;
+  switch (ongletShot) {
+    case 'L5': return gameLog.slice(-5);
+    case 'L10': return gameLog.slice(-10);
+    case 'L20': return gameLog.slice(-20);
+    default: return null;
+  }
+};
+
+const matchsShotPeriode = getMatchsShotPeriode();
+
+const getSogPeriode = (matchs, type) => {
+  if (!matchs || matchs.length === 0) return type === 'POUR' ? sogPourNum : sogContreNum;
+  const nb = matchs.length;
+  const total = matchs.reduce((s, m) => {
+    const dom = m.homeTeam?.abbrev === abbrev;
+if (type === 'POUR') return s + (dom ? (m.sogHome || 0) : (m.sogAway || 0));
+return s + (dom ? (m.sogAway || 0) : (m.sogHome || 0));
+  }, 0);
+  return total > 0 ? total / nb : (type === 'POUR' ? sogPourNum : sogContreNum);
+};
+
+const sogBasePeriode = getSogPeriode(matchsShotPeriode, typeShot);
+const sogBase = sogBasePeriode;
+  const zonesEquipe = [
+    { label: 'LOW LEFT', pct: 0.18 },
+    { label: 'LOW', pct: 0.22 },
+    { label: 'LOW RIGHT', pct: 0.16 },
+    { label: 'BOARDS', pct: 0.12 },
+    { label: 'SLOT', pct: typeShot === 'POUR' ? 0.35 : 0.28 },
+    { label: 'BOARDS', pct: 0.08 },
+    { label: 'LEFT', pct: 0.05 },
+    { label: 'POINT', pct: 0.04 },
+    { label: 'RIGHT', pct: 0.05 },
+  ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
+
+  const positionsZones = [
+    { x: 75, y: 130 }, { x: 220, y: 110 }, { x: 365, y: 130 },
+    { x: 50, y: 225 }, { x: 220, y: 210 }, { x: 390, y: 225 },
+    { x: 75, y: 335 }, { x: 220, y: 335 }, { x: 365, y: 335 },
+  ];
+
+  const getTendanceZone = (z) => {
+    const attendu = 1 / zonesEquipe.length;
+    if (z.pct > attendu * 1.15) return 'haut';
+    if (z.pct < attendu * 0.85) return 'bas';
+    return 'neutre';
+  };
+
+  // Analyse matchup précise
+  const getAnalyseMatchup = () => {
+    if (!abbrevAdv || !equipeAdverse) return null;
+    const gfEq = gf / gp;
+    const gaEq = ga / gp;
+    const gfAdv = equipeAdverse.goalFor / (equipeAdverse.gamesPlayed || 1);
+    const gaAdv = equipeAdverse.goalAgainst / (equipeAdverse.gamesPlayed || 1);
+    const sogEq = sogPourNum;
+    const sogContreEq = sogContreNum;
+    const sogEqAdv = statsAdverse?.shotsForPerGame ?? 0;
+    const sogContreAdv = statsAdverse?.shotsAgainstPerGame ?? 0;
+    const ppEq = statsEquipe?.powerPlayPct ?? 0;
+    const pkEq = statsEquipe?.penaltyKillPct ?? 0;
+    const ppAdv = statsAdverse?.powerPlayPct ?? 0;
+    const pkAdv = statsAdverse?.penaltyKillPct ?? 0;
+
+    let scoreEq = 0;
+    let scoreAdv = 0;
+    let raisonsEq = [];
+    let raisonsAdv = [];
+
+    // 1. Attaque vs défense
+    if (gfEq > gaAdv + 0.2) { scoreEq += 2; raisonsEq.push(`attaque efficace (${gfEq.toFixed(2)} B/m) vs defense poreuse (${gaAdv.toFixed(2)} acc./m)`); }
+    else if (gaAdv < gfEq - 0.2) { scoreAdv += 2; raisonsAdv.push(`defense solide (${gaAdv.toFixed(2)} acc./m) contre attaque de ${gfEq.toFixed(2)} B/m`); }
+    else { scoreEq += 1; scoreAdv += 1; }
+
+    // 2. Défense vs attaque adverse
+    if (gaEq < gfAdv - 0.2) { scoreEq += 2; raisonsEq.push(`defense forte (${gaEq.toFixed(2)} acc./m) contre attaque adverse (${gfAdv.toFixed(2)} B/m)`); }
+    else if (gfAdv > gaEq + 0.2) { scoreAdv += 2; raisonsAdv.push(`attaque dangereuse (${gfAdv.toFixed(2)} B/m) face a defense de ${gaEq.toFixed(2)} acc./m`); }
+    else { scoreEq += 1; scoreAdv += 1; }
+
+    // 3. Tirs pour vs tirs contre adversaire
+    if (sogEq > 0 && sogContreAdv > 0) {
+      if (sogEq > sogContreAdv + 1) { scoreEq += 1; raisonsEq.push(`plus de tirs generes (${sogEq.toFixed(1)}/m) que l'adversaire n'en accorde (${sogContreAdv.toFixed(1)}/m)`); }
+      else if (sogContreAdv > sogEq + 1) { scoreAdv += 1; raisonsAdv.push(`accorde peu de tirs (${sogContreAdv.toFixed(1)}/m) face aux ${sogEq.toFixed(1)}/m generes`); }
+    }
+
+    // 4. Tirs contre vs tirs pour adversaire
+    if (sogContreEq > 0 && sogEqAdv > 0) {
+      if (sogContreEq < sogEqAdv - 1) { scoreEq += 1; raisonsEq.push(`accorde moins de tirs (${sogContreEq.toFixed(1)}/m) que l'adversaire n'en genere (${sogEqAdv.toFixed(1)}/m)`); }
+      else if (sogEqAdv > sogContreEq + 1) { scoreAdv += 1; raisonsAdv.push(`genere plus de tirs (${sogEqAdv.toFixed(1)}/m) que la defense de ${abbrev} en accorde (${sogContreEq.toFixed(1)}/m)`); }
+    }
+
+    // 5. PP vs PK
+    if (ppEq > 0 && pkAdv > 0) {
+      if (ppEq > 0.22 && pkAdv < 0.80) { scoreEq += 1; raisonsEq.push(`avantage numerique puissant (${(ppEq*100).toFixed(1)}%) contre PK faible (${(pkAdv*100).toFixed(1)}%)`); }
+      else if (pkAdv > 0.84 && ppEq < 0.20) { scoreAdv += 1; raisonsAdv.push(`PK solide (${(pkAdv*100).toFixed(1)}%) neutralise le PP de ${abbrev} (${(ppEq*100).toFixed(1)}%)`); }
+    }
+    if (ppAdv > 0 && pkEq > 0) {
+      if (ppAdv > 0.22 && pkEq < 0.80) { scoreAdv += 1; raisonsAdv.push(`avantage numerique adverse efficace (${(ppAdv*100).toFixed(1)}%) contre PK de ${(pkEq*100).toFixed(1)}%`); }
+      else if (pkEq > 0.84 && ppAdv < 0.20) { scoreEq += 1; raisonsEq.push(`PK solide (${(pkEq*100).toFixed(1)}%) neutralise le PP adverse (${(ppAdv*100).toFixed(1)}%)`); }
+    }
+
+    const favorable = scoreEq >= scoreAdv;
+    const marge = Math.abs(scoreEq - scoreAdv);
+    let niveau = marge >= 4 ? 'tres favorable' : marge >= 2 ? 'favorable' : 'legerement favorable';
+    if (marge === 0) niveau = 'equilibre';
+    const equipeGagnante = scoreEq > scoreAdv ? abbrev : scoreAdv > scoreEq ? abbrevAdv : null;
+    const raisonsFinales = favorable ? raisonsEq : raisonsAdv;
+    const conclusion = equipeGagnante
+      ? `Matchup ${niveau} pour ${equipeGagnante} — ${raisonsFinales.slice(0, 2).join(', et ')}.`
+      : `Matchup equilibre entre ${abbrev} et ${abbrevAdv} — les deux equipes se valent dans ce duel.`;
+
+    return { conclusion, favorable, scoreEq, scoreAdv, equipeGagnante };
+  };
+
+  const analyseMatchup = getAnalyseMatchup();
   const matchsGraphe = matchsPeriode || gameLog.slice(-10);
-  const maxButs = Math.max(...matchsGraphe.map(m => {
-    const estDomicile = m.homeTeam?.abbrev === abbrev;
-    return Math.max(
-      estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0),
-      estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0)
-    );
-  }), 1);
-
+  const maxButs = Math.max(...(matchsGraphe.length > 0 ? matchsGraphe.map(m => { const dom = m.homeTeam?.abbrev === abbrev; return Math.max(dom ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0), dom ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0)); }) : [1]), 1);
   const pad = isMobile ? '14px' : '20px';
 
   return (
     <div>
       <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
 
-      {/* Header équipe */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
         <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
         <div style={{ flex: 1 }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white' }}>{nom}</h2>
           <div style={{ color: '#666', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '14px' }}>{pts} pts</span>
             <span style={{ color: '#888', fontSize: '13px' }}>{wins}V · {losses}D · {otl}DP</span>
+            <span style={{ backgroundColor: equipe?.streakCode === 'W' ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)', color: equipe?.streakCode === 'W' ? '#f97316' : '#ef4444', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 'bold' }}>{streak}</span>
           </div>
         </div>
         <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 14px', border: '1px solid #222' }}>
-          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>RANG</div>
+          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANG</div>
           <div style={{ color: '#f97316', fontSize: '22px', fontWeight: '900' }}>#{rang}</div>
           <div style={{ color: '#555', fontSize: '9px' }}>classement</div>
         </div>
@@ -923,57 +1070,50 @@ function FicheEquipe({ equipe, classement, onRetour }) {
       {/* Onglets période */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginBottom: '16px' }}>
         {['SZN', 'L5', 'L10', 'L20'].map(p => (
-          <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '9px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#111', color: ongletPeriode === p ? 'white' : '#666', fontSize: '13px', fontWeight: ongletPeriode === p ? 'bold' : 'normal', border: '1px solid #222' }}>{p}</button>
+          <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '9px', borderRadius: '8px', border: '1px solid #222', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#111', color: ongletPeriode === p ? 'white' : '#666', fontSize: '13px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
         ))}
       </div>
 
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement des stats...</p>
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
-          {/* Stats sommaire */}
+          {/* Sommaire */}
           <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
             <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>SOMMAIRE {ongletPeriode}</div>
-
             {ongletPeriode === 'SZN' ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px' }}>
-                  {[
-                    ['Pts%', `${ptsPct}%`, '#f97316'],
-                    ['Buts/m', (gf / gp).toFixed(2), 'white'],
-                    ['Acc./m', (ga / gp).toFixed(2), 'white'],
-                    ['Diff.', gf - ga > 0 ? `+${gf - ga}` : `${gf - ga}`, gf - ga >= 0 ? '#f97316' : '#ef4444'],
-                  ].map(([l, v, c], i) => (
-                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                  {[
-                    ['SOG/m', sogPour, 'white'],
-                    ['SOG acc./m', sogContre, 'white'],
-                    ['Shoot%', `${shootPct}%`, 'white'],
-                    ['Save%', `${savePct}%`, 'white'],
-                  ].map(([l, v, c], i) => (
+                  {[['Pts%', `${ptsPct}%`, '#f97316'], ['Buts/m', (gf/gp).toFixed(2), 'white'], ['Acc./m', (ga/gp).toFixed(2), 'white'], ['Diff.', gf-ga > 0 ? `+${gf-ga}` : `${gf-ga}`, gf-ga >= 0 ? '#f97316' : '#ef4444']].map(([l,v,c],i) => (
                     <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
                       <div style={{ fontSize: '16px', fontWeight: '900', color: c }}>{v}</div>
                       <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                     </div>
                   ))}
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {[['Face-off%', `${faceoffPct}%`, 'white'], ['Dom.', `${equipe?.homeWins||0}V-${equipe?.homeLosses||0}D`, 'white'], ['Ext.', `${equipe?.roadWins||0}V-${equipe?.roadLosses||0}D`, 'white']].map(([l,v,c],i) => (
+                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '900', color: c }}>{v}</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
               </>
+            ) : ongletPeriode === 'L10' ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                {[[`${l10Wins}V-${l10Losses}D`, 'Bilan L10', '#f97316'], [(l10Gf/10).toFixed(2), 'Buts/m', 'white'], [(l10Ga/10).toFixed(2), 'Acc./m', 'white'], [l10Gf-l10Ga > 0 ? `+${l10Gf-l10Ga}` : `${l10Gf-l10Ga}`, 'Diff.', l10Gf-l10Ga >= 0 ? '#f97316' : '#ef4444']].map(([v,l,c],i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  </div>
+                ))}
+              </div>
             ) : statsPeriode ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                {[
-                  ['Victoires', statsPeriode.victoires, '#f97316'],
-                  ['Buts/m', statsPeriode.bpMoy, 'white'],
-                  ['Acc./m', statsPeriode.bcMoy, 'white'],
-                  ['Diff.', statsPeriode.bp - statsPeriode.bc > 0 ? `+${statsPeriode.bp - statsPeriode.bc}` : `${statsPeriode.bp - statsPeriode.bc}`, statsPeriode.bp - statsPeriode.bc >= 0 ? '#f97316' : '#ef4444'],
-                ].map(([l, v, c], i) => (
+                {[[`${statsPeriode.victoires}/${statsPeriode.nb}`, 'Victoires', '#f97316'], [statsPeriode.bpMoy, 'Buts/m', 'white'], [statsPeriode.bcMoy, 'Acc./m', 'white'], [statsPeriode.bp-statsPeriode.bc > 0 ? `+${statsPeriode.bp-statsPeriode.bc}` : `${statsPeriode.bp-statsPeriode.bc}`, 'Diff.', statsPeriode.bp-statsPeriode.bc >= 0 ? '#f97316' : '#ef4444']].map(([v,l,c],i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
@@ -981,87 +1121,194 @@ function FicheEquipe({ equipe, classement, onRetour }) {
             ) : null}
           </div>
 
-          {/* Avantage / Désavantage numérique */}
+          {/* PP / PK */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>AVANTAGE NUM.</div>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>AVANTAGE NUM.</div>
               <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316', marginBottom: '4px' }}>{ppPct}%</div>
-              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang #{ppRang} dans la LNH</div>
+              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang #{statsEquipe ? [...classement].filter(e => (statsEquipe?.powerPlayPct || 0) < 0.01).length + 1 : '-'} LNH</div>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-                <div style={{ width: `${ppPct !== '-' ? Math.min(ppPct, 35) / 35 * 100 : 0}%`, height: '100%', backgroundColor: '#f97316', borderRadius: '6px' }} />
+                <div style={{ width: `${ppPct !== '-' ? Math.min(parseFloat(ppPct), 30) / 30 * 100 : 0}%`, height: '100%', backgroundColor: '#f97316', borderRadius: '6px' }} />
               </div>
             </div>
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DESAVANTAGE NUM.</div>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>DESAVANTAGE NUM.</div>
               <div style={{ fontSize: '28px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{pkPct}%</div>
-              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang #{pkRang} dans la LNH</div>
+              <div style={{ color: '#666', fontSize: '11px', marginBottom: '8px' }}>Rang LNH</div>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-                <div style={{ width: `${pkPct !== '-' ? Math.min(pkPct, 100) / 100 * 100 : 0}%`, height: '100%', backgroundColor: '#888', borderRadius: '6px' }} />
+                <div style={{ width: `${pkPct !== '-' ? Math.min(parseFloat(pkPct), 100) / 100 * 100 : 0}%`, height: '100%', backgroundColor: '#888', borderRadius: '6px' }} />
               </div>
             </div>
           </div>
 
-          {/* Rangs offensif / défensif */}
+          {/* Rangs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>RANG OFFENSIF</div>
               <div style={{ fontSize: '36px', fontWeight: '900', color: '#f97316' }}>#{rangOff}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} buts/match</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf/gp).toFixed(2)} buts/m</div>
             </div>
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>RANG DEFENSIF</div>
               <div style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>#{rangDef}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} acc./match</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga/gp).toFixed(2)} acc./m</div>
             </div>
           </div>
 
-          {/* Graphique derniers matchs */}
+          {/* Graphique résultats */}
           {matchsGraphe.length > 0 && (
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>RESULTATS RECENTS</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '100px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '90px', marginBottom: '4px' }}>
                 {matchsGraphe.map((m, i) => {
-                  const estDomicile = m.homeTeam?.abbrev === abbrev;
-                  const bp = estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
-                  const bc = estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
-                  const victoire = bp > bc;
-                  const h = maxButs > 0 ? Math.max((bp / maxButs) * 80, 4) : 4;
+                  const dom = m.homeTeam?.abbrev === abbrev;
+                  const bp = dom ? (m.homeTeam?.score||0) : (m.awayTeam?.score||0);
+                  const bc = dom ? (m.awayTeam?.score||0) : (m.homeTeam?.score||0);
+                  const v = bp > bc;
+                  const h = Math.max((bp / maxButs) * 70, 4);
                   return (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '100px', justifyContent: 'flex-end' }}>
-                      <span style={{ fontSize: '8px', color: victoire ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{bp}-{bc}</span>
-                      <div style={{ width: '100%', height: `${h}px`, backgroundColor: victoire ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
-                      <div style={{ width: '100%', height: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '7px', color: '#555' }}>{m.homeTeam?.abbrev === abbrev ? m.awayTeam?.abbrev : m.homeTeam?.abbrev}</span>
-                      </div>
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '90px', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '8px', color: v ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{bp}-{bc}</span>
+                      <div style={{ width: '100%', height: `${h}px`, backgroundColor: v ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
+                      <div style={{ fontSize: '7px', color: '#555', marginTop: '2px' }}>{m.homeTeam?.abbrev === abbrev ? m.awayTeam?.abbrev : m.homeTeam?.abbrev}</div>
                     </div>
                   );
                 })}
               </div>
-
-              {/* Forme résumé */}
-              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '8px' }}>
+              <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', marginTop: '6px' }}>
                 {matchsGraphe.map((m, i) => {
-                  const estDomicile = m.homeTeam?.abbrev === abbrev;
-                  const bp = estDomicile ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
-                  const bc = estDomicile ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
-                  const victoire = bp > bc;
-                  return <div key={i} style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: victoire ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{victoire ? 'V' : 'D'}</div>;
+                  const dom = m.homeTeam?.abbrev === abbrev;
+                  const bp = dom ? (m.homeTeam?.score||0) : (m.awayTeam?.score||0);
+                  const bc = dom ? (m.awayTeam?.score||0) : (m.homeTeam?.score||0);
+                  const v = bp > bc;
+                  return <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: v ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{v ? 'V' : 'D'}</div>;
                 })}
               </div>
             </div>
           )}
 
-          {/* Stats domicile vs extérieur */}
+          {/* SHOTS ON GOAL */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Shots on Goal</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>TIRS POUR / MATCH</div>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316' }}>{sogPour}</div>
+                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>Shoot% {statsEquipe?.powerPlayPct ? (statsEquipe.powerPlayPct * 100).toFixed(1) : '-'}%</div>
+              </div>
+              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>TIRS CONTRE / MATCH</div>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{sogContre}</div>
+                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>Save% {statsEquipe?.penaltyKillPct ? (statsEquipe.penaltyKillPct * 100).toFixed(1) : '-'}%</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '8px' }}>
+              {['SZN', 'L5', 'L10', 'L20'].map(p => (
+                <button key={p} onClick={() => setOngletShot(p)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletShot === p ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: ongletShot === p ? 'bold' : 'normal' }}>{p}</button>
+              ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '14px' }}>
+              {[['POUR', 'Tirs pour'], ['CONTRE', 'Tirs contre']].map(([t, label]) => (
+                <button key={t} onClick={() => setTypeShot(t)} style={{ padding: '8px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeShot === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: typeShot === t ? 'bold' : 'normal' }}>{label}</button>
+              ))}
+            </div>
+
+            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
+              <svg viewBox="0 0 440 420" style={{ width: isMobile ? '75%' : '60%', display: 'block', margin: '0 auto' }}>
+                <rect x="0" y="0" width="440" height="420" fill="#1a1a1a" />
+                <rect x="0" y="0" width="440" height="420" rx="10" fill="none" stroke="#2a2a2a" strokeWidth="2" />
+                <rect x="175" y="8" width="90" height="40" rx="3" fill="none" stroke="#888" strokeWidth="2" />
+                <line x1="190" y1="8" x2="190" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="205" y1="8" x2="205" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="220" y1="8" x2="220" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="235" y1="8" x2="235" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="250" y1="8" x2="250" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="265" y1="8" x2="265" y2="48" stroke="#444" strokeWidth="0.7" />
+                <line x1="175" y1="22" x2="265" y2="22" stroke="#444" strokeWidth="0.7" />
+                <line x1="175" y1="36" x2="265" y2="36" stroke="#444" strokeWidth="0.7" />
+                <line x1="50" y1="55" x2="390" y2="55" stroke="#ef4444" strokeWidth="1.5" opacity="0.5" />
+                <path d="M175 55 Q175 100 220 100 Q265 100 265 55" fill="none" stroke="#3b82f6" strokeWidth="1.5" opacity="0.5" />
+                <line x1="145" y1="55" x2="115" y2="8" stroke="#555" strokeWidth="1" />
+                <line x1="295" y1="55" x2="325" y2="8" stroke="#555" strokeWidth="1" />
+                <circle cx="120" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
+                <circle cx="120" cy="220" r="3" fill="#333" />
+                <line x1="103" y1="220" x2="109" y2="220" stroke="#444" strokeWidth="1" />
+                <line x1="131" y1="220" x2="137" y2="220" stroke="#444" strokeWidth="1" />
+                <line x1="120" y1="203" x2="120" y2="209" stroke="#444" strokeWidth="1" />
+                <line x1="120" y1="231" x2="120" y2="237" stroke="#444" strokeWidth="1" />
+                <circle cx="320" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
+                <circle cx="320" cy="220" r="3" fill="#333" />
+                <line x1="303" y1="220" x2="309" y2="220" stroke="#444" strokeWidth="1" />
+                <line x1="331" y1="220" x2="337" y2="220" stroke="#444" strokeWidth="1" />
+                <line x1="320" y1="203" x2="320" y2="209" stroke="#444" strokeWidth="1" />
+                <line x1="320" y1="231" x2="320" y2="237" stroke="#444" strokeWidth="1" />
+                <line x1="0" y1="360" x2="440" y2="360" stroke="#3b82f6" strokeWidth="2" opacity="0.4" />
+                <path d="M170 360 Q220 325 270 360" fill="none" stroke="#444" strokeWidth="1.2" />
+                <circle cx="120" cy="388" r="4" fill="#333" />
+                <circle cx="320" cy="388" r="4" fill="#333" />
+                {zonesEquipe.map((z, i) => {
+                  const pos = positionsZones[i];
+                  const tendance = getTendanceZone(z);
+                  return (
+                    <g key={i}>
+                      <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill="#777" fontSize="9" fontWeight="bold" letterSpacing="0.8">{z.label}</text>
+                      {tendance === 'haut' && <polygon points={`${pos.x},${pos.y-7} ${pos.x-5},${pos.y} ${pos.x+5},${pos.y}`} fill="#f97316" />}
+                      {tendance === 'bas' && <polygon points={`${pos.x},${pos.y} ${pos.x-5},${pos.y-7} ${pos.x+5},${pos.y-7}`} fill="#ef4444" />}
+                      {tendance === 'neutre' && <circle cx={pos.x} cy={pos.y - 4} r="4" fill="#555" />}
+                      <text x={pos.x + 10} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="15" fontWeight="bold">{z.moy}</text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginBottom: '14px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="10" height="8"><polygon points="5,0 0,8 10,8" fill="#f97316" /></svg>
+                <span style={{ fontSize: '10px', color: '#888' }}>Zone privilegiee</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="10" height="8"><polygon points="5,8 0,0 10,0" fill="#ef4444" /></svg>
+                <span style={{ fontSize: '10px', color: '#888' }}>Zone faible</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="#555" /></svg>
+                <span style={{ fontSize: '10px', color: '#888' }}>Zone moyenne</span>
+              </div>
+            </div>
+
+            {/* Analyse Matchup */}
+            {analyseMatchup && abbrevAdv && (
+              <div style={{ backgroundColor: analyseMatchup.favorable ? 'rgba(249,115,22,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${analyseMatchup.favorable ? 'rgba(249,115,22,0.3)' : 'rgba(239,68,68,0.3)'}`, borderRadius: '10px', padding: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: analyseMatchup.favorable ? '#f97316' : '#ef4444', flexShrink: 0 }} />
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: analyseMatchup.favorable ? '#f97316' : '#ef4444', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Analyse matchup vs {abbrevAdv}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#666' }}>
+                    {abbrev} {analyseMatchup.scoreEq} — {analyseMatchup.scoreAdv} {abbrevAdv}
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '12px', color: '#ccc', lineHeight: '1.6' }}>{analyseMatchup.conclusion}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Domicile vs Extérieur */}
           <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
             <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DOMICILE VS EXTERIEUR</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {[
-                { label: 'Domicile', v: equipe?.homeRecord || '-', w: equipe?.homeWins || 0, l: equipe?.homeLosses || 0 },
-                { label: 'Exterieur', v: equipe?.roadRecord || '-', w: equipe?.roadWins || 0, l: equipe?.roadLosses || 0 },
+                { label: 'Domicile', w: equipe?.homeWins||0, l: (equipe?.homeLosses||0) + (equipe?.homeOtLosses||0), gf: equipe?.homeGoalsFor||0, ga: equipe?.homeGoalsAgainst||0 },
+                { label: 'Exterieur', w: equipe?.roadWins||0, l: (equipe?.roadLosses||0) + (equipe?.roadOtLosses||0), gf: equipe?.roadGoalsFor||0, ga: equipe?.roadGoalsAgainst||0 },
               ].map((eq, i) => (
-                <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '6px' }}>{eq.label}</div>
-                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>{eq.w}V · {eq.l}D</div>
+                <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '8px', fontWeight: 'bold' }}>{eq.label}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{eq.w}V · {eq.l}D</div>
+                  <div style={{ color: '#666', fontSize: '11px' }}>{eq.gf} BP · {eq.ga} BC</div>
                 </div>
               ))}
             </div>
@@ -1217,23 +1464,68 @@ function FicheJoueur({ joueur, onRetour }) {
 
   useEffect(() => { chargerStats(); }, [joueur.id]);
 
-  async function chargerStats() {
-    setChargement(true);
+async function chargerStats() {
+  setChargement(true);
+  try {
+    // Stats équipe depuis api.nhle.com (PP%, PK%, SOG)
+    const resStats = await fetch(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026`);
+    const dataStats = await resStats.json();
+
+    // Cherche par teamId si disponible, sinon par nom
+    const teamId = equipe?.franchiseId || equipe?.teamId || null;
+    let teamStats = null;
+
+    if (teamId) {
+      teamStats = dataStats.data?.find(t => t.teamId === teamId);
+    }
+
+    // Fallback par nom
+    if (!teamStats) {
+      const place = (equipe?.placeName?.default || '').toLowerCase();
+      const commonName = (equipe?.teamCommonName?.default || '').toLowerCase();
+      teamStats = dataStats.data?.find(t => {
+        const full = t.teamFullName?.toLowerCase() || '';
+        return full.includes(place) || full.includes(commonName) || full.includes(abbrev.toLowerCase());
+      });
+    }
+
+    console.log('Equipe cherchee:', abbrev, equipe?.placeName?.default, equipe?.teamCommonName?.default);
+    console.log('Stats trouvees:', teamStats);
+    setStatsEquipe(teamStats || null);
+
+    // Stats adverse
+    if (abbrevAdv && equipeAdverse) {
+      const placeAdv = (equipeAdverse?.placeName?.default || '').toLowerCase();
+      const commonNameAdv = (equipeAdverse?.teamCommonName?.default || '').toLowerCase();
+      const teamStatsAdv = dataStats.data?.find(t => {
+        const full = t.teamFullName?.toLowerCase() || '';
+        return full.includes(placeAdv) || full.includes(commonNameAdv);
+      });
+      setStatsAdverse(teamStatsAdv || null);
+    }
+
+ // Historique matchs avec SOG
+const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/now`));
+const data2 = await res2.json();
+const matchsJoues = (data2.games || [])
+  .filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL')
+  .slice(-20);
+const matchsAvecSog = [...matchsJoues];
+for (let i = 0; i < matchsJoues.length; i += 5) {
+  const batch = matchsJoues.slice(i, i + 5);
+  const boxscores = await Promise.all(batch.map(async (m) => {
     try {
-      const res = await fetch(getUrl(`player/${joueur.id}/landing`));
-      const data = await res.json();
-      const saison = data.featuredStats?.regularSeason?.subSeason;
-      const isGardien = joueur.position === 'G';
-      if (isGardien) {
-        setStatsAvancees({ gaa: saison?.goalsAgainstAvg?.toFixed(2) ?? '-', svp: saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-', wins: saison?.wins ?? '-', losses: saison?.losses ?? '-', shutouts: saison?.shutouts ?? '-', gamesStarted: saison?.gamesStarted ?? '-' });
-      } else {
-        setStatsAvancees({ goals: saison?.goals ?? 0, assists: saison?.assists ?? 0, points: saison?.points ?? 0, plusMinus: saison?.plusMinus ?? 0, ppp: saison?.powerPlayPoints ?? 0, sog: saison?.shots ?? 0, hits: saison?.hits ?? 0, blocks: saison?.blockedShots ?? 0, fow: saison?.faceoffWinningPctg ? (saison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-', fowPct: saison?.faceoffWinningPctg ?? 0, gp: saison?.gamesPlayed ?? 1, toi: saison?.avgToi ?? '-' });
-      }
-      const gameLog = data.last5Games || data.recentGameResults || [];
-      setDernierMatchs(gameLog.slice(0, 20));
-    } catch (err) { console.error(err); }
-    setChargement(false);
-  }
+      const r = await fetch(getUrl(`gamecenter/${m.id}/boxscore`));
+      const d = await r.json();
+      return { ...m, sogHome: d.homeTeam?.sog ?? 0, sogAway: d.awayTeam?.sog ?? 0 };
+    } catch { return m; }
+  }));
+  boxscores.forEach((b, idx) => { matchsAvecSog[i + idx] = b; });
+}
+setGameLog(matchsAvecSog);
+  } catch (err) { console.error(err); }
+  setChargement(false);
+}
 
   const isGardien = joueur.position === 'G';
   const gp = statsAvancees?.gp || 1;
