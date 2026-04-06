@@ -42,6 +42,16 @@ const LIGUES = [
   { id: 'nba', label: 'NBA', disponible: false, logo: 'https://cdn.nba.com/logos/leagues/logo-nba.svg', description: 'Association nationale de basketball' },
 ];
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, []);
+  return isMobile;
+}
+
 function getUrl(path) {
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
   if (estEnProduction) return `/api/nhl?path=${path}`;
@@ -153,39 +163,33 @@ function CarrouselMeneurs({ meneurs }) {
   );
 }
 
-function CarteJoueurLigne({ joueur, onSelect, estChaud }) {
+function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
+  const taille = isMobile ? '36px' : '44px';
   return (
     <div
       onClick={() => onSelect(joueur)}
-      style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', border: estChaud ? '1px solid #f97316' : '1px solid #222', padding: '10px 8px', textAlign: 'center', cursor: 'pointer', position: 'relative', flex: 1, minWidth: '80px' }}
+      style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', border: estChaud ? '1px solid #f97316' : '1px solid #222', padding: isMobile ? '8px 4px' : '10px 8px', textAlign: 'center', cursor: 'pointer', position: 'relative', flex: 1, minWidth: isMobile ? '60px' : '80px' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
       onMouseLeave={e => e.currentTarget.style.borderColor = estChaud ? '#f97316' : '#222'}
     >
       {estChaud && (
-        <div style={{ position: 'absolute', top: '-8px', right: '-4px', backgroundColor: '#f97316', borderRadius: '10px', padding: '2px 6px', fontSize: '9px', fontWeight: 'bold', color: 'white' }}>HOT</div>
+        <div style={{ position: 'absolute', top: '-7px', right: '-3px', backgroundColor: '#f97316', borderRadius: '8px', padding: '1px 5px', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>HOT</div>
       )}
-      <img
-        src={getPhotoJoueur(joueur.id)}
-        alt={joueur.nom}
-        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333', marginBottom: '6px' }}
-        onError={e => { e.target.style.display = 'none'; }}
-      />
-      <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'white', marginBottom: '2px', lineHeight: '1.2' }}>
-        {joueur.nom.split(' ').pop()}
-      </div>
-      <div style={{ fontSize: '10px', color: '#666', marginBottom: '6px' }}>#{joueur.numero} · {joueur.position}</div>
+      <img src={getPhotoJoueur(joueur.id)} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333', marginBottom: '4px' }} onError={e => { e.target.style.display = 'none'; }} />
+      <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'white', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
+      <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px' }}>#{joueur.numero}</div>
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
         <div>
-          <div style={{ fontSize: '13px', fontWeight: '900', color: joueur.goals != null ? '#f97316' : '#444' }}>{joueur.goals ?? '-'}</div>
-          <div style={{ fontSize: '9px', color: '#555' }}>B</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.goals != null ? '#f97316' : '#444' }}>{joueur.goals ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>B</div>
         </div>
         <div>
-          <div style={{ fontSize: '13px', fontWeight: '900', color: joueur.assists != null ? 'white' : '#444' }}>{joueur.assists ?? '-'}</div>
-          <div style={{ fontSize: '9px', color: '#555' }}>A</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.assists != null ? 'white' : '#444' }}>{joueur.assists ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>A</div>
         </div>
         <div>
-          <div style={{ fontSize: '13px', fontWeight: '900', color: joueur.points != null ? 'white' : '#444' }}>{joueur.points ?? '-'}</div>
-          <div style={{ fontSize: '9px', color: '#555' }}>PTS</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.points != null ? 'white' : '#444' }}>{joueur.points ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>PTS</div>
         </div>
       </div>
     </div>
@@ -195,29 +199,29 @@ function CarteJoueurLigne({ joueur, onSelect, estChaud }) {
 function SectionGardien({ gardien, onSelect }) {
   if (!gardien) return null;
   return (
-    <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}>
-      <img src={getPhotoJoueur(gardien.id)} alt={gardien.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }} onError={e => { e.target.style.display = 'none'; }} />
+    <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+      <img src={getPhotoJoueur(gardien.id)} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }} onError={e => { e.target.style.display = 'none'; }} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
-        <div style={{ fontSize: '16px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{gardien.nom}</div>
-        <div style={{ fontSize: '12px', color: '#666' }}>#{gardien.numero}</div>
+        <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
+        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{gardien.nom}</div>
+        <div style={{ fontSize: '11px', color: '#666' }}>#{gardien.numero}</div>
       </div>
-      <div style={{ display: 'flex', gap: '20px' }}>
+      <div style={{ display: 'flex', gap: '16px' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: '#f97316' }}>{gardien.gaa ?? '-'}</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{gardien.gaa ?? '-'}</div>
           <div style={{ fontSize: '10px', color: '#666' }}>GAA</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{gardien.svp ?? '-'}</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{gardien.svp ?? '-'}</div>
           <div style={{ fontSize: '10px', color: '#666' }}>SV%</div>
         </div>
       </div>
-      <span style={{ color: '#f97316', fontSize: '12px' }}>Fiche →</span>
+      <span style={{ color: '#f97316', fontSize: '12px' }}>→</span>
     </div>
   );
 }
 
-function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect }) {
+function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile }) {
   const forwards = joueurs.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
   const defenseurs = joueurs.filter(j => ['D', 'LD', 'RD'].includes(j.position));
   const gardiens = joueurs.filter(j => j.position === 'G');
@@ -226,85 +230,78 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect }) {
   const lignes = [];
   if (forwards.some(j => j.ligne)) {
     const parLigne = {};
-    forwards.forEach(j => {
-      const l = j.ligne || 99;
-      if (!parLigne[l]) parLigne[l] = [];
-      parLigne[l].push(j);
-    });
+    forwards.forEach(j => { const l = j.ligne || 99; if (!parLigne[l]) parLigne[l] = []; parLigne[l].push(j); });
     Object.keys(parLigne).sort((a, b) => Number(a) - Number(b)).forEach(l => lignes.push(parLigne[l]));
   } else {
-    for (let i = 0; i < Math.min(forwards.length, 12); i += 3) {
-      lignes.push(forwards.slice(i, i + 3));
-    }
+    for (let i = 0; i < Math.min(forwards.length, 12); i += 3) lignes.push(forwards.slice(i, i + 3));
   }
 
   const paires = [];
   if (defenseurs.some(j => j.ligne)) {
     const parPaire = {};
-    defenseurs.forEach(j => {
-      const l = j.ligne || 99;
-      if (!parPaire[l]) parPaire[l] = [];
-      parPaire[l].push(j);
-    });
+    defenseurs.forEach(j => { const l = j.ligne || 99; if (!parPaire[l]) parPaire[l] = []; parPaire[l].push(j); });
     Object.keys(parPaire).sort((a, b) => Number(a) - Number(b)).forEach(l => paires.push(parPaire[l]));
   } else {
-    for (let i = 0; i < Math.min(defenseurs.length, 6); i += 2) {
-      paires.push(defenseurs.slice(i, i + 2));
-    }
+    for (let i = 0; i < Math.min(defenseurs.length, 6); i += 2) paires.push(defenseurs.slice(i, i + 2));
   }
 
   const joueurChaud = forwards.reduce((max, j) => (j.points || 0) > (max?.points || 0) ? j : max, null);
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '2px solid #f97316' }}>
-        <img src={logo} alt={abbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+    <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f97316' }}>
+        <img src={logo} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'white' }}>{nom}</h3>
       </div>
-      <div style={{ marginBottom: '16px' }}>
+
+      <div style={{ marginBottom: '14px' }}>
         <SectionGardien gardien={gardienPartant} onSelect={onSelect} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+
+      {/* Sur mobile: colonne unique, sur desktop: côte à côte */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
         <div>
-          <div style={{ fontSize: '11px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Attaquants</div>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
           {lignes.map((ligne, li) => (
-            <div key={li} style={{ marginBottom: '10px' }}>
-              <div style={{ fontSize: '10px', color: '#555', marginBottom: '5px' }}>Ligne {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {ligne.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={joueurChaud?.id === j.id && (j.points || 0) > 0} />)}
+            <div key={li} style={{ marginBottom: '8px' }}>
+              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Ligne {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {ligne.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={joueurChaud?.id === j.id && (j.points || 0) > 0} isMobile={isMobile} />)}
               </div>
             </div>
           ))}
         </div>
+
         <div>
-          <div style={{ fontSize: '11px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Defenseurs</div>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Defenseurs</div>
           {paires.map((paire, pi) => (
-            <div key={pi} style={{ marginBottom: '10px' }}>
-              <div style={{ fontSize: '10px', color: '#555', marginBottom: '5px' }}>Paire {pi + 1}</div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {paire.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} />)}
+            <div key={pi} style={{ marginBottom: '8px' }}>
+              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Paire {pi + 1}</div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {paire.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
               </div>
             </div>
           ))}
+
           {forwards.length > 0 && (
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ fontSize: '11px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Power Play</div>
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '10px', color: '#f97316', marginBottom: '5px' }}>PP1</div>
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                  {forwards.slice(0, 3).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} />)}
+            <div style={{ marginTop: '12px' }}>
+              <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Power Play</div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ fontSize: '9px', color: '#f97316', marginBottom: '4px' }}>PP1</div>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
+                  {forwards.slice(0, 3).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[defenseurs[0], defenseurs[1]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} />)}
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[defenseurs[0], defenseurs[1]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '10px', color: '#f97316', marginBottom: '5px' }}>PP2</div>
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                  {forwards.slice(3, 6).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} />)}
+                <div style={{ fontSize: '9px', color: '#f97316', marginBottom: '4px' }}>PP2</div>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
+                  {forwards.slice(3, 6).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[defenseurs[2], defenseurs[3]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} />)}
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[defenseurs[2], defenseurs[3]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
                 </div>
               </div>
             </div>
@@ -316,6 +313,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect }) {
 }
 
 function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
+  const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
   const [roster1, setRoster1] = useState([]);
   const [roster2, setRoster2] = useState([]);
@@ -331,18 +329,11 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
   const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
   const etat = match.gameState;
 
-  // Ouvrir automatiquement si filtre correspond à l'équipe
   useEffect(() => {
     if (filtre && filtre.length >= 2) {
       const f = filtre.toLowerCase();
-      const correspond = abbrev1.toLowerCase().includes(f) ||
-        abbrev2.toLowerCase().includes(f) ||
-        nom1.toLowerCase().includes(f) ||
-        nom2.toLowerCase().includes(f);
-      if (correspond) {
-        setOuvert(true);
-        if (!chargementLance.current) chargerRosters();
-      }
+      const correspond = abbrev1.toLowerCase().includes(f) || abbrev2.toLowerCase().includes(f) || nom1.toLowerCase().includes(f) || nom2.toLowerCase().includes(f);
+      if (correspond) { setOuvert(true); if (!chargementLance.current) chargerRosters(); }
     }
   }, [filtre]);
 
@@ -351,47 +342,24 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
     const result = [...joueurs];
     for (let i = 0; i < joueurs.length; i += batchSize) {
       const batch = joueurs.slice(i, i + batchSize);
-      const stats = await Promise.all(
-        batch.map(async (j) => {
-          try {
-            const res = await fetch(getUrl(`player/${j.id}/landing`));
-            const data = await res.json();
-            const saison = data.featuredStats?.regularSeason?.subSeason;
-            const isGardien = j.position === 'G';
-            return {
-              ...j,
-              goals: isGardien ? null : (saison?.goals ?? 0),
-              assists: isGardien ? null : (saison?.assists ?? 0),
-              points: isGardien ? null : (saison?.points ?? 0),
-              gaa: isGardien ? (saison?.goalsAgainstAvg?.toFixed(2) ?? '-') : null,
-              svp: isGardien ? (saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-') : null,
-            };
-          } catch { return j; }
-        })
-      );
+      const stats = await Promise.all(batch.map(async (j) => {
+        try {
+          const res = await fetch(getUrl(`player/${j.id}/landing`));
+          const data = await res.json();
+          const saison = data.featuredStats?.regularSeason?.subSeason;
+          const isGardien = j.position === 'G';
+          return { ...j, goals: isGardien ? null : (saison?.goals ?? 0), assists: isGardien ? null : (saison?.assists ?? 0), points: isGardien ? null : (saison?.points ?? 0), gaa: isGardien ? (saison?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-') : null };
+        } catch { return j; }
+      }));
       stats.forEach((s, idx) => { result[i + idx] = s; });
       setRoster([...result]);
     }
   }
 
   async function chargerDepuisRoster() {
-    const [r1, r2] = await Promise.all([
-      fetch(getUrl(`roster/${abbrev1}/current`)),
-      fetch(getUrl(`roster/${abbrev2}/current`)),
-    ]);
+    const [r1, r2] = await Promise.all([fetch(getUrl(`roster/${abbrev1}/current`)), fetch(getUrl(`roster/${abbrev2}/current`))]);
     const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
-    const fmt = (data, equipe) => [
-      ...(data.forwards || []),
-      ...(data.defensemen || []),
-      ...(data.goalies || []),
-    ].map(j => ({
-      id: j.id,
-      nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(),
-      numero: j.sweaterNumber || '',
-      position: j.positionCode || '',
-      equipe, ligne: null,
-      goals: null, assists: null, points: null, gaa: null, svp: null,
-    }));
+    const fmt = (data, equipe) => [...(data.forwards || []), ...(data.defensemen || []), ...(data.goalies || [])].map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), numero: j.sweaterNumber || '', position: j.positionCode || '', equipe, ligne: null, goals: null, assists: null, points: null, gaa: null, svp: null }));
     return { j1: fmt(d1, abbrev1), j2: fmt(d2, abbrev2) };
   }
 
@@ -401,68 +369,28 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
     setChargement(true);
     try {
       const gameId = match.id;
-      let joueurs1 = [], joueurs2 = [];
-      let utiliséBoxscore = false;
-
+      let joueurs1 = [], joueurs2 = [], utiliséBoxscore = false;
       try {
         const res = await fetch(getUrl(`gamecenter/${gameId}/boxscore`));
         const data = await res.json();
-        const awayRaw = [
-          ...(data.playerByGameStats?.awayTeam?.forwards || []),
-          ...(data.playerByGameStats?.awayTeam?.defense || []),
-          ...(data.playerByGameStats?.awayTeam?.goalies || []),
-        ];
-        const homeRaw = [
-          ...(data.playerByGameStats?.homeTeam?.forwards || []),
-          ...(data.playerByGameStats?.homeTeam?.defense || []),
-          ...(data.playerByGameStats?.homeTeam?.goalies || []),
-        ];
-
+        const awayRaw = [...(data.playerByGameStats?.awayTeam?.forwards || []), ...(data.playerByGameStats?.awayTeam?.defense || []), ...(data.playerByGameStats?.awayTeam?.goalies || [])];
+        const homeRaw = [...(data.playerByGameStats?.homeTeam?.forwards || []), ...(data.playerByGameStats?.homeTeam?.defense || []), ...(data.playerByGameStats?.homeTeam?.goalies || [])];
         if (awayRaw.length > 0) {
-          const fmt = (joueurs, equipe) => joueurs.map(j => {
-            const id = j.playerId || j.id;
-            const prenom = j.firstName?.default || j.firstName || '';
-            const ln = j.lastName?.default || j.lastName || '';
-            const nomComplet = j.name?.default || `${prenom} ${ln}`.trim();
-            return {
-              id,
-              nom: nomComplet || 'Joueur',
-              numero: j.sweaterNumber || j.jerseyNumber || '',
-              position: j.position || j.positionCode || '',
-              equipe,
-              ligne: j.lineNumber || null,
-              goals: null, assists: null, points: null, gaa: null, svp: null,
-            };
-          }).filter(j => j.id && j.nom !== 'Joueur');
-
+          const fmt = (joueurs, equipe) => joueurs.map(j => ({ id: j.playerId || j.id, nom: j.name?.default || `${j.firstName?.default || j.firstName || ''} ${j.lastName?.default || j.lastName || ''}`.trim() || 'Joueur', numero: j.sweaterNumber || j.jerseyNumber || '', position: j.position || j.positionCode || '', equipe, ligne: j.lineNumber || null, goals: null, assists: null, points: null, gaa: null, svp: null })).filter(j => j.id && j.nom !== 'Joueur');
           joueurs1 = fmt(awayRaw, abbrev1);
           joueurs2 = fmt(homeRaw, abbrev2);
           utiliséBoxscore = true;
         }
       } catch (e) { }
-
-      if (joueurs1.length === 0) {
-        const fallback = await chargerDepuisRoster();
-        joueurs1 = fallback.j1;
-        joueurs2 = fallback.j2;
-      }
-
+      if (joueurs1.length === 0) { const fallback = await chargerDepuisRoster(); joueurs1 = fallback.j1; joueurs2 = fallback.j2; }
       setSourceData(utiliséBoxscore ? 'live' : 'roster');
-      setRoster1(joueurs1);
-      setRoster2(joueurs2);
+      setRoster1(joueurs1); setRoster2(joueurs2);
       setChargement(false);
       chargerStatsEnBatch(joueurs1, setRoster1);
       chargerStatsEnBatch(joueurs2, setRoster2);
-
     } catch (err) {
       console.error(err);
-      try {
-        const fallback = await chargerDepuisRoster();
-        setRoster1(fallback.j1);
-        setRoster2(fallback.j2);
-        chargerStatsEnBatch(fallback.j1, setRoster1);
-        chargerStatsEnBatch(fallback.j2, setRoster2);
-      } catch (e) { }
+      try { const fallback = await chargerDepuisRoster(); setRoster1(fallback.j1); setRoster2(fallback.j2); chargerStatsEnBatch(fallback.j1, setRoster1); chargerStatsEnBatch(fallback.j2, setRoster2); } catch (e) { }
       setChargement(false);
     }
   }
@@ -476,70 +404,52 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
   const filtrerJoueurs = (joueurs) => {
     if (!filtre || filtre.length < 2) return joueurs;
     const f = filtre.toLowerCase();
-    // Si filtre = équipe, montrer tous les joueurs de l'équipe
-    if (abbrev1.toLowerCase().includes(f) || nom1.toLowerCase().includes(f) ||
-        abbrev2.toLowerCase().includes(f) || nom2.toLowerCase().includes(f)) {
-      return joueurs;
-    }
-    // Sinon filtrer par nom
+    if (abbrev1.toLowerCase().includes(f) || nom1.toLowerCase().includes(f) || abbrev2.toLowerCase().includes(f) || nom2.toLowerCase().includes(f)) return joueurs;
     return joueurs.filter(j => j.nom.toLowerCase().includes(f));
   };
 
-  const joueursFiltres1 = filtrerJoueurs(roster1);
-  const joueursFiltres2 = filtrerJoueurs(roster2);
-
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '12px' }}>
-      <div onClick={handleOuvrir} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{nom1}</span>
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px' }}>
+      <div onClick={handleOuvrir} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px', flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</span>
           </div>
-          <span style={{ color: '#444', fontWeight: 'bold' }}>@</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{nom2}</span>
-            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+          <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</span>
+            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {etat === 'LIVE' || etat === 'CRIT'
-            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>EN DIRECT</span>
-            : <span style={{ color: '#666', fontSize: '13px' }}>{heure}</span>}
-          <span style={{ color: ouvert ? '#f97316' : '#444', fontSize: '12px' }}>{ouvert ? 'Fermer' : 'Voir alignement'}</span>
+            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
+            : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
+          <span style={{ color: ouvert ? '#f97316' : '#444', fontSize: '11px' }}>{ouvert ? '▲' : '▼'}</span>
         </div>
       </div>
 
       {ouvert && (
-        <div style={{ borderTop: '1px solid #222', padding: '20px' }}>
+        <div style={{ borderTop: '1px solid #222', padding: isMobile ? '14px' : '20px' }}>
           {chargement ? (
-            <p style={{ color: '#666', textAlign: 'center', padding: '30px 0' }}>Chargement des alignements...</p>
+            <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement...</p>
           ) : (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
                   {[{ abbrev: abbrev1, logo: LOGOS_NHL[abbrev1] }, { abbrev: abbrev2, logo: LOGOS_NHL[abbrev2] }].map((eq, i) => (
-                    <button key={i} onClick={() => setOngletEquipe(i)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: ongletEquipe === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '13px', fontWeight: ongletEquipe === i ? 'bold' : 'normal' }}>
-                      <img src={eq.logo} alt={eq.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                    <button key={i} onClick={() => setOngletEquipe(i)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: ongletEquipe === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: ongletEquipe === i ? 'bold' : 'normal' }}>
+                      <img src={eq.logo} alt={eq.abbrev} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                       {eq.abbrev}
                     </button>
                   ))}
                 </div>
-                {sourceData === 'live' && (
-                  <span style={{ fontSize: '11px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', padding: '4px 10px', borderRadius: '20px' }}>
-                    Alignement en direct
-                  </span>
-                )}
+                {sourceData === 'live' && <span style={{ fontSize: '10px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', padding: '3px 8px', borderRadius: '20px' }}>En direct</span>}
               </div>
-              {ongletEquipe === 0 && joueursFiltres1.length > 0 && (
-                <AlignementEquipe abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} joueurs={joueursFiltres1} onSelect={onSelectJoueur} />
-              )}
-              {ongletEquipe === 1 && joueursFiltres2.length > 0 && (
-                <AlignementEquipe abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} joueurs={joueursFiltres2} onSelect={onSelectJoueur} />
-              )}
-              {((ongletEquipe === 0 && joueursFiltres1.length === 0) || (ongletEquipe === 1 && joueursFiltres2.length === 0)) && (
-                <p style={{ color: '#666', textAlign: 'center' }}>Aucun joueur trouve.</p>
-              )}
+              {ongletEquipe === 0 && filtrerJoueurs(roster1).length > 0 && <AlignementEquipe abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} joueurs={filtrerJoueurs(roster1)} onSelect={onSelectJoueur} isMobile={isMobile} />}
+              {ongletEquipe === 1 && filtrerJoueurs(roster2).length > 0 && <AlignementEquipe abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} joueurs={filtrerJoueurs(roster2)} onSelect={onSelectJoueur} isMobile={isMobile} />}
+              {((ongletEquipe === 0 && filtrerJoueurs(roster1).length === 0) || (ongletEquipe === 1 && filtrerJoueurs(roster2).length === 0)) && <p style={{ color: '#666', textAlign: 'center' }}>Aucun joueur trouve.</p>}
             </>
           )}
         </div>
@@ -549,6 +459,7 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
 }
 
 function PageStatsJoueurs({ onSelectJoueur }) {
+  const isMobile = useIsMobile();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
@@ -559,11 +470,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   async function chargerSemaine() {
     setChargement(true);
     const aujourdhui = new Date();
-    const jours = Array(7).fill(null).map((_, i) => {
-      const d = new Date(aujourdhui);
-      d.setDate(d.getDate() + i);
-      return getDateStr(d);
-    });
+    const jours = Array(7).fill(null).map((_, i) => { const d = new Date(aujourdhui); d.setDate(d.getDate() + i); return getDateStr(d); });
     const resultats = {};
     await Promise.all(jours.map(async (jour) => {
       try {
@@ -574,8 +481,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
       } catch (err) { }
     }));
     setMatchsParJour(resultats);
-    const premierJour = Object.keys(resultats).sort()[0] || jours[0];
-    setJourActif(premierJour);
+    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
     setChargement(false);
   }
 
@@ -583,35 +489,31 @@ function PageStatsJoueurs({ onSelectJoueur }) {
 
   return (
     <div>
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '14px' }}>
         <input
-          style={{ width: '100%', padding: '12px 16px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Rechercher un joueur ou une equipe..."
           value={filtre}
           onChange={e => setFiltre(e.target.value)}
         />
       </div>
-      {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement des matchs de la semaine...</p>
-      ) : (
+      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
         <>
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
               const estAujourdhui = jour === getDateStr(new Date());
-              const label = estAujourdhui ? "Aujourd'hui" : d.toLocaleDateString('fr-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
-                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '10px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '13px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '11px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb} match{nb > 1 ? 's' : ''}</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}m</span>
                 </button>
               );
             })}
           </div>
-          {(matchsParJour[jourActif] || []).map((match, i) => (
-            <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} />
-          ))}
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} />)}
         </>
       )}
     </div>
@@ -621,22 +523,21 @@ function PageStatsJoueurs({ onSelectJoueur }) {
 function EtoilesConfiance({ score }) {
   return (
     <div style={{ display: 'flex', gap: '2px' }}>
-      {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '14px', color: i <= score ? '#f97316' : '#333' }}>★</span>)}
+      {[1,2,3,4,5].map(i => <span key={i} style={{ fontSize: '13px', color: i <= score ? '#f97316' : '#333' }}>★</span>)}
     </div>
   );
 }
 
 function BadgeTendance({ resultats }) {
   return (
-    <div style={{ display: 'flex', gap: '4px' }}>
-      {resultats.map((r, i) => (
-        <div key={i} style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white' }}>{r}</div>
-      ))}
+    <div style={{ display: 'flex', gap: '3px' }}>
+      {resultats.map((r, i) => <div key={i} style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
     </div>
   );
 }
 
 function CarteMatchEquipes({ match, classement }) {
+  const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
@@ -668,81 +569,83 @@ function CarteMatchEquipes({ match, classement }) {
   const favori = prob1 > prob2 ? abbrev1 : abbrev2;
 
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '12px' }}>
-      <div onClick={() => setOuvert(!ouvert)} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px' }}>
+      <div onClick={() => setOuvert(!ouvert)} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{nom1}</div>
-              <div style={{ color: '#666', fontSize: '11px' }}>{wins1}V-{losses1}D-{otl1}DP</div>
+              <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins1}V-{losses1}D</div>
             </div>
           </div>
-          <span style={{ color: '#444', fontWeight: 'bold' }}>@</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{nom2}</div>
-              <div style={{ color: '#666', fontSize: '11px' }}>{wins2}V-{losses2}D-{otl2}DP</div>
+              <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins2}V-{losses2}D</div>
             </div>
-            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {etat === 'LIVE' || etat === 'CRIT' ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>EN DIRECT</span> : <span style={{ color: '#666', fontSize: '13px' }}>{heure}</span>}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {etat === 'LIVE' || etat === 'CRIT' ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span> : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
             <EtoilesConfiance score={confiance} />
           </div>
-          <div style={{ color: '#f97316', fontSize: '12px' }}>{favori} favori {Math.max(prob1, prob2)}% · {overUnder} {total_buts}</div>
-          <div style={{ color: '#444', fontSize: '12px' }}>{ouvert ? 'Reduire' : "Voir l'analyse"}</div>
+          <div style={{ color: '#f97316', fontSize: '11px' }}>{favori} {Math.max(prob1, prob2)}% · {overUnder}</div>
         </div>
       </div>
+
       {ouvert && (
-        <div style={{ borderTop: '1px solid #222', padding: '20px' }}>
-          <div style={{ marginBottom: '16px' }}>
+        <div style={{ borderTop: '1px solid #222', padding: isMobile ? '12px 14px' : '20px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '13px' }}>{abbrev1} — {prob1}%</span>
-              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '13px' }}>{prob2}% — {abbrev2}</span>
+              <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '12px' }}>{abbrev1} {prob1}%</span>
+              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '12px' }}>{prob2}% {abbrev2}</span>
             </div>
-            <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden', height: '28px' }}>
-              <div style={{ width: `${prob1}%`, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', color: 'white' }}>{prob1}%</div>
-              <div style={{ width: `${prob2}%`, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', color: 'white' }}>{prob2}%</div>
+            <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', height: '26px' }}>
+              <div style={{ width: `${prob1}%`, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob1}%</div>
+              <div style={{ width: `${prob2}%`, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob2}%</div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
             {[
               { abbrev: abbrev1, logo: LOGOS_NHL[abbrev1], pts: pts1, win: win1, gf: gf1, ga: ga1, gp: gp1, t: genT(win1) },
               { abbrev: abbrev2, logo: LOGOS_NHL[abbrev2], pts: pts2, win: win2, gf: gf2, ga: ga2, gp: gp2, t: genT(win2) },
             ].map((eq, i) => (
-              <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <img src={eq.logo} alt={eq.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+              <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <img src={eq.logo} alt={eq.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
                   <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{eq.abbrev}</span>
                 </div>
-                {[['Points', eq.pts, '#f97316'], ['Win%', `${eq.win}%`, 'white'], ['Buts/match', eq.gf.toFixed(2), 'white'], ['Accordes/match', eq.ga.toFixed(2), 'white']].map(([l, v, c], j) => (
+                {[['Points', eq.pts, '#f97316'], ['Win%', `${eq.win}%`, 'white'], ['Buts/m', eq.gf.toFixed(2), 'white'], ['Acc./m', eq.ga.toFixed(2), 'white']].map(([l, v, c], j) => (
                   <div key={j} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ color: '#666', fontSize: '11px' }}>{l}</span>
+                    <span style={{ color: '#666', fontSize: '10px' }}>{l}</span>
                     <span style={{ fontWeight: 'bold', color: c, fontSize: '11px' }}>{v}</span>
                   </div>
                 ))}
-                <div style={{ marginTop: '8px' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>Forme</div>
+                <div style={{ marginTop: '6px' }}>
+                  <div style={{ color: '#666', fontSize: '9px', marginBottom: '3px' }}>Forme</div>
                   <BadgeTendance resultats={eq.t} />
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-              <div style={{ color: '#666', fontSize: '10px', marginBottom: '3px' }}>Differentiel</div>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'white' }}>{parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(parseFloat(diff)).toFixed(1)}`}</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+              <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Diff.</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{parseFloat(diff) > 0 ? `${abbrev1} +${diff}` : `${abbrev2} +${Math.abs(parseFloat(diff)).toFixed(1)}`}</div>
             </div>
-            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-              <div style={{ color: '#666', fontSize: '10px', marginBottom: '3px' }}>Total predit</div>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
+            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+              <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Total</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
             </div>
-            <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-              <div style={{ color: '#666', fontSize: '10px', marginBottom: '3px' }}>Recommandation</div>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder} 5.5</div>
+            <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+              <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Rec.</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder}</div>
             </div>
           </div>
         </div>
@@ -752,6 +655,7 @@ function CarteMatchEquipes({ match, classement }) {
 }
 
 function FicheJoueur({ joueur, onRetour }) {
+  const isMobile = useIsMobile();
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [dernierMatchs, setDernierMatchs] = useState([]);
   const [ongletStat, setOngletStat] = useState('PTS');
@@ -770,29 +674,9 @@ function FicheJoueur({ joueur, onRetour }) {
       const saison = data.featuredStats?.regularSeason?.subSeason;
       const isGardien = joueur.position === 'G';
       if (isGardien) {
-        setStatsAvancees({
-          gaa: saison?.goalsAgainstAvg?.toFixed(2) ?? '-',
-          svp: saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-',
-          wins: saison?.wins ?? '-',
-          losses: saison?.losses ?? '-',
-          shutouts: saison?.shutouts ?? '-',
-          gamesStarted: saison?.gamesStarted ?? '-',
-        });
+        setStatsAvancees({ gaa: saison?.goalsAgainstAvg?.toFixed(2) ?? '-', svp: saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-', wins: saison?.wins ?? '-', losses: saison?.losses ?? '-', shutouts: saison?.shutouts ?? '-', gamesStarted: saison?.gamesStarted ?? '-' });
       } else {
-        setStatsAvancees({
-          goals: saison?.goals ?? 0,
-          assists: saison?.assists ?? 0,
-          points: saison?.points ?? 0,
-          plusMinus: saison?.plusMinus ?? 0,
-          ppp: saison?.powerPlayPoints ?? 0,
-          sog: saison?.shots ?? 0,
-          hits: saison?.hits ?? 0,
-          blocks: saison?.blockedShots ?? 0,
-          fow: saison?.faceoffWinningPctg ? (saison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-',
-          fowPct: saison?.faceoffWinningPctg ?? 0,
-          gp: saison?.gamesPlayed ?? 1,
-          toi: saison?.avgToi ?? '-',
-        });
+        setStatsAvancees({ goals: saison?.goals ?? 0, assists: saison?.assists ?? 0, points: saison?.points ?? 0, plusMinus: saison?.plusMinus ?? 0, ppp: saison?.powerPlayPoints ?? 0, sog: saison?.shots ?? 0, hits: saison?.hits ?? 0, blocks: saison?.blockedShots ?? 0, fow: saison?.faceoffWinningPctg ? (saison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-', fowPct: saison?.faceoffWinningPctg ?? 0, gp: saison?.gamesPlayed ?? 1, toi: saison?.avgToi ?? '-' });
       }
       const gameLog = data.last5Games || data.recentGameResults || [];
       setDernierMatchs(gameLog.slice(0, 20));
@@ -801,21 +685,12 @@ function FicheJoueur({ joueur, onRetour }) {
   }
 
   const isGardien = joueur.position === 'G';
-  const sog = statsAvancees?.sog || 0;
   const gp = statsAvancees?.gp || 1;
+  const sog = statsAvancees?.sog || 0;
 
   const ongletsDef = isGardien
     ? [{ id: 'GAA', label: 'GAA' }, { id: 'SVP', label: 'SV%' }]
-    : [
-        { id: 'PTS', label: 'PTS' },
-        { id: 'SOG', label: 'SOG' },
-        { id: 'GOAL', label: 'GOAL' },
-        { id: 'AST', label: 'AST' },
-        { id: 'PPP', label: 'PPP' },
-        { id: 'FOW', label: 'FOW' },
-        { id: 'BLK', label: 'BLK' },
-        { id: 'HITS', label: 'HITS' },
-      ];
+    : [{ id: 'PTS', label: 'PTS' }, { id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PPP', label: 'PPP' }, { id: 'FOW', label: 'FOW' }, { id: 'BLK', label: 'BLK' }, { id: 'HITS', label: 'HITS' }];
 
   const getValeurMatch = (m, stat) => {
     switch (stat) {
@@ -823,9 +698,9 @@ function FicheJoueur({ joueur, onRetour }) {
       case 'SOG': return m.shots ?? m.sog ?? 0;
       case 'GOAL': return m.goals ?? 0;
       case 'AST': return m.assists ?? 0;
-      case 'PPP': return m.powerPlayPoints ?? m.ppp ?? 0;
-      case 'FOW': return m.faceoffWins ?? m.fow ?? 0;
-      case 'BLK': return m.blockedShots ?? m.blocks ?? 0;
+      case 'PPP': return m.powerPlayPoints ?? 0;
+      case 'FOW': return m.faceoffWins ?? 0;
+      case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
       default: return 0;
     }
@@ -859,31 +734,22 @@ function FicheJoueur({ joueur, onRetour }) {
   const moyenne = getMoyenneSaison(ongletStat);
   const valeurs = matchsFiltres.map(m => getValeurMatch(m, ongletStat));
   const maxVal = Math.max(...valeurs, moyenne * 1.5, 1);
-
-  const getPctAuDessus = () => {
-    if (valeurs.length === 0) return 0;
-    return Math.round((valeurs.filter(v => v >= moyenne).length / valeurs.length) * 100);
-  };
+  const getPctAuDessus = () => valeurs.length === 0 ? 0 : Math.round((valeurs.filter(v => v >= moyenne).length / valeurs.length) * 100);
 
   const zones = [
-    { label: 'LOW LEFT',  sog: Math.round(sog * 0.18) },
-    { label: 'LOW',       sog: Math.round(sog * 0.22) },
+    { label: 'LOW LEFT', sog: Math.round(sog * 0.18) },
+    { label: 'LOW', sog: Math.round(sog * 0.22) },
     { label: 'LOW RIGHT', sog: Math.round(sog * 0.16) },
-    { label: 'BOARDS',    sog: Math.round(sog * 0.12) },
-    { label: 'SLOT',      sog: Math.round(sog * 0.35) },
-    { label: 'BOARDS',    sog: Math.round(sog * 0.08) },
-    { label: 'LEFT',      sog: Math.round(sog * 0.05) },
-    { label: 'POINT',     sog: Math.round(sog * 0.04) },
-    { label: 'RIGHT',     sog: Math.round(sog * 0.05) },
+    { label: 'BOARDS', sog: Math.round(sog * 0.12) },
+    { label: 'SLOT', sog: Math.round(sog * 0.35) },
+    { label: 'BOARDS', sog: Math.round(sog * 0.08) },
+    { label: 'LEFT', sog: Math.round(sog * 0.05) },
+    { label: 'POINT', sog: Math.round(sog * 0.04) },
+    { label: 'RIGHT', sog: Math.round(sog * 0.05) },
   ];
 
-  const pctZones = zones.map(z => ({
-    ...z,
-    pct: sog > 0 ? Math.round((z.sog / sog) * 100) : 0,
-  }));
-
+  const pctZones = zones.map(z => ({ ...z, pct: sog > 0 ? Math.round((z.sog / sog) * 100) : 0 }));
   const getValeurZone = (z) => typeChart === 'SOG' ? z.sog : `${z.pct}%`;
-
   const getTendanceZone = (z) => {
     if (sog === 0) return 'neutre';
     const pct = z.sog / sog;
@@ -894,114 +760,87 @@ function FicheJoueur({ joueur, onRetour }) {
   };
 
   const positionsZones = [
-    { x: 75,  y: 130 },
-    { x: 220, y: 110 },
-    { x: 365, y: 130 },
-    { x: 50,  y: 225 },
-    { x: 220, y: 210 },
-    { x: 390, y: 225 },
-    { x: 75,  y: 335 },
-    { x: 220, y: 335 },
-    { x: 365, y: 335 },
+    { x: 75, y: 130 }, { x: 220, y: 110 }, { x: 365, y: 130 },
+    { x: 50, y: 225 }, { x: 220, y: 210 }, { x: 390, y: 225 },
+    { x: 75, y: 335 }, { x: 220, y: 335 }, { x: 365, y: 335 },
   ];
 
-  return (
-    <div>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', marginBottom: '20px' }}>Retour</button>
+  const pad = isMobile ? '14px' : '20px';
 
-      {/* Header joueur */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
-        <img src={getPhotoJoueur(joueur.id)} alt={joueur.nom} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }} onError={e => { e.target.src = LOGOS_NHL[joueur.equipe] || ''; }} />
-        <div style={{ flex: 1 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '900', color: 'white' }}>{joueur.nom}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-            <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
-            <span style={{ color: '#666', fontSize: '13px' }}>{joueur.position} · {joueur.equipe}</span>
+  return (
+    <div style={{ padding: isMobile ? '0' : '0' }}>
+      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
+        <img src={getPhotoJoueur(joueur.id)} alt={joueur.nom} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }} onError={e => { e.target.src = LOGOS_NHL[joueur.equipe] || ''; }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+            <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+            <span style={{ color: '#666', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
           </div>
-          {!isGardien && statsAvancees && (
-            <div style={{ display: 'flex', gap: '16px' }}>
-              {[['OPP', '-'], ['DEF RANK', '-'], ['GAME TIME', '-']].map(([l, v], i) => (
-                <div key={i}>
-                  <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px' }}>{l}</div>
-                  <div style={{ color: '#888', fontSize: '12px' }}>{v}</div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         {!isGardien && statsAvancees && (
-          <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 14px', border: '1px solid #222' }}>
-            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '4px' }}>AVG</div>
-            <div style={{ color: '#f97316', fontSize: '20px', fontWeight: '900' }}>{getMoyenneSaison(ongletStat)}</div>
-            <div style={{ color: '#555', fontSize: '10px' }}>{ongletStat}/match</div>
+          <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', border: '1px solid #222', flexShrink: 0 }}>
+            <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>AVG</div>
+            <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '900' }}>{getMoyenneSaison(ongletStat)}</div>
+            <div style={{ color: '#555', fontSize: '9px' }}>{ongletStat}/m</div>
           </div>
         )}
       </div>
 
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement des stats...</p>
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
           {/* Onglets stats */}
           {!isGardien && (
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', gap: '3px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
               {ongletsDef.map(o => (
-                <button key={o.id} onClick={() => setOngletStat(o.id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletStat === o.id ? '#f97316' : '#111', color: ongletStat === o.id ? 'white' : '#666', fontSize: '13px', fontWeight: ongletStat === o.id ? 'bold' : 'normal', borderBottom: ongletStat === o.id ? '2px solid #f97316' : '2px solid transparent' }}>{o.label}</button>
+                <button key={o.id} onClick={() => setOngletStat(o.id)} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletStat === o.id ? '#f97316' : '#111', color: ongletStat === o.id ? 'white' : '#666', fontSize: '12px', fontWeight: ongletStat === o.id ? 'bold' : 'normal' }}>{o.label}</button>
               ))}
             </div>
           )}
 
-          {/* Graphique derniers matchs style PropsCash */}
+          {/* Graphique derniers matchs */}
           {!isGardien && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '20px' }}>
-
-              {/* Ligne du haut - max et info */}
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
                   {['L5', 'L10', 'L20'].map(p => (
-                    <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#1a1a1a', color: ongletPeriode === p ? 'white' : '#666', fontSize: '12px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
+                    <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#1a1a1a', color: ongletPeriode === p ? 'white' : '#666', fontSize: '11px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
                   ))}
                 </div>
-                <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '4px 10px' }}>
-                  <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold' }}>{getPctAuDessus()}%</span>
-                  <span style={{ color: '#555', fontSize: '11px' }}> au dessus</span>
+                <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '3px 8px' }}>
+                  <span style={{ color: '#f97316', fontSize: '12px', fontWeight: 'bold' }}>{getPctAuDessus()}%</span>
+                  <span style={{ color: '#555', fontSize: '10px' }}> au dessus</span>
                 </div>
               </div>
 
               {matchsFiltres.length === 0 ? (
-                <p style={{ color: '#555', textAlign: 'center', fontSize: '13px', padding: '20px 0' }}>Donnees non disponibles</p>
+                <p style={{ color: '#555', textAlign: 'center', fontSize: '12px' }}>Donnees non disponibles</p>
               ) : (
                 <div style={{ position: 'relative' }}>
-                  {/* Axe Y labels */}
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '24px' }}>
-                    <span style={{ color: '#555', fontSize: '10px' }}>{Math.ceil(maxVal)}</span>
-                    <span style={{ color: '#888', fontSize: '10px' }}>{moyenne}</span>
-                    <span style={{ color: '#555', fontSize: '10px' }}>0</span>
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '22px' }}>
+                    <span style={{ color: '#555', fontSize: '9px' }}>{Math.ceil(maxVal)}</span>
+                    <span style={{ color: '#888', fontSize: '9px' }}>{moyenne}</span>
+                    <span style={{ color: '#555', fontSize: '9px' }}>0</span>
                   </div>
-
-                  {/* Zone graphique */}
-                  <div style={{ marginLeft: '28px', position: 'relative' }}>
-                    {/* Ligne moyenne */}
-                    <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${24 + (moyenne / maxVal) * 120}px`, height: '1px', backgroundColor: 'rgba(255,255,255,0.2)', zIndex: 1 }} />
-
-                    {/* Label moyenne */}
-                    <div style={{ position: 'absolute', right: 0, bottom: `${24 + (moyenne / maxVal) * 120 + 4}px`, zIndex: 2 }}>
-                      <span style={{ color: '#888', fontSize: '9px' }}>{moyenne}</span>
-                    </div>
-
-                    {/* Barres */}
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '144px' }}>
+                  <div style={{ marginLeft: '26px', position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${24 + (moyenne / maxVal) * 110}px`, height: '1px', backgroundColor: 'rgba(255,255,255,0.2)', zIndex: 1 }} />
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '134px' }}>
                       {matchsFiltres.map((m, i) => {
                         const val = getValeurMatch(m, ongletStat);
-                        const hauteur = maxVal > 0 ? Math.max((val / maxVal) * 120, val > 0 ? 8 : 3) : 3;
+                        const h = maxVal > 0 ? Math.max((val / maxVal) * 110, val > 0 ? 7 : 3) : 3;
                         const estAuDessus = val >= moyenne;
                         return (
-                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', height: '144px', justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: '9px', color: estAuDessus ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{val}</span>
-                            <div style={{ width: '100%', height: `${hauteur}px`, backgroundColor: estAuDessus ? '#f97316' : '#ef4444', borderRadius: '3px 3px 0 0', opacity: 0.85 }} />
+                          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '134px', justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: '8px', color: estAuDessus ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{val}</span>
+                            <div style={{ width: '100%', height: `${h}px`, backgroundColor: estAuDessus ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
                             <div style={{ width: '100%', height: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontSize: '8px', color: '#555', lineHeight: '1.2' }}>{m.gameDate ? m.gameDate.slice(5) : ''}</span>
-                              <span style={{ fontSize: '8px', color: '#444' }}>{m.opponentAbbrev || m.opponent || ''}</span>
+                              <span style={{ fontSize: '7px', color: '#555' }}>{m.gameDate ? m.gameDate.slice(5) : ''}</span>
+                              <span style={{ fontSize: '7px', color: '#444' }}>{m.opponentAbbrev || ''}</span>
                             </div>
                           </div>
                         );
@@ -1011,30 +850,24 @@ function FicheJoueur({ joueur, onRetour }) {
                 </div>
               )}
 
-              {/* Résumé stats période */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1a1a' }}>
-                {[
-                  ['Buts', matchsFiltres.reduce((s, m) => s + (m.goals || 0), 0), '#f97316'],
-                  ['Passes', matchsFiltres.reduce((s, m) => s + (m.assists || 0), 0), 'white'],
-                  ['Points', matchsFiltres.reduce((s, m) => s + (m.points ?? ((m.goals || 0) + (m.assists || 0))), 0), 'white'],
-                  ['Tirs', matchsFiltres.reduce((s, m) => s + (m.shots || 0), 0), 'white'],
-                ].map(([l, v, c], i) => (
-                  <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '900', color: c }}>{v}</div>
-                    <div style={{ fontSize: '10px', color: '#555' }}>{l}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+                {[['Buts', matchsFiltres.reduce((s, m) => s + (m.goals || 0), 0), '#f97316'], ['Passes', matchsFiltres.reduce((s, m) => s + (m.assists || 0), 0), 'white'], ['Points', matchsFiltres.reduce((s, m) => s + (m.points ?? ((m.goals || 0) + (m.assists || 0))), 0), 'white'], ['Tirs', matchsFiltres.reduce((s, m) => s + (m.shots || 0), 0), 'white']].map(([l, v, c], i) => (
+                  <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '7px', padding: '8px 4px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
+                    <div style={{ fontSize: '9px', color: '#555' }}>{l}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Stats saison gardien */}
+          {/* Stats gardien */}
           {isGardien && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
               {[['GAA', statsAvancees?.gaa, '#f97316'], ['SV%', statsAvancees?.svp, '#f97316'], ['Victoires', statsAvancees?.wins, 'white'], ['Defaites', statsAvancees?.losses, 'white'], ['Blanchiss.', statsAvancees?.shutouts, 'white'], ['Matchs', statsAvancees?.gamesStarted, '#666']].map(([l, v, c], i) => (
-                <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '22px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
-                  <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{l}</div>
+                <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '20px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
+                  <div style={{ fontSize: '10px', color: '#666', marginTop: '3px' }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -1042,29 +875,29 @@ function FicheJoueur({ joueur, onRetour }) {
 
           {/* Stats saison attaquant */}
           {!isGardien && statsAvancees && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '20px' }}>
-              <div style={{ color: '#666', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>SAISON COMPLETE</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '8px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>SAISON COMPLETE</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['Buts', statsAvancees.goals, '#f97316'], ['Passes', statsAvancees.assists, 'white'], ['Points', statsAvancees.points, 'white'], ['+/-', (statsAvancees.plusMinus ?? 0) >= 0 ? `+${statsAvancees.plusMinus}` : statsAvancees.plusMinus, (statsAvancees.plusMinus ?? 0) >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '10px 6px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['PPP', statsAvancees.ppp], ['Tirs', statsAvancees.sog], ['Hits', statsAvancees.hits], ['Blocs', statsAvancees.blocks]].map(([l, v], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '10px 6px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                 {[['Face-off %', statsAvancees.fow], ['Tps glace', statsAvancees.toi], ['Matchs', statsAvancees.gp]].map(([l, v], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '10px 6px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -1073,27 +906,23 @@ function FicheJoueur({ joueur, onRetour }) {
 
           {/* Shot Chart */}
           {!isGardien && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
-              <h3 style={{ margin: '0 0 12px', fontSize: '15px', fontWeight: '900', color: 'white' }}>Shot Chart</h3>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginBottom: '8px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Shot Chart</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '6px' }}>
                 {['SZN', 'L5', 'L10', 'L20'].map(n => (
-                  <button key={n} onClick={() => setOngletChart(n)} style={{ padding: '8px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletChart === n ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: ongletChart === n ? 'bold' : 'normal' }}>{n}</button>
+                  <button key={n} onClick={() => setOngletChart(n)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletChart === n ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: ongletChart === n ? 'bold' : 'normal' }}>{n}</button>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', marginBottom: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '10px' }}>
                 {[['SOG', 'Shots on Goal'], ['Buts', 'Goals']].map(([t, label]) => (
-                  <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '8px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
+                  <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
                 ))}
               </div>
 
-              {/* SVG Patinoire */}
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
                 <svg viewBox="0 0 440 420" style={{ width: '100%', display: 'block' }}>
                   <rect x="0" y="0" width="440" height="420" fill="#1a1a1a" />
                   <rect x="0" y="0" width="440" height="420" rx="10" fill="none" stroke="#2a2a2a" strokeWidth="2" />
-
-                  {/* Cage en haut */}
                   <rect x="175" y="8" width="90" height="40" rx="3" fill="none" stroke="#888" strokeWidth="2" />
                   <line x1="190" y1="8" x2="190" y2="48" stroke="#444" strokeWidth="0.7" />
                   <line x1="205" y1="8" x2="205" y2="48" stroke="#444" strokeWidth="0.7" />
@@ -1103,39 +932,26 @@ function FicheJoueur({ joueur, onRetour }) {
                   <line x1="265" y1="8" x2="265" y2="48" stroke="#444" strokeWidth="0.7" />
                   <line x1="175" y1="22" x2="265" y2="22" stroke="#444" strokeWidth="0.7" />
                   <line x1="175" y1="36" x2="265" y2="36" stroke="#444" strokeWidth="0.7" />
-
-                  {/* Ligne de but */}
                   <line x1="50" y1="55" x2="390" y2="55" stroke="#ef4444" strokeWidth="1.5" opacity="0.5" />
-
-                  {/* Zone de but */}
                   <path d="M175 55 Q175 100 220 100 Q265 100 265 55" fill="none" stroke="#3b82f6" strokeWidth="1.5" opacity="0.5" />
-
-                  {/* Trapèze */}
                   <line x1="145" y1="55" x2="115" y2="8" stroke="#555" strokeWidth="1" />
                   <line x1="295" y1="55" x2="325" y2="8" stroke="#555" strokeWidth="1" />
-
-                  {/* Cercles mise en jeu */}
                   <circle cx="120" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
                   <circle cx="120" cy="220" r="3" fill="#333" />
                   <line x1="103" y1="220" x2="109" y2="220" stroke="#444" strokeWidth="1" />
                   <line x1="131" y1="220" x2="137" y2="220" stroke="#444" strokeWidth="1" />
                   <line x1="120" y1="203" x2="120" y2="209" stroke="#444" strokeWidth="1" />
                   <line x1="120" y1="231" x2="120" y2="237" stroke="#444" strokeWidth="1" />
-
                   <circle cx="320" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
                   <circle cx="320" cy="220" r="3" fill="#333" />
                   <line x1="303" y1="220" x2="309" y2="220" stroke="#444" strokeWidth="1" />
                   <line x1="331" y1="220" x2="337" y2="220" stroke="#444" strokeWidth="1" />
                   <line x1="320" y1="203" x2="320" y2="209" stroke="#444" strokeWidth="1" />
                   <line x1="320" y1="231" x2="320" y2="237" stroke="#444" strokeWidth="1" />
-
-                  {/* Ligne bleue en bas */}
                   <line x1="0" y1="360" x2="440" y2="360" stroke="#3b82f6" strokeWidth="2" opacity="0.4" />
                   <path d="M170 360 Q220 325 270 360" fill="none" stroke="#444" strokeWidth="1.2" />
                   <circle cx="120" cy="388" r="4" fill="#333" />
                   <circle cx="320" cy="388" r="4" fill="#333" />
-
-                  {/* Zones */}
                   {pctZones.map((z, i) => {
                     const pos = positionsZones[i];
                     const tendance = getTendanceZone(z);
@@ -1144,7 +960,7 @@ function FicheJoueur({ joueur, onRetour }) {
                       <g key={i}>
                         <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill="#777" fontSize="9" fontWeight="bold" letterSpacing="0.8">{z.label}</text>
                         {tendance === 'haut' && <polygon points={`${pos.x},${pos.y-7} ${pos.x-5},${pos.y} ${pos.x+5},${pos.y}`} fill="#f97316" />}
-                        {tendance === 'bas'  && <polygon points={`${pos.x},${pos.y} ${pos.x-5},${pos.y-7} ${pos.x+5},${pos.y-7}`} fill="#ef4444" />}
+                        {tendance === 'bas' && <polygon points={`${pos.x},${pos.y} ${pos.x-5},${pos.y-7} ${pos.x+5},${pos.y-7}`} fill="#ef4444" />}
                         {tendance === 'neutre' && <circle cx={pos.x} cy={pos.y - 4} r="4" fill="#555" />}
                         <text x={pos.x + 10} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">{val}</text>
                       </g>
@@ -1153,19 +969,18 @@ function FicheJoueur({ joueur, onRetour }) {
                 </svg>
               </div>
 
-              {/* Légende */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '10px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <svg width="10" height="8"><polygon points="5,0 0,8 10,8" fill="#f97316" /></svg>
-                  <span style={{ fontSize: '11px', color: '#888' }}>Au dessus moyenne</span>
+                  <span style={{ fontSize: '10px', color: '#888' }}>Au dessus moy.</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <svg width="10" height="8"><polygon points="5,8 0,0 10,0" fill="#ef4444" /></svg>
-                  <span style={{ fontSize: '11px', color: '#888' }}>En dessous moyenne</span>
+                  <span style={{ fontSize: '10px', color: '#888' }}>En dessous moy.</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <svg width="8" height="8"><circle cx="4" cy="4" r="4" fill="#555" /></svg>
-                  <span style={{ fontSize: '11px', color: '#888' }}>Dans la moyenne</span>
+                  <span style={{ fontSize: '10px', color: '#888' }}>Dans la moy.</span>
                 </div>
               </div>
             </div>
@@ -1177,6 +992,7 @@ function FicheJoueur({ joueur, onRetour }) {
 }
 
 function Analyses() {
+  const isMobile = useIsMobile();
   const [ligue, setLigue] = useState(null);
   const [categorie, setCategorie] = useState(null);
   const [classement, setClassement] = useState([]);
@@ -1185,13 +1001,8 @@ function Analyses() {
   const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
   const [joueurSelectionne, setJoueurSelectionne] = useState(null);
 
-  useEffect(() => {
-    if (ligue === 'nhl' && !categorie) chargerPreview();
-  }, [ligue, categorie]);
-
-  useEffect(() => {
-    if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL();
-  }, [ligue, categorie]);
+  useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
+  useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
 
   async function chargerPreview() {
     try {
@@ -1222,21 +1033,17 @@ function Analyses() {
         fetch(getUrl('skater-stats-leaders/current?categories=points&limit=8')),
       ]);
       const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
-      const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({
-        rang: i + 1,
-        nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(),
-        equipe: j.teamAbbrevs || j.teamAbbrev || '',
-        position: j.position || '',
-        valeur: j.value || 0,
-        playerId: j.playerId || j.id || '',
-      }));
+      const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({ rang: i + 1, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), equipe: j.teamAbbrevs || j.teamAbbrev || '', position: j.position || '', valeur: j.value || 0, playerId: j.playerId || j.id || '' }));
       setMeneurs({ buts: fmt(d1, 'goals'), passes: fmt(d2, 'assists'), points: fmt(d3, 'points') });
     } catch (err) { console.error(err); }
   }
 
+  const padding = isMobile ? '16px' : '32px';
+  const maxWidth = isMobile ? '100%' : '1000px';
+
   if (joueurSelectionne) {
     return (
-      <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
         <FicheJoueur joueur={joueurSelectionne} onRetour={() => setJoueurSelectionne(null)} />
       </div>
     );
@@ -1244,20 +1051,20 @@ function Analyses() {
 
   if (!ligue) {
     return (
-      <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '32px' }}>
-        <h2 style={{ margin: '0 0 12px', fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses et Modeles</h2>
-        <p style={{ color: '#666', margin: '0 0 56px', fontSize: '16px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', width: '100%', maxWidth: '900px' }}>
+      <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
+        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses et Modeles</h2>
+        <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', width: '100%', maxWidth: '900px' }}>
           {LIGUES.map(l => (
-            <div key={l.id} onClick={() => l.disponible && setLigue(l.id)} style={{ backgroundColor: '#111', borderRadius: '20px', border: '2px solid #222', padding: '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
-              <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                <img src={l.logo} alt={l.label} style={{ maxHeight: '80px', maxWidth: '120px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <div key={l.id} onClick={() => l.disponible && setLigue(l.id)} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
+              <div style={{ height: isMobile ? '50px' : '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <img src={l.logo} alt={l.label} style={{ maxHeight: isMobile ? '50px' : '80px', maxWidth: '100px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
               </div>
-              <div style={{ fontWeight: '900', fontSize: '22px', marginBottom: '6px', color: 'white' }}>{l.label}</div>
-              <div style={{ color: '#666', fontSize: '13px', marginBottom: '12px' }}>{l.description}</div>
+              <div style={{ fontWeight: '900', fontSize: isMobile ? '18px' : '22px', marginBottom: '4px', color: 'white' }}>{l.label}</div>
+              {!isMobile && <div style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>{l.description}</div>}
               {l.disponible
-                ? <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', fontSize: '12px', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>Disponible</span>
-                : <span style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#555', fontSize: '12px', padding: '4px 12px', borderRadius: '20px' }}>Bientot</span>}
+                ? <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold' }}>Disponible</span>
+                : <span style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#555', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Bientot</span>}
             </div>
           ))}
         </div>
@@ -1268,33 +1075,33 @@ function Analyses() {
   if (!categorie) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
-      <div style={{ minHeight: '85vh', padding: '48px 32px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '48px' }}>
-          <button onClick={() => setLigue(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Retour</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '40px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+      <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+          <button onClick={() => setLigue(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '28px', fontWeight: '900', color: 'white' }}>{ligueInfo.label}</h2>
-              <p style={{ color: '#666', margin: 0, fontSize: '14px' }}>Choisis une categorie</p>
+              <h2 style={{ margin: '0 0 2px', fontSize: isMobile ? '22px' : '28px', fontWeight: '900', color: 'white' }}>{ligueInfo.label}</h2>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Choisis une categorie</p>
             </div>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div style={{ backgroundColor: '#111', borderRadius: '20px', border: '2px solid #222', padding: '28px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '900', color: 'white' }}>Statistiques Equipes</h3>
-              <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>Classement par division</p>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Statistiques Equipes</h3>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Classement par division</p>
             </div>
             <div style={{ flex: 1 }}><CarrouselDivisions classement={classement} /></div>
-            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '20px', background: '#f97316', color: 'white', border: 'none', padding: '14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>Voir les analyses</button>
+            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les analyses</button>
           </div>
-          <div style={{ backgroundColor: '#111', borderRadius: '20px', border: '2px solid #222', padding: '28px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '900', color: 'white' }}>Statistiques Joueurs</h3>
-              <p style={{ color: '#666', margin: 0, fontSize: '13px' }}>Meneurs buts, passes et points</p>
+          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Statistiques Joueurs</h3>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Meneurs buts, passes et points</p>
             </div>
             <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
-            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '20px', background: '#f97316', color: 'white', border: 'none', padding: '14px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', width: '100%' }}>Voir les matchs</button>
+            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les matchs</button>
           </div>
         </div>
       </div>
@@ -1303,17 +1110,17 @@ function Analyses() {
 
   const ligueInfo = LIGUES.find(l => l.id === ligue);
   return (
-    <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Retour</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '30px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+    <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div>
-            <h2 style={{ margin: '0 0 2px', fontSize: '20px', fontWeight: '900', color: 'white' }}>
-              {ligueInfo.label} · {categorie === 'equipes' ? 'Statistiques Equipes' : 'Statistiques Joueurs'}
+            <h2 style={{ margin: '0 0 1px', fontSize: isMobile ? '16px' : '20px', fontWeight: '900', color: 'white' }}>
+              {ligueInfo.label} · {categorie === 'equipes' ? 'Equipes' : 'Joueurs'}
             </h2>
-            <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>
-              {categorie === 'equipes' ? "Clique sur un match pour voir l'analyse" : "Clique sur un joueur pour voir sa fiche"}
+            <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
+              {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Clique sur un joueur"}
             </p>
           </div>
         </div>
@@ -1321,9 +1128,9 @@ function Analyses() {
 
       {categorie === 'equipes' && (
         <div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            {['Probabilite victoire', 'Differentiel de buts', 'Total de buts'].map((m, i) => (
-              <button key={i} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: i === 0 ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '14px' }}>{m}</button>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {['Probabilite victoire', 'Differentiel', 'Total buts'].map((m, i) => (
+              <button key={i} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: i === 0 ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', whiteSpace: 'nowrap' }}>{m}</button>
             ))}
           </div>
           {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
@@ -1332,9 +1139,7 @@ function Analyses() {
         </div>
       )}
 
-      {categorie === 'joueurs' && (
-        <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />
-      )}
+      {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />}
     </div>
   );
 }
