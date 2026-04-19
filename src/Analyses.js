@@ -104,7 +104,7 @@ function CarrouselDivisions({ classement }) {
           <span style={{ color: '#666', fontSize: '12px' }}>{indexActif + 1} / {listeDivisions.length}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          {equipes.slice(0, 8).map((e, i) => (
+          {equipes.slice(0, 10).map((e, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '8px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
               <span style={{ color: i < 3 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
               <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
