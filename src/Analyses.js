@@ -1277,7 +1277,10 @@ const getMatchsChart = () => {
   const maxVal = Math.max(...valeurs, moyenne * 1.5, 1);
   const getPctAuDessus = () => valeurs.length === 0 ? 0 : Math.round((valeurs.filter(v => v >= moyenne).length / valeurs.length) * 100);
  
-  const zones = [
+  const matchsChart = getMatchsChart();
+  const sog = matchsChart && matchsChart.length > 0
+    ? matchsChart.reduce((s, m) => s + (m.shots || 0), 0)
+    : sogSaison;const zones = [
     { label: 'LOW LEFT', sog: Math.round(sog * 0.18) }, { label: 'LOW', sog: Math.round(sog * 0.22) },
     { label: 'LOW RIGHT', sog: Math.round(sog * 0.16) }, { label: 'BOARDS', sog: Math.round(sog * 0.12) },
     { label: 'SLOT', sog: Math.round(sog * 0.35) }, { label: 'BOARDS', sog: Math.round(sog * 0.08) },
