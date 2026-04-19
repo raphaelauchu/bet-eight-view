@@ -9,8 +9,6 @@ import { supabase } from './supabase';
 function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs }) {
   return (
     <div style={{ color: 'white', fontFamily: 'Arial' }}>
- 
-      {/* Hero */}
       <div style={{ padding: '120px 32px 100px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.4)', borderRadius: '20px', padding: '6px 16px', marginBottom: '32px', fontSize: '13px', color: '#fed7aa' }}>
@@ -21,7 +19,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           Analyse. Calcule.<br />
           <span style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Parie mieux.</span>
         </h1>
-        <p style={{ fontSize: '20px', color: '#9ca3af', marginBottom: '48px', maxWidth: '560px', margin: '0 auto 48px', lineHeight: '1.6' }}>
+        <p style={{ fontSize: '20px', color: '#9ca3af', maxWidth: '560px', margin: '0 auto 48px', lineHeight: '1.6' }}>
           La première plateforme d'analyse technique pour les paris sportifs. Modèles statistiques avancés, cotes en temps réel et suivi de performance.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -35,7 +33,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         <p style={{ color: '#4b5563', fontSize: '13px', marginTop: '20px' }}>Gratuit pour commencer · Aucune carte de crédit</p>
       </div>
  
-      {/* Stats bar */}
       <div style={{ borderTop: '1px solid #1f2937', borderBottom: '1px solid #1f2937', padding: '28px 32px', backgroundColor: '#111827' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap', maxWidth: '900px', margin: '0 auto' }}>
           {[
@@ -52,7 +49,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
       </div>
  
-      {/* Feature principale */}
       <div style={{ padding: '80px 32px', maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Dashboard</span>
@@ -100,7 +96,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
       </div>
  
-      {/* Features */}
       <div style={{ backgroundColor: '#111827', padding: '80px 32px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
@@ -129,7 +124,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
       </div>
  
-      {/* Comment ça marche */}
       <div style={{ padding: '80px 32px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Simple</span>
@@ -154,7 +148,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
       </div>
  
-      {/* CTA Final */}
       <div style={{ margin: '0 32px 80px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(234,88,12,0.2) 100%)', border: '1px solid rgba(249,115,22,0.3)', padding: '64px 32px', textAlign: 'center' }}>
         <h2 style={{ fontSize: '44px', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-1px' }}>
           Prêt à parier<br />plus intelligemment?
@@ -170,7 +163,6 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
       </div>
  
-      {/* Footer */}
       <div style={{ borderTop: '1px solid #1f2937', padding: '32px', textAlign: 'center', backgroundColor: '#0a0a0a' }}>
         <h3 style={{ color: '#f97316', margin: '0 0 8px', fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h3>
         <p style={{ color: '#4b5563', fontSize: '13px', margin: '0 0 16px' }}>La plateforme d'analyse de paris sportifs</p>
@@ -197,6 +189,7 @@ function App() {
   const [utilisateur, setUtilisateur] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
+  const [ligueAnalyses, setLigueAnalyses] = useState(null);
  
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -260,8 +253,8 @@ function App() {
         </div>
       </div>
  
-      {/* Ticker NHL - visible seulement dans la section Analyses NHL */}
-      {page === 'analyses' && (
+      {/* Ticker NHL - visible seulement quand NHL est sélectionné dans Analyses */}
+      {page === 'analyses' && ligueAnalyses === 'nhl' && (
         <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
       )}
  
@@ -274,7 +267,7 @@ function App() {
           nombreMatchs={nombreMatchs}
         />
       )}
-      {page === 'analyses' && <Analyses />}
+      {page === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
       {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
       {page === 'dashboard' && utilisateur && <Dashboard />}
       {page === 'dashboard' && !utilisateur && (

@@ -1478,7 +1478,7 @@ function FicheJoueur({ joueur, onRetour }) {
   );
 }
  
-function Analyses({ ligueActive }) {
+function Analyses({ onLigueChange }) {
   const isMobile = useIsMobile();
   const [ligue, setLigue] = useState(null);
   const [categorie, setCategorie] = useState(null);
@@ -1540,7 +1540,7 @@ function Analyses({ ligueActive }) {
         <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 300px)', gap: '14px' }}>
           {LIGUES.map(l => (
-            <div key={l.id} onClick={() => l.disponible && setLigue(l.id)} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
+            <div key={l.id} onClick={() => l.disponible && setLigue(l.id); if (l.disponible && onLigueChange) onLigueChange(l.id);} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
               <div style={{ height: isMobile ? '50px' : '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
                 <img src={l.logo} alt={l.label} style={{ maxHeight: isMobile ? '50px' : '80px', maxWidth: '100px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
               </div>
@@ -1561,7 +1561,7 @@ function Analyses({ ligueActive }) {
     return (
       <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <button onClick={() => setLigue(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
+          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div>
