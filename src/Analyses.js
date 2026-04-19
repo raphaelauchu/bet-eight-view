@@ -1231,7 +1231,7 @@ const getMatchsChart = () => {
  
   const ongletsDef = isGardien
     ? [{ id: 'GAA', label: 'GAA' }, { id: 'SVP', label: 'SV%' }]
-    : [{ id: 'PTS', label: 'PTS' }, { id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PPP', label: 'PPP' }, { id: 'FOW', label: 'FOW' }, { id: 'BLK', label: 'BLK' }, { id: 'HITS', label: 'HITS' }];
+    : [{ id: 'PTS', label: 'PTS' }, { id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PPP', label: 'PPP' }, { id: 'TOI', label: 'TOI' }, { id: 'BLK', label: 'BLK' }, { id: 'HITS', label: 'HITS' }];
  
   const getValeurMatch = (m, stat) => {
     switch (stat) {
@@ -1240,7 +1240,7 @@ const getMatchsChart = () => {
       case 'GOAL': return m.goals ?? 0;
       case 'AST': return m.assists ?? 0;
       case 'PPP': return m.powerPlayPoints ?? 0;
-      case 'FOW': return m.faceoffWins ?? 0;
+      case 'TOI': return m.toi ?? '-';
       case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
       default: return 0;
@@ -1255,7 +1255,7 @@ const getMatchsChart = () => {
       case 'GOAL': return parseFloat((statsAvancees.goals / gp).toFixed(1));
       case 'AST': return parseFloat((statsAvancees.assists / gp).toFixed(1));
       case 'PPP': return parseFloat((statsAvancees.ppp / gp).toFixed(1));
-      case 'FOW': return parseFloat(((statsAvancees.fowPct || 0) * 10).toFixed(1));
+      case 'TOI': return statsAvancees.toi ?? '-';
       case 'BLK': return parseFloat((statsAvancees.blocks / gp).toFixed(1));
       case 'HITS': return parseFloat((statsAvancees.hits / gp).toFixed(1));
       default: return 0;
