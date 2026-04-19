@@ -5,11 +5,11 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses from './Analyses';
 import { supabase } from './supabase';
-
+ 
 function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs }) {
   return (
     <div style={{ color: 'white', fontFamily: 'Arial' }}>
-
+ 
       {/* Hero */}
       <div style={{ padding: '120px 32px 100px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -34,7 +34,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
         <p style={{ color: '#4b5563', fontSize: '13px', marginTop: '20px' }}>Gratuit pour commencer · Aucune carte de crédit</p>
       </div>
-
+ 
       {/* Stats bar */}
       <div style={{ borderTop: '1px solid #1f2937', borderBottom: '1px solid #1f2937', padding: '28px 32px', backgroundColor: '#111827' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap', maxWidth: '900px', margin: '0 auto' }}>
@@ -51,8 +51,8 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           ))}
         </div>
       </div>
-
-      {/* Feature principale - Dashboard mockup */}
+ 
+      {/* Feature principale */}
       <div style={{ padding: '80px 32px', maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Dashboard</span>
@@ -99,7 +99,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           </div>
         </div>
       </div>
-
+ 
       {/* Features */}
       <div style={{ backgroundColor: '#111827', padding: '80px 32px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -128,7 +128,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           </div>
         </div>
       </div>
-
+ 
       {/* Comment ça marche */}
       <div style={{ padding: '80px 32px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
@@ -153,7 +153,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           ))}
         </div>
       </div>
-
+ 
       {/* CTA Final */}
       <div style={{ margin: '0 32px 80px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(234,88,12,0.2) 100%)', border: '1px solid rgba(249,115,22,0.3)', padding: '64px 32px', textAlign: 'center' }}>
         <h2 style={{ fontSize: '44px', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-1px' }}>
@@ -169,7 +169,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
           ))}
         </div>
       </div>
-
+ 
       {/* Footer */}
       <div style={{ borderTop: '1px solid #1f2937', padding: '32px', textAlign: 'center', backgroundColor: '#0a0a0a' }}>
         <h3 style={{ color: '#f97316', margin: '0 0 8px', fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h3>
@@ -181,7 +181,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
         </div>
         <p style={{ color: '#374151', fontSize: '12px', margin: 0 }}>© 2025 Betrics · Jouer comporte des risques · 18+</p>
       </div>
-
+ 
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -191,13 +191,13 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
     </div>
   );
 }
-
+ 
 function App() {
   const [page, setPage] = useState('home');
   const [utilisateur, setUtilisateur] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
-
+ 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUtilisateur(session?.user ?? null);
@@ -207,13 +207,13 @@ function App() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
+ 
   async function handleDeconnexion() {
     await supabase.auth.signOut();
     setUtilisateur(null);
     setPage('home');
   }
-
+ 
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
@@ -221,10 +221,10 @@ function App() {
       </div>
     );
   }
-
+ 
   return (
     <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
-
+ 
       {/* Navbar */}
       <div style={{ backgroundColor: 'rgba(10,10,10,0.95)', padding: '14px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f2937', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
@@ -259,10 +259,12 @@ function App() {
           )}
         </div>
       </div>
-
-      {/* Ticker NHL */}
-      <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
-
+ 
+      {/* Ticker NHL - visible seulement dans la section Analyses NHL */}
+      {page === 'analyses' && (
+        <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
+      )}
+ 
       {/* Pages */}
       {page === 'home' && (
         <LandingPage
@@ -286,5 +288,6 @@ function App() {
     </div>
   );
 }
-
+ 
 export default App;
+ 
