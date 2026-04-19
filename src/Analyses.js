@@ -54,8 +54,8 @@ function useIsMobile() {
 
 function getUrl(path) {
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
-  if (estEnProduction) return `/api/nhl?path=${path}`;
-  return `https://corsproxy.io/?${encodeURIComponent('https://api-web.nhle.com/v1/' + path)}`;
+  if (estEnProduction) return `/api/nhl?path=${encodeURIComponent(path)}`;
+  return `https://api-web.nhle.com/v1/${path}`;
 }
 
 function getPhotoJoueur(playerId) {
@@ -123,10 +123,10 @@ function CarrouselMeneurs({ meneurs }) {
   const [indexActif, setIndexActif] = useState(0);
   const [visible, setVisible] = useState(true);
   const categories = [
-    { label: 'Top 8 Buteurs', data: meneurs.buts?.slice(0, 8) || [] },
-    { label: 'Top 8 Passeurs', data: meneurs.passes?.slice(0, 8) || [] },
-    { label: 'Top 8 Pointeurs', data: meneurs.points?.slice(0, 8) || [] },
-  ];
+  { label: 'Top 10 Buteurs', data: meneurs.buts?.slice(0, 10) || [] },
+  { label: 'Top 10 Passeurs', data: meneurs.passes?.slice(0, 10) || [] },
+  { label: 'Top 10 Pointeurs', data: meneurs.points?.slice(0, 10) || [] },
+];
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
@@ -843,10 +843,11 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onRetour }) {
     setChargement(true);
     try {
       // API stats équipe avec PP%, PK%, SOG
-     const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+    const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+const statsPath = 'https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId%3D20252026';
 const urlStats = estEnProduction
-  ? `/api/nhl?path=https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026`
-  : `https://corsproxy.io/?${encodeURIComponent('https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026')}`;
+  ? `/api/nhl?path=${encodeURIComponent(statsPath)}`
+  : statsPath;
 const resStats = await fetch(urlStats);
       const dataStats = await resStats.json();
       const teamStats = dataStats.data?.find(t =>
@@ -1871,9 +1872,9 @@ function Analyses() {
   async function chargerMeneurs() {
     try {
       const [r1, r2, r3] = await Promise.all([
-        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=8')),
-        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=8')),
-        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=8')),
+        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=10')),
+        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=10')),
+        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=10')),
       ]);
       const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
       const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({ rang: i + 1, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), equipe: j.teamAbbrevs || j.teamAbbrev || '', position: j.position || '', valeur: j.value || 0, playerId: j.playerId || j.id || '' }));
