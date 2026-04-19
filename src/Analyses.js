@@ -1468,62 +1468,42 @@ function FicheJoueur({ joueur, onRetour }) {
 async function chargerStats() {
   setChargement(true);
   try {
-    // Stats équipe depuis api.nhle.com (PP%, PK%, SOG)
-    const resStats = await fetch(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId=20252026`);
-    const dataStats = await resStats.json();
+    const res = await fetch(getUrl(`player/${joueur.id}/landing`));
+    const data = await res.json();
+    const saison = data.featuredStats?.regularSeason?.subSeason;
+    const playoffs = data.featuredStats?.playoffs?.subSeason;
+    const isGardien = joueur.position === 'G';
 
-    // Cherche par teamId si disponible, sinon par nom
-    const teamId = equipe?.franchiseId || equipe?.teamId || null;
-    let teamStats = null;
-
-    if (teamId) {
-      teamStats = dataStats.data?.find(t => t.teamId === teamId);
-    }
-
-    // Fallback par nom
-    if (!teamStats) {
-      const place = (equipe?.placeName?.default || '').toLowerCase();
-      const commonName = (equipe?.teamCommonName?.default || '').toLowerCase();
-      teamStats = dataStats.data?.find(t => {
-        const full = t.teamFullName?.toLowerCase() || '';
-        return full.includes(place) || full.includes(commonName) || full.includes(abbrev.toLowerCase());
+    if (isGardien) {
+      setStatsAvancees({
+        gp: saison?.gamesPlayed ?? 0,
+        gaa: saison?.goalsAgainstAvg?.toFixed(2) ?? '-',
+        svp: saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-',
+        wins: saison?.wins ?? 0,
+        losses: saison?.losses ?? 0,
+        shutouts: saison?.shutouts ?? 0,
+        gamesStarted: saison?.gamesStarted ?? 0,
+      });
+    } else {
+      setStatsAvancees({
+        gp: saison?.gamesPlayed ?? 0,
+        goals: saison?.goals ?? 0,
+        assists: saison?.assists ?? 0,
+        points: saison?.points ?? 0,
+        plusMinus: saison?.plusMinus ?? 0,
+        ppp: saison?.powerPlayPoints ?? 0,
+        sog: saison?.shots ?? 0,
+        hits: saison?.hits ?? 0,
+        blocks: saison?.blockedShots ?? 0,
+        fow: saison?.faceoffWinningPctg ? (saison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-',
+        toi: saison?.avgToi ?? '-',
       });
     }
 
-    console.log('Equipe cherchee:', abbrev, equipe?.placeName?.default, equipe?.teamCommonName?.default);
-    console.log('Stats trouvees:', teamStats);
-    setStatsEquipe(teamStats || null);
+    const resLog = await fetch(getUrl(`player/${joueur.id}/game-log/now`));
+    const dataLog = await resLog.json();
+    setDernierMatchs((dataLog.gameLog || []).slice(0, 20));
 
-    // Stats adverse
-    if (abbrevAdv && equipeAdverse) {
-      const placeAdv = (equipeAdverse?.placeName?.default || '').toLowerCase();
-      const commonNameAdv = (equipeAdverse?.teamCommonName?.default || '').toLowerCase();
-      const teamStatsAdv = dataStats.data?.find(t => {
-        const full = t.teamFullName?.toLowerCase() || '';
-        return full.includes(placeAdv) || full.includes(commonNameAdv);
-      });
-      setStatsAdverse(teamStatsAdv || null);
-    }
-
- // Historique matchs avec SOG
-const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/now`));
-const data2 = await res2.json();
-const matchsJoues = (data2.games || [])
-  .filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL')
-  .slice(-20);
-const matchsAvecSog = [...matchsJoues];
-for (let i = 0; i < matchsJoues.length; i += 5) {
-  const batch = matchsJoues.slice(i, i + 5);
-  const boxscores = await Promise.all(batch.map(async (m) => {
-    try {
-      const r = await fetch(getUrl(`gamecenter/${m.id}/boxscore`));
-      const d = await r.json();
-      return { ...m, sogHome: d.homeTeam?.sog ?? 0, sogAway: d.awayTeam?.sog ?? 0 };
-    } catch { return m; }
-  }));
-  boxscores.forEach((b, idx) => { matchsAvecSog[i + idx] = b; });
-}
-setGameLog(matchsAvecSog);
   } catch (err) { console.error(err); }
   setChargement(false);
 }
