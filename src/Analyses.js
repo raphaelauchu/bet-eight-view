@@ -1219,6 +1219,7 @@ function FicheJoueur({ joueur, onRetour }) {
   const isGardien = joueur.position === 'G';
   const gp = statsAvancees?.gp || 1;
   const sogSaison = statsAvancees?.sog || 0;
+
 const getMatchsChart = () => {
   switch (ongletChart) {
     case 'L5': return dernierMatchs.slice(0, 5);
@@ -1226,11 +1227,7 @@ const getMatchsChart = () => {
     case 'L20': return dernierMatchs.slice(0, 20);
     default: return null;
   }
-};
-const matchsChart = getMatchsChart();
-const sog = matchsChart && matchsChart.length > 0
-  ? matchsChart.reduce((s, m) => s + (m.shots || 0), 0)
-  : sogSaison;
+}
  
   const ongletsDef = isGardien
     ? [{ id: 'GAA', label: 'GAA' }, { id: 'SVP', label: 'SV%' }]
