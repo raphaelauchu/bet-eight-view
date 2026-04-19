@@ -138,7 +138,7 @@ function CarrouselMeneurs({ meneurs }) {
         {cat.data.length === 0 ? <p style={{ color: '#666' }}>Chargement...</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             {cat.data.map((j, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '8px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                 <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
                 <img src={getPhotoJoueur(j.playerId)} alt={j.nom} style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }} onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }} />
                 <div style={{ flex: 1 }}>
