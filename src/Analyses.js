@@ -98,7 +98,7 @@ function CarrouselDivisions({ classement }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           {equipes.slice(0, 10).map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '8px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
               <span style={{ color: i < 3 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
               <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
               <span style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}>{e.teamAbbrev?.default}</span>
@@ -140,12 +140,12 @@ function CarrouselMeneurs({ meneurs }) {
             {cat.data.map((j, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '8px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                 <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
-                <img src={getPhotoJoueur(j.playerId)} alt={j.nom} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }} onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }} />
+                <img src={getPhotoJoueur(j.playerId)} alt={j.nom} style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #333' }} onError={e => { e.target.src = LOGOS_NHL[j.equipe] || ''; }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{j.nom}</div>
                   <div style={{ color: '#666', fontSize: '11px' }}>{j.equipe} · {j.position}</div>
                 </div>
-                <span style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{j.valeur}</span>
+                <span style={{ fontSize: '14px', fontWeight: '900', color: '#f97316' }}>{j.valeur}</span>
               </div>
             ))}
           </div>
