@@ -1280,7 +1280,9 @@ const getMatchsChart = () => {
   const matchsChart = getMatchsChart();
   const sog = matchsChart && matchsChart.length > 0
     ? matchsChart.reduce((s, m) => s + (m.shots || 0), 0)
-    : sogSaison;const zones = [
+    : sogSaison;
+
+  const zones = [
     { label: 'LOW LEFT', sog: Math.round(sog * 0.18) }, { label: 'LOW', sog: Math.round(sog * 0.22) },
     { label: 'LOW RIGHT', sog: Math.round(sog * 0.16) }, { label: 'BOARDS', sog: Math.round(sog * 0.12) },
     { label: 'SLOT', sog: Math.round(sog * 0.35) }, { label: 'BOARDS', sog: Math.round(sog * 0.08) },
