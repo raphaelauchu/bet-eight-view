@@ -249,7 +249,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile }) {
       <div style={{ marginBottom: '14px' }}>
         <SectionGardien gardien={gardienPartant} onSelect={onSelect} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
         <div>
           <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
           {lignes.map((ligne, li) => (
