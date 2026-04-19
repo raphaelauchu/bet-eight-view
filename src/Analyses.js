@@ -1583,6 +1583,7 @@ function Analyses({ onLigueChange }) {
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Statistiques Joueurs</h3>
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Meneurs buts, passes et points · Top 10</p>
+            </div>
             <div style={{ flex: 1, minHeight: '320px' }}><CarrouselMeneurs meneurs={meneurs} /></div>
             <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
           </div>
