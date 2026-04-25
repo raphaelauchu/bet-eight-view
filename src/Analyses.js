@@ -1339,37 +1339,29 @@ const getMatchsChart = () => {
           {!isGardien && statsAvancees && (
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>SAISON COMPLETE</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['GOALS', statsAvancees.goals, '#f97316'], ['AST', statsAvancees.assists, 'white'], ['PTS', statsAvancees.points, 'white'], ['+/-', (statsAvancees.plusMinus ?? 0) >= 0 ? `+${statsAvancees.plusMinus}` : statsAvancees.plusMinus, (statsAvancees.plusMinus ?? 0) >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
-  {[['GOALS', statsAvancees.goals, '#f97316'], ['AST', statsAvancees.assists, 'white'], ['PTS', statsAvancees.points, 'white'], ['+/-', (statsAvancees.plusMinus ?? 0) >= 0 ? `+${statsAvancees.plusMinus}` : statsAvancees.plusMinus, (statsAvancees.plusMinus ?? 0) >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
-    <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-      <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
-      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-    </div>
-  ))}
-</div>
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '6px' }}>
-  {[['PPP', statsAvancees.ppp], ['SOG', statsAvancees.sog], ['HITS', statsAvancees.hits]].map(([l, v], i) => (
-    <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-    </div>
-  ))}
-</div>
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-  {[['BLK', statsAvancees.blocks], ['TOI/G', statsAvancees.toi], ['GAMES', statsAvancees.gp]].map(([l, v], i) => (
-    <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-    </div>
-  ))}
-</div>
+                {[['PPP', statsAvancees.ppp], ['SOG', statsAvancees.sog], ['HITS', statsAvancees.hits], ['BLK', statsAvancees.blocks]].map(([l, v], i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                {[['TOI/G', statsAvancees.toi], ['GAMES', statsAvancees.gp]].map(([l, v], i) => (
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
