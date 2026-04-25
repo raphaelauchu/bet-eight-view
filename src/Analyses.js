@@ -1257,7 +1257,7 @@ const getMatchsChart = () => {
  
   const ongletsDef = isGardien
     ? [{ id: 'GAA', label: 'GAA' }, { id: 'SVP', label: 'SV%' }]
-    : [{ id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PTS', label: 'PTS' }, { id: 'PPP', label: 'PPP' }, { id: 'HITS', label: 'HITS' }, { id: 'BLK', label: 'BLK' }, { id: 'TOI', label: 'TOI' }];
+    : [{ id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PTS', label: 'PTS' }, { id: 'PPP', label: 'PPP' }, { id: 'BLK', label: 'BLK' }, { id: 'HITS', label: 'HITS' }, { id: 'TOI', label: 'TOI' }];
  
   const getValeurMatch = (m, stat) => {
     switch (stat) {
