@@ -1207,7 +1207,19 @@ function FicheJoueur({ joueur, onRetour }) {
           statsBase.blocks = 0;
         }
  
-        setStatsAvancees(statsBase);
+       // Calcul TOI moyen depuis game log
+const log2 = await getGameLogJoueur(joueur.id);
+if (log2.length > 0) {
+  const toiEnSecondes = log2.map(m => {
+    const parts = (m.toi || '0:00').split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+  });
+  const moyenneSecondes = Math.round(toiEnSecondes.reduce((a, b) => a + b, 0) / toiEnSecondes.length);
+  const minutes = Math.floor(moyenneSecondes / 60);
+  const secondes = String(moyenneSecondes % 60).padStart(2, '0');
+  statsBase.toi = `${minutes}:${secondes}`;
+}
+setStatsAvancees(statsBase);
       }
  
      const log = await getGameLogJoueur(joueur.id);
