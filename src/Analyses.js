@@ -1301,6 +1301,7 @@ const getMatchsChart = () => {
   const moyenne = getMoyenneSaison(ongletStat);
   const valeurs = matchsFiltres.map(m => getValeurMatch(m, ongletStat));
   const maxVal = Math.max(...valeurs, moyenne * 1.5, 1);
+  const getPctAuDessus = () => valeurs.length === 0 ? 0 : Math.round((valeurs.filter(v => v >= moyenne).length / valeurs.length) * 100);
   const getPctAuDessusEdge = () => {
     if (!edgeValue || valeurs.length === 0) return 0;
     const edge = parseFloat(edgeValue);
