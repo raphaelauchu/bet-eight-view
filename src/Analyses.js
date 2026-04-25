@@ -1476,21 +1476,21 @@ const getMatchsChart = () => {
                       onChange={e => setEdgeValue(e.target.value)}
                       style={{ width: '80px', backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '6px', color: 'white', fontSize: '16px', fontWeight: '900', textAlign: 'center', padding: '4px', outline: 'none' }}
                     />
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>Ligne de paris</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>Betting line</div>
                   </div>
 
                   {/* Encadré 2 - % Au-dessus */}
                   <div style={{ backgroundColor: edgeValue && getPctAuDessusEdge() >= 70 ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: edgeValue && getPctAuDessusEdge() >= 70 ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>AU-DESSUS EDGE</div>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>OVER EDGE</div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : '#444' }}>
                       {edgeValue ? `${getPctAuDessusEdge()}%` : '-'}
                     </div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode} · {matchsFiltres.length} matchs</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode} · {matchsFiltres.length} games</div>
                   </div>
 
                   {/* Encadré 3 - Cumulatif */}
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMULATIF {ongletPeriode}</div>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMULATIVE {ongletPeriode} {ongletPeriode}</div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
                   </div>
