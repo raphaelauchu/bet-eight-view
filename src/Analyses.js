@@ -1490,7 +1490,7 @@ const getMatchsChart = () => {
 
                   {/* Encadré 3 - Cumulatif */}
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMULATIVE {ongletPeriode} {ongletPeriode}</div>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMUL. {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
                   </div>
