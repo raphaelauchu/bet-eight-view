@@ -1428,7 +1428,7 @@ const getMatchsChart = () => {
                 </div>
                 <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '3px 8px' }}>
                   <span style={{ color: '#f97316', fontSize: '12px', fontWeight: 'bold' }}>{getPctAuDessus()}%</span>
-                  <span style={{ color: '#555', fontSize: '10px' }}> au dessus</span>
+                  <span style={{ color: '#555', fontSize: '10px' }}> over avg. season</span>
                 </div>
               </div>
  
