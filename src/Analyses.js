@@ -1356,7 +1356,7 @@ const getMatchsChart = () => {
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                {[['Tps glace', statsAvancees.toi], ['Matchs', statsAvancees.gp], ['Giveaways', statsAvancees.giveaways ?? '-']].map(([l, v], i) => (
+                {[['Tps glace/m', statsAvancees.toi], ['Matchs', statsAvancees.gp]].map(([l, v], i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
