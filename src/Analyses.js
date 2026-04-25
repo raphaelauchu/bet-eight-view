@@ -335,7 +335,6 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
           const res = await fetch(getUrl(`player/${j.id}/landing`));
           const data = await res.json();
           const saison = data.featuredStats?.regularSeason?.subSeason;
-const saisonComplete = data.seasonTotals?.find(s => s.season === 20252026 && s.gameTypeId === 2);
           const isGardien = j.position === 'G';
           return { ...j, goals: isGardien ? null : (saison?.goals ?? 0), assists: isGardien ? null : (saison?.assists ?? 0), points: isGardien ? null : (saison?.points ?? 0), gaa: isGardien ? (saison?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-') : null };
         } catch { return j; }
@@ -1188,7 +1187,7 @@ function FicheJoueur({ joueur, onRetour }) {
           plusMinus: saison?.plusMinus ?? 0,
           ppp: saison?.powerPlayPoints ?? 0,
           sog: saison?.shots ?? 0,
-          toi: saisonComplete?.avgToi ?? saison?.avgToi ?? '-',
+          toi: saison?.avgToi ?? '-',
         };
  
         // Stats avancées (hits, blocs) depuis api realtime
