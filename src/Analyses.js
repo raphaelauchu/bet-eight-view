@@ -1256,7 +1256,7 @@ const getMatchsChart = () => {
  
   const ongletsDef = isGardien
     ? [{ id: 'GAA', label: 'GAA' }, { id: 'SVP', label: 'SV%' }]
-    : [{ id: 'PTS', label: 'PTS' }, { id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PPP', label: 'PPP' }, { id: 'TOI', label: 'TOI' }, { id: 'BLK', label: 'BLK' }, { id: 'HITS', label: 'HITS' }];
+    : [{ id: 'SOG', label: 'SOG' }, { id: 'GOAL', label: 'GOAL' }, { id: 'AST', label: 'AST' }, { id: 'PTS', label: 'PTS' }, { id: 'PPP', label: 'PPP' }, { id: 'HITS', label: 'HITS' }, { id: 'BLK', label: 'BLK' }, { id: 'TOI', label: 'TOI' }];
  
   const getValeurMatch = (m, stat) => {
     switch (stat) {
@@ -1458,8 +1458,16 @@ const getMatchsChart = () => {
                 </div>
               )}
  
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
-                {[['Buts', matchsFiltres.reduce((s, m) => s + (m.goals || 0), 0), '#f97316'], ['Passes', matchsFiltres.reduce((s, m) => s + (m.assists || 0), 0), 'white'], ['Points', matchsFiltres.reduce((s, m) => s + (m.points ?? ((m.goals || 0) + (m.assists || 0))), 0), 'white'], ['Tirs', matchsFiltres.reduce((s, m) => s + (m.shots || 0), 0), 'white']].map(([l, v, c], i) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+                {[
+                  ['SOG', matchsFiltres.reduce((s, m) => s + (m.shots || 0), 0), 'white'],
+                  ['GOAL', matchsFiltres.reduce((s, m) => s + (m.goals || 0), 0), '#f97316'],
+                  ['AST', matchsFiltres.reduce((s, m) => s + (m.assists || 0), 0), 'white'],
+                  ['PTS', matchsFiltres.reduce((s, m) => s + (m.points ?? ((m.goals || 0) + (m.assists || 0))), 0), 'white'],
+                  ['PPP', matchsFiltres.reduce((s, m) => s + (m.powerPlayPoints || 0), 0), 'white'],
+                  ['HITS', matchsFiltres.reduce((s, m) => s + (m.hits || 0), 0), 'white'],
+                  ['BLK', matchsFiltres.reduce((s, m) => s + (m.blockedShots || 0), 0), 'white'],
+                ].map(([l, v, c], i) => (
                   <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '7px', padding: '8px 4px', textAlign: 'center' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
                     <div style={{ fontSize: '9px', color: '#555' }}>{l}</div>
