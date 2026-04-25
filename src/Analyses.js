@@ -1485,7 +1485,7 @@ const getMatchsChart = () => {
                     <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : '#444' }}>
                       {edgeValue ? `${getPctAuDessusEdge()}%` : '-'}
                     </div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode} · {matchsFiltres.length} games</div>
+                   <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                   </div>
 
                   {/* Encadré 3 - Cumulatif */}
