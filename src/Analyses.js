@@ -1266,7 +1266,10 @@ const getMatchsChart = () => {
       case 'GOAL': return m.goals ?? 0;
       case 'AST': return m.assists ?? 0;
       case 'PPP': return m.powerPlayPoints ?? 0;
-      case 'TOI': return m.toi ?? '-';
+      case 'TOI': {
+  const parts = (m.toi || '0:00').split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+}
       case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
       default: return 0;
@@ -1468,7 +1471,10 @@ const getMatchsChart = () => {
                 {['HITS', 'TOI'].includes(ongletStat) ? (
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
                     <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>{ongletStat} AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
-                    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (valeurs.reduce((a, b) => a + b, 0) / valeurs.length).toFixed(1) : '-'}</div>
+                    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (() => {
+  const avgSec = Math.round(valeurs.reduce((a, b) => a + b, 0) / valeurs.length);
+  return `${Math.floor(avgSec / 60)}:${String(avgSec % 60).padStart(2, '0')}`;
+})() : '-'}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
                   </div>
                 ) : (
