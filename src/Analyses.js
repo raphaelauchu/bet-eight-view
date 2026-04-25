@@ -1156,6 +1156,7 @@ function FicheJoueur({ joueur, onRetour }) {
   const [ongletChart, setOngletChart] = useState('SZN');
   const [typeChart, setTypeChart] = useState('SOG');
   const [chargement, setChargement] = useState(true);
+  const [edgeValue, setEdgeValue] = useState('');
  
   useEffect(() => { chargerStats(); }, [joueur.id]);
  
@@ -1300,7 +1301,11 @@ const getMatchsChart = () => {
   const moyenne = getMoyenneSaison(ongletStat);
   const valeurs = matchsFiltres.map(m => getValeurMatch(m, ongletStat));
   const maxVal = Math.max(...valeurs, moyenne * 1.5, 1);
-  const getPctAuDessus = () => valeurs.length === 0 ? 0 : Math.round((valeurs.filter(v => v >= moyenne).length / valeurs.length) * 100);
+  const getPctAuDessusEdge = () => {
+    if (!edgeValue || valeurs.length === 0) return 0;
+    const edge = parseFloat(edgeValue);
+    return Math.round((valeurs.filter(v => v > edge).length / valeurs.length) * 100);
+  };
  
   const matchsChart = getMatchsChart();
   const sog = matchsChart && matchsChart.length > 0
@@ -1458,22 +1463,37 @@ const getMatchsChart = () => {
                 </div>
               )}
  
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
-                {[
-                  ['SOG', matchsFiltres.reduce((s, m) => s + (m.shots || 0), 0), 'white'],
-                  ['GOAL', matchsFiltres.reduce((s, m) => s + (m.goals || 0), 0), '#f97316'],
-                  ['AST', matchsFiltres.reduce((s, m) => s + (m.assists || 0), 0), 'white'],
-                  ['PTS', matchsFiltres.reduce((s, m) => s + (m.points ?? ((m.goals || 0) + (m.assists || 0))), 0), 'white'],
-                  ['PPP', matchsFiltres.reduce((s, m) => s + (m.powerPlayPoints || 0), 0), 'white'],
-                  ['HITS', matchsFiltres.reduce((s, m) => s + (m.hits || 0), 0), 'white'],
-                  ['BLK', matchsFiltres.reduce((s, m) => s + (m.blockedShots || 0), 0), 'white'],
-                ].map(([l, v, c], i) => (
-                  <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '7px', padding: '8px 4px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>{l}</div>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+                  {/* Encadré 1 - Edge */}
+                  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>EDGE ({ongletStat})</div>
+                    <input
+                      type="number"
+                      step="0.5"
+                      placeholder="ex: 1.5"
+                      value={edgeValue}
+                      onChange={e => setEdgeValue(e.target.value)}
+                      style={{ width: '80px', backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '6px', color: 'white', fontSize: '16px', fontWeight: '900', textAlign: 'center', padding: '4px', outline: 'none' }}
+                    />
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>Ligne de paris</div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Encadré 2 - % Au-dessus */}
+                  <div style={{ backgroundColor: edgeValue && getPctAuDessusEdge() >= 70 ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: edgeValue && getPctAuDessusEdge() >= 70 ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>AU-DESSUS EDGE</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : '#444' }}>
+                      {edgeValue ? `${getPctAuDessusEdge()}%` : '-'}
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode} · {matchsFiltres.length} matchs</div>
+                  </div>
+
+                  {/* Encadré 3 - Cumulatif */}
+                  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMULATIF {ongletPeriode}</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
+                  </div>
+                </div>
             </div>
           )}
  
