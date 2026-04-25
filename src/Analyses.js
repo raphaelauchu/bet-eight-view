@@ -1464,7 +1464,33 @@ const getMatchsChart = () => {
                 </div>
               )}
  
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+                {['HITS', 'BLK', 'TOI'].includes(ongletStat) ? (
+                  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>{ongletStat} AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+                    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (valeurs.reduce((a, b) => a + b, 0) / valeurs.length).toFixed(1) : '-'}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>EDGE ({ongletStat})</div>
+                      <input type="number" step="0.5" placeholder="ex: 1.5" value={edgeValue} onChange={e => setEdgeValue(e.target.value)} style={{ width: '80px', backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '6px', color: 'white', fontSize: '16px', fontWeight: '900', textAlign: 'center', padding: '4px', outline: 'none' }} />
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>Betting line</div>
+                    </div>
+                    <div style={{ backgroundColor: edgeValue && getPctAuDessusEdge() >= 70 ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: edgeValue && getPctAuDessusEdge() >= 70 ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>OVER EDGE</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : '#444' }}>{edgeValue ? `${getPctAuDessusEdge()}%` : '-'}</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+                    </div>
+                    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMUL. {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
+                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
+                    </div>
+                  </div>
+                )}
+              </div>
                   {/* Encadré 1 - Edge */}
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
                     <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>EDGE ({ongletStat})</div>
@@ -1493,8 +1519,7 @@ const getMatchsChart = () => {
                     <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMUL. {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                     <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
-                  </div>
-                </div>
+              </div>
             </div>
           )}
  
