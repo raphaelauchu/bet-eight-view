@@ -1268,7 +1268,7 @@ const getMatchsChart = () => {
       case 'PPP': return m.powerPlayPoints ?? 0;
       case 'TOI': {
   const parts = (m.toi || '0:00').split(':');
-  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+  return parseFloat((parseInt(parts[0]) + parseInt(parts[1] || 0) / 60).toFixed(1));
 }
       case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
