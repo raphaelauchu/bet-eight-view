@@ -1268,7 +1268,7 @@ const getMatchsChart = () => {
       case 'PPP': return m.powerPlayPoints ?? 0;
      case 'TOI': {
   const parts = (m.toi || '0:00').split(':');
-  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+  return parseFloat((parseInt(parts[0]) + parseInt(parts[1] || 0) / 60).toFixed(2));
 }
       case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
@@ -1286,7 +1286,7 @@ const getMatchsChart = () => {
       case 'PPP': return parseFloat((statsAvancees.ppp / gp).toFixed(1));
       case 'TOI': {
   const parts = (statsAvancees.toi || '0:00').split(':');
-  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+  return parseFloat((parseInt(parts[0]) + parseInt(parts[1] || 0) / 60).toFixed(2));
 }
       case 'BLK': return parseFloat((statsAvancees.blocks / gp).toFixed(1));
       case 'HITS': return parseFloat((statsAvancees.hits / gp).toFixed(1));
@@ -1362,7 +1362,9 @@ const getMatchsChart = () => {
         {!isGardien && statsAvancees && (
           <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', border: '1px solid #222', flexShrink: 0 }}>
             <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>AVG</div>
-            <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '900' }}>{getMoyenneSaison(ongletStat)}</div>
+            <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '900' }}>
+  {ongletStat === 'TOI' ? statsAvancees?.toi ?? '-' : getMoyenneSaison(ongletStat)}
+</div>
             <div style={{ color: '#555', fontSize: '9px' }}>{ongletStat}/m</div>
           </div>
         )}
