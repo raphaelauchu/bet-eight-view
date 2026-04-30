@@ -1218,7 +1218,7 @@ if (log2.length > 0) {
   const moyenneSecondes = Math.round(toiEnSecondes.reduce((a, b) => a + b, 0) / toiEnSecondes.length);
   const minutes = Math.floor(moyenneSecondes / 60);
   const secondes = String(moyenneSecondes % 60).padStart(2, '0');
-  statsBase.toi = `${minutes}:${secondes}`;
+  statsBase.toi = `${minutes}:${secondes}`;setStatsAvancees({ ...statsBase });
 }
 setStatsAvancees(statsBase);
       }
