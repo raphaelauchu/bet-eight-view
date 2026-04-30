@@ -1365,7 +1365,7 @@ const getMatchsChart = () => {
             <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '900' }}>
   {ongletStat === 'TOI' ? statsAvancees?.toi ?? '-' : getMoyenneSaison(ongletStat)}
 </div>
-            <div style={{ color: '#555', fontSize: '9px' }}>{ongletStat}/m</div>
+           <div style={{ color: '#555', fontSize: '9px' }}>{ongletStat}/G</div>
           </div>
         )}
       </div>
