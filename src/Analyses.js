@@ -1266,9 +1266,9 @@ const getMatchsChart = () => {
       case 'GOAL': return m.goals ?? 0;
       case 'AST': return m.assists ?? 0;
       case 'PPP': return m.powerPlayPoints ?? 0;
-      case 'TOI': {
+     case 'TOI': {
   const parts = (m.toi || '0:00').split(':');
-  return parseFloat((parseInt(parts[0]) + parseInt(parts[1] || 0) / 60).toFixed(1));
+  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
 }
       case 'BLK': return m.blockedShots ?? 0;
       case 'HITS': return m.hits ?? 0;
@@ -1284,7 +1284,10 @@ const getMatchsChart = () => {
       case 'GOAL': return parseFloat((statsAvancees.goals / gp).toFixed(1));
       case 'AST': return parseFloat((statsAvancees.assists / gp).toFixed(1));
       case 'PPP': return parseFloat((statsAvancees.ppp / gp).toFixed(1));
-      case 'TOI': return statsAvancees.toi ?? '-';
+      case 'TOI': {
+  const parts = (statsAvancees.toi || '0:00').split(':');
+  return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+}
       case 'BLK': return parseFloat((statsAvancees.blocks / gp).toFixed(1));
       case 'HITS': return parseFloat((statsAvancees.hits / gp).toFixed(1));
       default: return 0;
