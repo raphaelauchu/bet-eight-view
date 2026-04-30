@@ -1477,8 +1477,10 @@ const getMatchsChart = () => {
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
                     <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>{ongletStat} AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                     <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (() => {
-  const avgSec = Math.round(valeurs.reduce((a, b) => a + b, 0) / valeurs.length);
-  return `${Math.floor(avgSec / 60)}:${String(avgSec % 60).padStart(2, '0')}`;
+  const avgMin = valeurs.reduce((a, b) => a + b, 0) / valeurs.length;
+  const minutes = Math.floor(avgMin);
+  const secondes = String(Math.round((avgMin - minutes) * 60)).padStart(2, '0');
+  return `${minutes}:${secondes}`;
 })() : '-'}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
                   </div>
