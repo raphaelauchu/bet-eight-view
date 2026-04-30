@@ -1446,7 +1446,13 @@ const getMatchsChart = () => {
                 <div style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '22px' }}>
                     <span style={{ color: '#555', fontSize: '9px' }}>{Math.ceil(maxVal)}</span>
-                    <span style={{ color: '#888', fontSize: '9px' }}>{moyenne}</span>
+                    <span style={{ color: '#888', fontSize: '9px' }}>
+  {ongletStat === 'TOI' ? (() => {
+    const min = Math.floor(moyenne);
+    const sec = String(Math.round((moyenne - min) * 60)).padStart(2, '0');
+    return `${min}:${sec}`;
+  })() : moyenne}
+</span>
                     <span style={{ color: '#555', fontSize: '9px' }}>0</span>
                   </div>
                   <div style={{ marginLeft: '26px', position: 'relative' }}>
@@ -1458,7 +1464,13 @@ const getMatchsChart = () => {
                         const estAuDessus = val >= moyenne;
                         return (
                           <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '134px', justifyContent: 'flex-end' }}>
-                            <span style={{ fontSize: '8px', color: estAuDessus ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{val}</span>
+                           <span style={{ fontSize: '8px', color: estAuDessus ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>
+  {ongletStat === 'TOI' ? (() => {
+    const min = Math.floor(val);
+    const sec = String(Math.round((val - min) * 60)).padStart(2, '0');
+    return `${min}:${sec}`;
+  })() : val}
+</span>
                             <div style={{ width: '100%', height: `${h}px`, backgroundColor: estAuDessus ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
                             <div style={{ width: '100%', height: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                               <span style={{ fontSize: '7px', color: '#555' }}>{m.gameDate ? m.gameDate.slice(5) : ''}</span>
