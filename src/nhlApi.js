@@ -61,3 +61,25 @@ export function calcStatsPeriode(gameLog, periode, stat) {
   const total = matchs.reduce((s, m) => s + (m[stat] ?? 0), 0);
   return { total, moyenne: parseFloat((total / matchs.length).toFixed(2)), matchs };
 }
+export async function getHitsBlocksParMatch(playerId, gameLog) {
+  const result = [...gameLog];
+  for (let i = 0; i < gameLog.length; i += 5) {
+    const batch = gameLog.slice(i, i + 5);
+    const boxscores = await Promise.all(batch.map(async (m) => {
+      try {
+        const r = await fetch(getUrl(`gamecenter/${m.gameId}/boxscore`));
+        const d = await r.json();
+        const allPlayers = [
+          ...(d.playerByGameStats?.awayTeam?.forwards || []),
+          ...(d.playerByGameStats?.awayTeam?.defense || []),
+          ...(d.playerByGameStats?.homeTeam?.forwards || []),
+          ...(d.playerByGameStats?.homeTeam?.defense || []),
+        ];
+        const joueur = allPlayers.find(p => p.playerId === playerId);
+        return { ...m, hits: joueur?.hits ?? 0, blockedShots: joueur?.blockedShots ?? 0 };
+      } catch { return m; }
+    }));
+    boxscores.forEach((b, idx) => { result[i + idx] = b; });
+  }
+  return result;
+}

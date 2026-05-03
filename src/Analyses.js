@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode } from './nhlApi';
+import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch } from './nhlApi';
  
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
@@ -1224,7 +1224,8 @@ setStatsAvancees(statsBase);
       }
  
      const log = await getGameLogJoueur(joueur.id);
-      setDernierMatchs(log);
+      const logAvecHits = await getHitsBlocksParMatch(joueur.id, log);
+      setDernierMatchs(logAvecHits);
 
       // Calcul TOI moyen depuis game log
       if (log.length > 0) {
@@ -1485,7 +1486,18 @@ const getMatchsChart = () => {
               )}
  
              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
-                {['HITS', 'TOI'].includes(ongletStat) ? (
+                {ongletStat === 'TOI' ? (
+  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>TOI AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (() => {
+      const avgMin = valeurs.reduce((a, b) => a + b, 0) / valeurs.length;
+      const minutes = Math.floor(avgMin);
+      const secondes = String(Math.round((avgMin - minutes) * 60)).padStart(2, '0');
+      return `${minutes}:${secondes}`;
+    })() : '-'}</div>
+    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
+  </div>
+) : ongletStat === 'HITS' ? (
                   <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
                     <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>{ongletStat} AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                     <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (() => {
