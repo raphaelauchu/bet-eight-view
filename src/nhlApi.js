@@ -75,7 +75,7 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
           ...(d.playerByGameStats?.homeTeam?.forwards || []),
           ...(d.playerByGameStats?.homeTeam?.defense || []),
         ];
-        const joueur = allPlayers.find(p => p.playerId === playerId);
+        const joueur = allPlayers.find(p => p.playerId === parseInt(playerId));
         return { ...m, hits: joueur?.hits ?? 0, blockedShots: joueur?.blockedShots ?? 0 };
       } catch { return m; }
     }));
