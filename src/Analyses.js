@@ -1194,7 +1194,7 @@ function FicheJoueur({ joueur, onRetour }) {
         // Stats avancées (hits, blocs) depuis api realtime
         try {
           const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
-          const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId=${joueur.id}%20and%20seasonId=20252026`;
+          const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId%3D${joueur.id}%20and%20seasonId%3D20252026`;
           const urlRealtime = estEnProduction ? `/api/nhl?path=${encodeURIComponent(realtimePath)}` : realtimePath;
           const resRealtime = await fetch(urlRealtime);
           const dataRealtime = await resRealtime.json();
