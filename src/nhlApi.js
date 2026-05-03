@@ -38,6 +38,7 @@ export async function getGameLogJoueur(playerId) {
     const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/2`));
     const data = await res.json();
     return (data.gameLog || []).map(m => ({
+      gameId: m.gameId,
       gameDate: m.gameDate,
       opponentAbbrev: m.opponentAbbrev,
       goals: m.goals ?? 0,
