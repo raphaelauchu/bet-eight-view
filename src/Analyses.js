@@ -1580,7 +1580,44 @@ const getMatchsChart = () => {
     </div>
   );
 }
- 
+ function BracketPlayoffs({ bracket }) {
+  const [indexRonde, setIndexRonde] = useState(0);
+  if (!bracket) return <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
+  const rondes = bracket.rounds || [];
+  const ronde = rondes[indexRonde];
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+        {rondes.map((r, i) => (
+          <button key={i} onClick={() => setIndexRonde(i)} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: indexRonde === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: indexRonde === i ? 'bold' : 'normal' }}>{r.roundAbbrev}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {(ronde?.series || []).map((s, i) => {
+          const top = s.topSeed;
+          const bot = s.bottomSeed;
+          const gagne = s.winningTeamId;
+          return (
+            <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #222' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
+                  <img src={top?.logo} alt={top?.abbrev} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                  <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.abbrev}</span>
+                </div>
+                <span style={{ color: '#f97316', fontWeight: '900', fontSize: '16px' }}>{top?.wins} - {bot?.wins}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.abbrev}</span>
+                  <img src={bot?.logo} alt={bot?.abbrev} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                </div>
+              </div>
+              {gagne && <div style={{ textAlign: 'center', fontSize: '10px', color: '#f97316' }}>{gagne === top?.id ? top?.abbrev : bot?.abbrev} wins</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 function Analyses({ onLigueChange }) {
   const isMobile = useIsMobile();
   const [ligue, setLigue] = useState(null);
@@ -1589,16 +1626,19 @@ function Analyses({ onLigueChange }) {
   const [chargement, setChargement] = useState(false);
   const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
   const [joueurSelectionne, setJoueurSelectionne] = useState(null);
+  const [playoffBracket, setPlayoffBracket] = useState(null);
+  const [estPlayoffs, setEstPlayoffs] = useState(false);
  
   useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
   useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
  
-  async function chargerPreview() {
+ async function chargerPreview() {
     try {
       const res = await fetch(getUrl('standings/now'));
       const data = await res.json();
       setClassement(data.standings || []);
       await chargerMeneurs();
+      await detecterEtChargerPlayoffs();
     } catch (err) { console.error(err); }
   }
  
@@ -1624,7 +1664,22 @@ function Analyses({ onLigueChange }) {
       setMeneurs({ buts: fmt(d1, 'goals'), passes: fmt(d2, 'assists'), points: fmt(d3, 'points') });
     } catch (err) { console.error(err); }
   }
- 
+
+  async function detecterEtChargerPlayoffs() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const resSchedule = await fetch(getUrl(`schedule/${today}`));
+      const dataSchedule = await resSchedule.json();
+      const allGames = (dataSchedule.gameWeek || []).flatMap(w => w.games || []);
+      const enPlayoffs = allGames.some(g => g.gameType === 3);
+      setEstPlayoffs(enPlayoffs);
+      if (enPlayoffs) {
+        const resBracket = await fetch(getUrl('playoff-series/carousel/20252026'));
+        const dataBracket = await resBracket.json();
+        setPlayoffBracket(dataBracket);
+      }
+    } catch (err) { console.error(err); }
+  }
   const padding = isMobile ? '16px' : '32px';
   const maxWidth = isMobile ? '100%' : '1000px';
  
@@ -1679,7 +1734,7 @@ function Analyses({ onLigueChange }) {
               <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Statistiques Equipes</h3>
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Classement par division · Top 10</p>
             </div>
-            <div style={{ flex: 1 }}><CarrouselDivisions classement={classement} /></div>
+            <div style={{ flex: 1 }}>{estPlayoffs ? <BracketPlayoffs bracket={playoffBracket} /> : <CarrouselDivisions classement={classement} />}</div>
             <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
           </div>
           <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
