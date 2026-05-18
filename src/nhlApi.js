@@ -37,8 +37,8 @@ export async function detecterPlayoffs() {
     const today = new Date().toISOString().split('T')[0];
     const res = await fetch(getUrl(`schedule/${today}`));
     const data = await res.json();
-    const games = data.gameWeek?.[0]?.games || [];
-    return games.some(g => g.gameType === 3);
+    const allGames = (data.gameWeek || []).flatMap(w => w.games || []);
+    return allGames.some(g => g.gameType === 3);
   } catch { return false; }
 }
 export async function getGameLogJoueur(playerId) {
