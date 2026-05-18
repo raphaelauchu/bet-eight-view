@@ -1650,7 +1650,7 @@ const getMatchsChart = () => {
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: '#f97316' }}>
-            {ronde?.label === 'SCF' ? '🏆 Stanley Cup Final' : indexConf === 0 ? 'Conférence EST' : 'Conférence OUEST'}
+            {ronde?.label === 'SCF' ? '🏆 Stanley Cup Final' : indexConf === 0 ? 'Eastern Conference' : 'Western Conference'}
           </h3>
           {ronde?.label !== 'SCF' && <span style={{ color: '#666', fontSize: '12px' }}>{indexConf + 1} / 2</span>}
         </div>
@@ -1774,7 +1774,7 @@ function Analyses({ onLigueChange }) {
           <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Statistiques Equipes</h3>
-              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Classement par division · Top 10</p>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Bracket' : 'Classement par division · Top 10'}</p>
             </div>
             <div style={{ flex: 1 }}>{estPlayoffs ? <BracketPlayoffs bracket={playoffBracket} /> : <CarrouselDivisions classement={classement} />}</div>
             <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
