@@ -1581,39 +1581,37 @@ const getMatchsChart = () => {
   );
 }
  function BracketPlayoffs({ bracket }) {
-  const [indexActif, setIndexActif] = useState(0);
+  const [indexConf, setIndexConf] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [rondeActive, setRondeActive] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
-      setTimeout(() => { setIndexActif(prev => (prev + 1) % 3); setVisible(true); }, 300);
+      setTimeout(() => { setIndexConf(prev => (prev + 1) % 2); setVisible(true); }, 300);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   if (!bracket) return <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
+  
   const rounds = bracket.rounds || [];
   const r1 = rounds.find(r => r.roundNumber === 1)?.series || [];
   const r2 = rounds.find(r => r.roundNumber === 2)?.series || [];
   const r3 = rounds.find(r => r.roundNumber === 3)?.series || [];
   const r4 = rounds.find(r => r.roundNumber === 4)?.series || [];
 
-  const estR1 = r1.filter(s => ['A','B','C','D'].includes(s.seriesLetter));
-  const ouestR1 = r1.filter(s => ['E','F','G','H'].includes(s.seriesLetter));
-  const estR2 = r2.filter(s => ['I','J'].includes(s.seriesLetter));
-  const ouestR2 = r2.filter(s => ['K','L'].includes(s.seriesLetter));
-  const estCF = r3.find(s => s.seriesLetter === 'M');
-  const ouestCF = r3.find(s => s.seriesLetter === 'N');
-  const finale = r4?.[0];
+  const rondes = [
+    { label: 'R1', est: r1.filter(s => ['A','B','C','D'].includes(s.seriesLetter)), ouest: r1.filter(s => ['E','F','G','H'].includes(s.seriesLetter)) },
+    { label: 'R2', est: r2.filter(s => ['I','J'].includes(s.seriesLetter)), ouest: r2.filter(s => ['K','L'].includes(s.seriesLetter)) },
+    { label: 'CF', est: r3.filter(s => s.seriesLetter === 'M'), ouest: r3.filter(s => s.seriesLetter === 'N') },
+    { label: 'SCF', est: r4, ouest: [] },
+  ].filter(r => r.est.length > 0 || r.ouest.length > 0);
 
-  const conferences = [
-    { label: 'EST', r1: estR1, r2: estR2, cf: estCF },
-    { label: 'OUEST', r1: ouestR1, r2: ouestR2, cf: ouestCF },
-    { label: 'FINALE', r1: [], r2: [], cf: null, finale },
-  ];
-
-  const conf = conferences[indexActif];
+  const ronde = rondes[rondeActive];
+  const series = rondeActive === rondes.length - 1 && ronde?.label === 'SCF' 
+    ? ronde.est 
+    : indexConf === 0 ? ronde?.est : ronde?.ouest;
 
   const SerieItem = ({ serie }) => {
     if (!serie) return null;
@@ -1644,27 +1642,21 @@ const getMatchsChart = () => {
 
   return (
     <div>
-      <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>
-            {conf.label === 'FINALE' ? '🏆 STANLEY CUP FINAL' : `Conférence ${conf.label}`}
-          </h3>
-          <span style={{ color: '#666', fontSize: '12px' }}>{indexActif + 1} / {conferences.length}</span>
-        </div>
-        {conf.label === 'FINALE' ? (
-          <SerieItem serie={finale} />
-        ) : (
-          <>
-            {conf.r1.length > 0 && <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px', fontWeight: 'bold' }}>ROUND 1</div>}
-            {conf.r1.map((s, i) => <SerieItem key={i} serie={s} />)}
-            {conf.r2.length > 0 && <div style={{ fontSize: '9px', color: '#666', margin: '8px 0 4px', fontWeight: 'bold' }}>ROUND 2</div>}
-            {conf.r2.map((s, i) => <SerieItem key={i} serie={s} />)}
-            {conf.cf && <div style={{ fontSize: '9px', color: '#666', margin: '8px 0 4px', fontWeight: 'bold' }}>CONFERENCE FINAL</div>}
-            {conf.cf && <SerieItem serie={conf.cf} />}
-          </>
-        )}
+      <div style={{ display: 'flex', gap: '5px', marginBottom: '12px' }}>
+        {rondes.map((r, i) => (
+          <button key={i} onClick={() => { setRondeActive(i); setIndexConf(0); }} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: rondeActive === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: rondeActive === i ? 'bold' : 'normal' }}>{r.label}</button>
+        ))}
       </div>
-      <PointsIndicateur total={conferences.length} actif={indexActif} />
+      <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: '#f97316' }}>
+            {ronde?.label === 'SCF' ? '🏆 Stanley Cup Final' : indexConf === 0 ? 'Conférence EST' : 'Conférence OUEST'}
+          </h3>
+          {ronde?.label !== 'SCF' && <span style={{ color: '#666', fontSize: '12px' }}>{indexConf + 1} / 2</span>}
+        </div>
+        {(series || []).map((s, i) => <SerieItem key={i} serie={s} />)}
+      </div>
+      {ronde?.label !== 'SCF' && <PointsIndicateur total={2} actif={indexConf} />}
     </div>
   );
 }
