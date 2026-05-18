@@ -1155,7 +1155,8 @@ function FicheJoueur({ joueur, onRetour }) {
   const [ongletPeriode, setOngletPeriode] = useState('L10');
   const [ongletChart, setOngletChart] = useState('SZN');
   const [typeChart, setTypeChart] = useState('SOG');
-  
+  const [chargement, setChargement] = useState(true);
+  const [edgeValue, setEdgeValue] = useState('');
   const [modeStats, setModeStats] = useState('playoffs');
  
   useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
