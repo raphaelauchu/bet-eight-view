@@ -1581,40 +1581,89 @@ const getMatchsChart = () => {
   );
 }
  function BracketPlayoffs({ bracket }) {
-  const [indexRonde, setIndexRonde] = useState(0);
+  const [indexActif, setIndexActif] = useState(0);
+  const [visible, setVisible] = useState(true);
   if (!bracket) return <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
-  const rondes = bracket.rounds || [];
-  const ronde = rondes[indexRonde];
+  const rounds = bracket.rounds || [];
+  const r1 = rounds.find(r => r.roundNumber === 1)?.series || [];
+  const r2 = rounds.find(r => r.roundNumber === 2)?.series || [];
+  const r3 = rounds.find(r => r.roundNumber === 3)?.series || [];
+  const r4 = rounds.find(r => r.roundNumber === 4)?.series || [];
+
+  const estR1 = r1.filter(s => ['A','B','C','D'].includes(s.seriesLetter));
+  const ouestR1 = r1.filter(s => ['E','F','G','H'].includes(s.seriesLetter));
+  const estR2 = r2.filter(s => ['I','J'].includes(s.seriesLetter));
+  const ouestR2 = r2.filter(s => ['K','L'].includes(s.seriesLetter));
+  const estCF = r3.find(s => s.seriesLetter === 'M');
+  const ouestCF = r3.find(s => s.seriesLetter === 'N');
+  const finale = r4?.[0];
+
+  const conferences = [
+    { label: 'EST', r1: estR1, r2: estR2, cf: estCF },
+    { label: 'OUEST', r1: ouestR1, r2: ouestR2, cf: ouestCF },
+    { label: 'FINALE', r1: [], r2: [], cf: null, finale },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => { setIndexActif(prev => (prev + 1) % conferences.length); setVisible(true); }, 300);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const conf = conferences[indexActif];
+
+  const SerieItem = ({ serie }) => {
+    if (!serie) return null;
+    const top = serie.topSeed;
+    const bot = serie.bottomSeed;
+    const gagne = serie.winningTeamId;
+    return (
+      <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px', border: '1px solid #333', marginBottom: '5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img src={top?.logo} alt={top?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.abbrev}</span>
+          </div>
+          <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.wins}</span>
+        </div>
+        <div style={{ height: '1px', backgroundColor: '#222', marginBottom: '4px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img src={bot?.logo} alt={bot?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.abbrev}</span>
+          </div>
+          <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.wins}</span>
+        </div>
+        {gagne && <div style={{ textAlign: 'center', fontSize: '9px', color: '#f97316', marginTop: '4px' }}>✓ {gagne === top?.id ? top?.abbrev : bot?.abbrev} wins</div>}
+      </div>
+    );
+  };
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-        {rondes.map((r, i) => (
-          <button key={i} onClick={() => setIndexRonde(i)} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: indexRonde === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: indexRonde === i ? 'bold' : 'normal' }}>{r.roundAbbrev}</button>
-        ))}
+      <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>
+            {conf.label === 'FINALE' ? '🏆 STANLEY CUP FINAL' : `Conférence ${conf.label}`}
+          </h3>
+          <span style={{ color: '#666', fontSize: '12px' }}>{indexActif + 1} / {conferences.length}</span>
+        </div>
+        {conf.label === 'FINALE' ? (
+          <SerieItem serie={finale} />
+        ) : (
+          <>
+            {conf.r1.length > 0 && <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px', fontWeight: 'bold' }}>ROUND 1</div>}
+            {conf.r1.map((s, i) => <SerieItem key={i} serie={s} />)}
+            {conf.r2.length > 0 && <div style={{ fontSize: '9px', color: '#666', margin: '8px 0 4px', fontWeight: 'bold' }}>ROUND 2</div>}
+            {conf.r2.map((s, i) => <SerieItem key={i} serie={s} />)}
+            {conf.cf && <div style={{ fontSize: '9px', color: '#666', margin: '8px 0 4px', fontWeight: 'bold' }}>CONFERENCE FINAL</div>}
+            {conf.cf && <SerieItem serie={conf.cf} />}
+          </>
+        )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {(ronde?.series || []).map((s, i) => {
-          const top = s.topSeed;
-          const bot = s.bottomSeed;
-          const gagne = s.winningTeamId;
-          return (
-            <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px', border: '1px solid #222' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
-                  <img src={top?.logo} alt={top?.abbrev} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-                  <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.abbrev}</span>
-                </div>
-                <span style={{ color: '#f97316', fontWeight: '900', fontSize: '16px' }}>{top?.wins} - {bot?.wins}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.abbrev}</span>
-                  <img src={bot?.logo} alt={bot?.abbrev} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-                </div>
-              </div>
-              {gagne && <div style={{ textAlign: 'center', fontSize: '10px', color: '#f97316' }}>{gagne === top?.id ? top?.abbrev : bot?.abbrev} wins</div>}
-            </div>
-          );
-        })}
-      </div>
+      <PointsIndicateur total={conferences.length} actif={indexActif} />
     </div>
   );
 }
