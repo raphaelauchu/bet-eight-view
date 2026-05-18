@@ -32,10 +32,20 @@ export function calcSOGPeriode(matchs, type) {
   const total = valides.reduce((s, m) => s + (type === 'POUR' ? m.sogPour : m.sogContre), 0);
   return (total / valides.length).toFixed(1);
 }
-
+export async function detecterPlayoffs() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(getUrl(`schedule/${today}`));
+    const data = await res.json();
+    const games = data.gameWeek?.[0]?.games || [];
+    return games.some(g => g.gameType === 3);
+  } catch { return false; }
+}
 export async function getGameLogJoueur(playerId) {
   try {
-    const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/2`));
+    const estPlayoffs = await detecterPlayoffs();
+const gameType = estPlayoffs ? 3 : 2;
+const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/${gameType}`));
     const data = await res.json();
     return (data.gameLog || []).map(m => ({
       gameId: m.gameId,
