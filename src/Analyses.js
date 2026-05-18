@@ -1777,7 +1777,7 @@ function Analyses({ onLigueChange }) {
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Bracket' : 'Classement par division · Top 10'}</p>
             </div>
             <div style={{ flex: 1 }}>{estPlayoffs ? <BracketPlayoffs bracket={playoffBracket} /> : <CarrouselDivisions classement={classement} />}</div>
-            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
+            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
           </div>
           <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
             <div style={{ marginBottom: '16px' }}>
@@ -1785,7 +1785,7 @@ function Analyses({ onLigueChange }) {
               <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Leaders' : 'Goals, assists and points · Top 10'}</p>
             </div>
             <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
-            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>Voir les statistiques</button>
+            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
           </div>
         </div>
       </div>
