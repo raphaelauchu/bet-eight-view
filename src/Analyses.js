@@ -1155,10 +1155,10 @@ function FicheJoueur({ joueur, onRetour }) {
   const [ongletPeriode, setOngletPeriode] = useState('L10');
   const [ongletChart, setOngletChart] = useState('SZN');
   const [typeChart, setTypeChart] = useState('SOG');
-  const [chargement, setChargement] = useState(true);
-  const [edgeValue, setEdgeValue] = useState('');
+  
+  const [modeStats, setModeStats] = useState('playoffs');
  
-  useEffect(() => { chargerStats(); }, [joueur.id]);
+  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
  
   async function chargerStats() {
     setChargement(true);
@@ -1223,7 +1223,8 @@ if (log2.length > 0) {
 setStatsAvancees(statsBase);
       }
  
-     const log = await getGameLogJoueur(joueur.id);
+     const gameType = modeStats === 'playoffs' ? 3 : 2;
+      const log = await getGameLogJoueur(joueur.id, gameType);
       const logAvecHits = await getHitsBlocksParMatch(joueur.id, log);
       setDernierMatchs(logAvecHits);
 
@@ -1350,7 +1351,10 @@ const getMatchsChart = () => {
   return (
     <div>
       <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
- 
+ <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+  <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Regular Season</button>
+  <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
+</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
         <img src={getPhotoJoueur(joueur.id)} alt={joueur.nom} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '3px solid #f97316' }} onError={e => { e.target.src = LOGOS_NHL[joueur.equipe] || ''; }} />
         <div style={{ flex: 1, minWidth: 0 }}>

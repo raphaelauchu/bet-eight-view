@@ -32,20 +32,10 @@ export function calcSOGPeriode(matchs, type) {
   const total = valides.reduce((s, m) => s + (type === 'POUR' ? m.sogPour : m.sogContre), 0);
   return (total / valides.length).toFixed(1);
 }
-export async function detecterPlayoffs() {
+
+export async function getGameLogJoueur(playerId, gameType = 2) {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const res = await fetch(getUrl(`schedule/${today}`));
-    const data = await res.json();
-    const allGames = (data.gameWeek || []).flatMap(w => w.games || []);
-    return allGames.some(g => g.gameType === 3);
-  } catch { return false; }
-}
-export async function getGameLogJoueur(playerId) {
-  try {
-    const estPlayoffs = await detecterPlayoffs();
-const gameType = estPlayoffs ? 3 : 2;
-const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/${gameType}`));
+    const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/${gameType}`));
     const data = await res.json();
     return (data.gameLog || []).map(m => ({
       gameId: m.gameId,
@@ -72,6 +62,7 @@ export function calcStatsPeriode(gameLog, periode, stat) {
   const total = matchs.reduce((s, m) => s + (m[stat] ?? 0), 0);
   return { total, moyenne: parseFloat((total / matchs.length).toFixed(2)), matchs };
 }
+
 export async function getHitsBlocksParMatch(playerId, gameLog) {
   const result = [...gameLog];
   for (let i = 0; i < gameLog.length; i += 5) {
