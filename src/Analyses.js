@@ -1583,6 +1583,15 @@ const getMatchsChart = () => {
  function BracketPlayoffs({ bracket }) {
   const [indexActif, setIndexActif] = useState(0);
   const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => { setIndexActif(prev => (prev + 1) % 3); setVisible(true); }, 300);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   if (!bracket) return <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
   const rounds = bracket.rounds || [];
   const r1 = rounds.find(r => r.roundNumber === 1)?.series || [];
@@ -1603,14 +1612,6 @@ const getMatchsChart = () => {
     { label: 'OUEST', r1: ouestR1, r2: ouestR2, cf: ouestCF },
     { label: 'FINALE', r1: [], r2: [], cf: null, finale },
   ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => { setIndexActif(prev => (prev + 1) % 3); setVisible(true); }, 300);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const conf = conferences[indexActif];
 
