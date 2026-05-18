@@ -1166,7 +1166,9 @@ function FicheJoueur({ joueur, onRetour }) {
     try {
       const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
-      const saison = data.featuredStats?.regularSeason?.subSeason;
+      const saison = modeStats === 'playoffs' 
+        ? data.featuredStats?.playoffs?.subSeason 
+        : data.featuredStats?.regularSeason?.subSeason;
       const isGardien = joueur.position === 'G';
  
       if (isGardien) {
