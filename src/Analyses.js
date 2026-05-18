@@ -1607,7 +1607,7 @@ const getMatchsChart = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
-      setTimeout(() => { setIndexActif(prev => (prev + 1) % conferences.length); setVisible(true); }, 300);
+      setTimeout(() => { setIndexActif(prev => (prev + 1) % 3); setVisible(true); }, 300);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
