@@ -116,9 +116,9 @@ function CarrouselMeneurs({ meneurs }) {
   const [indexActif, setIndexActif] = useState(0);
   const [visible, setVisible] = useState(true);
   const categories = [
-    { label: 'Top 10 Buteurs', data: meneurs.buts?.slice(0, 10) || [] },
-    { label: 'Top 10 Passeurs', data: meneurs.passes?.slice(0, 10) || [] },
-    { label: 'Top 10 Pointeurs', data: meneurs.points?.slice(0, 10) || [] },
+   { label: 'Top 10 Goals', data: meneurs.buts?.slice(0, 10) || [] },
+    { label: 'Top 10 Assists', data: meneurs.passes?.slice(0, 10) || [] },
+    { label: 'Top 10 Points', data: meneurs.points?.slice(0, 10) || [] },
   ];
   useEffect(() => {
     const interval = setInterval(() => {
