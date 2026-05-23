@@ -553,9 +553,16 @@ function PageStatsJoueurs({ onSelectJoueur }) {
           style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Rechercher un joueur ou une equipe..."
           value={filtre}
-          onChange={e => setFiltre(e.target.value)}
+          onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
       </div>
+      {recherchJoueurs.length > 0 && (
+  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden' }}>
+    {chargementRecherche ? (
+      <p style={{ color: '#666', padding: '12px', textAlign: 'center' }}>Recherche...</p>
+    ) : (
+      recherchJoueurs.map((j, i) => (
+        <div key={i} onClick={() => onSelectJoueur({ id: j.playerId, nom: `${j.name}`, position:
       {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
         <>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -585,6 +592,19 @@ function PageStatsEquipes({ classement }) {
   const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
+  const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+const [chargementRecherche, setChargementRecherche] = useState(false);
+
+async function rechercherJoueur(query) {
+  if (query.length < 2) { setRechercheJoueurs([]); return; }
+  setChargementRecherche(true);
+  try {
+    const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=10&q=${encodeURIComponent(query)}&active=true`);
+    const data = await res.json();
+    setRechercheJoueurs(data || []);
+  } catch { setRechercheJoueurs([]); }
+  setChargementRecherche(false);
+}
   const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
  
   useEffect(() => { chargerSemaine(); }, []);
