@@ -304,12 +304,12 @@ function App() {
     <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
  
       {/* Navbar */}
-      <div style={{ backgroundColor: 'rgba(10,10,10,0.95)', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f2937', position: 'sticky', top: 0, zIndex: 100 }}>
+      <div style={{ backgroundColor: 'rgba(10,10,10,0.95)', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f2937', position: 'sticky', top: 0, zIndex: 100, overflowX: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
           <h1 onClick={() => setPage('home')} style={{ color: '#f97316', margin: 0, fontSize: '20px', cursor: 'pointer', fontWeight: '900', letterSpacing: '-0.5px' }}>
             Betrics
           </h1>
-          <div style={{ display: 'flex', gap: '24px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
             <span onClick={() => setPage('analyses')} style={{ cursor: 'pointer', color: page === 'analyses' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Analyses</span>
             <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Pricing</span>
             {utilisateur && (
@@ -320,7 +320,7 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {utilisateur ? (
             <>
-              <span style={{ color: '#4b5563', fontSize: '13px' }}>{utilisateur.email}</span>
+              <span style={{ color: '#4b5563', fontSize: '13px', display: window.innerWidth < 768 ? 'none' : 'block' }}>{utilisateur.email}</span>
               <button onClick={handleDeconnexion} style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
                 Déconnexion
               </button>
