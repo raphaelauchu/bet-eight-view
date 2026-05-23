@@ -1,1 +1,35 @@
-404: Not Found
+name: Scrape NHL Lineups
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        run: python lineups.py
+
+      - name: Commit and push JSON
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add nhl_lineups.json
+          git diff --staged --quiet || git commit -m "Update NHL lineups $(date +'%Y-%m-%d %H:%M')"
+          git push
+
+          
