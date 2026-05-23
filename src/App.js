@@ -6,157 +6,263 @@ import Pricing from './Pricing';
 import Analyses from './Analyses';
 import { supabase } from './supabase';
  
+function MockupJoueur() {
+  return (
+    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #1a1a1a', padding: '16px', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '900', color: 'white' }}>C</div>
+        <div>
+          <div style={{ fontWeight: '700', fontSize: '15px', color: 'white' }}>Cole Caufield</div>
+          <div style={{ color: '#555', fontSize: '12px' }}>R · MTL · #13</div>
+        </div>
+        <div style={{ marginLeft: 'auto', backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+          <div style={{ color: '#f97316', fontSize: '16px', fontWeight: '900' }}>1.1</div>
+          <div style={{ color: '#555', fontSize: '9px' }}>PTS/G</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
+        {[['51', 'GOALS'], ['37', 'AST'], ['88', 'PTS'], ['+29', '+/-']].map(([v, l], i) => (
+          <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '8px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: i === 0 ? '#f97316' : i === 3 ? '#f97316' : 'white' }}>{v}</div>
+            <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#111', borderRadius: '10px', padding: '12px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+          {['SOG', 'GOAL', 'AST', 'PTS', 'PPP'].map((s, i) => (
+            <div key={i} style={{ padding: '4px 8px', borderRadius: '6px', backgroundColor: i === 0 ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '10px', fontWeight: i === 0 ? 'bold' : 'normal' }}>{s}</div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '60px' }}>
+          {[4, 7, 2, 5, 8, 3, 6, 4, 7, 5].map((h, i) => (
+            <div key={i} style={{ flex: 1, height: `${h * 7}px`, backgroundColor: h >= 5 ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+        <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+          <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 'bold', marginBottom: '4px' }}>EDGE (SOG)</div>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>3.5</div>
+        </div>
+        <div style={{ backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.4)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+          <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', marginBottom: '4px' }}>OVER EDGE</div>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: '#f97316' }}>80%</div>
+        </div>
+        <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+          <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', marginBottom: '4px' }}>CUMUL. L10</div>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>42</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockupBracket() {
+  const series = [
+    { t: 'BUF', b: 'BOS', tw: 4, bw: 2, done: true },
+    { t: 'MTL', b: 'TBL', tw: 4, bw: 3, done: true },
+    { t: 'CAR', b: 'OTT', tw: 4, bw: 0, done: true },
+    { t: 'COL', b: 'VGK', tw: 0, bw: 0, done: false },
+  ];
+  return (
+    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #1a1a1a', padding: '16px' }}>
+      <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>🏆 PLAYOFF BRACKET · 2026</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {series.map((s, i) => (
+          <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '10px 12px', border: s.done ? '1px solid #222' : '1px solid rgba(249,115,22,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', opacity: s.done && s.tw < s.bw ? 0.4 : 1 }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: s.done && s.tw > s.bw ? '#f97316' : 'white' }}>{s.t}</span>
+              <span style={{ fontSize: '16px', fontWeight: '900', color: s.done && s.tw > s.bw ? '#f97316' : 'white' }}>{s.tw}</span>
+            </div>
+            <div style={{ height: '1px', backgroundColor: '#1a1a1a', marginBottom: '4px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: s.done && s.bw < s.tw ? 0.4 : 1 }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: s.done && s.bw > s.tw ? '#f97316' : 'white' }}>{s.b}</span>
+              <span style={{ fontSize: '16px', fontWeight: '900', color: s.done && s.bw > s.tw ? '#f97316' : 'white' }}>{s.bw}</span>
+            </div>
+            {!s.done && <div style={{ textAlign: 'center', fontSize: '9px', color: '#f97316', marginTop: '4px' }}>LIVE</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs }) {
   return (
-    <div style={{ color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif' }}>
+    <div style={{ color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
       <style>{`
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .hero-btn:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(249,115,22,0.6) !important; }
-        .ghost-btn:hover { background: rgba(255,255,255,0.08) !important; }
-        .feature-card:hover { border-color: rgba(249,115,22,0.4) !important; transform: translateY(-2px); }
-        * { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        .hero-btn:hover { transform: translateY(-2px) !important; box-shadow: 0 0 50px rgba(249,115,22,0.7) !important; }
+        .ghost-btn:hover { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.2) !important; }
+        .feature-card:hover { border-color: rgba(249,115,22,0.3) !important; transform: translateY(-3px) !important; }
+        .nav-link:hover { color: white !important; }
       `}</style>
 
       {/* HERO */}
-      <div style={{ padding: '140px 24px 120px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        
-        {/* Badge */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '100px', padding: '6px 16px', marginBottom: '40px', fontSize: '13px', color: '#fdba74' }}>
-          <span style={{ width: '7px', height: '7px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-          NHL Live Data · {nombreMatchs > 0 ? `${nombreMatchs} games tonight` : 'Real-time updates'}
+      <div style={{ padding: '120px 24px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 100% 60% at 50% -5%, rgba(249,115,22,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '20%', left: '5%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+          {/* Left */}
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '5px 14px', marginBottom: '36px', fontSize: '12px', color: '#fdba74' }}>
+              <span style={{ width: '6px', height: '6px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              NHL Live · {nombreMatchs > 0 ? `${nombreMatchs} games tonight` : 'Real-time data'}
+            </div>
+            <h1 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: '900', margin: '0 0 20px', lineHeight: '1.05', letterSpacing: '-2px' }}>
+              Bet smarter.<br />
+              <span style={{ background: 'linear-gradient(135deg, #f97316, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Win more.</span>
+            </h1>
+            <p style={{ fontSize: '17px', color: '#6b7280', margin: '0 0 40px', lineHeight: '1.7', maxWidth: '420px' }}>
+              Advanced NHL analytics platform built for serious bettors. Real-time stats, edge detection, and performance tracking.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 30px rgba(249,115,22,0.3)', transition: 'all 0.2s' }}>
+                Get started free →
+              </button>
+              <button className="ghost-btn" onClick={onVoirAnalyses} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: '1px solid #1f2937', padding: '14px 28px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s' }}>
+                Live demo
+              </button>
+            </div>
+            <p style={{ color: '#374151', fontSize: '12px', margin: 0 }}>Free forever · No credit card</p>
+          </div>
+
+          {/* Right - Mockup */}
+          <div style={{ animation: 'float 6s ease-in-out infinite' }}>
+            <MockupJoueur />
+          </div>
         </div>
-
-        {/* Title */}
-        <h1 style={{ fontSize: 'clamp(40px, 7vw, 72px)', fontWeight: '900', margin: '0 0 24px', lineHeight: '1.05', letterSpacing: '-2.5px', maxWidth: '820px', marginLeft: 'auto', marginRight: 'auto' }}>
-          The smarter way to<br />
-          <span style={{ background: 'linear-gradient(135deg, #f97316 0%, #fb923c 50%, #ea580c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>bet on hockey.</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p style={{ fontSize: '18px', color: '#6b7280', maxWidth: '500px', margin: '0 auto 52px', lineHeight: '1.7', fontWeight: '400' }}>
-          Advanced NHL analytics, real-time odds comparison, and performance tracking — built for serious bettors.
-        </p>
-
-        {/* CTAs */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
-          <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '15px 32px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 30px rgba(249,115,22,0.35)', letterSpacing: '-0.2px' }}>
-            Get started free →
-          </button>
-          <button className="ghost-btn" onClick={onVoirAnalyses} style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.1)', padding: '15px 32px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '500' }}>
-            View analytics
-          </button>
-        </div>
-        <p style={{ color: '#374151', fontSize: '13px', margin: 0 }}>Free to start · No credit card required</p>
       </div>
 
       {/* STATS BAR */}
-      <div style={{ borderTop: '1px solid #161616', borderBottom: '1px solid #161616', padding: '32px 24px', backgroundColor: '#0d0d0d' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '64px', flexWrap: 'wrap', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ borderTop: '1px solid #111', borderBottom: '1px solid #111', padding: '28px 24px', backgroundColor: '#080808' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '60px', flexWrap: 'wrap', maxWidth: '800px', margin: '0 auto' }}>
           {[
             { valeur: '32', label: 'NHL Teams' },
             { valeur: '3', label: 'Stat Models' },
             { valeur: '40+', label: 'Bookmakers' },
-            { valeur: nombreMatchs > 0 ? `${nombreMatchs}` : 'Live', label: 'Games Tonight' },
+            { valeur: '99%', label: 'Uptime' },
           ].map((stat, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'white', letterSpacing: '-1px' }}>{stat.valeur}</div>
-              <div style={{ color: '#4b5563', fontSize: '12px', marginTop: '4px', fontWeight: '500', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{stat.label}</div>
+              <div style={{ fontSize: '26px', fontWeight: '800', color: 'white', letterSpacing: '-1px' }}>{stat.valeur}</div>
+              <div style={{ color: '#374151', fontSize: '11px', marginTop: '3px', fontWeight: '500', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* FEATURES */}
+      {/* FEATURE 1 - Player Analytics */}
       <div style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-          <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
-            <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>Features</span>
-          </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-1.5px' }}>Everything you need to win.</h2>
-          <p style={{ color: '#6b7280', fontSize: '16px', maxWidth: '460px', margin: '0 auto', lineHeight: '1.7' }}>From raw data to actionable insights — all in one place.</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-          {[
-            { icon: '◈', tag: 'Analytics', titre: 'NHL Statistical Models', description: 'Win probability, goal differential, and total goals calculated from official NHL data updated in real-time.', couleur: '#f97316' },
-            { icon: '◎', tag: 'Live Odds', titre: 'Real-Time Odds Comparison', description: 'Compare odds from Bet365, Betway, DraftKings and more. Our algorithm automatically detects value bets.', couleur: '#22c55e' },
-            { icon: '▸', tag: 'NHL Live', titre: 'Live Scores & Ticker', description: 'Real-time NHL game feed with team logos, live scores, and start times — always up to date.', couleur: '#f59e0b' },
-            { icon: '⬡', tag: 'Performance', titre: 'Advanced Bankroll Tracking', description: 'Profit curve, ROI, win rate and bankroll management using the Kelly Criterion method.', couleur: '#a78bfa' },
-            { icon: '◐', tag: 'Value Bets', titre: 'Automatic Edge Detection', description: 'When our model spots a gap between our probabilities and bookmaker odds, you get notified instantly.', couleur: '#ec4899' },
-            { icon: '◉', tag: 'Security', titre: 'Private & Secure', description: 'Secure authentication and encrypted data. Your betting history stays completely private.', couleur: '#14b8a6' },
-          ].map((f, i) => (
-            <div className="feature-card" key={i} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '28px', border: '1px solid #1a1a1a' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <span style={{ color: f.couleur, fontSize: '20px', fontWeight: '300' }}>{f.icon}</span>
-                <span style={{ color: f.couleur, fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>{f.tag}</span>
-              </div>
-              <h3 style={{ margin: '0 0 10px', fontSize: '16px', fontWeight: '700', color: 'white', letterSpacing: '-0.3px' }}>{f.titre}</h3>
-              <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', lineHeight: '1.7' }}>{f.description}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
+              <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>Player Analytics</span>
             </div>
-          ))}
+            <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-1.5px', lineHeight: '1.1' }}>
+              Every stat you need to find the edge.
+            </h2>
+            <p style={{ color: '#6b7280', fontSize: '15px', lineHeight: '1.7', margin: '0 0 28px' }}>
+              SOG, Goals, Assists, Points, PPP, Hits, Blocks and TOI — all with L5/L10/L20 breakdowns and automatic edge detection against bookmaker lines.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {['L5 / L10 / L20 performance trends', 'Manual edge input with % over detection', 'Real-time TOI and advanced metrics'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#9ca3af', fontSize: '14px' }}>
+                  <span style={{ color: '#f97316', fontSize: '16px' }}>◆</span> {f}
+                </div>
+              ))}
+            </div>
+          </div>
+          <MockupJoueur />
         </div>
       </div>
 
-      {/* HOW IT WORKS */}
-      <div style={{ padding: '0 24px 100px', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-          <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
-            <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>How it works</span>
-          </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', margin: '0', letterSpacing: '-1.5px' }}>Up and running in minutes.</h2>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {[
-            { numero: '01', titre: 'Create your account', description: 'Free signup in 30 seconds. No credit card required.', },
-            { numero: '02', titre: 'Analyze the games', description: 'Browse statistical models and compare real-time odds.' },
-            { numero: '03', titre: 'Track your results', description: 'Log your bets and monitor your progress in the Dashboard.' },
-          ].map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', padding: '28px', borderRadius: '14px', backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a' }}>
-              <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '700', letterSpacing: '1px', minWidth: '28px', paddingTop: '2px' }}>{e.numero}</div>
-              <div>
-                <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>{e.titre}</h3>
-                <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', lineHeight: '1.6' }}>{e.description}</p>
-              </div>
+      {/* FEATURE 2 - Playoff Bracket */}
+      <div style={{ padding: '0 24px 100px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+          <MockupBracket />
+          <div>
+            <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
+              <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>Playoff Mode</span>
             </div>
-          ))}
+            <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-1.5px', lineHeight: '1.1' }}>
+              Automatically switches to playoffs.
+            </h2>
+            <p style={{ color: '#6b7280', fontSize: '15px', lineHeight: '1.7', margin: '0 0 28px' }}>
+              When the playoffs start, Betrics automatically detects the mode and switches to playoff stats and bracket view. No manual setup needed.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {['Live bracket with series scores', 'Eastern & Western conference view', 'Playoff vs Regular Season stats toggle'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#9ca3af', fontSize: '14px' }}>
+                  <span style={{ color: '#f97316', fontSize: '16px' }}>◆</span> {f}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* CTA FINAL */}
-      <div style={{ margin: '0 24px 100px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(234,88,12,0.08) 100%)', border: '1px solid rgba(249,115,22,0.2)', padding: '80px 32px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-2px', lineHeight: '1.05' }}>
-          Ready to bet smarter?
+      {/* FEATURES GRID */}
+      <div style={{ backgroundColor: '#080808', padding: '100px 24px', borderTop: '1px solid #111', borderBottom: '1px solid #111' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-1.5px' }}>Built for every edge.</h2>
+            <p style={{ color: '#6b7280', fontSize: '16px', maxWidth: '400px', margin: '0 auto' }}>Everything you need to make smarter bets.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+            {[
+              { icon: '⬡', tag: 'Live Odds', titre: 'Real-Time Odds', desc: 'Compare odds from 40+ bookmakers instantly. Auto-detect value bets.', c: '#f97316' },
+              { icon: '◈', tag: 'NHL Live', titre: 'Live Scores & Ticker', desc: 'NHL game feed with logos, live scores and start times.', c: '#22c55e' },
+              { icon: '◎', tag: 'Bankroll', titre: 'Bankroll Tracking', desc: 'Profit curve, ROI, win rate with Kelly Criterion management.', c: '#a78bfa' },
+              { icon: '◐', tag: 'Security', titre: 'Private & Secure', desc: 'Encrypted data. Your betting history stays completely private.', c: '#14b8a6' },
+            ].map((f, i) => (
+              <div className="feature-card" key={i} style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '24px', border: '1px solid #161616', transition: 'all 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <span style={{ color: f.c, fontSize: '18px' }}>{f.icon}</span>
+                  <span style={{ color: f.c, fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>{f.tag}</span>
+                </div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '15px', fontWeight: '700', color: 'white', letterSpacing: '-0.3px' }}>{f.titre}</h3>
+                <p style={{ margin: 0, color: '#4b5563', fontSize: '13px', lineHeight: '1.7' }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: '100px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(249,115,22,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <h2 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-2px', lineHeight: '1.05' }}>
+          Ready to find your edge?
         </h2>
-        <p style={{ color: '#6b7280', fontSize: '17px', marginBottom: '40px', maxWidth: '400px', margin: '0 auto 40px', lineHeight: '1.6' }}>
-          Join bettors who use data to gain an edge.
+        <p style={{ color: '#6b7280', fontSize: '17px', marginBottom: '40px', maxWidth: '380px', margin: '0 auto 40px', lineHeight: '1.6' }}>
+          Join bettors who use data to gain an edge over the house.
         </p>
-        <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 44px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 40px rgba(249,115,22,0.4)', letterSpacing: '-0.2px' }}>
+        <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 44px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 40px rgba(249,115,22,0.35)', letterSpacing: '-0.2px', transition: 'all 0.2s' }}>
           Get started free →
         </button>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '28px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '24px' }}>
           {['Free forever', 'No credit card', 'Upgrade anytime'].map((t, i) => (
-            <span key={i} style={{ color: '#374151', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#f97316' }}>✓</span> {t}
-            </span>
+            <span key={i} style={{ color: '#374151', fontSize: '13px' }}><span style={{ color: '#f97316' }}>✓</span> {t}</span>
           ))}
         </div>
       </div>
 
       {/* FOOTER */}
-      <div style={{ borderTop: '1px solid #111', padding: '40px 24px', backgroundColor: '#0a0a0a' }}>
+      <div style={{ borderTop: '1px solid #0f0f0f', padding: '36px 24px', backgroundColor: '#050505' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h3 style={{ color: '#f97316', margin: '0 0 4px', fontSize: '16px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h3>
-            <p style={{ color: '#374151', fontSize: '12px', margin: 0 }}>Sports betting analytics platform</p>
+            <div style={{ color: '#f97316', fontSize: '15px', fontWeight: '900', letterSpacing: '-0.5px', marginBottom: '3px' }}>Betrics</div>
+            <div style={{ color: '#1f2937', fontSize: '12px' }}>Sports betting analytics</div>
           </div>
-          <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-            <span onClick={onVoirAnalyses} style={{ color: '#4b5563', fontSize: '13px', cursor: 'pointer' }}>Analytics</span>
-            <span onClick={onVoirPricing} style={{ color: '#4b5563', fontSize: '13px', cursor: 'pointer' }}>Pricing</span>
-            <span style={{ color: '#4b5563', fontSize: '13px' }}>Contact</span>
+          <div style={{ display: 'flex', gap: '24px' }}>
+            <span className="nav-link" onClick={onVoirAnalyses} style={{ color: '#374151', fontSize: '13px', cursor: 'pointer', transition: 'color 0.2s' }}>Analytics</span>
+            <span className="nav-link" onClick={onVoirPricing} style={{ color: '#374151', fontSize: '13px', cursor: 'pointer', transition: 'color 0.2s' }}>Pricing</span>
+            <span style={{ color: '#374151', fontSize: '13px' }}>Contact</span>
           </div>
-          <p style={{ color: '#1f2937', fontSize: '12px', margin: 0 }}>© 2026 Betrics · Gambling involves risk · 18+</p>
+          <div style={{ color: '#1a1a1a', fontSize: '12px' }}>© 2026 Betrics · 18+ · Bet responsibly</div>
         </div>
       </div>
     </div>
