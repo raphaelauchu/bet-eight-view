@@ -31,5 +31,3 @@ jobs:
           git add nhl_lineups.json
           git diff --staged --quiet || git commit -m "Update NHL lineups $(date +'%Y-%m-%d %H:%M')"
           git push
-
-          
