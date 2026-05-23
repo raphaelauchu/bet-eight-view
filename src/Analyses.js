@@ -1914,7 +1914,7 @@ function Analyses({ onLigueChange }) {
           <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div>
             <h2 style={{ margin: '0 0 1px', fontSize: isMobile ? '16px' : '20px', fontWeight: '900', color: 'white' }}>
-              {ligueInfo.label} · categorie === 'equipes' ? 'Teams' : 'Players'
+              {ligueInfo.label} · {categorie === 'equipes' ? 'Teams' : 'Players'}
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
               {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Click on a player"}
