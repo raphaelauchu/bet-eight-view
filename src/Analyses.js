@@ -556,26 +556,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
           onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
       </div>
-      {recherchJoueurs.length > 0 && (
-  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden' }}>
-    {recherchJoueurs.map((j, i) => (
-      <div key={i} onClick={() => onSelectJoueur({ id: j.playerId, nom: j.name, position: j.positionCode, equipe: j.teamAbbrev || '', numero: j.sweaterNumber || '' })}
-        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid #222' : 'none' }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-      >
-        <img src={`https://assets.nhle.com/mugs/${j.playerId}.png`} alt={j.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#333' }} onError={e => e.target.style.display = 'none'} />
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
-          <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
-        <>
-          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+      
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
               const estAujourdhui = jour === getDateStr(new Date());
