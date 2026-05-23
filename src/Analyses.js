@@ -561,7 +561,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
       <div style={{ marginBottom: '14px', position: 'relative' }}>
         <input
           style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
-          placeholder="Rechercher un joueur ou une equipe..."
+          placeholder="Search players..."
           value={filtre}
           onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
