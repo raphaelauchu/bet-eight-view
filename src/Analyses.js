@@ -1,6 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch } from './nhlApi';
  
+const NHL_ABBREV_TO_SLUG = {
+  'ANA': 'anaheim-ducks', 'BOS': 'boston-bruins', 'BUF': 'buffalo-sabres',
+  'CGY': 'calgary-flames', 'CAR': 'carolina-hurricanes', 'CHI': 'chicago-blackhawks',
+  'COL': 'colorado-avalanche', 'CBJ': 'columbus-blue-jackets', 'DAL': 'dallas-stars',
+  'DET': 'detroit-red-wings', 'EDM': 'edmonton-oilers', 'FLA': 'florida-panthers',
+  'LAK': 'los-angeles-kings', 'MIN': 'minnesota-wild', 'MTL': 'montreal-canadiens',
+  'NSH': 'nashville-predators', 'NJD': 'new-jersey-devils', 'NYI': 'new-york-islanders',
+  'NYR': 'new-york-rangers', 'OTT': 'ottawa-senators', 'PHI': 'philadelphia-flyers',
+  'PIT': 'pittsburgh-penguins', 'SJS': 'san-jose-sharks', 'SEA': 'seattle-kraken',
+  'STL': 'st-louis-blues', 'TBL': 'tampa-bay-lightning', 'TOR': 'toronto-maple-leafs',
+  'UTA': 'utah-mammoth', 'VAN': 'vancouver-canucks', 'VGK': 'vegas-golden-knights',
+  'WSH': 'washington-capitals', 'WPG': 'winnipeg-jets',
+};
+
+function useLineupsDailyFaceoff() {
+  const [lineups, setLineups] = useState(null);
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/raphaelauchu/bet-eight-view/main/nhl_lineups.json')
+      .then(r => r.json())
+      .then(data => setLineups(data.teams))
+      .catch(err => console.error('Lineups fetch error:', err));
+  }, []);
+  return lineups;
+}
 const LOGOS_NHL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
   'BUF': 'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',
