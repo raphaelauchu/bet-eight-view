@@ -590,7 +590,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
               const estAujourdhui = jour === getDateStr(new Date());
-              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' });
+              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
                 <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
@@ -690,7 +690,7 @@ async function rechercherJoueur(query) {
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
               const estAujourdhui = jour === getDateStr(new Date());
-              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' });
+              const label = estAujourdhui ? "Auj." : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
                 <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
