@@ -247,9 +247,17 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   const slug = NHL_ABBREV_TO_SLUG[abbrev];
   const dfData = lineupDF?.[slug];
 
-  const trouverJoueur = (nom) => joueurs.find(j =>
-    j.nom.toLowerCase().includes(nom.split(' ').pop().toLowerCase())
-  );
+  const trouverJoueur = (nomDF) => {
+  const nomLower = nomDF.toLowerCase();
+  const prenomDF = nomDF.split(' ')[0].toLowerCase();
+  const nomFamilleDF = nomDF.split(' ').pop().toLowerCase();
+  
+  return joueurs.find(j => {
+    const jNom = j.nom.toLowerCase();
+    return jNom.includes(nomFamilleDF) || 
+           (jNom.includes(prenomDF) && nomFamilleDF.length > 3);
+  });
+};
 
   const lignesDF = dfData?.forwards ?
     Object.entries(dfData.forwards).map(([key, line]) => [
