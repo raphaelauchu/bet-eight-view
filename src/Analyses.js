@@ -248,15 +248,30 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   const dfData = lineupDF?.[slug];
 
   const trouverJoueur = (nomDF) => {
+  if (!nomDF) return null;
   const nomLower = nomDF.toLowerCase();
-  const prenomDF = nomDF.split(' ')[0].toLowerCase();
-  const nomFamilleDF = nomDF.split(' ').pop().toLowerCase();
+  const parties = nomDF.toLowerCase().split(' ');
+  const prenomDF = parties[0];
+  const nomFamilleDF = parties[parties.length - 1];
   
-  return joueurs.find(j => {
+  // 1. Match exact complet
+  let trouve = joueurs.find(j => j.nom.toLowerCase() === nomLower);
+  if (trouve) return trouve;
+  
+  // 2. Match nom de famille + prénom
+  trouve = joueurs.find(j => {
     const jNom = j.nom.toLowerCase();
-    return jNom.includes(nomFamilleDF) || 
-           (jNom.includes(prenomDF) && nomFamilleDF.length > 3);
+    return jNom.includes(nomFamilleDF) && jNom.includes(prenomDF);
   });
+  if (trouve) return trouve;
+  
+  // 3. Match nom de famille seulement (si > 4 lettres)
+  if (nomFamilleDF.length > 4) {
+    trouve = joueurs.find(j => j.nom.toLowerCase().includes(nomFamilleDF));
+    if (trouve) return trouve;
+  }
+  
+  return null;
 };
 
   const lignesDF = dfData?.forwards ?
