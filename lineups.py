@@ -401,7 +401,7 @@ def main():
     wb.save(output_file)
     print(f"\nFichier cree : {output_file}")
     print(f"{len(TEAMS)} equipes - {len(wb.sheetnames)} onglets")
-    input("\nAppuie sur Entree pour fermer...")
+    pass
 
 
 if __name__ == "__main__":
