@@ -238,11 +238,28 @@ function SectionGardien({ gardien, onSelect }) {
   );
 }
  
-function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile }) {
+function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, lineupDF }) {
   const forwards = joueurs.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
   const defenseurs = joueurs.filter(j => ['D', 'LD', 'RD'].includes(j.position));
   const gardiens = joueurs.filter(j => j.position === 'G');
   const gardienPartant = gardiens[0] || null;
+  // Matching Daily Faceoff
+  const slug = NHL_ABBREV_TO_SLUG[abbrev];
+  const dfData = lineupDF?.[slug];
+
+  const trouverJoueur = (nom) => joueurs.find(j =>
+    j.nom.toLowerCase().includes(nom.split(' ').pop().toLowerCase())
+  );
+
+  const lignesDF = dfData?.forwards ?
+    Object.entries(dfData.forwards).map(([key, line]) => [
+      trouverJoueur(line.LW),
+      trouverJoueur(line.C),
+      trouverJoueur(line.RW),
+    ].filter(Boolean)).filter(l => l.length > 0) : null;
+
+  const gardienDF = dfData?.goalies?.[0] ?
+    trouverJoueur(dfData.goalies[0]) || gardienPartant : gardienPartant;
  
   const lignes = [];
   if (forwards.some(j => j.ligne)) {
@@ -271,12 +288,12 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile }) {
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'white' }}>{nom}</h3>
       </div>
       <div style={{ marginBottom: '14px' }}>
-        <SectionGardien gardien={gardienPartant} onSelect={onSelect} />
+        <SectionGardien gardien={gardienDF} onSelect={onSelect} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
         <div>
           <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
-          {lignes.map((ligne, li) => (
+          {(lignesDF || lignes).map((ligne, li) => (
             <div key={li} style={{ marginBottom: '8px' }}>
               <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Ligne {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -333,6 +350,7 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
   const [ongletEquipe, setOngletEquipe] = useState(0);
   const [sourceData, setSourceData] = useState('');
   const chargementLance = useRef(false);
+  const lineupDF = useLineupsDailyFaceoff();
  
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
@@ -458,8 +476,8 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
                 </div>
                 {sourceData === 'live' && <span style={{ fontSize: '10px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', padding: '3px 8px', borderRadius: '20px' }}>En direct</span>}
               </div>
-              {ongletEquipe === 0 && filtrerJoueurs(roster1).length > 0 && <AlignementEquipe abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} joueurs={filtrerJoueurs(roster1)} onSelect={onSelectJoueur} isMobile={isMobile} />}
-              {ongletEquipe === 1 && filtrerJoueurs(roster2).length > 0 && <AlignementEquipe abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} joueurs={filtrerJoueurs(roster2)} onSelect={onSelectJoueur} isMobile={isMobile} />}
+              {ongletEquipe === 0 && filtrerJoueurs(roster1).length > 0 && <AlignementEquipe abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} joueurs={filtrerJoueurs(roster1)} onSelect={onSelectJoueur} isMobile={isMobile} lineupDF={lineupDF} />}
+              {ongletEquipe === 1 && filtrerJoueurs(roster2).length > 0 && <AlignementEquipe abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} joueurs={filtrerJoueurs(roster2)} onSelect={onSelectJoueur} isMobile={isMobile} lineupDF={lineupDF} />}
               {((ongletEquipe === 0 && filtrerJoueurs(roster1).length === 0) || (ongletEquipe === 1 && filtrerJoueurs(roster2).length === 0)) && <p style={{ color: '#666', textAlign: 'center' }}>Aucun joueur trouve.</p>}
             </>
           )}

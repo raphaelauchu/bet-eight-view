@@ -8,182 +8,160 @@ import { supabase } from './supabase';
  
 function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs }) {
   return (
-    <div style={{ color: 'white', fontFamily: 'Arial' }}>
-      <div style={{ padding: '120px 32px 100px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.4)', borderRadius: '20px', padding: '6px 16px', marginBottom: '32px', fontSize: '13px', color: '#fed7aa' }}>
-          <span style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-          Données NHL en temps réel · {nombreMatchs > 0 ? `${nombreMatchs} matchs ce soir` : 'Matchs en direct'}
+    <div style={{ color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif' }}>
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .hero-btn:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(249,115,22,0.6) !important; }
+        .ghost-btn:hover { background: rgba(255,255,255,0.08) !important; }
+        .feature-card:hover { border-color: rgba(249,115,22,0.4) !important; transform: translateY(-2px); }
+        * { transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s; }
+      `}</style>
+
+      {/* HERO */}
+      <div style={{ padding: '140px 24px 120px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        
+        {/* Badge */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '100px', padding: '6px 16px', marginBottom: '40px', fontSize: '13px', color: '#fdba74' }}>
+          <span style={{ width: '7px', height: '7px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+          NHL Live Data · {nombreMatchs > 0 ? `${nombreMatchs} games tonight` : 'Real-time updates'}
         </div>
-        <h1 style={{ fontSize: '64px', fontWeight: '900', margin: '0 0 24px', lineHeight: '1.1', letterSpacing: '-2px' }}>
-          Analyse. Calcule.<br />
-          <span style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Parie mieux.</span>
+
+        {/* Title */}
+        <h1 style={{ fontSize: 'clamp(40px, 7vw, 72px)', fontWeight: '900', margin: '0 0 24px', lineHeight: '1.05', letterSpacing: '-2.5px', maxWidth: '820px', marginLeft: 'auto', marginRight: 'auto' }}>
+          The smarter way to<br />
+          <span style={{ background: 'linear-gradient(135deg, #f97316 0%, #fb923c 50%, #ea580c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>bet on hockey.</span>
         </h1>
-        <p style={{ fontSize: '20px', color: '#9ca3af', maxWidth: '560px', margin: '0 auto 48px', lineHeight: '1.6' }}>
-          La première plateforme d'analyse technique pour les paris sportifs. Modèles statistiques avancés, cotes en temps réel et suivi de performance.
+
+        {/* Subtitle */}
+        <p style={{ fontSize: '18px', color: '#6b7280', maxWidth: '500px', margin: '0 auto 52px', lineHeight: '1.7', fontWeight: '400' }}>
+          Advanced NHL analytics, real-time odds comparison, and performance tracking — built for serious bettors.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 36px', borderRadius: '10px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 0 30px rgba(249,115,22,0.4)' }}>
-            Commencer gratuitement →
+
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
+          <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '15px 32px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 30px rgba(249,115,22,0.35)', letterSpacing: '-0.2px' }}>
+            Get started free →
           </button>
-          <button onClick={onVoirAnalyses} style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.15)', padding: '16px 36px', borderRadius: '10px', fontSize: '16px', cursor: 'pointer' }}>
-            Voir les analyses
+          <button className="ghost-btn" onClick={onVoirAnalyses} style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#d1d5db', border: '1px solid rgba(255,255,255,0.1)', padding: '15px 32px', borderRadius: '10px', fontSize: '15px', cursor: 'pointer', fontWeight: '500' }}>
+            View analytics
           </button>
         </div>
-        <p style={{ color: '#4b5563', fontSize: '13px', marginTop: '20px' }}>Gratuit pour commencer · Aucune carte de crédit</p>
+        <p style={{ color: '#374151', fontSize: '13px', margin: 0 }}>Free to start · No credit card required</p>
       </div>
- 
-      <div style={{ borderTop: '1px solid #1f2937', borderBottom: '1px solid #1f2937', padding: '28px 32px', backgroundColor: '#111827' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '48px', flexWrap: 'wrap', maxWidth: '900px', margin: '0 auto' }}>
+
+      {/* STATS BAR */}
+      <div style={{ borderTop: '1px solid #161616', borderBottom: '1px solid #161616', padding: '32px 24px', backgroundColor: '#0d0d0d' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '64px', flexWrap: 'wrap', maxWidth: '800px', margin: '0 auto' }}>
           {[
-            { valeur: '3', label: 'Modèles statistiques', couleur: '#f97316' },
-            { valeur: '32', label: 'Équipes NHL', couleur: '#22c55e' },
-            { valeur: '40+', label: 'Bookmakers comparés', couleur: '#f59e0b' },
-            { valeur: nombreMatchs > 0 ? `${nombreMatchs}` : '—', label: 'Matchs ce soir', couleur: '#ec4899' },
+            { valeur: '32', label: 'NHL Teams' },
+            { valeur: '3', label: 'Stat Models' },
+            { valeur: '40+', label: 'Bookmakers' },
+            { valeur: nombreMatchs > 0 ? `${nombreMatchs}` : 'Live', label: 'Games Tonight' },
           ].map((stat, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '32px', fontWeight: '900', color: stat.couleur, letterSpacing: '-1px' }}>{stat.valeur}</div>
-              <div style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>{stat.label}</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: 'white', letterSpacing: '-1px' }}>{stat.valeur}</div>
+              <div style={{ color: '#4b5563', fontSize: '12px', marginTop: '4px', fontWeight: '500', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
- 
-      <div style={{ padding: '80px 32px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Dashboard</span>
-          <h2 style={{ fontSize: '40px', fontWeight: '800', margin: '12px 0 16px', letterSpacing: '-1px' }}>Ton centre de contrôle</h2>
-          <p style={{ color: '#9ca3af', fontSize: '16px', maxWidth: '500px', margin: '0 auto' }}>Suis tes paris, visualise ta performance et gère ta bankroll comme un professionnel.</p>
+
+      {/* FEATURES */}
+      <div style={{ padding: '100px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
+            <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>Features</span>
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', margin: '0 0 16px', letterSpacing: '-1.5px' }}>Everything you need to win.</h2>
+          <p style={{ color: '#6b7280', fontSize: '16px', maxWidth: '460px', margin: '0 auto', lineHeight: '1.7' }}>From raw data to actionable insights — all in one place.</p>
         </div>
-        <div style={{ backgroundColor: '#111827', borderRadius: '16px', border: '1px solid #1f2937', padding: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-            {[
-              { label: 'Bankroll', valeur: '$1,840', couleur: '#fed7aa' },
-              { label: 'Profit net', valeur: '+$340', couleur: '#22c55e' },
-              { label: 'ROI', valeur: '+12.4%', couleur: '#22c55e' },
-              { label: 'Win rate', valeur: '58%', couleur: '#f59e0b' },
-            ].map((s, i) => (
-              <div key={i} style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px 20px', flex: 1, minWidth: '120px' }}>
-                <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '6px' }}>{s.label}</div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold', color: s.couleur }}>{s.valeur}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '20px', marginBottom: '16px', height: '120px', display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-            <div style={{ color: '#6b7280', fontSize: '12px', marginRight: '8px', alignSelf: 'center' }}>📈 Courbe de profit</div>
-            {[30, 45, 35, 60, 55, 75, 65, 85, 70, 90, 80, 95].map((h, i) => (
-              <div key={i} style={{ flex: 1, height: `${h}%`, background: 'linear-gradient(180deg, #f97316, #ea580c)', borderRadius: '4px 4px 0 0', opacity: 0.7 + i * 0.02 }} />
-            ))}
-          </div>
-          <div style={{ backgroundColor: '#1f2937', borderRadius: '10px', padding: '16px' }}>
-            <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '12px' }}>🎯 Paris actifs</div>
-            {[
-              { match: 'MTL vs TOR', type: 'Moneyline', cote: '2.10', mise: '$50', profit: '+$55' },
-              { match: 'EDM vs CGY', type: 'Total buts Over 5.5', cote: '1.85', mise: '$75', profit: '+$63.75' },
-            ].map((p, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #374151' : 'none' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{p.match}</div>
-                  <div style={{ color: '#f97316', fontSize: '12px' }}>{p.type} · Cote {p.cote}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: '#9ca3af', fontSize: '12px' }}>Mise {p.mise}</div>
-                  <div style={{ color: '#22c55e', fontWeight: 'bold' }}>{p.profit}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
- 
-      <div style={{ backgroundColor: '#111827', padding: '80px 32px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Fonctionnalités</span>
-            <h2 style={{ fontSize: '40px', fontWeight: '800', margin: '12px 0 16px', letterSpacing: '-1px' }}>Tout pour parier intelligemment</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-            {[
-              { emoji: '📊', tag: 'Analyses', titre: 'Modèles statistiques NHL', description: 'Probabilités de victoire, différentiel de buts et total de buts calculés avec les données officielles NHL.', couleur: '#f97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.3)' },
-              { emoji: '💰', tag: 'Cotes', titre: 'Comparateur en temps réel', description: 'Compare les cotes de Bet365, Betway, DraftKings et plus. Notre algorithme détecte automatiquement les value bets.', couleur: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.3)' },
-              { emoji: '🏒', tag: 'NHL Live', titre: 'Ticker et scores en direct', description: 'Fil de matchs NHL en temps réel avec logos des équipes, scores en direct et heures de départ.', couleur: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
-              { emoji: '📈', tag: 'Performance', titre: 'Suivi de bankroll avancé', description: 'Courbe de profit, ROI, win rate et gestion de bankroll avec la méthode Kelly.', couleur: '#ec4899', bg: 'rgba(236,72,153,0.1)', border: 'rgba(236,72,153,0.3)' },
-              { emoji: '🎯', tag: 'Value Bets', titre: 'Détection automatique', description: 'Quand notre modèle voit une différence entre nos probabilités et les cotes des bookmakers, il te le signale.', couleur: '#ea580c', bg: 'rgba(234,88,12,0.1)', border: 'rgba(234,88,12,0.3)' },
-              { emoji: '🔒', tag: 'Sécurité', titre: 'Données privées et sécurisées', description: 'Authentification sécurisée, données chiffrées. Ton historique de paris reste privé.', couleur: '#14b8a6', bg: 'rgba(20,184,166,0.1)', border: 'rgba(20,184,166,0.3)' },
-            ].map((f, i) => (
-              <div key={i} style={{ backgroundColor: f.bg, borderRadius: '14px', padding: '28px', border: `1px solid ${f.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                  <span style={{ fontSize: '24px' }}>{f.emoji}</span>
-                  <span style={{ backgroundColor: f.bg, border: `1px solid ${f.border}`, color: f.couleur, fontSize: '11px', fontWeight: 'bold', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>{f.tag}</span>
-                </div>
-                <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '700', color: 'white' }}>{f.titre}</h3>
-                <p style={{ margin: 0, color: '#9ca3af', fontSize: '14px', lineHeight: '1.7' }}>{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
- 
-      <div style={{ padding: '80px 32px', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <span style={{ color: '#f97316', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Simple</span>
-          <h2 style={{ fontSize: '40px', fontWeight: '800', margin: '12px 0 16px', letterSpacing: '-1px' }}>En 3 étapes</h2>
-        </div>
-        <div style={{ display: 'flex', gap: '0', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '28px', left: '16.66%', right: '16.66%', height: '2px', backgroundColor: '#1f2937', zIndex: 0 }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
           {[
-            { numero: '01', titre: 'Crée ton compte', description: 'Inscription gratuite en 30 secondes. Aucune carte de crédit requise.', emoji: '👤' },
-            { numero: '02', titre: 'Analyse les matchs', description: 'Consulte les modèles statistiques et compare les cotes en temps réel.', emoji: '📊' },
-            { numero: '03', titre: 'Track tes résultats', description: 'Enregistre tes paris et suis ta progression dans le Dashboard.', emoji: '📈' },
-          ].map((e, i) => (
-            <div key={i} style={{ flex: 1, textAlign: 'center', position: 'relative', zIndex: 1, padding: '0 16px' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '22px' }}>
-                {e.emoji}
+            { icon: '◈', tag: 'Analytics', titre: 'NHL Statistical Models', description: 'Win probability, goal differential, and total goals calculated from official NHL data updated in real-time.', couleur: '#f97316' },
+            { icon: '◎', tag: 'Live Odds', titre: 'Real-Time Odds Comparison', description: 'Compare odds from Bet365, Betway, DraftKings and more. Our algorithm automatically detects value bets.', couleur: '#22c55e' },
+            { icon: '▸', tag: 'NHL Live', titre: 'Live Scores & Ticker', description: 'Real-time NHL game feed with team logos, live scores, and start times — always up to date.', couleur: '#f59e0b' },
+            { icon: '⬡', tag: 'Performance', titre: 'Advanced Bankroll Tracking', description: 'Profit curve, ROI, win rate and bankroll management using the Kelly Criterion method.', couleur: '#a78bfa' },
+            { icon: '◐', tag: 'Value Bets', titre: 'Automatic Edge Detection', description: 'When our model spots a gap between our probabilities and bookmaker odds, you get notified instantly.', couleur: '#ec4899' },
+            { icon: '◉', tag: 'Security', titre: 'Private & Secure', description: 'Secure authentication and encrypted data. Your betting history stays completely private.', couleur: '#14b8a6' },
+          ].map((f, i) => (
+            <div className="feature-card" key={i} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '28px', border: '1px solid #1a1a1a' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <span style={{ color: f.couleur, fontSize: '20px', fontWeight: '300' }}>{f.icon}</span>
+                <span style={{ color: f.couleur, fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>{f.tag}</span>
               </div>
-              <div style={{ color: '#4b5563', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', letterSpacing: '1px' }}>{e.numero}</div>
-              <h3 style={{ margin: '0 0 8px', fontSize: '17px', fontWeight: '700' }}>{e.titre}</h3>
-              <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0, lineHeight: '1.6' }}>{e.description}</p>
+              <h3 style={{ margin: '0 0 10px', fontSize: '16px', fontWeight: '700', color: 'white', letterSpacing: '-0.3px' }}>{f.titre}</h3>
+              <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', lineHeight: '1.7' }}>{f.description}</p>
             </div>
           ))}
         </div>
       </div>
- 
-      <div style={{ margin: '0 32px 80px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(234,88,12,0.2) 100%)', border: '1px solid rgba(249,115,22,0.3)', padding: '64px 32px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '44px', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-1px' }}>
-          Prêt à parier<br />plus intelligemment?
-        </h2>
-        <p style={{ color: '#9ca3af', fontSize: '18px', marginBottom: '36px' }}>Rejoins les parieurs qui utilisent les données pour gagner.</p>
-        <button onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '18px 48px', borderRadius: '12px', fontSize: '18px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 0 40px rgba(249,115,22,0.5)' }}>
-          Commencer gratuitement →
-        </button>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '24px', flexWrap: 'wrap' }}>
-          {['✓ Gratuit pour toujours', '✓ Aucune carte de crédit', '✓ Upgrade quand tu veux'].map((t, i) => (
-            <span key={i} style={{ color: '#6b7280', fontSize: '13px' }}>{t}</span>
+
+      {/* HOW IT WORKS */}
+      <div style={{ padding: '0 24px 100px', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div style={{ display: 'inline-block', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '100px', padding: '4px 14px', marginBottom: '20px' }}>
+            <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase' }}>How it works</span>
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: '800', margin: '0', letterSpacing: '-1.5px' }}>Up and running in minutes.</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {[
+            { numero: '01', titre: 'Create your account', description: 'Free signup in 30 seconds. No credit card required.', },
+            { numero: '02', titre: 'Analyze the games', description: 'Browse statistical models and compare real-time odds.' },
+            { numero: '03', titre: 'Track your results', description: 'Log your bets and monitor your progress in the Dashboard.' },
+          ].map((e, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', padding: '28px', borderRadius: '14px', backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a' }}>
+              <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '700', letterSpacing: '1px', minWidth: '28px', paddingTop: '2px' }}>{e.numero}</div>
+              <div>
+                <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '700', letterSpacing: '-0.3px' }}>{e.titre}</h3>
+                <p style={{ margin: 0, color: '#4b5563', fontSize: '14px', lineHeight: '1.6' }}>{e.description}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
- 
-      <div style={{ borderTop: '1px solid #1f2937', padding: '32px', textAlign: 'center', backgroundColor: '#0a0a0a' }}>
-        <h3 style={{ color: '#f97316', margin: '0 0 8px', fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h3>
-        <p style={{ color: '#4b5563', fontSize: '13px', margin: '0 0 16px' }}>La plateforme d'analyse de paris sportifs</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '16px' }}>
-          <span onClick={onVoirAnalyses} style={{ color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>Analyses</span>
-          <span onClick={onVoirPricing} style={{ color: '#6b7280', fontSize: '13px', cursor: 'pointer' }}>Pricing</span>
-          <span style={{ color: '#6b7280', fontSize: '13px' }}>Contact</span>
+
+      {/* CTA FINAL */}
+      <div style={{ margin: '0 24px 100px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(234,88,12,0.08) 100%)', border: '1px solid rgba(249,115,22,0.2)', padding: '80px 32px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: '900', margin: '0 0 16px', letterSpacing: '-2px', lineHeight: '1.05' }}>
+          Ready to bet smarter?
+        </h2>
+        <p style={{ color: '#6b7280', fontSize: '17px', marginBottom: '40px', maxWidth: '400px', margin: '0 auto 40px', lineHeight: '1.6' }}>
+          Join bettors who use data to gain an edge.
+        </p>
+        <button className="hero-btn" onClick={onCommencer} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 44px', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 0 40px rgba(249,115,22,0.4)', letterSpacing: '-0.2px' }}>
+          Get started free →
+        </button>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '28px', flexWrap: 'wrap' }}>
+          {['Free forever', 'No credit card', 'Upgrade anytime'].map((t, i) => (
+            <span key={i} style={{ color: '#374151', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#f97316' }}>✓</span> {t}
+            </span>
+          ))}
         </div>
-        <p style={{ color: '#374151', fontSize: '12px', margin: 0 }}>© 2025 Betrics · Jouer comporte des risques · 18+</p>
       </div>
- 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
+
+      {/* FOOTER */}
+      <div style={{ borderTop: '1px solid #111', padding: '40px 24px', backgroundColor: '#0a0a0a' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h3 style={{ color: '#f97316', margin: '0 0 4px', fontSize: '16px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h3>
+            <p style={{ color: '#374151', fontSize: '12px', margin: 0 }}>Sports betting analytics platform</p>
+          </div>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+            <span onClick={onVoirAnalyses} style={{ color: '#4b5563', fontSize: '13px', cursor: 'pointer' }}>Analytics</span>
+            <span onClick={onVoirPricing} style={{ color: '#4b5563', fontSize: '13px', cursor: 'pointer' }}>Pricing</span>
+            <span style={{ color: '#4b5563', fontSize: '13px' }}>Contact</span>
+          </div>
+          <p style={{ color: '#1f2937', fontSize: '12px', margin: 0 }}>© 2026 Betrics · Gambling involves risk · 18+</p>
+        </div>
+      </div>
     </div>
   );
 }
- 
 function App() {
   const [page, setPage] = useState('home');
   const [utilisateur, setUtilisateur] = useState(null);
