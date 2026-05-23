@@ -258,12 +258,15 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   let trouve = joueurs.find(j => j.nom.toLowerCase() === nomLower);
   if (trouve) return trouve;
   
-  // 2. Match nom de famille + prénom
-  trouve = joueurs.find(j => {
-    const jNom = j.nom.toLowerCase();
-    return jNom.includes(nomFamilleDF) && jNom.includes(prenomDF);
-  });
+  // 2. Match nom de famille seul d'abord
+  trouve = joueurs.find(j => j.nom.toLowerCase().includes(nomFamilleDF));
   if (trouve) return trouve;
+
+  // 3. Match prénom seul (si > 4 lettres)
+  if (prenomDF.length > 4) {
+    trouve = joueurs.find(j => j.nom.toLowerCase().includes(prenomDF));
+    if (trouve) return trouve;
+  }
   
   // 3. Match nom de famille seulement (si > 4 lettres)
   if (nomFamilleDF.length > 4) {
