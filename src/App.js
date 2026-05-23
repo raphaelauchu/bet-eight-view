@@ -154,3 +154,4 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
     </div>
   );
 }
+export default App;
