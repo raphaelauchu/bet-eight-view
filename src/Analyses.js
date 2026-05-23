@@ -523,9 +523,10 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
- 
+  const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+
   useEffect(() => { chargerSemaine(); }, []);
- 
+
   async function chargerSemaine() {
     setChargement(true);
     const aujourdhui = new Date();
@@ -543,20 +544,49 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
     setChargement(false);
   }
- 
+
+  async function rechercherJoueur(query) {
+    if (query.length < 2) { setRechercheJoueurs([]); return; }
+    try {
+      const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=10&q=${encodeURIComponent(query)}&active=true`);
+      const data = await res.json();
+      setRechercheJoueurs(data || []);
+    } catch { setRechercheJoueurs([]); }
+  }
+
   const jours = Object.keys(matchsParJour).sort();
- 
+
   return (
     <div>
-      <div style={{ marginBottom: '14px' }}>
+      <div style={{ marginBottom: '14px', position: 'relative' }}>
         <input
           style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Rechercher un joueur ou une equipe..."
           value={filtre}
           onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
+        {recherchJoueurs.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+            {recherchJoueurs.map((j, i) => (
+              <div key={i}
+                onClick={() => { onSelectJoueur({ id: j.playerId, nom: j.name, position: j.positionCode, equipe: j.teamAbbrev || '', numero: j.sweaterNumber || '' }); setRechercheJoueurs([]); setFiltre(''); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid #222' : 'none' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <img src={`https://assets.nhle.com/mugs/${j.playerId}.png`} alt={j.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#333' }} onError={e => e.target.style.display = 'none'} />
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
+                  <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      
+      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
+        <>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
               const estAujourdhui = jour === getDateStr(new Date());
