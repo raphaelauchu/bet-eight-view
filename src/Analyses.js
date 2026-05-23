@@ -330,19 +330,19 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ fontSize: '9px', color: '#f97316', marginBottom: '4px' }}>PP1</div>
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
-                  {forwards.slice(0, 3).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+                  {(dfData?.pp_units?.PP1?.slice(0,3) || forwards.slice(0, 3)).filter(Boolean).map((j, i) => { const joueur = typeof j === 'string' ? trouverJoueur(j) : j; return joueur ? <CarteJoueurLigne key={i} joueur={joueur} onSelect={onSelect} estChaud={false} isMobile={isMobile} /> : null; })}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  {[defenseurs[0], defenseurs[1]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+                  {(dfData?.pp_units?.PP1?.slice(3) || [defenseurs[0], defenseurs[1]]).filter(Boolean).map((j, i) => { const joueur = typeof j === 'string' ? trouverJoueur(j) : j; return joueur ? <CarteJoueurLigne key={i} joueur={joueur} onSelect={onSelect} estChaud={false} isMobile={isMobile} /> : null; })}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: '9px', color: '#f97316', marginBottom: '4px' }}>PP2</div>
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
-                  {forwards.slice(3, 6).filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+                  {(dfData?.pp_units?.PP2?.slice(0,3) || forwards.slice(3, 6)).filter(Boolean).map((j, i) => { const joueur = typeof j === 'string' ? trouverJoueur(j) : j; return joueur ? <CarteJoueurLigne key={i} joueur={joueur} onSelect={onSelect} estChaud={false} isMobile={isMobile} /> : null; })}
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  {[defenseurs[2], defenseurs[3]].filter(Boolean).map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+                  {(dfData?.pp_units?.PP2?.slice(3) || [defenseurs[2], defenseurs[3]]).filter(Boolean).map((j, i) => { const joueur = typeof j === 'string' ? trouverJoueur(j) : j; return joueur ? <CarteJoueurLigne key={i} joueur={joueur} onSelect={onSelect} estChaud={false} isMobile={isMobile} /> : null; })}
                 </div>
               </div>
             </div>
