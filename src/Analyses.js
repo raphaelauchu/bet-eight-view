@@ -277,7 +277,11 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   } else {
     for (let i = 0; i < Math.min(forwards.length, 12); i += 3) lignes.push(forwards.slice(i, i + 3));
   }
- 
+ const pairesDF = dfData?.defence ?
+    Object.entries(dfData.defence).map(([key, pair]) => [
+      trouverJoueur(pair.LD),
+      trouverJoueur(pair.RD),
+    ].filter(Boolean)).filter(p => p.length > 0) : null;
   const paires = [];
   if (defenseurs.some(j => j.ligne)) {
     const parPaire = {};
@@ -312,7 +316,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
         </div>
         <div>
           <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Defenseurs</div>
-          {paires.map((paire, pi) => (
+          {(pairesDF || paires).map((paire, pi) => (
             <div key={pi} style={{ marginBottom: '8px' }}>
               <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Paire {pi + 1}</div>
               <div style={{ display: 'flex', gap: '4px' }}>

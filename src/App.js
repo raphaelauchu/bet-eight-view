@@ -140,7 +140,7 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
 
       {/* STATS BAR */}
       <div style={{ borderTop: '1px solid #111', borderBottom: '1px solid #111', padding: '28px 24px', backgroundColor: '#080808' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '60px', flexWrap: 'wrap', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
           {[
             { valeur: '32', label: 'NHL Teams' },
             { valeur: '3', label: 'Stat Models' },
