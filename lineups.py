@@ -1,7 +1,7 @@
 """
-NHL Lineups Scraper - Daily Faceoff -> Excel
+NHL Lineups Scraper - Daily Faceoff -> Excel + JSON
 Usage personnel uniquement. Un onglet par equipe.
-Version 3 - extraction via JSON Next.js + sections HTML
+Version 4 - production ready pour GitHub Actions
 """
 
 import time
@@ -76,7 +76,6 @@ def get_soup(url):
 
 
 def get_players_in_section(section_div):
-    """Extrait les noms de joueurs dans un div de section."""
     players = []
     for a in section_div.find_all("a", href=re.compile(r"/players/news/")):
         span = a.find("span")
@@ -88,13 +87,8 @@ def get_players_in_section(section_div):
 
 
 def find_section_by_title(soup, *keywords):
-    """
-    Trouve un conteneur de section par son titre.
-    Cherche un tag contenant un des keywords, puis remonte/descend pour trouver les joueurs.
-    """
     for kw in keywords:
         for tag in soup.find_all(string=re.compile(kw, re.IGNORECASE)):
-            # Remonte pour trouver le conteneur de la section
             container = tag.find_parent("div")
             for _ in range(8):
                 if container is None:
@@ -121,14 +115,6 @@ def scrape_team_lineup(team_slug):
         "goalies":  [],
     }
 
-    # ── Strategie: trouver les sections par leurs titres HTML ──────────────────
-    # Daily Faceoff utilise des divs avec du texte comme "1st Powerplay Unit",
-    # "Defensive Pairings", "Goalies" comme separateurs de section.
-
-    # Collecter toutes les sections avec leurs titres
-    # On cherche les elements qui contiennent exactement ces textes
-    sections = {}
-
     title_patterns = {
         "forwards":  [r"Forward Lines", r"Forwards"],
         "defensive": [r"Defensive Pairings", r"Defense"],
@@ -137,7 +123,6 @@ def scrape_team_lineup(team_slug):
         "goalies":   [r"Goalies", r"Goalie"],
     }
 
-    # Trouver tous les divs qui sont des titres de section
     all_divs = soup.find_all("div")
     section_markers = []
 
@@ -146,16 +131,14 @@ def scrape_team_lineup(team_slug):
         for key, patterns in title_patterns.items():
             for pat in patterns:
                 if re.match(pat, text, re.IGNORECASE) and len(text) < 50:
-                    # Verifier que ce div est un titre (peu d'enfants)
                     if len(div.find_all("div")) < 5:
                         section_markers.append((key, div, text))
                         break
 
     print(f"    Sections trouvees: {[(s[0], s[2]) for s in section_markers]}")
 
-    # Pour chaque section trouvee, extraire les joueurs du conteneur parent
+    sections = {}
     for key, marker_div, title in section_markers:
-        # Remonte pour trouver le conteneur qui inclut les joueurs
         container = marker_div.find_parent("div")
         for _ in range(6):
             if container is None:
@@ -168,9 +151,8 @@ def scrape_team_lineup(team_slug):
 
     print(f"    Joueurs par section: { {k: len(v) for k,v in sections.items()} }")
 
-    # ── Assigner les avants ────────────────────────────────────────────────────
+    # Avants
     fwd = sections.get("forwards", [])
-    # Si pas trouve par titre, fallback sur les 12 premiers joueurs uniques
     if not fwd:
         all_names = []
         seen = set()
@@ -188,47 +170,30 @@ def scrape_team_lineup(team_slug):
         if len(chunk) == 3:
             data["forwards"][f"L{i+1}"] = {"LW": chunk[0], "C": chunk[1], "RW": chunk[2]}
 
-    # ── Assigner les defenseurs ────────────────────────────────────────────────
+    # Defenseurs
     defs = sections.get("defensive", [])
-    if not defs and "forwards" not in sections:
-        # Fallback: positions 12-17
-        all_names = []
-        seen = set()
-        for a in soup.find_all("a", href=re.compile(r"/players/news/")):
-            sp = a.find("span")
-            if sp:
-                n = sp.get_text(strip=True)
-                if n and n not in seen:
-                    all_names.append(n)
-                    seen.add(n)
-        defs = all_names[12:18]
-
     for i in range(3):
         chunk = defs[i*2:(i+1)*2]
         if len(chunk) == 2:
             data["defence"][f"D{i+1}"] = {"LD": chunk[0], "RD": chunk[1]}
 
-    # ── PP Units ───────────────────────────────────────────────────────────────
+    # PP Units
     pp1 = sections.get("pp1", [])
     pp2 = sections.get("pp2", [])
-
-    # Fallback si sections pas trouvees: chercher par texte "1st" et "2nd"
     if not pp1:
         pp1, _ = find_section_by_title(soup, r"1st Powerplay", r"1st Power Play")
     if not pp2:
         pp2, _ = find_section_by_title(soup, r"2nd Powerplay", r"2nd Power Play")
-
     if pp1:
         data["pp_units"]["PP1"] = pp1[:5]
     if pp2:
         data["pp_units"]["PP2"] = pp2[:5]
 
-    # ── Gardiens ───────────────────────────────────────────────────────────────
+    # Gardiens
     goalie_players = sections.get("goalies", [])
     if not goalie_players:
         goalie_players, _ = find_section_by_title(soup, r"Goalies", r"Goalie")
-
-    data["goalies"] = goalie_players[:2]  # Max 2 gardiens
+    data["goalies"] = goalie_players[:2]
 
     return data
 
@@ -267,7 +232,6 @@ def write_team_sheet(wb, team_data, team_name):
 
     row = 1
 
-    # Titre
     ws.merge_cells(f"A{row}:F{row}")
     c = ws.cell(row, 1, f"NHL {team_name.upper()} - Lineups")
     c.font = Font(bold=True, name="Arial", size=14, color=COLOR_HEADER_FONT)
@@ -282,12 +246,9 @@ def write_team_sheet(wb, team_data, team_name):
     c.alignment = Alignment(horizontal="right")
     row += 2
 
-    # ── Avants ────────────────────────────────────────────────────────────────
-    for col, lbl in enumerate(["Ligne", "LW", "C", "RW"], 1):
+    # Avants
+    for col, lbl in enumerate(["Ligne", "LW", "C", "RW", "", ""], 1):
         hcell(ws, row, col, lbl)
-    # Vide les colonnes E et F pour cette section
-    for col in [5, 6]:
-        hcell(ws, row, col, "")
     ws.row_dimensions[row].height = 20
     row += 1
 
@@ -311,7 +272,7 @@ def write_team_sheet(wb, team_data, team_name):
         row += 1
     row += 1
 
-    # ── Defenseurs ────────────────────────────────────────────────────────────
+    # Defenseurs
     for col, lbl in enumerate(["Pairing", "LD", "RD", "", "", ""], 1):
         hcell(ws, row, col, lbl)
     ws.row_dimensions[row].height = 20
@@ -336,7 +297,7 @@ def write_team_sheet(wb, team_data, team_name):
         row += 1
     row += 1
 
-    # ── Power Play (5 colonnes: PP + 5 joueurs) ───────────────────────────────
+    # Power Play
     for col, lbl in enumerate(["PP", "J1", "J2", "J3", "J4", "J5"], 1):
         hcell(ws, row, col, lbl)
     ws.row_dimensions[row].height = 20
@@ -361,7 +322,7 @@ def write_team_sheet(wb, team_data, team_name):
         row += 1
     row += 1
 
-    # ── Gardiens ──────────────────────────────────────────────────────────────
+    # Gardiens
     ws.merge_cells(f"A{row}:F{row}")
     c = ws.cell(row, 1, "GARDIENS")
     c.font = Font(bold=True, name="Arial", size=11)
@@ -385,23 +346,34 @@ def write_team_sheet(wb, team_data, team_name):
 
 def main():
     today = datetime.now().strftime("%Y-%m-%d %H:%M")
-    output_file = "nhl_lineups.xlsx"  # Fichier fixe - toujours ecrase
-
-    print(f"\nNHL Lineups Scraper v3 - {today}")
+    print(f"\nNHL Lineups Scraper v4 - {today}")
     print("=" * 50)
 
     wb = Workbook()
     wb.remove(wb.active)
 
+    all_data = {"last_updated": today, "teams": {}}
+
     for slug, name in TEAMS:
         print(f"  Scraping : {name}...")
         team_data = scrape_team_lineup(slug)
         write_team_sheet(wb, team_data, name)
+        all_data["teams"][slug] = {
+            "name":     name,
+            "forwards": team_data["forwards"] if team_data else {},
+            "defence":  team_data["defence"]  if team_data else {},
+            "pp_units": team_data["pp_units"] if team_data else {},
+            "goalies":  team_data["goalies"]  if team_data else [],
+        }
 
-    wb.save(output_file)
-    print(f"\nFichier cree : {output_file}")
-    print(f"{len(TEAMS)} equipes - {len(wb.sheetnames)} onglets")
-    pass
+    wb.save("nhl_lineups.xlsx")
+    print("  Excel cree : nhl_lineups.xlsx")
+
+    with open("nhl_lineups.json", "w", encoding="utf-8") as f:
+        json.dump(all_data, f, ensure_ascii=False, indent=2)
+    print("  JSON cree  : nhl_lineups.json")
+
+    print(f"\nTermine! {len(TEAMS)} equipes mises a jour.")
 
 
 if __name__ == "__main__":
