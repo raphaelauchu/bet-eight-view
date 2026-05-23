@@ -595,7 +595,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
               return (
                 <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}m</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
                 </button>
               );
             })}
@@ -695,7 +695,7 @@ async function rechercherJoueur(query) {
               return (
                 <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}m</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
                 </button>
               );
             })}
@@ -1914,7 +1914,7 @@ function Analyses({ onLigueChange }) {
           <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div>
             <h2 style={{ margin: '0 0 1px', fontSize: isMobile ? '16px' : '20px', fontWeight: '900', color: 'white' }}>
-              {ligueInfo.label} · {categorie === 'equipes' ? 'Equipes' : 'Joueurs'}
+              {ligueInfo.label} · categorie === 'equipes' ? 'Teams' : 'Players'
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
               {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Click on a player"}
