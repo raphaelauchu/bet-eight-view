@@ -1917,7 +1917,7 @@ function Analyses({ onLigueChange }) {
               {ligueInfo.label} · {categorie === 'equipes' ? 'Equipes' : 'Joueurs'}
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
-              {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Clique sur un joueur"}
+              {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Click on a player"}
             </p>
           </div>
         </div>
