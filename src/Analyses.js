@@ -1006,10 +1006,10 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
     const ppEq = statsEquipe?.powerPlayPct ?? 0; const pkEq = statsEquipe?.penaltyKillPct ?? 0;
     const ppAdv = statsAdverse?.powerPlayPct ?? 0; const pkAdv = statsAdverse?.penaltyKillPct ?? 0;
     let scoreEq = 0, scoreAdv = 0, raisonsEq = [], raisonsAdv = [];
-    if (gfEq > gaAdv + 0.2) { scoreEq += 2; raisonsEq.push(`attaque efficace (${gfEq.toFixed(2)} B/m) vs defense poreuse (${gaAdv.toFixed(2)} acc./m)`); }
-    else if (gaAdv < gfEq - 0.2) { scoreAdv += 2; raisonsAdv.push(`defense solide (${gaAdv.toFixed(2)} acc./m)`); }
+    if (gfEq > gaAdv + 0.2) { scoreEq += 2; raisonsEq.push(`attaque efficace (${gfEq.toFixed(2)} B/m) vs defense poreuse (${gaAdv.toFixed(2)} GA/G)`); }
+    else if (gaAdv < gfEq - 0.2) { scoreAdv += 2; raisonsAdv.push(`defense solide (${gaAdv.toFixed(2)} GA/G)`); }
     else { scoreEq += 1; scoreAdv += 1; }
-    if (gaEq < gfAdv - 0.2) { scoreEq += 2; raisonsEq.push(`defense forte (${gaEq.toFixed(2)} acc./m)`); }
+    if (gaEq < gfAdv - 0.2) { scoreEq += 2; raisonsEq.push(`defense forte (${gaEq.toFixed(2)} GA/G)`); }
     else if (gfAdv > gaEq + 0.2) { scoreAdv += 2; raisonsAdv.push(`attaque dangereuse (${gfAdv.toFixed(2)} B/m)`); }
     else { scoreEq += 1; scoreAdv += 1; }
     if (sogEq > 0 && sogContreAdv > 0) {
@@ -1050,7 +1050,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
           <div style={{ color: '#666', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '14px' }}>{pts} pts</span>
-            <span style={{ color: '#888', fontSize: '13px' }}>{wins}V · {losses}D · {otl}DP</span>
+            <span style={{ color: '#888', fontSize: '13px' }}>{wins}W · {losses}L · {otl}OT</span>
             <span style={{ backgroundColor: equipe?.streakCode === 'W' ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)', color: equipe?.streakCode === 'W' ? '#f97316' : '#ef4444', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 'bold' }}>{streak}</span>
           </div>
         </div>
@@ -1134,12 +1134,12 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>OFFENSIVE RANK</div>
               <div style={{ fontSize: '36px', fontWeight: '900', color: '#f97316' }}>#{rangOff}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} buts/m</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} goals/G</div>
             </div>
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
               <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>DEFENSIVE RANK</div>
               <div style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>#{rangDef}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} acc./m</div>
+              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} GA/G</div>
             </div>
           </div>
  
@@ -1168,7 +1168,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
                   const bp = dom ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
                   const bc = dom ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
                   const v = bp > bc;
-                  return <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: v ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{v ? 'V' : 'D'}</div>;
+                  return <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: v ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{v ? 'W' : 'L'}</div>;
                 })}
               </div>
             </div>
