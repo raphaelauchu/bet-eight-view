@@ -1180,12 +1180,12 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
                 <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS FOR / GAME</div>
                 <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316' }}>{sogPourPeriode}</div>
-                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Saison'}</div>
+                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
               </div>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
                 <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS AGAINST / GAME</div>
                 <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{sogContrePeriode}</div>
-                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Saison'}</div>
+                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
               </div>
             </div>
  
@@ -1231,7 +1231,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
               <div style={{ backgroundColor: analyseMatchup.favorable ? 'rgba(249,115,22,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${analyseMatchup.favorable ? 'rgba(249,115,22,0.3)' : 'rgba(239,68,68,0.3)'}`, borderRadius: '10px', padding: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: analyseMatchup.favorable ? '#f97316' : '#ef4444', flexShrink: 0 }} />
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: analyseMatchup.favorable ? '#f97316' : '#ef4444', textTransform: 'uppercase' }}>Analyse matchup vs {abbrevAdv}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: analyseMatchup.favorable ? '#f97316' : '#ef4444', textTransform: 'uppercase' }}>Matchup Analysis vs {abbrevAdv}</span>
                   <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#666' }}>{abbrev} {analyseMatchup.scoreEq} — {analyseMatchup.scoreAdv} {abbrevAdv}</span>
                 </div>
                 <p style={{ margin: 0, fontSize: '12px', color: '#ccc', lineHeight: '1.6' }}>{analyseMatchup.conclusion}</p>
