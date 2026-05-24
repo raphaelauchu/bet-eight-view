@@ -371,7 +371,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   );
 }
  
-function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
+function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
   const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
   const [roster1, setRoster1] = useState([]);
@@ -380,8 +380,7 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur }) {
   const [ongletEquipe, setOngletEquipe] = useState(0);
   const [sourceData, setSourceData] = useState('');
   const chargementLance = useRef(false);
-  const lineupDF = useLineupsDailyFaceoff();
- 
+   
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
   const nom1 = match.awayTeam?.commonName?.default || abbrev1;
@@ -524,6 +523,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+  const lineupDF = useLineupsDailyFaceoff();
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -600,7 +600,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
               );
             })}
           </div>
-          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} />)}
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />
         </>
       )}
     </div>
