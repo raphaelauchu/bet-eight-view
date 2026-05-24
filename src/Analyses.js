@@ -1376,8 +1376,7 @@ setStatsAvancees(statsBase);
         const secondes = String(moyenneSecondes % 60).padStart(2, '0');
         statsBase.toi = `${minutes}:${secondes}`;
         setStatsAvancees({ ...statsBase });
-     setStatsAvancees({ ...statsBase });
-      }
+        }
 
       // Charger shot chart SZN par défaut
       const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
