@@ -600,7 +600,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
               );
             })}
           </div>
-          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={i} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
         </>
       )}
     </div>
