@@ -777,7 +777,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
       </div>
  
       <div style={{ padding: '0 14px 8px' }}>
-        <span style={{ fontSize: '10px', color: '#444' }}>Clique sur un logo pour voir la fiche de l'equipe</span>
+        <span style={{ fontSize: '10px', color: '#444' }}>Click on a logo to view the team stats</span>
       </div>
  
       {ouvert && (
