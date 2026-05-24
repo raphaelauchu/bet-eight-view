@@ -1486,7 +1486,12 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
   ];
  
   const pctZones = zones.map(z => ({ ...z, pct: sog > 0 ? Math.round((z.sog / sog) * 100) : 0 }));
-  const getValeurZone = (z) => typeChart === 'SOG' ? z.sog : `${z.pct}%`;
+  const getValeurZone = (z) => {
+  if (typeChart === 'SOG') return z.sog;
+  if (typeChart === 'Buts') return z.goals;
+  const pct = totalShotsChart > 0 ? Math.round((z.sog / totalShotsChart) * 100) : 0;
+  return `${pct}%`;
+};
   const getTendanceZone = (z) => {
     if (sog === 0) return 'neutre';
     const pct = z.sog / sog;
