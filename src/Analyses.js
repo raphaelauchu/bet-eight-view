@@ -661,7 +661,7 @@ async function rechercherJoueur(query) {
     const equipeAdverse = matchActif
       ? classement.find(e => e.teamAbbrev?.default === (matchActif.awayTeam?.abbrev === abbrevEq ? matchActif.homeTeam?.abbrev : matchActif.awayTeam?.abbrev))
       : null;
-    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onRetour={() => setEquipeSelectionnee(null)} />;
+    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} />;
   }
  
   const jours = Object.keys(matchsParJour).sort();
@@ -862,7 +862,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
  
-function FicheEquipe({ equipe, equipeAdverse, classement, onRetour }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -1041,7 +1041,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onRetour }) {
  
   return (
     <div>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
  
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
         <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
@@ -1260,7 +1260,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onRetour }) {
   );
 }
  
-function FicheJoueur({ joueur, onRetour }) {
+function FicheJoueur({ joueur, onBack }) {
   const isMobile = useIsMobile();
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [dernierMatchs, setDernierMatchs] = useState([]);
@@ -1466,7 +1466,7 @@ const getMatchsChart = () => {
  
   return (
     <div>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Retour</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
   <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Regular Season</button>
   <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
@@ -1841,7 +1841,7 @@ function Analyses({ onLigueChange }) {
   if (joueurSelectionne) {
     return (
       <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-        <FicheJoueur joueur={joueurSelectionne} onRetour={() => setJoueurSelectionne(null)} />
+        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
       </div>
     );
   }
@@ -1874,7 +1874,7 @@ function Analyses({ onLigueChange }) {
     return (
       <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
+          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div>
@@ -1909,7 +1909,7 @@ function Analyses({ onLigueChange }) {
   return (
     <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Retour</button>
+        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div>
