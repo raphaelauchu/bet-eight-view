@@ -325,7 +325,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
           <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
           {(lignesDF || lignes).map((ligne, li) => (
             <div key={li} style={{ marginBottom: '8px' }}>
-              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Ligne {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
+              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Line {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 {ligne.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={joueurChaud?.id === j.id && (j.points || 0) > 0} isMobile={isMobile} />)}
               </div>
@@ -847,7 +847,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f97316' }}>{favori} {Math.max(prob1, prob2)}%</div>
               </div>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Total predit</div>
+                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Predicted Total</div>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
               </div>
               <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
@@ -1084,7 +1084,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
                   ))}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                  {[['Face-off%', `${faceoffPct}%`, 'white'], ['Dom.', `${equipe?.homeWins || 0}V-${equipe?.homeLosses || 0}D`, 'white'], ['Ext.', `${equipe?.roadWins || 0}V-${equipe?.roadLosses || 0}D`, 'white']].map(([l, v, c], i) => (
+                  {[['Face-off%', `${faceoffPct}%`, 'white'], ['Home', `${equipe?.homeWins || 0}W-${equipe?.homeLosses || 0}L`, 'white'], ['Away', `${equipe?.roadWins || 0}W-${equipe?.roadLosses || 0}L`, 'white']].map(([l, v, c], i) => (
                     <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
                       <div style={{ fontSize: '14px', fontWeight: '900', color: c }}>{v}</div>
                       <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
@@ -1094,7 +1094,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
               </>
             ) : ongletPeriode === 'L10' ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                {[[`${l10Wins}V-${l10Losses}D`, 'Bilan L10', '#f97316'], [(l10Gf / 10).toFixed(2), 'Goals/G', 'white'], [(l10Ga / 10).toFixed(2), 'GA/G', 'white'], [l10Gf - l10Ga > 0 ? `+${l10Gf - l10Ga}` : `${l10Gf - l10Ga}`, 'Diff', l10Gf - l10Ga >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
+                {[[`${l10Wins}V-${l10Losses}D`, 'L10 Record', '#f97316'], [(l10Gf / 10).toFixed(2), 'Goals/G', 'white'], [(l10Ga / 10).toFixed(2), 'GA/G', 'white'], [l10Gf - l10Ga > 0 ? `+${l10Gf - l10Ga}` : `${l10Gf - l10Ga}`, 'Diff', l10Gf - l10Ga >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
@@ -1103,7 +1103,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
               </div>
             ) : statsPeriode ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                {[[`${statsPeriode.victoires}/${statsPeriode.nb}`, 'Victoires', '#f97316'], [statsPeriode.bpMoy, 'Goals/G', 'white'], [statsPeriode.bcMoy, 'GA/G', 'white'], [statsPeriode.bp - statsPeriode.bc > 0 ? `+${statsPeriode.bp - statsPeriode.bc}` : `${statsPeriode.bp - statsPeriode.bc}`, 'Diff', statsPeriode.bp - statsPeriode.bc >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
+                {[[`${statsPeriode.victoires}/${statsPeriode.nb}`, 'Wins', '#f97316'], [statsPeriode.bpMoy, 'Goals/G', 'white'], [statsPeriode.bcMoy, 'GA/G', 'white'], [statsPeriode.bp - statsPeriode.bc > 0 ? `+${statsPeriode.bp - statsPeriode.bc}` : `${statsPeriode.bp - statsPeriode.bc}`, 'Diff', statsPeriode.bp - statsPeriode.bc >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
                     <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
@@ -1577,7 +1577,7 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
  
           {isGardien && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-              {[['GAA', statsAvancees?.gaa, '#f97316'], ['SV%', statsAvancees?.svp, '#f97316'], ['Victoires', statsAvancees?.wins, 'white'], ['Defaites', statsAvancees?.losses, 'white'], ['Blanchiss.', statsAvancees?.shutouts, 'white'], ['Matchs', statsAvancees?.gamesStarted, '#666']].map(([l, v, c], i) => (
+              {[['GAA', statsAvancees?.gaa, '#f97316'], ['SV%', statsAvancees?.svp, '#f97316'], ['Wins', statsAvancees?.wins, 'white'], ['Losses', statsAvancees?.losses, 'white'], ['Shutouts', statsAvancees?.shutouts, 'white'], ['GP', statsAvancees?.gamesStarted, '#666']].map(([l, v, c], i) => (
                 <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
                   <div style={{ fontSize: '20px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
                   <div style={{ fontSize: '10px', color: '#666', marginTop: '3px' }}>{l}</div>
@@ -1705,7 +1705,7 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '10px' }}>
-                {[['SOG', 'Shots on Goal'], ['Buts', 'Goals']].map(([t, label]) => (
+                {[['SOG', 'Shots on Goal'], ['Goals', 'Goals']].map(([t, label]) => (
                   <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
                 ))}
               </div>
