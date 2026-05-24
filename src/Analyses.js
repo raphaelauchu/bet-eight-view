@@ -1376,16 +1376,20 @@ setStatsAvancees(statsBase);
         const secondes = String(moyenneSecondes % 60).padStart(2, '0');
         statsBase.toi = `${minutes}:${secondes}`;
         setStatsAvancees({ ...statsBase });
+     setStatsAvancees({ ...statsBase });
       }
+
+      // Charger shot chart SZN par défaut
+      const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
+      if (gameIdsSZN.length > 0) {
+        setChargementShotChart(true);
+        const shotData = await getShotChartData(joueur.id, gameIdsSZN);
+        setShotChartData({ SZN: shotData });
+        setChargementShotChart(false);
+      }
+
     } catch (err) { console.error(err); }
-   // Charger shot chart SZN par défaut
-const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
-if (gameIdsSZN.length > 0) {
-  setChargementShotChart(true);
-  const shotData = await getShotChartData(joueur.id, gameIdsSZN);
-  setShotChartData({ SZN: shotData });
-  setChargementShotChart(false);
-} setChargement(false);
+    setChargement(false);
   }
  
   const isGardien = joueur.position === 'G';
