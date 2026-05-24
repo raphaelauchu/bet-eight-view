@@ -85,3 +85,42 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
   }
   return result;
 }
+export async function getShotChartData(playerId, gameIds) {
+  const zones = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
+  const goals = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
+
+  const getZone = (x, y) => {
+    const ax = Math.abs(x);
+    const ay = Math.abs(y);
+    if (ax > 25 && ay < 15) return 'SLOT';
+    if (ax > 25 && y < -15) return 'LOW LEFT';
+    if (ax > 25 && y > 15) return 'LOW RIGHT';
+    if (ax > 10 && ax <= 25 && ay < 15) return 'LOW';
+    if (ax > 0 && ay >= 25 && ax > 10) return y < 0 ? 'BOARDS LEFT' : 'BOARDS RIGHT';
+    if (ax <= 10 && y < -10) return 'LEFT';
+    if (ax <= 10 && y > 10) return 'RIGHT';
+    return 'POINT';
+  };
+
+  for (let i = 0; i < gameIds.length; i += 3) {
+    const batch = gameIds.slice(i, i + 3);
+    await Promise.all(batch.map(async (gameId) => {
+      try {
+        const res = await fetch(getUrl(`gamecenter/${gameId}/play-by-play`));
+        const data = await res.json();
+        (data.plays || []).forEach(play => {
+          if (!['shot-on-goal', 'goal'].includes(play.typeDescKey)) return;
+          if (play.details?.shootingPlayerId !== parseInt(playerId)) return;
+          const x = play.details?.xCoord;
+          const y = play.details?.yCoord;
+          if (x == null || y == null) return;
+          const zone = getZone(x, y);
+          zones[zone] = (zones[zone] || 0) + 1;
+          if (play.typeDescKey === 'goal') goals[zone] = (goals[zone] || 0) + 1;
+        });
+      } catch { }
+    }));
+  }
+
+  return { zones, goals };
+}
