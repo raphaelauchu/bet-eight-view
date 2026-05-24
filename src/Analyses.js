@@ -679,7 +679,7 @@ async function rechercherJoueur(query) {
       <div style={{ marginBottom: '14px' }}>
         <input
           style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
-          placeholder="Rechercher une equipe..."
+          placeholder="Search a team..."
           value={filtre}
           onChange={e => setFiltre(e.target.value)}
         />
@@ -753,14 +753,14 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
             <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e1); }} />
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</div>
-              <div style={{ color: '#666', fontSize: '10px' }}>{wins1}V-{losses1}D-{otl1}DP</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins1}W-{losses1}L-{otl1}OT</div>
             </div>
           </div>
           <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</div>
-              <div style={{ color: '#666', fontSize: '10px' }}>{wins2}V-{losses2}D-{otl2}DP</div>
+              <div style={{ color: '#666', fontSize: '10px' }}>{wins2}W-{losses2}L-{otl2}OT</div>
             </div>
             <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e2); }} />
           </div>
@@ -1917,7 +1917,7 @@ function Analyses({ onLigueChange }) {
               {ligueInfo.label} · {categorie === 'equipes' ? 'Teams' : 'Players'}
             </h2>
             <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
-              {categorie === 'equipes' ? "Clique pour voir l'analyse" : "Click on a player"}
+              {categorie === 'equipes' ? "Click on a match to analyze" : "Click on a player"}
             </p>
           </div>
         </div>
