@@ -798,12 +798,12 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
                 </div>
               ))}
               <div style={{ marginTop: '10px' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Forme</div>
+                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Form</div>
                 <div style={{ display: 'flex', gap: '3px' }}>
                   {genT(win1).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
                 </div>
               </div>
-              <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>Voir la fiche →</span></div>
+              <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>View stats →</span></div>
             </div>
  
             <div style={{ backgroundColor: '#222', width: '1px' }} />
@@ -823,12 +823,12 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
                 </div>
               ))}
               <div style={{ marginTop: '10px' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Forme</div>
+                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Form</div>
                 <div style={{ display: 'flex', gap: '3px' }}>
                   {genT(win2).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
                 </div>
               </div>
-              <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>Voir la fiche →</span></div>
+              <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>View stats →</span></div>
             </div>
           </div>
  
@@ -843,7 +843,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px' }}>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Favori</div>
+                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Favorite</div>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f97316' }}>{favori} {Math.max(prob1, prob2)}%</div>
               </div>
               <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
@@ -1006,7 +1006,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
     const ppEq = statsEquipe?.powerPlayPct ?? 0; const pkEq = statsEquipe?.penaltyKillPct ?? 0;
     const ppAdv = statsAdverse?.powerPlayPct ?? 0; const pkAdv = statsAdverse?.penaltyKillPct ?? 0;
     let scoreEq = 0, scoreAdv = 0, raisonsEq = [], raisonsAdv = [];
-    if (gfEq > gaAdv + 0.2) { scoreEq += 2; raisonsEq.push(`attaque efficace (${gfEq.toFixed(2)} B/m) vs defense poreuse (${gaAdv.toFixed(2)} GA/G)`); }
+    if (gfEq > gaAdv + 0.2) { scoreEq += 2; raisonsEq.push(`efficient offense (${gfEq.toFixed(2)} B/m) vs weak defense (${gaAdv.toFixed(2)} GA/G)`); }
     else if (gaAdv < gfEq - 0.2) { scoreAdv += 2; raisonsAdv.push(`defense solide (${gaAdv.toFixed(2)} GA/G)`); }
     else { scoreEq += 1; scoreAdv += 1; }
     if (gaEq < gfAdv - 0.2) { scoreEq += 2; raisonsEq.push(`defense forte (${gaEq.toFixed(2)} GA/G)`); }
@@ -1055,7 +1055,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
           </div>
         </div>
         <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 14px', border: '1px solid #222' }}>
-          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANG</div>
+          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANK</div>
           <div style={{ color: '#f97316', fontSize: '22px', fontWeight: '900' }}>#{rang}</div>
           <div style={{ color: '#555', fontSize: '9px' }}>classement</div>
         </div>
