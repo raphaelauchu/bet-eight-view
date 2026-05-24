@@ -1304,7 +1304,7 @@ const [chargementShotChart, setChargementShotChart] = useState(false);
         ? data.featuredStats?.playoffs?.subSeason 
         : data.featuredStats?.regularSeason?.subSeason;
       const isGardien = joueur.position === 'G';
- 
+
       if (isGardien) {
         setStatsAvancees({
           gp: saison?.gamesPlayed ?? 0,
@@ -1316,7 +1316,6 @@ const [chargementShotChart, setChargementShotChart] = useState(false);
           gamesStarted: saison?.gamesStarted ?? 0,
         });
       } else {
-        // Stats de base depuis landing
         const statsBase = {
           gp: saison?.gamesPlayed ?? 0,
           goals: saison?.goals ?? 0,
@@ -1326,9 +1325,10 @@ const [chargementShotChart, setChargementShotChart] = useState(false);
           ppp: saison?.powerPlayPoints ?? 0,
           sog: saison?.shots ?? 0,
           toi: saison?.avgToi ?? '-',
+          hits: 0,
+          blocks: 0,
         };
- 
-        // Stats avancées (hits, blocs) depuis api realtime
+
         try {
           const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
           const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId%3D${joueur.id}%20and%20seasonId%3D20252026`;
@@ -1338,34 +1338,16 @@ const [chargementShotChart, setChargementShotChart] = useState(false);
           const rt = dataRealtime.data?.[0];
           statsBase.hits = rt?.hits ?? 0;
           statsBase.blocks = rt?.blockedShots ?? 0;
-          statsBase.giveaways = rt?.giveaways ?? 0;
-          statsBase.takeaways = rt?.takeaways ?? 0;
-        } catch {
-          statsBase.hits = 0;
-          statsBase.blocks = 0;
-        }
- 
-       // Calcul TOI moyen depuis game log
-const log2 = await getGameLogJoueur(joueur.id);
-if (log2.length > 0) {
-  const toiEnSecondes = log2.map(m => {
-    const parts = (m.toi || '0:00').split(':');
-    return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
-  });
-  const moyenneSecondes = Math.round(toiEnSecondes.reduce((a, b) => a + b, 0) / toiEnSecondes.length);
-  const minutes = Math.floor(moyenneSecondes / 60);
-  const secondes = String(moyenneSecondes % 60).padStart(2, '0');
-  statsBase.toi = `${minutes}:${secondes}`;setStatsAvancees({ ...statsBase });
-}
-setStatsAvancees(statsBase);
+        } catch { }
+
+        setStatsAvancees({ ...statsBase });
       }
- 
-     const gameType = modeStats === 'playoffs' ? 3 : 2;
+
+      const gameType = modeStats === 'playoffs' ? 3 : 2;
       const log = await getGameLogJoueur(joueur.id, gameType);
       const logAvecHits = await getHitsBlocksParMatch(joueur.id, log);
       setDernierMatchs(logAvecHits);
 
-      // Calcul TOI moyen depuis game log
       if (log.length > 0) {
         const toiEnSecondes = log.map(m => {
           const parts = (m.toi || '0:00').split(':');
@@ -1374,11 +1356,10 @@ setStatsAvancees(statsBase);
         const moyenneSecondes = Math.round(toiEnSecondes.reduce((a, b) => a + b, 0) / toiEnSecondes.length);
         const minutes = Math.floor(moyenneSecondes / 60);
         const secondes = String(moyenneSecondes % 60).padStart(2, '0');
-        statsBase.toi = `${minutes}:${secondes}`;
-        setStatsAvancees({ ...statsBase });
-        }
+        setStatsAvancees(prev => ({ ...prev, toi: `${minutes}:${secondes}` }));
+      }
 
-      // Charger shot chart SZN par défaut
+      // Shot chart SZN
       const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
       if (gameIdsSZN.length > 0) {
         setChargementShotChart(true);
@@ -1390,7 +1371,7 @@ setStatsAvancees(statsBase);
     } catch (err) { console.error(err); }
     setChargement(false);
   }
- 
+
   const isGardien = joueur.position === 'G';
   const gp = statsAvancees?.gp || 1;
   const sogSaison = statsAvancees?.sog || 0;
