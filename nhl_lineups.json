@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-24 19:24",
+  "last_updated": "2026-05-25 19:49",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -359,18 +359,18 @@
       "name": "Colorado Avalanche",
       "forwards": {
         "L1": {
-          "LW": "Gabriel Landeskog",
+          "LW": "Artturi Lehkonen",
           "C": "Nathan MacKinnon",
-          "RW": "Martin Necas"
+          "RW": "Gabriel Landeskog"
         },
         "L2": {
-          "LW": "Artturi Lehkonen",
+          "LW": "Nazem Kadri",
           "C": "Brock Nelson",
-          "RW": "Nicolas Roy"
+          "RW": "Martin Necas"
         },
         "L3": {
           "LW": "Ross Colton",
-          "C": "Nazem Kadri",
+          "C": "Nicolas Roy",
           "RW": "Valeri Nichushkin"
         },
         "L4": {
@@ -382,15 +382,15 @@
       "defence": {
         "D1": {
           "LD": "Devon Toews",
-          "RD": "Sam Malinski"
+          "RD": "Cale Makar"
         },
         "D2": {
           "LD": "Brett Kulak",
-          "RD": "Brent Burns"
+          "RD": "Sam Malinski"
         },
         "D3": {
-          "LD": "Nick Blankenburg",
-          "RD": "Josh Manson"
+          "LD": "Josh Manson",
+          "RD": "Brent Burns"
         }
       },
       "pp_units": {
@@ -399,13 +399,13 @@
           "Nazem Kadri",
           "Gabriel Landeskog",
           "Nathan MacKinnon",
-          "Devon Toews"
+          "Cale Makar"
         ],
         "PP2": [
           "Artturi Lehkonen",
           "Brock Nelson",
           "Valeri Nichushkin",
-          "Brent Burns",
+          "Devon Toews",
           "Sam Malinski"
         ]
       },
@@ -842,7 +842,7 @@
         },
         "L4": {
           "LW": "Zack Bolduc",
-          "C": "Oliver Kapanen",
+          "C": "Joe Veleno",
           "RW": "Kirby Dach"
         }
       },
@@ -1721,9 +1721,9 @@
           "RW": "Mitch Marner"
         },
         "L3": {
-          "LW": "Brandon Saad",
-          "C": "Tomas Hertl",
-          "RW": "Colton Sissons"
+          "LW": "Tomas Hertl",
+          "C": "Colton Sissons",
+          "RW": "Mark Stone"
         },
         "L4": {
           "LW": "Cole Smith",
@@ -1741,16 +1741,16 @@
           "RD": "Rasmus Andersson"
         },
         "D3": {
-          "LD": "Kaedan Korczak",
-          "RD": "Dylan Coghlan"
+          "LD": "Dylan Coghlan",
+          "RD": "Kaedan Korczak"
         }
       },
       "pp_units": {
         "PP1": [
+          "Mark Stone",
           "Jack Eichel",
-          "Tomas Hertl",
           "Pavel Dorofeyev",
-          "Shea Theodore",
+          "Tomas Hertl",
           "Mitch Marner"
         ],
         "PP2": [
@@ -1758,7 +1758,7 @@
           "William Karlsson",
           "Brett Howden",
           "Rasmus Andersson",
-          "Noah Hanifin"
+          "Shea Theodore"
         ]
       },
       "goalies": [
