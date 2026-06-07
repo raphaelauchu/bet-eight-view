@@ -907,7 +907,24 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
         equipe: abbrev,
         ligne: null, goals: null, assists: null, points: null,
       }));
-      setRosterEquipe([...fmt(data.forwards, 'F'), ...fmt(data.defensemen, 'D'), ...fmt(data.goalies, 'G')]);
+      const tous = [...fmt(data.forwards, 'F'), ...fmt(data.defensemen, 'D'), ...fmt(data.goalies, 'G')];
+      setRosterEquipe(tous);
+      // Charger stats en batch
+      const batchSize = 5;
+      const result = [...tous];
+      for (let i = 0; i < tous.length; i += batchSize) {
+        const batch = tous.slice(i, i + batchSize);
+        const stats = await Promise.all(batch.map(async (j) => {
+          try {
+            const r = await fetch(getUrl('player/' + j.id + '/landing'));
+            const d = await r.json();
+            const s = d.featuredStats?.regularSeason?.subSeason;
+            return { ...j, goals: s?.goals ?? 0, assists: s?.assists ?? 0, points: s?.points ?? 0 };
+          } catch { return j; }
+        }));
+        stats.forEach((s, idx) => { result[i + idx] = s; });
+        setRosterEquipe([...result]);
+      }
     } catch (err) { console.error(err); }
     setChargementRoster(false);
   }
