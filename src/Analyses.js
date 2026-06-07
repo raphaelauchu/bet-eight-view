@@ -1326,7 +1326,14 @@ function FicheJoueur({ joueur, onBack }) {
   const [ongletPeriode, setOngletPeriode] = useState('L10');
   const [ongletChart, setOngletChart] = useState('SZN');
   useEffect(() => {
-  if (!dernierMatchs.length) return;
+  if (!shotChartData) return;
+  if (shotChartData?.[ongletChart]) return;
+  setChargementShotChart(true);
+  getShotChartData(joueur.id, null, ongletChart).then(data => {
+    setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
+    setChargementShotChart(false);
+  });
+}, [ongletChart, shotChartData]);
   const getIds = () => {
     switch (ongletChart) {
       case 'L5': return dernierMatchs.slice(0, 5).map(m => m.gameId).filter(Boolean);
@@ -1342,7 +1349,6 @@ function FicheJoueur({ joueur, onBack }) {
     setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
     setChargementShotChart(false);
   });
-}, [ongletChart, dernierMatchs]);
   const [typeChart, setTypeChart] = useState('SOG');
   const [shotChartData, setShotChartData] = useState(null);
 const [chargementShotChart, setChargementShotChart] = useState(false);
@@ -1420,7 +1426,7 @@ const [chargementShotChart, setChargementShotChart] = useState(false);
       const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
       if (gameIdsSZN.length > 0) {
         setChargementShotChart(true);
-        const shotData = await getShotChartData(joueur.id, gameIdsSZN);
+        const shotData = await getShotChartData(joueur.id, null, 'SZN');
         setShotChartData({ SZN: shotData });
         setChargementShotChart(false);
       }
@@ -1512,9 +1518,9 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
     { label: 'LOW LEFT', sog: currentShotData.zones['LOW LEFT'] || 0, goals: currentShotData.goals['LOW LEFT'] || 0 },
     { label: 'LOW', sog: currentShotData.zones['LOW'] || 0, goals: currentShotData.goals['LOW'] || 0 },
     { label: 'LOW RIGHT', sog: currentShotData.zones['LOW RIGHT'] || 0, goals: currentShotData.goals['LOW RIGHT'] || 0 },
-    { label: 'BOARDS', sog: currentShotData.zones['BOARDS LEFT'] || 0, goals: currentShotData.goals['BOARDS LEFT'] || 0 },
+    { label: 'BOARDS', sog: currentShotData.zones['LEFT'] || 0, goals: currentShotData.goals['LEFT'] || 0 },
     { label: 'SLOT', sog: currentShotData.zones['SLOT'] || 0, goals: currentShotData.goals['SLOT'] || 0 },
-    { label: 'BOARDS', sog: currentShotData.zones['BOARDS RIGHT'] || 0, goals: currentShotData.goals['BOARDS RIGHT'] || 0 },
+    { label: 'BOARDS', sog: currentShotData.zones['RIGHT'] || 0, goals: currentShotData.goals['RIGHT'] || 0 },
     { label: 'LEFT', sog: currentShotData.zones['LEFT'] || 0, goals: currentShotData.goals['LEFT'] || 0 },
     { label: 'POINT', sog: currentShotData.zones['POINT'] || 0, goals: currentShotData.goals['POINT'] || 0 },
     { label: 'RIGHT', sog: currentShotData.zones['RIGHT'] || 0, goals: currentShotData.goals['RIGHT'] || 0 },

@@ -269,6 +269,112 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
     </div>
   );
 }
+
+function AdminPage() {
+  return (
+    <div style={{ padding: '40px 32px', maxWidth: '900px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+        <div style={{ backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '8px', padding: '4px 12px' }}>
+          <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600', letterSpacing: '1px' }}>INTERNAL</span>
+        </div>
+        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', color: 'white' }}>Betrics · Parameters & Methodology</h1>
+      </div>
+
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>01 · Prop Probability Weighting</div>
+        <div style={{ fontSize: '14px', color: '#888', lineHeight: '1.7', marginBottom: '16px' }}>
+          Based on backtesting of 93 simulated NHL players across 5,766 observations (2024-25 season distributions). L5 is the strongest predictor in 9/10 cases.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
+          {[['L5', '45%', 'Most recent form — strongest predictor'], ['L10', '33%', 'Medium-term trend'], ['L20', '22%', 'Season consistency']].map(([label, weight, desc], i) => (
+            <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#f97316', letterSpacing: '-1px' }}>{weight}</div>
+              <div style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>{desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', borderTop: '1px solid #1a1a1a', paddingTop: '12px' }}>
+          <strong style={{ color: '#888' }}>Formula:</strong> P = (L5_rate x 0.45) + (L10_rate x 0.33) + (L20_rate x 0.22)<br/>
+          <strong style={{ color: '#888' }}>Exception:</strong> Offensive defensemen use L10/L20 split (36%/35%).
+        </div>
+      </div>
+
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>02 · Props Analyzed</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[
+            ['SOG', 'Shots on Goal', '1.5, 2.5, 3.5'],
+            ['Goals', 'Goal scorer', '0.5'],
+            ['Assists', 'Primary/secondary assist', '0.5'],
+            ['Points', 'Goals + Assists', '0.5, 1.5'],
+            ['PPP', 'Power Play Points', '0.5'],
+          ].map(([stat, desc, lines], i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#111', borderRadius: '8px', padding: '10px 14px' }}>
+              <div style={{ minWidth: '60px', fontWeight: '700', color: '#f97316', fontSize: '13px' }}>{stat}</div>
+              <div style={{ flex: 1, fontSize: '13px', color: '#888' }}>{desc}</div>
+              <div style={{ fontSize: '12px', color: '#555', fontFamily: 'monospace' }}>Lines: {lines}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>03 · Data Sources</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[
+            ['NHL Official API', 'api-web.nhle.com/v1', 'Game logs, rosters, standings, schedules'],
+            ['NHL Stats API', 'api.nhle.com/stats/rest', 'Advanced stats, hits, blocked shots'],
+            ['DailyFaceoff', 'GitHub raw JSON (scraped)', 'Line combinations, PP units'],
+            ['Supabase', 'supabase.io', 'User data, bets, bankroll'],
+          ].map(([name, url, usage], i) => (
+            <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '12px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontWeight: '600', fontSize: '13px', color: 'white' }}>{name}</span>
+                <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>{url}</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#555' }}>{usage}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>04 · Backtesting Results</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
+          {[['MAE', 'L5: 0.420 · L10: 0.433 · L20: 0.441', 'Lower is better'], ['Correlation', 'L5: 0.272 · L10: 0.271 · L20: 0.279', 'Higher is better'], ['Brier Score', 'L5: 0.254 · L10: 0.242 · L20: 0.234', 'Lower is better']].map(([metric, values, note], i) => (
+            <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{metric}</div>
+              <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{values}</div>
+              <div style={{ fontSize: '11px', color: '#444' }}>{note}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: '12px', color: '#555', fontStyle: 'italic' }}>93 players · 5,766 observations · NHL 2024-25 distributions</div>
+      </div>
+
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>05 · Changelog</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[
+            ['2026-06-07', 'Added prop probability model L5/L10/L20, Admin page with email detection'],
+            ['2026-05-24', 'Added Lineup tab in FicheEquipe with DailyFaceoff trios'],
+            ['2026-05-18', 'Added playoff bracket with auto-detection'],
+            ['2026-05-03', 'Regular Season vs Playoffs toggle in player stats'],
+            ['2026-04-25', 'HITS/BLK from boxscore API, TOI average calculation'],
+            ['2026-04-19', 'Initial launch — NHL player/team analytics'],
+          ].map(([date, change], i) => (
+            <div key={i} style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
+              <span style={{ color: '#444', fontFamily: 'monospace', minWidth: '90px' }}>{date}</span>
+              <span style={{ color: '#666' }}>{change}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 function App() {
