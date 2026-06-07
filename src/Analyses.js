@@ -919,6 +919,10 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
             const r = await fetch(getUrl('player/' + j.id + '/landing'));
             const d = await r.json();
             const s = d.featuredStats?.regularSeason?.subSeason;
+            const isG = j.position === 'G';
+            if (isG) {
+              return { ...j, gaa: s?.goalsAgainstAvg?.toFixed(2) ?? '-', svp: s?.savePctg ? (s.savePctg * 100).toFixed(1) + '%' : '-' };
+            }
             return { ...j, goals: s?.goals ?? 0, assists: s?.assists ?? 0, points: s?.points ?? 0 };
           } catch { return j; }
         }));
@@ -1332,10 +1336,9 @@ function FicheJoueur({ joueur, onBack }) {
     }
   };
   const ids = getIds();
-  if (!ids) return;
   if (shotChartData?.[ongletChart]) return; // déjà chargé
   setChargementShotChart(true);
-  getShotChartData(joueur.id, ids).then(data => {
+  getShotChartData(joueur.id, null, ongletChart).then(data => {
     setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
     setChargementShotChart(false);
   });
