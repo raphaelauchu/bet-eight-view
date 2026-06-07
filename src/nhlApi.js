@@ -85,42 +85,46 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
   }
   return result;
 }
-export async function getShotChartData(playerId, gameIds) {
-  const zones = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
-  const goals = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
-
-  const getZone = (x, y) => {
-    const ax = Math.abs(x);
-    const ay = Math.abs(y);
-    if (ax > 25 && ay < 15) return 'SLOT';
-    if (ax > 25 && y < -15) return 'LOW LEFT';
-    if (ax > 25 && y > 15) return 'LOW RIGHT';
-    if (ax > 10 && ax <= 25 && ay < 15) return 'LOW';
-    if (ax > 0 && ay >= 25 && ax > 10) return y < 0 ? 'BOARDS LEFT' : 'BOARDS RIGHT';
-    if (ax <= 10 && y < -10) return 'LEFT';
-    if (ax <= 10 && y > 10) return 'RIGHT';
-    return 'POINT';
+export async function getShotChartData(playerId, gameIds, onglet = 'SZN') {
+  const mapZone = {
+    slot: 'SLOT',
+    low: 'LOW',
+    lowLeft: 'LOW LEFT',
+    lowRight: 'LOW RIGHT',
+    point: 'POINT',
+    left: 'LEFT',
+    right: 'RIGHT'
   };
 
-  for (let i = 0; i < gameIds.length; i += 3) {
-    const batch = gameIds.slice(i, i + 3);
-    await Promise.all(batch.map(async (gameId) => {
-      try {
-        const res = await fetch(getUrl(`gamecenter/${gameId}/play-by-play`));
-        const data = await res.json();
-        (data.plays || []).forEach(play => {
-          if (!['shot-on-goal', 'goal'].includes(play.typeDescKey)) return;
-          if (play.details?.shootingPlayerId !== parseInt(playerId)) return;
-          const x = play.details?.xCoord;
-          const y = play.details?.yCoord;
-          if (x == null || y == null) return;
-          const zone = getZone(x, y);
-          zones[zone] = (zones[zone] || 0) + 1;
-          if (play.typeDescKey === 'goal') goals[zone] = (goals[zone] || 0) + 1;
-        });
-      } catch { }
-    }));
-  }
+  try {
+    const res = await fetch(`/data/shotchart_${playerId}.json`);
+    if (!res.ok) throw new Error('JSON introuvable');
+    const data = await res.json();
 
-  return { zones, goals };
+    const ongletKey = onglet.toLowerCase() === 'szn' ? 'szn'
+      : onglet.toLowerCase() === 'l5' ? 'l5'
+      : onglet.toLowerCase() === 'l10' ? 'l10'
+      : onglet.toLowerCase() === 'l20' ? 'l20'
+      : 'szn';
+
+    const source = data[ongletKey] || data.szn;
+
+    const zones = {};
+    const goals = {};
+    for (const [mpKey, nhlKey] of Object.entries(mapZone)) {
+      zones[nhlKey] = source[mpKey]?.shotsOnGoal || 0;
+      goals[nhlKey] = source[mpKey]?.goals || 0;
+    }
+    zones['BOARDS LEFT'] = 0;
+    zones['BOARDS RIGHT'] = 0;
+    goals['BOARDS LEFT'] = 0;
+    goals['BOARDS RIGHT'] = 0;
+
+    return { zones, goals };
+  } catch {
+    // Fallback: ancienne méthode NHL API
+    const zones = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
+    const goals = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
+    return { zones, goals };
+  }
 }

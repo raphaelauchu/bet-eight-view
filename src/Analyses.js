@@ -607,7 +607,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   );
 }
  
-function PageStatsEquipes({ classement }) {
+function PageStatsEquipes({ classement, onSelectJoueur }) {
   const isMobile = useIsMobile();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
@@ -661,7 +661,7 @@ async function rechercherJoueur(query) {
     const equipeAdverse = matchActif
       ? classement.find(e => e.teamAbbrev?.default === (matchActif.awayTeam?.abbrev === abbrevEq ? matchActif.homeTeam?.abbrev : matchActif.awayTeam?.abbrev))
       : null;
-    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} />;
+    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} onSelectJoueur={onSelectJoueur} />;
   }
  
   const jours = Object.keys(matchsParJour).sort();
@@ -862,7 +862,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
  
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -1101,7 +1101,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
           {chargementRoster ? (
             <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Loading lineup...</p>
           ) : (
-            <AlignementEquipe abbrev={abbrev} nom={nom} logo={LOGOS_NHL[abbrev]} joueurs={rosterEquipe} onSelect={() => {}} isMobile={isMobile} lineupDF={null} />
+            <AlignementEquipe abbrev={abbrev} nom={nom} logo={LOGOS_NHL[abbrev]} joueurs={rosterEquipe} onSelect={onSelectJoueur || (() => {})} isMobile={isMobile} lineupDF={null} />
           )}
         </div>
       ) : chargement ? (
@@ -1988,7 +1988,7 @@ function Analyses({ onLigueChange }) {
           </div>
         </div>
       </div>
-      {categorie === 'equipes' && <PageStatsEquipes classement={classement} />}
+      {categorie === 'equipes' && <PageStatsEquipes classement={classement} onSelectJoueur={setJoueurSelectionne} />}
       {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />}
     </div>
   );
