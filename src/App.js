@@ -269,8 +269,11 @@ function LandingPage({ onCommencer, onVoirPricing, onVoirAnalyses, nombreMatchs 
     </div>
   );
 }
+const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
+
 function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
+  const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
   const [utilisateur, setUtilisateur] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
@@ -314,6 +317,7 @@ function App() {
             <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Pricing</span>
             {utilisateur && (
               <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Dashboard</span>
+              {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: page === 'admin' ? '#f97316' : '#555', fontSize: '14px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
             )}
           </div>
         </div>
@@ -355,7 +359,9 @@ function App() {
       {page === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
       {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
       {page === 'dashboard' && utilisateur && <Dashboard />}
-      {page === 'dashboard' && !utilisateur && (
+      {page === 'admin' && (
+        <AdminPage />
+      )}{page === 'dashboard' && !utilisateur && (
         <div style={{ textAlign: 'center', padding: '80px 32px' }}>
           <p style={{ color: '#888' }}>Connecte-toi pour accéder au Dashboard.</p>
           <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', marginTop: '16px' }}>
