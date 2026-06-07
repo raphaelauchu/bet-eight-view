@@ -1426,6 +1426,7 @@ function FicheJoueur({ joueur, onBack }) {
   const [ongletChart, setOngletChart] = useState('SZN');
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
+  const [typeChart, setTypeChart] = useState('SOG');
 
   useEffect(() => {
     if (!shotChartData) return;
