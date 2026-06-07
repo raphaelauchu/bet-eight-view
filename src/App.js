@@ -316,8 +316,10 @@ function App() {
             <span onClick={() => setPage('analyses')} style={{ cursor: 'pointer', color: page === 'analyses' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Analyses</span>
             <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Pricing</span>
             {utilisateur && (
-              <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Dashboard</span>
-              {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: page === 'admin' ? '#f97316' : '#555', fontSize: '14px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
+              <>
+                <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Dashboard</span>
+                {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: page === 'admin' ? '#f97316' : '#555', fontSize: '14px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
+              </>
             )}
           </div>
         </div>
