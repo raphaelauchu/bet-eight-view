@@ -556,7 +556,8 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     setChargementProps(true);
     try {
       const aujourd = getDateStr(new Date());
-      const matchsDuJour = matchsParJour[aujourd] || [];
+      const prochainJour = Object.keys(matchsParJour).sort().find(j => matchsParJour[j]?.length > 0) || aujourd;
+      const matchsDuJour = matchsParJour[prochainJour] || [];
       if (matchsDuJour.length === 0) { setChargementProps(false); return; }
       const joueursDuJour = [];
       for (const match of matchsDuJour) {
