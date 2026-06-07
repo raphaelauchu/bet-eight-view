@@ -1433,21 +1433,6 @@ function FicheJoueur({ joueur, onBack }) {
     setChargementShotChart(false);
   });
 }, [ongletChart, shotChartData]);
-  const getIds = () => {
-    switch (ongletChart) {
-      case 'L5': return dernierMatchs.slice(0, 5).map(m => m.gameId).filter(Boolean);
-      case 'L10': return dernierMatchs.slice(0, 10).map(m => m.gameId).filter(Boolean);
-      case 'L20': return dernierMatchs.slice(0, 20).map(m => m.gameId).filter(Boolean);
-      default: return null;
-    }
-  };
-  const ids = getIds();
-  if (shotChartData?.[ongletChart]) return; // déjà chargé
-  setChargementShotChart(true);
-  getShotChartData(joueur.id, null, ongletChart).then(data => {
-    setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
-    setChargementShotChart(false);
-  });
   const [typeChart, setTypeChart] = useState('SOG');
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
