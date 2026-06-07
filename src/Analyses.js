@@ -871,6 +871,9 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
   const [statsEquipe, setStatsEquipe] = useState(null);
   const [statsAdverse, setStatsAdverse] = useState(null);
   const [gameLog, setGameLog] = useState([]);
+  const [ongletFiche, setOngletFiche] = useState('stats');
+  const [rosterEquipe, setRosterEquipe] = useState([]);
+  const [chargementRoster, setChargementRoster] = useState(false);
  
   const abbrev = equipe?.teamAbbrev?.default || '';
   const abbrevAdv = equipeAdverse?.teamAbbrev?.default || '';
@@ -886,6 +889,28 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
   const rang = equipe?.leagueSequence || (classement.findIndex(e => e.teamAbbrev?.default === abbrev) + 1);
  
   useEffect(() => { chargerStats(); }, [abbrev]);
+
+  useEffect(() => {
+    if (ongletFiche === 'lineup') chargerRoster();
+  }, [ongletFiche]);
+
+  async function chargerRoster() {
+    setChargementRoster(true);
+    try {
+      const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+      const data = await res.json();
+      const fmt = (joueurs, pos) => (joueurs || []).map(j => ({
+        id: j.id,
+        nom: ((j.firstName && j.firstName.default) || '') + ' ' + ((j.lastName && j.lastName.default) || ''),
+        numero: j.sweaterNumber || '',
+        position: j.positionCode || pos,
+        equipe: abbrev,
+        ligne: null, goals: null, assists: null, points: null,
+      }));
+      setRosterEquipe([...fmt(data.forwards, 'F'), ...fmt(data.defensemen, 'D'), ...fmt(data.goalies, 'G')]);
+    } catch (err) { console.error(err); }
+    setChargementRoster(false);
+  }
  
   async function chargerStats() {
     setChargement(true);
@@ -1042,6 +1067,10 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
   return (
     <div>
       <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
+        <button onClick={() => setOngletFiche('stats')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'stats' ? '#f97316' : 'transparent', color: ongletFiche === 'stats' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletFiche === 'stats' ? '600' : 'normal' }}>Stats</button>
+        <button onClick={() => setOngletFiche('lineup')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'lineup' ? '#f97316' : 'transparent', color: ongletFiche === 'lineup' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletFiche === 'lineup' ? '600' : 'normal' }}>Lineup</button>
+      </div>
  
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
         <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
@@ -1067,7 +1096,15 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack }) {
         ))}
       </div>
  
-      {chargement ? (
+      {ongletFiche === 'lineup' ? (
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px' }}>
+          {chargementRoster ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Loading lineup...</p>
+          ) : (
+            <AlignementEquipe abbrev={abbrev} nom={nom} logo={LOGOS_NHL[abbrev]} joueurs={rosterEquipe} onSelect={() => {}} isMobile={isMobile} lineupDF={null} />
+          )}
+        </div>
+      ) : chargement ? (
         <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
