@@ -524,6 +524,9 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
   const lineupDF = useLineupsDailyFaceoff();
+  const [ongletJoueurs, setOngletJoueurs] = useState('props');
+  const [props, setProps] = useState([]);
+  const [chargementProps, setChargementProps] = useState(false);
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -543,6 +546,68 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     setMatchsParJour(resultats);
     setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
     setChargement(false);
+  }
+
+  useEffect(() => {
+    if (ongletJoueurs === 'props' && Object.keys(matchsParJour).length > 0) chargerProps();
+  }, [ongletJoueurs, matchsParJour]);
+
+  async function chargerProps() {
+    setChargementProps(true);
+    try {
+      const aujourd = getDateStr(new Date());
+      const matchsDuJour = matchsParJour[aujourd] || [];
+      if (matchsDuJour.length === 0) { setChargementProps(false); return; }
+      const joueursDuJour = [];
+      for (const match of matchsDuJour) {
+        for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
+          if (!abbrev) continue;
+          try {
+            const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+            const data = await res.json();
+            (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
+            (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
+          } catch {}
+        }
+      }
+      const resultats = [];
+      for (let i = 0; i < Math.min(joueursDuJour.length, 80); i += 5) {
+        const batch = joueursDuJour.slice(i, i + 5);
+        const batchRes = await Promise.all(batch.map(async (j) => {
+          try {
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/20252026/2'));
+            const data = await res.json();
+            const log = (data.gameLog || []).slice(0, 20);
+            if (log.length < 5) return null;
+            const l5 = log.slice(0, 5);
+            const l10 = log.slice(0, Math.min(10, log.length));
+            const l20 = log.slice(0, Math.min(20, log.length));
+            const hit = (games, stat, line) => games.filter(g => (g[stat] || 0) > line).length / games.length;
+            const candidates = [];
+            for (const line of [1.5, 2.5, 3.5]) {
+              const r5=hit(l5,'shots',line), r10=hit(l10,'shots',line), r20=hit(l20,'shots',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'SOG', line, prob, r5, r10, r20 });
+            }
+            for (const line of [0.5, 1.5]) {
+              const r5=hit(l5,'points',line), r10=hit(l10,'points',line), r20=hit(l20,'points',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'PTS', line, prob, r5, r10, r20 });
+            }
+            const r5g=hit(l5,'goals',0.5), r10g=hit(l10,'goals',0.5), r20g=hit(l20,'goals',0.5);
+            const probG = r5g*0.45 + r10g*0.33 + r20g*0.22;
+            if (probG >= 0.55) candidates.push({ stat: 'GOAL', line: 0.5, prob: probG, r5: r5g, r10: r10g, r20: r20g });
+            if (candidates.length === 0) return null;
+            const best = candidates.sort((a,b) => b.prob-a.prob)[0];
+            const nom = ((j.firstName?.default||'') + ' ' + (j.lastName?.default||'')).trim();
+            return { id: j.id, nom, equipe: j.equipe, position: j.position, ...best };
+          } catch { return null; }
+        }));
+        resultats.push(...batchRes.filter(Boolean));
+      }
+      setProps(resultats.sort((a,b) => b.prob-a.prob));
+    } catch (err) { console.error(err); }
+    setChargementProps(false);
   }
 
   async function rechercherJoueur(query) {
@@ -584,7 +649,40 @@ function PageStatsJoueurs({ onSelectJoueur }) {
           </div>
         )}
       </div>
-      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
+        <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
+        <button onClick={() => setOngletJoueurs('lineups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'lineups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'lineups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'lineups' ? '600' : 'normal' }}>Lineups</button>
+      </div>
+
+      {ongletJoueurs === 'props' && (
+        <div>
+          {chargementProps ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
+          ) : props.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
+          ) : props.map((p, i) => (
+            <div key={p.id} onClick={() => onSelectJoueur({ id: p.id, nom: p.nom, position: p.position, equipe: p.equipe, numero: '' })}
+              style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px 16px', border: '1px solid #161616', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}
+            >
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#555', minWidth: '28px' }}>#{i+1}</div>
+              <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
+                <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+              </div>
+              <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '8px', padding: '8px 14px' }}>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
+                <div style={{ fontSize: '10px', color: '#444', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {ongletJoueurs === 'lineups' && chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : ongletJoueurs === 'lineups' && (
         <>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {jours.map(jour => {
