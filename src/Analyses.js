@@ -1450,7 +1450,17 @@ function FicheJoueur({ joueur, onBack }) {
   });
   const [typeChart, setTypeChart] = useState('SOG');
   const [shotChartData, setShotChartData] = useState(null);
-const [chargementShotChart, setChargementShotChart] = useState(false);
+  const [chargementShotChart, setChargementShotChart] = useState(false);
+
+  useEffect(() => {
+    if (!shotChartData) return;
+    if (shotChartData?.[ongletChart]) return;
+    setChargementShotChart(true);
+    getShotChartData(joueur.id, null, ongletChart).then(data => {
+      setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
+      setChargementShotChart(false);
+    });
+  }, [ongletChart, shotChartData]);
   const [chargement, setChargement] = useState(true);
   const [edgeValue, setEdgeValue] = useState('');
   const [modeStats, setModeStats] = useState('playoffs');
