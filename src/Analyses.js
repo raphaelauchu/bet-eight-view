@@ -1867,6 +1867,7 @@ function Analyses({ onLigueChange }) {
   const [chargement, setChargement] = useState(false);
   const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
   const [joueurSelectionne, setJoueurSelectionne] = useState(null);
+  const lineupDF = useLineupsDailyFaceoff();
   const [playoffBracket, setPlayoffBracket] = useState(null);
   const [estPlayoffs, setEstPlayoffs] = useState(false);
  
