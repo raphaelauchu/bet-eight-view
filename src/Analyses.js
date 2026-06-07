@@ -1424,7 +1424,6 @@ function FicheJoueur({ joueur, onBack }) {
   const [ongletStat, setOngletStat] = useState('PTS');
   const [ongletPeriode, setOngletPeriode] = useState('L10');
   const [ongletChart, setOngletChart] = useState('SZN');
-  useEffect(() => {
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
 
@@ -1870,7 +1869,8 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
     </div>
   );
 }
- function BracketPlayoffs({ bracket }) {
+}
+function BracketPlayoffs({ bracket }) {
   const [indexConf, setIndexConf] = useState(0);
   const [visible, setVisible] = useState(true);
   const [rondeActive, setRondeActive] = useState(0);
