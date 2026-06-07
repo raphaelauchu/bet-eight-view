@@ -273,8 +273,8 @@ const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 function App() {
   const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
-  const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
   const [utilisateur, setUtilisateur] = useState(null);
+  const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
