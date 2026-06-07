@@ -1869,7 +1869,6 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
     </div>
   );
 }
-}
 function BracketPlayoffs({ bracket }) {
   const [indexConf, setIndexConf] = useState(0);
   const [visible, setVisible] = useState(true);
