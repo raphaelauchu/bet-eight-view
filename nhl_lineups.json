@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-08 20:25",
+  "last_updated": "2026-06-09 20:12",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -243,7 +243,7 @@
         "L1": {
           "LW": "Andrei Svechnikov",
           "C": "Sebastian Aho",
-          "RW": "Seth Jarvis"
+          "RW": "Jordan Martinook"
         },
         "L2": {
           "LW": "Taylor Hall",
@@ -253,7 +253,7 @@
         "L3": {
           "LW": "Nikolaj Ehlers",
           "C": "Jordan Staal",
-          "RW": "Jordan Martinook"
+          "RW": "Seth Jarvis"
         },
         "L4": {
           "LW": "William Carrier",
@@ -278,22 +278,22 @@
       "pp_units": {
         "PP1": [
           "Seth Jarvis",
-          "Sebastian Aho",
-          "Nikolaj Ehlers",
+          "Jordan Staal",
+          "Andrei Svechnikov",
           "Shayne Gostisbehere",
-          "Andrei Svechnikov"
+          "Sebastian Aho"
         ],
         "PP2": [
           "Taylor Hall",
-          "Jordan Staal",
           "Logan Stankoven",
           "Jackson Blake",
-          "Alexander Nikishin"
+          "Alexander Nikishin",
+          "Nikolaj Ehlers"
         ]
       },
       "goalies": [
-        "Frederik Andersen",
-        "Brandon Bussi"
+        "Brandon Bussi",
+        "Frederik Andersen"
       ]
     },
     "chicago-blackhawks": {
@@ -1713,7 +1713,7 @@
         "L1": {
           "LW": "Ivan Barbashev",
           "C": "Jack Eichel",
-          "RW": "Pavel Dorofeyev"
+          "RW": "Mark Stone"
         },
         "L2": {
           "LW": "Brett Howden",
@@ -1723,7 +1723,7 @@
         "L3": {
           "LW": "Tomas Hertl",
           "C": "Colton Sissons",
-          "RW": "Mark Stone"
+          "RW": "Pavel Dorofeyev"
         },
         "L4": {
           "LW": "Cole Smith",
@@ -1750,15 +1750,15 @@
           "Mark Stone",
           "Jack Eichel",
           "Pavel Dorofeyev",
-          "Tomas Hertl",
+          "Shea Theodore",
           "Mitch Marner"
         ],
         "PP2": [
           "Ivan Barbashev",
-          "William Karlsson",
+          "Tomas Hertl",
           "Brett Howden",
           "Rasmus Andersson",
-          "Shea Theodore"
+          "William Karlsson"
         ]
       },
       "goalies": [
