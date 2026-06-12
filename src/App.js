@@ -377,6 +377,95 @@ function AdminPage() {
 
 const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
+
+function PropsPage() {
+  return (
+    <div style={{ padding: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Props du jour</h2>
+        <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Probabilités calculees L5/L10/L20</p>
+      </div>
+      <p style={{ color: '#555', textAlign: 'center', padding: '40px 0' }}>Charge depuis Analytics...</p>
+    </div>
+  );
+}
+
+function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
+  const { useState: useS, useEffect: useE } = require('react');
+  return (
+    <div style={{ padding: '24px', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <p style={{ margin: '0 0 2px', color: '#555', fontSize: '13px' }}>Bon retour,</p>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>{utilisateur?.email?.split('@')[0]}</h2>
+      </div>
+
+      {/* Bankroll card */}
+      <div style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', borderRadius: '20px', padding: '24px', marginBottom: '16px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ position: 'absolute', bottom: -30, left: -10, width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
+        <p style={{ margin: '0 0 4px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '1px' }}>Bankroll</p>
+        <h1 style={{ margin: '0 0 16px', fontSize: '42px', fontWeight: '900', color: 'white', letterSpacing: '-1px' }}>$1,000.00</h1>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>ROI</p>
+            <p style={{ margin: 0, color: 'white', fontSize: '16px', fontWeight: '700' }}>+0.0%</p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 2px', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Win Rate</p>
+            <p style={{ margin: 0, color: 'white', fontSize: '16px', fontWeight: '700' }}>0%</p>
+          </div>
+          <div>
+            <p style={{ margin: '0 0 2px', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Paris actifs</p>
+            <p style={{ margin: 0, color: 'white', fontSize: '16px', fontWeight: '700' }}>0</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+        <div onClick={onGoToProps} style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}>
+          <div style={{ fontSize: '24px', marginBottom: '8px' }}>◆</div>
+          <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Props du jour</p>
+          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>Voir les meilleures cotes</p>
+        </div>
+        <div onClick={onGoToAnalytics} style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}>
+          <div style={{ fontSize: '24px', marginBottom: '8px' }}>◎</div>
+          <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Analytics</p>
+          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>Stats joueurs et équipes</p>
+        </div>
+      </div>
+
+      {/* Paris récents */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Paris récents</h3>
+          <span style={{ color: '#555', fontSize: '12px' }}>Voir tout →</span>
+        </div>
+        <div style={{ textAlign: 'center', padding: '24px 0', color: '#333', fontSize: '13px' }}>
+          Aucun pari pour l'instant · Commence à tracker tes bets!
+        </div>
+      </div>
+
+      {/* Kelly recommandé */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ margin: '0 0 2px', color: '#555', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kelly 5% — Mise recommandée</p>
+            <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#22c55e', letterSpacing: '-0.5px' }}>$50.00</p>
+          </div>
+          <div style={{ backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <p style={{ margin: 0, color: '#22c55e', fontSize: '11px', fontWeight: '600' }}>Par pari</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
   const [utilisateur, setUtilisateur] = useState(null);
@@ -409,74 +498,84 @@ function App() {
     );
   }
  
+  // App connectée avec bottom nav style Oura
+  if (utilisateur) {
+    const tabs = [
+      { id: 'home', label: 'Home', icon: '⌂' },
+      { id: 'analyses', label: 'Analytics', icon: '◎' },
+      { id: 'props', label: 'Props', icon: '◆' },
+    ];
+    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : 'home';
+
+    return (
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
+
+        {/* Top bar connecté */}
+        <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}>
+          <h1 style={{ color: '#f97316', margin: 0, fontSize: '20px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: '#555', fontSize: '12px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
+            <button onClick={handleDeconnexion} style={{ backgroundColor: 'transparent', color: '#555', border: '1px solid #222', padding: '5px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>
+              Sign out
+            </button>
+          </div>
+        </div>
+
+        {/* Ticker NHL */}
+        {activeTab === 'analyses' && ligueAnalyses === 'nhl' && (
+          <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
+        )}
+
+        {/* Contenu */}
+        <div style={{ padding: '0' }}>
+          {activeTab === 'home' && <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} />}
+          {activeTab === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
+          {activeTab === 'props' && <PropsPage />}
+          {page === 'admin' && <AdminPage />}
+        </div>
+
+        {/* Bottom Nav style Oura */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
+          <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid #1a1a1a', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setPage(tab.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
+                <span style={{ fontSize: '20px', color: activeTab === tab.id ? '#f97316' : '#444', transition: 'color 0.2s' }}>{tab.icon}</span>
+                <span style={{ fontSize: '10px', fontWeight: activeTab === tab.id ? '600' : '400', color: activeTab === tab.id ? '#f97316' : '#444', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
+                {activeTab === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // App non connectée — landing page avec navbar
   return (
     <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
- 
-      {/* Navbar */}
+
+      {/* Navbar publique */}
       <div style={{ backgroundColor: 'rgba(10,10,10,0.95)', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1f2937', position: 'sticky', top: 0, zIndex: 100, overflowX: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-          <h1 onClick={() => setPage('home')} style={{ color: '#f97316', margin: 0, fontSize: '20px', cursor: 'pointer', fontWeight: '900', letterSpacing: '-0.5px' }}>
-            Betrics
-          </h1>
+          <h1 onClick={() => setPage('home')} style={{ color: '#f97316', margin: 0, fontSize: '20px', cursor: 'pointer', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
           <div style={{ display: 'flex', gap: '12px' }}>
             <span onClick={() => setPage('analyses')} style={{ cursor: 'pointer', color: page === 'analyses' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Analyses</span>
             <span onClick={() => setPage('pricing')} style={{ cursor: 'pointer', color: page === 'pricing' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Pricing</span>
-            {utilisateur && (
-              <>
-                <span onClick={() => setPage('dashboard')} style={{ cursor: 'pointer', color: page === 'dashboard' ? '#f97316' : '#9ca3af', fontSize: '14px' }}>Dashboard</span>
-                {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: page === 'admin' ? '#f97316' : '#555', fontSize: '14px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
-              </>
-            )}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {utilisateur ? (
-            <>
-              <span style={{ color: '#4b5563', fontSize: '13px', display: window.innerWidth < 768 ? 'none' : 'block' }}>{utilisateur.email}</span>
-              <button onClick={handleDeconnexion} style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
-                Déconnexion
-              </button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => setShowAuth(true)} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                Se connecter
-              </button>
-              <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Commencer →
-              </button>
-            </>
-          )}
+          <button onClick={() => setShowAuth(true)} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Se connecter</button>
+          <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>Commencer →</button>
         </div>
       </div>
- 
-      {/* Ticker NHL - visible seulement quand NHL est sélectionné dans Analyses */}
+
       {page === 'analyses' && ligueAnalyses === 'nhl' && (
         <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
       )}
- 
-      {/* Pages */}
-      {page === 'home' && (
-        <LandingPage
-          onCommencer={() => setShowAuth(true)}
-          onVoirPricing={() => setPage('pricing')}
-          onVoirAnalyses={() => setPage('analyses')}
-          nombreMatchs={nombreMatchs}
-        />
-      )}
+
+      {page === 'home' && <LandingPage onCommencer={() => setShowAuth(true)} onVoirPricing={() => setPage('pricing')} onVoirAnalyses={() => setPage('analyses')} nombreMatchs={nombreMatchs} />}
       {page === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
       {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
-      {page === 'dashboard' && utilisateur && <Dashboard />}
-      {page === 'admin' && (
-        <AdminPage />
-      )}{page === 'dashboard' && !utilisateur && (
-        <div style={{ textAlign: 'center', padding: '80px 32px' }}>
-          <p style={{ color: '#888' }}>Connecte-toi pour accéder au Dashboard.</p>
-          <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', marginTop: '16px' }}>
-            Se connecter
-          </button>
-        </div>
-      )}
     </div>
   );
 }
