@@ -379,13 +379,119 @@ const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 
 function PropsPage() {
+  const [props, setProps] = React.useState([]);
+  const [chargement, setChargement] = React.useState(true);
+  const [matchsParJour, setMatchsParJour] = React.useState({});
+
+  const getDateStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+  const getUrl = (path) => {
+    const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+    return isProd ? '/api/nhl?path=' + encodeURIComponent('https://api-web.nhle.com/v1/' + path) : 'https://api-web.nhle.com/v1/' + path;
+  };
+
+  React.useEffect(() => {
+    chargerProps();
+  }, []);
+
+  async function chargerProps() {
+    setChargement(true);
+    try {
+      const jours = Array(7).fill(null).map((_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return getDateStr(d); });
+      const resultats = {};
+      await Promise.all(jours.map(async (jour) => {
+        try {
+          const res = await fetch(getUrl('schedule/' + jour));
+          const data = await res.json();
+          const games = data.gameWeek?.[0]?.games || [];
+          if (games.length > 0) resultats[jour] = games;
+        } catch {}
+      }));
+      setMatchsParJour(resultats);
+      const aujourd = getDateStr(new Date());
+      const prochainJour = Object.keys(resultats).sort().find(j => resultats[j]?.length > 0) || aujourd;
+      const matchsDuJour = resultats[prochainJour] || [];
+      if (matchsDuJour.length === 0) { setChargement(false); return; }
+      const joueursDuJour = [];
+      for (const match of matchsDuJour) {
+        for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
+          if (!abbrev) continue;
+          try {
+            const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+            const data = await res.json();
+            (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
+            (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
+          } catch {}
+        }
+      }
+      const resultats2 = [];
+      for (let i = 0; i < Math.min(joueursDuJour.length, 80); i += 5) {
+        const batch = joueursDuJour.slice(i, i + 5);
+        const batchRes = await Promise.all(batch.map(async (j) => {
+          try {
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/20252026/2'));
+            const data = await res.json();
+            const log = (data.gameLog || []).slice(0, 20);
+            if (log.length < 5) return null;
+            const l5 = log.slice(0, 5);
+            const l10 = log.slice(0, Math.min(10, log.length));
+            const l20 = log.slice(0, Math.min(20, log.length));
+            const hit = (games, stat, line) => games.filter(g => (g[stat] || 0) > line).length / games.length;
+            const candidates = [];
+            for (const line of [1.5, 2.5, 3.5]) {
+              const r5=hit(l5,'shots',line), r10=hit(l10,'shots',line), r20=hit(l20,'shots',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'SOG', line, prob, r5, r10, r20 });
+            }
+            for (const line of [0.5, 1.5]) {
+              const r5=hit(l5,'points',line), r10=hit(l10,'points',line), r20=hit(l20,'points',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'PTS', line, prob, r5, r10, r20 });
+            }
+            const r5g=hit(l5,'goals',0.5), r10g=hit(l10,'goals',0.5), r20g=hit(l20,'goals',0.5);
+            const probG = r5g*0.45 + r10g*0.33 + r20g*0.22;
+            if (probG >= 0.55) candidates.push({ stat: 'GOAL', line: 0.5, prob: probG, r5: r5g, r10: r10g, r20: r20g });
+            if (candidates.length === 0) return null;
+            const best = candidates.sort((a,b) => b.prob-a.prob)[0];
+            const nom = ((j.firstName?.default||'') + ' ' + (j.lastName?.default||'')).trim();
+            return { id: j.id, nom, equipe: j.equipe, position: j.position, ...best };
+          } catch { return null; }
+        }));
+        resultats2.push(...batchRes.filter(Boolean));
+      }
+      setProps(resultats2.sort((a,b) => b.prob-a.prob));
+    } catch {}
+    setChargement(false);
+  }
+
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ marginBottom: '20px' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Today's Props</h2>
-        <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Probabilities calculated L5/L10/L20</p>
+        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>Ranked by L5/L10/L20 probability model</p>
       </div>
-      <p style={{ color: '#555', textAlign: 'center', padding: '40px 0' }}>Loading from Analytics...</p>
+      {chargement ? (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: '#444', fontSize: '13px' }}>Calculating props...</p>
+          <style>{" @keyframes spin { to { transform: rotate(360deg); } }"}</style>
+        </div>
+      ) : props.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: '#333' }}>No props available today.</div>
+      ) : props.map((p, i) => (
+        <div key={p.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '14px 16px', border: '1px solid #161616', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '700', color: '#333', minWidth: '28px' }}>#{i+1}</div>
+          <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
+            <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+          </div>
+          <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '10px', padding: '8px 12px', minWidth: '80px' }}>
+            <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
+            <div style={{ fontSize: '9px', color: '#333', marginTop: '1px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}%</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -530,10 +636,8 @@ function App() {
               <div style={{ padding: '12px', flex: 1 }}>
                 <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
                 {[
-                  { icon: '◐', label: 'Bets & Bankroll', page: 'bets' },
                   { icon: '⌂', label: 'Home', page: 'home' },
-                  { icon: '◎', label: 'Analytics', page: 'analyses' },
-                  { icon: '◆', label: 'Props', page: 'props' },
+                  { icon: '◐', label: 'Bets & Bankroll', page: 'bets' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
                     <span style={{ fontSize: '18px', color: page === item.page ? '#f97316' : '#555' }}>{item.icon}</span>
