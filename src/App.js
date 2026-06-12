@@ -393,14 +393,10 @@ function PropsPage() {
 function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   return (
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-
-      {/* Greeting */}
       <div style={{ marginBottom: '20px' }}>
         <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>Welcome back</p>
         <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{utilisateur?.email?.split('@')[0]}</h2>
       </div>
-
-      {/* Bankroll card */}
       <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
         <div style={{ position: 'absolute', bottom: -20, left: -20, width: '100px', height: '100px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)' }} />
@@ -411,7 +407,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           </div>
         </div>
         <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>$1,000<span style={{ fontSize: '24px', color: '#555' }}>.00</span></h1>
-        <div style={{ display: 'flex', gap: '0', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[['ROI', '+0.0%', '#22c55e'], ['Win Rate', '0%', 'white'], ['Active', '0 bets', '#f97316']].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
               <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
@@ -420,30 +416,26 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           ))}
         </div>
       </div>
-
-      {/* Quick actions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-        <div onClick={onGoToProps} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden' }}
+        <div onClick={onGoToProps} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.backgroundColor = '#111'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#161616'; e.currentTarget.style.backgroundColor = '#0d0d0d'; }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
             <span style={{ fontSize: '18px', color: '#f97316' }}>◆</span>
           </div>
-          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white', letterSpacing: '-0.3px' }}>Today's Props</p>
+          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Today's Props</p>
           <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>Best odds today</p>
         </div>
-        <div onClick={onGoToAnalytics} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer', transition: 'all 0.2s' }}
+        <div onClick={onGoToAnalytics} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.backgroundColor = '#111'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#161616'; e.currentTarget.style.backgroundColor = '#0d0d0d'; }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
             <span style={{ fontSize: '18px', color: '#f97316' }}>◎</span>
           </div>
-          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white', letterSpacing: '-0.3px' }}>Analytics</p>
+          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Analytics</p>
           <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>Player & team stats</p>
         </div>
       </div>
-
-      {/* Recent Bets */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
@@ -451,12 +443,10 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
           <span style={{ fontSize: '28px' }}>🏒</span>
-          <p style={{ margin: 0, color: '#333', fontSize: '13px', textAlign: 'center' }}>No bets yet</p>
+          <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>No bets yet</p>
           <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>Start tracking from the Bets menu</p>
         </div>
       </div>
-
-      {/* Kelly card */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
