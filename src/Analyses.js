@@ -1427,31 +1427,18 @@ function FicheJoueur({ joueur, onBack }) {
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
   const [typeChart, setTypeChart] = useState('SOG');
-
-  useEffect(() => {
-    if (!shotChartData) return;
-    if (shotChartData?.[ongletChart]) return;
-    setChargementShotChart(true);
-    getShotChartData(joueur.id, null, ongletChart, modeStats).then(data => {
-      setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
-      setChargementShotChart(false);
-    });
-  }, [ongletChart, shotChartData]);
-  useEffect(() => {
-  setShotChartData(null);
-}, [modeStats]);
   const [chargement, setChargement] = useState(true);
   const [edgeValue, setEdgeValue] = useState('');
   const [modeStats, setModeStats] = useState('playoffs');
- 
-  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
- 
-  async function chargerStats() {
-    setChargement(true);
-    try {
-      const res = await fetch(getUrl(`player/${joueur.id}/landing`));
-      const data = await res.json();
-      const saison = modeStats === 'playoffs' 
+
+  useEffect(() => {
+  setShotChartData(null);
+  setChargementShotChart(true);
+  getShotChartData(joueur.id, null, ongletChart, modeStats).then(data => {
+    setShotChartData({ [ongletChart]: data });
+    setChargementShotChart(false);
+  });
+}, [ongletChart, modeStats]); 
         ? data.featuredStats?.playoffs?.subSeason 
         : data.featuredStats?.regularSeason?.subSeason;
       const isGardien = joueur.position === 'G';
