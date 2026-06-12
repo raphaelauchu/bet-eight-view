@@ -382,10 +382,10 @@ function PropsPage() {
   return (
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Props du jour</h2>
-        <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Probabilités calculees L5/L10/L20</p>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Today's Props</h2>
+        <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Probabilities calculated L5/L10/L20</p>
       </div>
-      <p style={{ color: '#555', textAlign: 'center', padding: '40px 0' }}>Charge depuis Analytics...</p>
+      <p style={{ color: '#555', textAlign: 'center', padding: '40px 0' }}>Loading from Analytics...</p>
     </div>
   );
 }
@@ -395,7 +395,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   return (
     <div style={{ padding: '24px', fontFamily: '-apple-system, sans-serif' }}>
       <div style={{ marginBottom: '28px' }}>
-        <p style={{ margin: '0 0 2px', color: '#555', fontSize: '13px' }}>Bon retour,</p>
+        <p style={{ margin: '0 0 2px', color: '#555', fontSize: '13px' }}>Welcome back,</p>
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>{utilisateur?.email?.split('@')[0]}</h2>
       </div>
 
@@ -427,26 +427,26 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}>
           <div style={{ fontSize: '24px', marginBottom: '8px' }}>◆</div>
-          <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Props du jour</p>
-          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>Voir les meilleures cotes</p>
+          <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Today's Props</p>
+          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>View best odds</p>
         </div>
         <div onClick={onGoToAnalytics} style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616', cursor: 'pointer' }}
           onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
           onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}>
           <div style={{ fontSize: '24px', marginBottom: '8px' }}>◎</div>
           <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Analytics</p>
-          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>Stats joueurs et équipes</p>
+          <p style={{ margin: 0, color: '#555', fontSize: '12px' }}>Player & team stats</p>
         </div>
       </div>
 
-      {/* Paris récents */}
+      {/* Recent Bets */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Paris récents</h3>
-          <span style={{ color: '#555', fontSize: '12px' }}>Voir tout →</span>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
+          <span style={{ color: '#555', fontSize: '12px' }}>See all →</span>
         </div>
         <div style={{ textAlign: 'center', padding: '24px 0', color: '#333', fontSize: '13px' }}>
-          Aucun pari pour l'instant · Commence à tracker tes bets!
+          No bets yet · Start tracking your bets!
         </div>
       </div>
 
@@ -454,11 +454,11 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: '0 0 2px', color: '#555', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kelly 5% — Mise recommandée</p>
+            <p style={{ margin: '0 0 2px', color: '#555', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kelly 5% — Recommended Stake</p>
             <p style={{ margin: 0, fontSize: '28px', fontWeight: '800', color: '#22c55e', letterSpacing: '-0.5px' }}>$50.00</p>
           </div>
           <div style={{ backgroundColor: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <p style={{ margin: 0, color: '#22c55e', fontSize: '11px', fontWeight: '600' }}>Par pari</p>
+            <p style={{ margin: 0, color: '#22c55e', fontSize: '11px', fontWeight: '600' }}>Per bet</p>
           </div>
         </div>
       </div>
@@ -564,8 +564,8 @@ function App() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => setShowAuth(true)} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Se connecter</button>
-          <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>Commencer →</button>
+          <button onClick={() => setShowAuth(true)} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Sign in</button>
+          <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>Get started →</button>
         </div>
       </div>
 
