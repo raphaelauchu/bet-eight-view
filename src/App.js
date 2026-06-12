@@ -468,6 +468,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
 
 function App() {
   const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
+  const [menuOuvert, setMenuOuvert] = useState(false);
   const [utilisateur, setUtilisateur] = useState(null);
   const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
   const [showAuth, setShowAuth] = useState(false);
@@ -505,21 +506,61 @@ function App() {
       { id: 'analyses', label: 'Analytics', icon: '◎' },
       { id: 'props', label: 'Props', icon: '◆' },
     ];
-    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : 'home';
+    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' ? page : 'home';
 
     return (
       <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
 
         {/* Top bar connecté */}
         <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}>
-          <h1 style={{ color: '#f97316', margin: 0, fontSize: '20px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {isAdmin && <span onClick={() => setPage('admin')} style={{ cursor: 'pointer', color: '#555', fontSize: '12px', border: '1px solid #222', borderRadius: '6px', padding: '2px 8px' }}>Admin</span>}
-            <button onClick={handleDeconnexion} style={{ backgroundColor: 'transparent', color: '#555', border: '1px solid #222', padding: '5px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>
-              Sign out
-            </button>
-          </div>
+          <button onClick={() => setMenuOuvert(true)} style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
+            <div style={{ width: '22px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
+            <div style={{ width: '14px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
+          </button>
+          <h1 style={{ color: '#f97316', margin: 0, fontSize: '20px', fontWeight: '900', letterSpacing: '-0.5px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Betrics</h1>
+          <div style={{ width: '30px' }} />
         </div>
+
+        {/* Menu hamburger overlay */}
+        {menuOuvert && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, display: 'flex' }}>
+            <div style={{ width: '75%', maxWidth: '300px', backgroundColor: '#0a0a0a', height: '100%', padding: '0', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 40px rgba(0,0,0,0.8)' }}>
+              <div style={{ padding: '20px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ margin: 0, color: '#f97316', fontWeight: '900', fontSize: '18px' }}>Betrics</h2>
+                <button onClick={() => setMenuOuvert(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              </div>
+              <div style={{ padding: '12px', flex: 1 }}>
+                <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
+                {[
+                  { icon: '◐', label: 'Bets & Bankroll', page: 'bets' },
+                  { icon: '⌂', label: 'Home', page: 'home' },
+                  { icon: '◎', label: 'Analytics', page: 'analyses' },
+                  { icon: '◆', label: 'Props', page: 'props' },
+                ].map((item) => (
+                  <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '18px', color: page === item.page ? '#f97316' : '#555' }}>{item.icon}</span>
+                    <span style={{ fontSize: '15px', fontWeight: page === item.page ? '600' : '400', color: page === item.page ? 'white' : '#888' }}>{item.label}</span>
+                  </button>
+                ))}
+                {isAdmin && (
+                  <>
+                    <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginTop: '12px', marginBottom: '4px' }}>Admin</div>
+                    <button onClick={() => { setPage('admin'); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '18px', color: '#555' }}>⚙</span>
+                      <span style={{ fontSize: '15px', color: '#888' }}>Admin Panel</span>
+                    </button>
+                  </>
+                )}
+              </div>
+              <div style={{ padding: '20px', borderTop: '1px solid #111' }}>
+                <div style={{ color: '#444', fontSize: '12px', marginBottom: '12px' }}>{utilisateur?.email}</div>
+                <button onClick={() => { handleDeconnexion(); setMenuOuvert(false); }} style={{ width: '100%', padding: '12px', backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Sign out</button>
+              </div>
+            </div>
+            <div onClick={() => setMenuOuvert(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} />
+          </div>
+        )}
 
         {/* Ticker NHL */}
         {activeTab === 'analyses' && ligueAnalyses === 'nhl' && (
@@ -531,6 +572,8 @@ function App() {
           {activeTab === 'home' && <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} />}
           {activeTab === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
           {activeTab === 'props' && <PropsPage />}
+          {page === 'bets' && <Dashboard />}
+          {page === 'admin' && <AdminPage />}
           {page === 'admin' && <AdminPage />}
         </div>
 

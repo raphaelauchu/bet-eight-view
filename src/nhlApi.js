@@ -85,7 +85,8 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
   }
   return result;
 }
-export async function getShotChartData(playerId, gameIds, onglet = 'SZN') {
+
+export async function getShotChartData(playerId, gameIds, onglet = 'SZN', modeStats = 'reg') {
   const mapZone = {
     slot: 'SLOT',
     low: 'LOW',
@@ -101,13 +102,19 @@ export async function getShotChartData(playerId, gameIds, onglet = 'SZN') {
     if (!res.ok) throw new Error('JSON introuvable');
     const data = await res.json();
 
+    const section = modeStats === 'playoffs' && data.playoffs?.totalGames > 0
+      ? data.playoffs
+      : data.reg;
+
+    if (!section) throw new Error('Section introuvable');
+
     const ongletKey = onglet.toLowerCase() === 'szn' ? 'szn'
       : onglet.toLowerCase() === 'l5' ? 'l5'
       : onglet.toLowerCase() === 'l10' ? 'l10'
       : onglet.toLowerCase() === 'l20' ? 'l20'
       : 'szn';
 
-    const source = data[ongletKey] || data.szn;
+    const source = section[ongletKey] || section.szn;
 
     const zones = {};
     const goals = {};
@@ -115,16 +122,19 @@ export async function getShotChartData(playerId, gameIds, onglet = 'SZN') {
       zones[nhlKey] = source[mpKey]?.shotsOnGoal || 0;
       goals[nhlKey] = source[mpKey]?.goals || 0;
     }
-    zones['BOARDS LEFT'] = 0;
-    zones['BOARDS RIGHT'] = 0;
-    goals['BOARDS LEFT'] = 0;
-    goals['BOARDS RIGHT'] = 0;
 
-    return { zones, goals };
+    return {
+      zones,
+      goals,
+      hasPlayoffs: data.playoffs?.totalGames > 0,
+      totalGames: section.totalGames || 0,
+    };
   } catch {
-    // Fallback: ancienne méthode NHL API
-    const zones = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
-    const goals = { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, 'BOARDS LEFT': 0, 'BOARDS RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 };
-    return { zones, goals };
+    return {
+      zones: { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 },
+      goals: { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 },
+      hasPlayoffs: false,
+      totalGames: 0,
+    };
   }
 }
