@@ -381,7 +381,9 @@ const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 function PropsPage() {
   const [props, setProps] = React.useState([]);
   const [chargement, setChargement] = React.useState(true);
-  const [matchsParJour, setMatchsParJour] = React.useState({});
+  const [filtre, setFiltre] = React.useState('ALL');
+  const [filtreMatch, setFiltreMatch] = React.useState('ALL');
+  const [matches, setMatches] = React.useState([]);
 
   const getDateStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
   const getUrl = (path) => {
@@ -389,9 +391,7 @@ function PropsPage() {
     return isProd ? '/api/nhl?path=' + encodeURIComponent('https://api-web.nhle.com/v1/' + path) : 'https://api-web.nhle.com/v1/' + path;
   };
 
-  React.useEffect(() => {
-    chargerProps();
-  }, []);
+  React.useEffect(() => { chargerProps(); }, []);
 
   async function chargerProps() {
     setChargement(true);
@@ -406,10 +406,10 @@ function PropsPage() {
           if (games.length > 0) resultats[jour] = games;
         } catch {}
       }));
-      setMatchsParJour(resultats);
       const aujourd = getDateStr(new Date());
       const prochainJour = Object.keys(resultats).sort().find(j => resultats[j]?.length > 0) || aujourd;
       const matchsDuJour = resultats[prochainJour] || [];
+      setMatches(matchsDuJour);
       if (matchsDuJour.length === 0) { setChargement(false); return; }
       const joueursDuJour = [];
       for (const match of matchsDuJour) {
@@ -418,8 +418,8 @@ function PropsPage() {
           try {
             const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
             const data = await res.json();
-            (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
-            (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
+            (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F', matchId: match.id, away: match.awayTeam?.abbrev, home: match.homeTeam?.abbrev }));
+            (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D', matchId: match.id, away: match.awayTeam?.abbrev, home: match.homeTeam?.abbrev }));
           } catch {}
         }
       }
@@ -447,51 +447,117 @@ function PropsPage() {
               const prob = r5*0.45 + r10*0.33 + r20*0.22;
               if (prob >= 0.55) candidates.push({ stat: 'PTS', line, prob, r5, r10, r20 });
             }
-            const r5g=hit(l5,'goals',0.5), r10g=hit(l10,'goals',0.5), r20g=hit(l20,'goals',0.5);
-            const probG = r5g*0.45 + r10g*0.33 + r20g*0.22;
-            if (probG >= 0.55) candidates.push({ stat: 'GOAL', line: 0.5, prob: probG, r5: r5g, r10: r10g, r20: r20g });
+            for (const line of [0.5]) {
+              const r5=hit(l5,'goals',line), r10=hit(l10,'goals',line), r20=hit(l20,'goals',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'GOAL', line, prob, r5, r10, r20 });
+            }
+            for (const line of [0.5]) {
+              const r5=hit(l5,'assists',line), r10=hit(l10,'assists',line), r20=hit(l20,'assists',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'AST', line, prob, r5, r10, r20 });
+            }
             if (candidates.length === 0) return null;
-            const best = candidates.sort((a,b) => b.prob-a.prob)[0];
             const nom = ((j.firstName?.default||'') + ' ' + (j.lastName?.default||'')).trim();
-            return { id: j.id, nom, equipe: j.equipe, position: j.position, ...best };
+            return candidates.sort((a,b) => b.prob-a.prob).map(c => ({ id: j.id, nom, equipe: j.equipe, position: j.position, away: j.away, home: j.home, ...c }));
           } catch { return null; }
         }));
-        resultats2.push(...batchRes.filter(Boolean));
+        batchRes.filter(Boolean).forEach(arr => resultats2.push(...arr));
       }
       setProps(resultats2.sort((a,b) => b.prob-a.prob));
     } catch {}
     setChargement(false);
   }
 
+  const categories = ['ALL', 'SOG', 'PTS', 'GOAL', 'AST'];
+  const catColors = { SOG: '#3b82f6', PTS: '#f97316', GOAL: '#22c55e', AST: '#a78bfa', ALL: '#f97316' };
+
+  const propsFiltres = props.filter(p => {
+    const catOk = filtre === 'ALL' || p.stat === filtre;
+    const matchOk = filtreMatch === 'ALL' || p.equipe === filtreMatch || p.away === filtreMatch || p.home === filtreMatch;
+    return catOk && matchOk;
+  });
+
+  const getColor = (prob) => prob >= 0.75 ? '#22c55e' : prob >= 0.65 ? '#f97316' : '#888';
+  const getBg = (prob) => prob >= 0.75 ? 'rgba(34,197,94,0.08)' : prob >= 0.65 ? 'rgba(249,115,22,0.08)' : 'rgba(100,100,100,0.05)';
+  const getBorder = (prob) => prob >= 0.75 ? 'rgba(34,197,94,0.2)' : prob >= 0.65 ? 'rgba(249,115,22,0.2)' : '#161616';
+
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Today's Props</h2>
-        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>Ranked by L5/L10/L20 probability model</p>
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+      <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+
+      {/* Header */}
+      <div style={{ padding: '20px 20px 12px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Props</h2>
+        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>Ranked by L5·L10·L20 model · {propsFiltres.length} props</p>
       </div>
-      {chargement ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: '#444', fontSize: '13px' }}>Calculating props...</p>
-          <style>{" @keyframes spin { to { transform: rotate(360deg); } }"}</style>
+
+      {/* Match filter */}
+      {matches.length > 0 && (
+        <div style={{ padding: '0 20px 12px', overflowX: 'auto', display: 'flex', gap: '6px', scrollbarWidth: 'none' }}>
+          <button onClick={() => setFiltreMatch('ALL')} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: filtreMatch === 'ALL' ? '#f97316' : '#0d0d0d', color: filtreMatch === 'ALL' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>All games</button>
+          {matches.map((m, i) => {
+            const label = (m.awayTeam?.abbrev || '') + ' vs ' + (m.homeTeam?.abbrev || '');
+            const isActive = filtreMatch === m.awayTeam?.abbrev || filtreMatch === m.homeTeam?.abbrev;
+            return (
+              <button key={i} onClick={() => setFiltreMatch(isActive ? 'ALL' : m.awayTeam?.abbrev)} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: isActive ? '#f97316' : '#0d0d0d', color: isActive ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>{label}</button>
+            );
+          })}
         </div>
-      ) : props.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#333' }}>No props available today.</div>
-      ) : props.map((p, i) => (
-        <div key={p.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '14px 16px', border: '1px solid #161616', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '700', color: '#333', minWidth: '28px' }}>#{i+1}</div>
-          <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
-            <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+      )}
+
+      {/* Stat categories */}
+      <div style={{ padding: '0 20px 16px', display: 'flex', gap: '6px' }}>
+        {categories.map(cat => (
+          <button key={cat} onClick={() => setFiltre(cat)} style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtre === cat ? catColors[cat] : '#0d0d0d', color: filtre === cat ? 'white' : '#555', fontSize: '12px', fontWeight: '700', transition: 'all 0.15s' }}>{cat}</button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '0 20px' }}>
+        {chargement ? (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ width: '36px', height: '36px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Calculating props...</p>
           </div>
-          <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '10px', padding: '8px 12px', minWidth: '80px' }}>
-            <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
-            <div style={{ fontSize: '9px', color: '#333', marginTop: '1px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}%</div>
+        ) : propsFiltres.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 0', color: '#333', fontSize: '13px' }}>No props for this category today.</div>
+        ) : propsFiltres.map((p, i) => (
+          <div key={p.id + p.stat + p.line + i} style={{ backgroundColor: getBg(p.prob), borderRadius: '16px', padding: '14px 16px', border: '1px solid ' + getBorder(p.prob), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Rank */}
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#333', minWidth: '24px', textAlign: 'center' }}>#{i+1}</div>
+
+            {/* Photo */}
+            <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', border: '2px solid #222', flexShrink: 0 }}
+              onError={e => { e.target.style.display='none'; }} />
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '6px' }}>{p.equipe} · {p.away} vs {p.home}</div>
+              {/* L5 L10 L20 bars */}
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {[['L5', p.r5], ['L10', p.r10], ['L20', p.r20]].map(([label, val]) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <span style={{ fontSize: '9px', color: '#444', fontWeight: '600' }}>{label}</span>
+                    <div style={{ width: '28px', height: '4px', backgroundColor: '#1a1a1a', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: Math.round(val*100) + '%', height: '100%', backgroundColor: getColor(val), borderRadius: '2px' }} />
+                    </div>
+                    <span style={{ fontSize: '9px', color: '#444' }}>{Math.round(val*100)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Prop badge */}
+            <div style={{ textAlign: 'center', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '8px 12px', flexShrink: 0 }}>
+              <div style={{ fontSize: '10px', color: catColors[p.stat] || '#f97316', fontWeight: '700', marginBottom: '2px', letterSpacing: '0.5px' }}>{p.stat} {p.line}+</div>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: getColor(p.prob), letterSpacing: '-0.5px', lineHeight: 1 }}>{Math.round(p.prob * 100)}%</div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
