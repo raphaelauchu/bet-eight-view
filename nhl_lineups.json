@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-12 20:18",
+  "last_updated": "2026-06-13 19:44",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -241,9 +241,9 @@
       "name": "Carolina Hurricanes",
       "forwards": {
         "L1": {
-          "LW": "Andrei Svechnikov",
-          "C": "Sebastian Aho",
-          "RW": "Jordan Martinook"
+          "LW": "Nikolaj Ehlers",
+          "C": "Jordan Staal",
+          "RW": "Seth Jarvis"
         },
         "L2": {
           "LW": "Taylor Hall",
@@ -251,9 +251,9 @@
           "RW": "Jackson Blake"
         },
         "L3": {
-          "LW": "Nikolaj Ehlers",
-          "C": "Jordan Staal",
-          "RW": "Seth Jarvis"
+          "LW": "Andrei Svechnikov",
+          "C": "Sebastian Aho",
+          "RW": "Jordan Martinook"
         },
         "L4": {
           "LW": "William Carrier",
@@ -1713,17 +1713,17 @@
         "L1": {
           "LW": "Ivan Barbashev",
           "C": "Jack Eichel",
-          "RW": "Mark Stone"
+          "RW": "Pavel Dorofeyev"
         },
         "L2": {
           "LW": "Brett Howden",
-          "C": "William Karlsson",
-          "RW": "Mitch Marner"
+          "C": "Mitch Marner",
+          "RW": "Mark Stone"
         },
         "L3": {
           "LW": "Tomas Hertl",
           "C": "Colton Sissons",
-          "RW": "Pavel Dorofeyev"
+          "RW": "Reilly Smith"
         },
         "L4": {
           "LW": "Cole Smith",
@@ -1748,14 +1748,14 @@
       "pp_units": {
         "PP1": [
           "Mark Stone",
-          "Jack Eichel",
-          "Pavel Dorofeyev",
           "Tomas Hertl",
+          "Pavel Dorofeyev",
+          "Jack Eichel",
           "Mitch Marner"
         ],
         "PP2": [
           "Ivan Barbashev",
-          "William Karlsson",
+          "Colton Sissons",
           "Brett Howden",
           "Rasmus Andersson",
           "Shea Theodore"
