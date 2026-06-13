@@ -954,14 +954,14 @@ function ProfilePage({ utilisateur, onBack }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
             <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>First Name</label>
-            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Raphael"
+            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name"
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
               onBlur={e => e.target.style.borderColor = '#222'} />
           </div>
           <div>
             <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Last Name</label>
-            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Auch"
+            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name"
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
               onBlur={e => e.target.style.borderColor = '#222'} />
