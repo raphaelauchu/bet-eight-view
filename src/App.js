@@ -636,6 +636,97 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
 }
 
 
+
+function CropArea({ imgSrc, size, imgRef, onCropChange }) {
+  const [pos, setPos] = React.useState({ x: 0, y: 0 });
+  const [scale, setScale] = React.useState(1);
+  const [imgSize, setImgSize] = React.useState({ w: 0, h: 0 });
+  const dragging = React.useRef(false);
+  const lastPos = React.useRef({ x: 0, y: 0 });
+  const lastDist = React.useRef(null);
+
+  function onImgLoad(e) {
+    const img = e.target;
+    const ratio = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+    const w = img.naturalWidth * ratio;
+    const h = img.naturalHeight * ratio;
+    setImgSize({ w, h });
+    setScale(1);
+    setPos({ x: -(w - size) / 2, y: -(h - size) / 2 });
+  }
+
+  function clamp(val, min, max) { return Math.min(Math.max(val, min), max); }
+
+  function clampPos(x, y, s) {
+    const w = imgSize.w * s;
+    const h = imgSize.h * s;
+    return {
+      x: clamp(x, -(w - size), 0),
+      y: clamp(y, -(h - size), 0),
+    };
+  }
+
+  function onMouseDown(e) { dragging.current = true; lastPos.current = { x: e.clientX, y: e.clientY }; e.preventDefault(); }
+  function onMouseMove(e) {
+    if (!dragging.current) return;
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+    setPos(p => clampPos(p.x + dx, p.y + dy, scale));
+  }
+  function onMouseUp() { dragging.current = false; }
+
+  function onTouchStart(e) {
+    if (e.touches.length === 1) {
+      dragging.current = true;
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      lastDist.current = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+    e.preventDefault();
+  }
+  function onTouchMove(e) {
+    if (e.touches.length === 1 && dragging.current) {
+      const dx = e.touches[0].clientX - lastPos.current.x;
+      const dy = e.touches[0].clientY - lastPos.current.y;
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setPos(p => clampPos(p.x + dx, p.y + dy, scale));
+    } else if (e.touches.length === 2 && lastDist.current) {
+      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const delta = dist / lastDist.current;
+      lastDist.current = dist;
+      setScale(s => {
+        const ns = clamp(s * delta, 0.5, 4);
+        setPos(p => clampPos(p.x, p.y, ns));
+        return ns;
+      });
+    }
+    e.preventDefault();
+  }
+  function onTouchEnd() { dragging.current = false; lastDist.current = null; }
+
+  React.useEffect(() => {
+    if (onCropChange) onCropChange({ x: -pos.x / scale, y: -pos.y / scale, width: size / scale, height: size / scale });
+  }, [pos, scale]);
+
+  return (
+    <div
+      style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', backgroundColor: '#111', cursor: 'grab', position: 'relative' }}
+      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+    >
+      <img
+        ref={imgRef}
+        src={imgSrc}
+        alt="crop"
+        onLoad={onImgLoad}
+        draggable={false}
+        style={{ position: 'absolute', width: imgSize.w * scale, height: imgSize.h * scale, left: pos.x, top: pos.y, userSelect: 'none', pointerEvents: 'none' }}
+      />
+    </div>
+  );
+}
+
 function ProfilePage({ utilisateur, onBack }) {
   const [username, setUsername] = React.useState('');
   const [avatarUrl, setAvatarUrl] = React.useState(null);
@@ -671,7 +762,11 @@ function ProfilePage({ utilisateur, onBack }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => { setImgSrc(reader.result); setCropModal(true); };
+    reader.onload = () => {
+      setImgSrc(reader.result);
+      setCrop({ unit: '%', width: 80, height: 80, x: 10, y: 10 });
+      setCropModal(true);
+    };
     reader.readAsDataURL(file);
     e.target.value = '';
   }
@@ -724,40 +819,29 @@ function ProfilePage({ utilisateur, onBack }) {
 
       {/* Crop Modal */}
       {cropModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <h3 style={{ color: 'white', margin: '0 0 16px', fontWeight: '700' }}>Crop your photo</h3>
-          <div style={{ position: 'relative', maxWidth: '100%', marginBottom: '20px' }}>
-            {imgSrc && (
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <img
-                  ref={imgRef}
-                  src={imgSrc}
-                  alt="crop"
-                  style={{ maxWidth: '340px', maxHeight: '340px', borderRadius: '12px', display: 'block' }}
-                  onLoad={e => {
-                    const { width, height } = e.currentTarget;
-                    const size = Math.min(width, height) * 0.8;
-                    const x = (width - size) / 2;
-                    const y = (height - size) / 2;
-                    setCompletedCrop({ x, y, width: size, height: size, unit: 'px' });
-                  }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  top: '10%', left: '10%',
-                  width: '80%', height: '80%',
-                  border: '3px solid #f97316',
-                  borderRadius: '50%',
-                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
-                  pointerEvents: 'none'
-                }} />
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <style>{`
+            .crop-area { position: relative; overflow: hidden; touch-action: none; }
+            .crop-img { position: absolute; cursor: grab; user-select: none; }
+            .crop-img:active { cursor: grabbing; }
+          `}</style>
+          <h3 style={{ color: 'white', margin: '0 0 8px', fontWeight: '700', fontSize: '18px' }}>Crop your photo</h3>
+          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 20px' }}>Drag to reposition · Pinch to zoom</p>
+
+          {imgSrc && (() => {
+            const SIZE = Math.min(window.innerWidth - 40, 320);
+            return (
+              <div style={{ position: 'relative', width: SIZE, height: SIZE, marginBottom: '20px' }}>
+                <CropArea imgSrc={imgSrc} size={SIZE} imgRef={imgRef} onCropChange={setCompletedCrop} />
+                {/* Cercle overlay */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: '50%', border: '3px solid #f97316', pointerEvents: 'none', boxShadow: '0 0 0 9999px rgba(0,0,0,0.7)', zIndex: 10 }} />
               </div>
-            )}
-          </div>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', textAlign: 'center' }}>Your photo will be cropped as a circle</p>
+            );
+          })()}
+
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setCropModal(false)} style={{ padding: '12px 24px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-            <button onClick={uploadCropped} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>Use this photo</button>
+            <button onClick={() => setCropModal(false)} style={{ padding: '13px 28px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '15px' }}>Cancel</button>
+            <button onClick={uploadCropped} style={{ padding: '13px 28px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>Use this photo</button>
           </div>
         </div>
       )}
