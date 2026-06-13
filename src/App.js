@@ -681,10 +681,10 @@ function ProfilePage({ utilisateur, onBack }) {
       const ext = file.name.split('.').pop();
       const path = utilisateur.id + '/avatar.' + ext;
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('Avatars')
         .upload(path, file, { upsert: true });
       if (!uploadError) {
-        const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+        const { data } = supabase.storage.from('Avatars').getPublicUrl(path);
         const url = data.publicUrl + '?t=' + Date.now();
         setAvatarUrl(url);
         await supabase.from('profiles').upsert({ id: utilisateur.id, avatar_url: url });
