@@ -563,11 +563,22 @@ function PropsPage() {
 }
 
 function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
+  const [firstName, setFirstName] = React.useState('');
+
+  React.useEffect(() => {
+    if (utilisateur?.id) {
+      supabase.from('profiles').select('first_name').eq('id', utilisateur.id).single()
+        .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
+    }
+  }, [utilisateur?.id]);
+
+  const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
+
   return (
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       <div style={{ marginBottom: '20px' }}>
         <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>Welcome back</p>
-        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{utilisateur?.email?.split('@')[0]}</h2>
+        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{displayName}</h2>
       </div>
       <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
@@ -733,6 +744,8 @@ function ProfilePage({ utilisateur, onBack }) {
   const [uploading, setUploading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
   const [usernameStatus, setUsernameStatus] = React.useState(null); // null, 'checking', 'available', 'taken', 'invalid'
   const [originalUsername, setOriginalUsername] = React.useState('');
   const [cropModal, setCropModal] = React.useState(false);
@@ -746,8 +759,8 @@ function ProfilePage({ utilisateur, onBack }) {
 
   async function chargerProfil() {
     try {
-      const { data } = await supabase.from('profiles').select('username, avatar_url').eq('id', utilisateur.id).single();
-      if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); }
+      const { data } = await supabase.from('profiles').select('username, avatar_url, first_name, last_name').eq('id', utilisateur.id).single();
+      if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); setFirstName(data.first_name || ''); setLastName(data.last_name || ''); }
     } catch {}
   }
 
@@ -755,7 +768,7 @@ function ProfilePage({ utilisateur, onBack }) {
     if (usernameStatus === 'taken' || usernameStatus === 'invalid') return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('profiles').upsert({ id: utilisateur.id, username, updated_at: new Date().toISOString() });
+      const { error } = await supabase.from('profiles').upsert({ id: utilisateur.id, username, first_name: firstName, last_name: lastName, updated_at: new Date().toISOString() });
       if (!error) { setOriginalUsername(username); setSaved(true); setTimeout(() => setSaved(false), 2000); }
     } catch {}
     setSaving(false);
@@ -905,6 +918,22 @@ function ProfilePage({ utilisateur, onBack }) {
 
       {/* Fields */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div>
+            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>First Name</label>
+            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Raphael"
+              style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+              onFocus={e => e.target.style.borderColor = '#f97316'}
+              onBlur={e => e.target.style.borderColor = '#222'} />
+          </div>
+          <div>
+            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Last Name</label>
+            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Auch"
+              style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+              onFocus={e => e.target.style.borderColor = '#f97316'}
+              onBlur={e => e.target.style.borderColor = '#222'} />
+          </div>
+        </div>
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
           <input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. raphael_bets"
