@@ -679,7 +679,7 @@ function ProfilePage({ utilisateur, onBack }) {
     setUploading(true);
     try {
       const ext = file.name.split('.').pop();
-      const path = utilisateur.id + '.' + ext;
+      const path = utilisateur.id + '/avatar.' + ext;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(path, file, { upsert: true });
