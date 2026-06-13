@@ -566,6 +566,15 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   const [firstName, setFirstName] = React.useState('');
   const [bankroll, setBankroll] = React.useState(null);
   const [paris, setParis] = React.useState([]);
+  const [matchsSoir, setMatchsSoir] = React.useState([]);
+
+  const getDateStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+  const getUrl = (path) => {
+    const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+    return isProd ? '/api/nhl?path=' + encodeURIComponent('https://api-web.nhle.com/v1/' + path) : 'https://api-web.nhle.com/v1/' + path;
+  };
+
+  const LOGOS = { BOS:'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',BUF:'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',DET:'https://assets.nhle.com/logos/nhl/svg/DET_light.svg',FLA:'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg',MTL:'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg',OTT:'https://assets.nhle.com/logos/nhl/svg/OTT_light.svg',TBL:'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg',TOR:'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg',CAR:'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg',CBJ:'https://assets.nhle.com/logos/nhl/svg/CBJ_light.svg',NJD:'https://assets.nhle.com/logos/nhl/svg/NJD_light.svg',NYI:'https://assets.nhle.com/logos/nhl/svg/NYI_light.svg',NYR:'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg',PHI:'https://assets.nhle.com/logos/nhl/svg/PHI_light.svg',WSH:'https://assets.nhle.com/logos/nhl/svg/WSH_light.svg',CHI:'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg',COL:'https://assets.nhle.com/logos/nhl/svg/COL_light.svg',DAL:'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg',MIN:'https://assets.nhle.com/logos/nhl/svg/MIN_light.svg',NSH:'https://assets.nhle.com/logos/nhl/svg/NSH_light.svg',STL:'https://assets.nhle.com/logos/nhl/svg/STL_light.svg',WPG:'https://assets.nhle.com/logos/nhl/svg/WPG_light.svg',ANA:'https://assets.nhle.com/logos/nhl/svg/ANA_light.svg',CGY:'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg',EDM:'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg',LAK:'https://assets.nhle.com/logos/nhl/svg/LAK_light.svg',SJS:'https://assets.nhle.com/logos/nhl/svg/SJS_light.svg',SEA:'https://assets.nhle.com/logos/nhl/svg/SEA_light.svg',VGK:'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg',VAN:'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg',UTA:'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',PIT:'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg' };
 
   React.useEffect(() => {
     if (utilisateur?.id) {
@@ -576,6 +585,14 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
       supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false })
         .then(({ data }) => { if (data) setParis(data); });
     }
+    // Charger matchs du soir
+    const today = getDateStr(new Date());
+    fetch(getUrl('schedule/' + today))
+      .then(r => r.json())
+      .then(data => {
+        const games = data.gameWeek?.[0]?.games || [];
+        setMatchsSoir(games.slice(0, 5));
+      }).catch(() => {});
   }, [utilisateur?.id]);
 
   const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
@@ -588,23 +605,66 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
   const bankrollDisplay = bankroll !== null ? bankroll.toFixed(2) : '...';
   const kellyStake = bankroll !== null ? (bankroll * 0.05).toFixed(2) : '...';
+  const recentParis = paris.slice(0, 3);
+
+  // Profit curve data
+  const parisTraitesSorted = [...parisTraites].sort((a,b) => new Date(a.date_pari) - new Date(b.date_pari));
+  let cumul = 0;
+  const curveData = parisTraitesSorted.map(p => { cumul += (p.profit || 0); return cumul; });
+  const maxVal = Math.max(...curveData, 1);
+  const minVal = Math.min(...curveData, 0);
+  const range = maxVal - minVal || 1;
+  const H = 60;
+  const W = 200;
+  const points = curveData.map((v, i) => {
+    const x = curveData.length === 1 ? W/2 : (i / (curveData.length - 1)) * W;
+    const y = H - ((v - minVal) / range) * H;
+    return x + ',' + y;
+  }).join(' ');
 
   return (
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
+      {/* Greeting */}
       <div style={{ marginBottom: '20px' }}>
         <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>Welcome back</p>
         <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{displayName}</h2>
       </div>
+
+      {/* Bankroll card */}
       <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <div style={{ position: 'absolute', bottom: -20, left: -20, width: '100px', height: '100px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
           <p style={{ margin: 0, color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Bankroll</p>
           <div style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '20px', padding: '3px 10px' }}>
             <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>● Live</span>
           </div>
         </div>
-        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay.split('.')[0]}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay.split('.')[1] || '00'}</span></h1>
+        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay.split('.')[0]}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay.split('.')[1] || '00'}</span></h1>
+
+        {/* Mini Profit Curve */}
+        {curveData.length > 1 && (
+          <div style={{ marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '10px 12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Profit Curve</span>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: profitTotal >= 0 ? '#22c55e' : '#ef4444' }}>{profitTotal >= 0 ? '+' : ''}${profitTotal.toFixed(2)}</span>
+            </div>
+            <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={profitTotal >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={profitTotal >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {curveData.length > 1 && (
+                <>
+                  <polyline points={points} fill="none" stroke={profitTotal >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="#333" strokeWidth="0.5" strokeDasharray="4,4" />
+                </>
+              )}
+            </svg>
+          </div>
+        )}
+
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[[`ROI`, `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], ['Win Rate', `${winRate}%`, 'white'], ['Active', `${parisActifs.length} bets`, '#f97316']].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
@@ -614,6 +674,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           ))}
         </div>
       </div>
+
+      {/* Quick actions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
         <div onClick={onGoToProps} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.backgroundColor = '#111'; }}
@@ -634,18 +696,54 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>Player & team stats</p>
         </div>
       </div>
+
+      {/* Matchs du soir */}
+      {matchsSoir.length > 0 && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Tonight's Games</h3>
+            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} games</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {matchsSoir.map((m, i) => {
+              const away = m.awayTeam?.abbrev;
+              const home = m.homeTeam?.abbrev;
+              const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+              const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                    <img src={LOGOS[away]} alt={away} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{away}</span>
+                    <span style={{ fontSize: '11px', color: '#444' }}>@</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{home}</span>
+                    <img src={LOGOS[home]} alt={home} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
+                  </div>
+                  {isLive ? (
+                    <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
+                  ) : (
+                    <span style={{ color: '#555', fontSize: '12px' }}>{heure}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Bets */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
           <span style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>See all →</span>
         </div>
-        {paris.length === 0 ? (
+        {recentParis.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
             <span style={{ fontSize: '28px' }}>🏒</span>
             <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>No bets yet</p>
             <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>Start tracking from the Bets menu</p>
           </div>
-        ) : paris.map((p, i) => (
+        ) : recentParis.map((p, i) => (
           <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
             <div>
               <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.match}</p>
@@ -663,6 +761,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           </div>
         ))}
       </div>
+
+      {/* Kelly */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -675,98 +775,6 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-
-
-function CropArea({ imgSrc, size, imgRef, onCropChange }) {
-  const [pos, setPos] = React.useState({ x: 0, y: 0 });
-  const [scale, setScale] = React.useState(1);
-  const [imgSize, setImgSize] = React.useState({ w: 0, h: 0 });
-  const dragging = React.useRef(false);
-  const lastPos = React.useRef({ x: 0, y: 0 });
-  const lastDist = React.useRef(null);
-
-  function onImgLoad(e) {
-    const img = e.target;
-    const ratio = Math.max(size / img.naturalWidth, size / img.naturalHeight);
-    const w = img.naturalWidth * ratio;
-    const h = img.naturalHeight * ratio;
-    setImgSize({ w, h });
-    setScale(1);
-    setPos({ x: -(w - size) / 2, y: -(h - size) / 2 });
-  }
-
-  function clamp(val, min, max) { return Math.min(Math.max(val, min), max); }
-
-  function clampPos(x, y, s) {
-    const w = imgSize.w * s;
-    const h = imgSize.h * s;
-    return {
-      x: clamp(x, -(w - size), 0),
-      y: clamp(y, -(h - size), 0),
-    };
-  }
-
-  function onMouseDown(e) { dragging.current = true; lastPos.current = { x: e.clientX, y: e.clientY }; e.preventDefault(); }
-  function onMouseMove(e) {
-    if (!dragging.current) return;
-    const dx = e.clientX - lastPos.current.x;
-    const dy = e.clientY - lastPos.current.y;
-    lastPos.current = { x: e.clientX, y: e.clientY };
-    setPos(p => clampPos(p.x + dx, p.y + dy, scale));
-  }
-  function onMouseUp() { dragging.current = false; }
-
-  function onTouchStart(e) {
-    if (e.touches.length === 1) {
-      dragging.current = true;
-      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    } else if (e.touches.length === 2) {
-      lastDist.current = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    }
-    e.preventDefault();
-  }
-  function onTouchMove(e) {
-    if (e.touches.length === 1 && dragging.current) {
-      const dx = e.touches[0].clientX - lastPos.current.x;
-      const dy = e.touches[0].clientY - lastPos.current.y;
-      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      setPos(p => clampPos(p.x + dx, p.y + dy, scale));
-    } else if (e.touches.length === 2 && lastDist.current) {
-      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      const delta = dist / lastDist.current;
-      lastDist.current = dist;
-      setScale(s => {
-        const ns = clamp(s * delta, 0.5, 4);
-        setPos(p => clampPos(p.x, p.y, ns));
-        return ns;
-      });
-    }
-    e.preventDefault();
-  }
-  function onTouchEnd() { dragging.current = false; lastDist.current = null; }
-
-  React.useEffect(() => {
-    if (onCropChange) onCropChange({ x: -pos.x / scale, y: -pos.y / scale, width: size / scale, height: size / scale });
-  }, [pos, scale]);
-
-  return (
-    <div
-      style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', backgroundColor: '#111', cursor: 'grab', position: 'relative' }}
-      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-    >
-      <img
-        ref={imgRef}
-        src={imgSrc}
-        alt="crop"
-        onLoad={onImgLoad}
-        draggable={false}
-        style={{ position: 'absolute', width: imgSize.w * scale, height: imgSize.h * scale, left: pos.x, top: pos.y, userSelect: 'none', pointerEvents: 'none' }}
-      />
     </div>
   );
 }
