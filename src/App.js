@@ -635,6 +635,125 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   );
 }
 
+
+function ProfilePage({ utilisateur, onBack }) {
+  const [username, setUsername] = React.useState('');
+  const [avatarUrl, setAvatarUrl] = React.useState(null);
+  const [uploading, setUploading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const fileInputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    chargerProfil();
+  }, []);
+
+  async function chargerProfil() {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', utilisateur.id)
+        .single();
+      if (data) {
+        setUsername(data.username || '');
+        setAvatarUrl(data.avatar_url || null);
+      }
+    } catch {}
+  }
+
+  async function sauvegarderProfil() {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({ id: utilisateur.id, username, updated_at: new Date().toISOString() });
+      if (!error) { setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    } catch {}
+    setSaving(false);
+  }
+
+  async function uploadAvatar(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = utilisateur.id + '.' + ext;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true });
+      if (!uploadError) {
+        const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+        const url = data.publicUrl + '?t=' + Date.now();
+        setAvatarUrl(url);
+        await supabase.from('profiles').upsert({ id: utilisateur.id, avatar_url: url });
+      }
+    } catch {}
+    setUploading(false);
+  }
+
+  const initials = (username || utilisateur?.email || 'U').slice(0, 2).toUpperCase();
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Back</button>
+        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>My Profile</h2>
+      </div>
+
+      {/* Avatar */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+        <div onClick={() => fileInputRef.current?.click()} style={{ position: 'relative', cursor: 'pointer', marginBottom: '12px' }}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="avatar" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f97316' }} />
+          ) : (
+            <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#1a1a1a', border: '3px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', color: '#f97316' }}>{initials}</div>
+          )}
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid #080808' }}>
+            {uploading ? '⟳' : '✎'}
+          </div>
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={uploadAvatar} style={{ display: 'none' }} />
+        <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>{uploading ? 'Uploading...' : 'Tap to change photo'}</p>
+      </div>
+
+      {/* Fields */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+        <div>
+          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            placeholder="e.g. raphael_bets"
+            style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
+            onFocus={e => e.target.style.borderColor = '#f97316'}
+            onBlur={e => e.target.style.borderColor = '#222'}
+          />
+        </div>
+        <div>
+          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
+          <div style={{ padding: '12px 14px', backgroundColor: '#080808', border: '1px solid #161616', borderRadius: '12px', color: '#444', fontSize: '15px' }}>{utilisateur?.email}</div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
+        <p style={{ margin: '0 0 12px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Account</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#666', fontSize: '13px' }}>Member since</span>
+          <span style={{ color: 'white', fontSize: '13px', fontWeight: '600' }}>{new Date(utilisateur?.created_at || Date.now()).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}</span>
+        </div>
+      </div>
+
+      {/* Save button */}
+      <button onClick={sauvegarderProfil} disabled={saving} style={{ width: '100%', padding: '14px', background: saved ? 'rgba(34,197,94,0.15)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: saved ? '#22c55e' : 'white', border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>
+        {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Changes'}
+      </button>
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -702,6 +821,7 @@ function App() {
               <div style={{ padding: '12px', flex: 1 }}>
                 <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
                 {[
+                  { icon: '👤', label: 'My Profile', page: 'profile' },
                   { icon: '⌂', label: 'Home', page: 'home' },
                   { icon: '◐', label: 'Bets & Bankroll', page: 'bets' },
                 ].map((item) => (
@@ -740,6 +860,7 @@ function App() {
           {activeTab === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
           {activeTab === 'props' && <PropsPage />}
           {page === 'bets' && <Dashboard />}
+          {page === 'profile' && <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} />}
           {page === 'admin' && <AdminPage />}
           {page === 'admin' && <AdminPage />}
         </div>
