@@ -1059,7 +1059,6 @@ function App() {
                 <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
                 {[
                   { icon: '👤', label: 'My Profile', page: 'profile' },
-                  { icon: '⌂', label: 'Home', page: 'home' },
                   { icon: '◐', label: 'Bets', page: 'bets' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
