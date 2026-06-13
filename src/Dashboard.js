@@ -11,7 +11,7 @@ const BET_TYPES = [
   { value: 'parlay', label: 'Parlay' },
 ];
  
-function My Bets() {
+function Dashboard() {
   const [paris, setParis] = useState([]);
   const [bankroll, setBankrollState] = useState(1000);
   const [nouveauPari, setNouveauPari] = useState({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '' });
