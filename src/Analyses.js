@@ -1427,6 +1427,20 @@ function FicheJoueur({ joueur, onBack }) {
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
   const [typeChart, setTypeChart] = useState('SOG');
+  const [chargement, setChargement] = useState(true);
+  const [edgeValue, setEdgeValue] = useState('');
+  const [modeStats, setModeStats] = useState('reg');
+
+  useEffect(() => {
+    setShotChartData(null);
+    setChargementShotChart(true);
+    getShotChartData(joueur.id, null, ongletChart, modeStats).then(data => {
+      setShotChartData({ [ongletChart]: data });
+      setChargementShotChart(false);
+    });
+  }, [ongletChart, modeStats]);
+
+  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
 
   
   useEffect(() => {

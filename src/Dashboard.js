@@ -113,49 +113,10 @@ function Dashboard() {
         <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Track your bets and manage your bankroll</p>
       </div>
  
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-        {[
-          { label: 'Bankroll', value: `$${bankroll.toFixed(2)}`, color: '#f97316' },
-          { label: 'Net Profit', value: `${profitTotal >= 0 ? '+' : ''}$${profitTotal.toFixed(2)}`, color: profitTotal >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'ROI', value: `${roi}%`, color: parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444' },
-          { label: 'Win Rate', value: `${winRate}%`, sub: `${parisGagnes}/${parisTraites.length} bets`, color: winRate >= 50 ? '#22c55e' : '#ef4444' },
-        ].map((s, i) => (
-          <div key={i} style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '20px', border: '1px solid #161616' }}>
-            <div style={{ color: '#555', fontSize: '12px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{s.label}</div>
-            <div style={{ fontSize: '26px', fontWeight: '800', color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
-            {s.sub && <div style={{ color: '#444', fontSize: '12px', marginTop: '4px' }}>{s.sub}</div>}
-          </div>
-        ))}
-      </div>
- 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', marginBottom: '24px', border: '1px solid #161616' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <div style={{ fontWeight: '700', fontSize: '15px', letterSpacing: '-0.3px' }}>Profit Curve</div>
-            <div style={{ color: '#555', fontSize: '12px', marginTop: '2px' }}>Cumulative performance</div>
-          </div>
-          <div style={{ display: 'flex', gap: '4px', backgroundColor: '#111', borderRadius: '8px', padding: '3px' }}>
-            {['7d', '30d', '90d'].map(f => (
-              <button key={f} onClick={() => setFiltreGraphique(f)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraphique === f ? '#f97316' : 'transparent', color: filtreGraphique === f ? 'white' : '#555', fontSize: '12px', fontWeight: filtreGraphique === f ? 'bold' : 'normal' }}>{f}</button>
-            ))}
-          </div>
-        </div>
-        {donneesGraphique.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>No settled bets for this period</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={donneesGraphique}>
-              <XAxis dataKey="date" stroke="#222" fontSize={11} tick={{ fill: '#444' }} axisLine={false} tickLine={false} />
-              <YAxis stroke="#222" fontSize={11} tick={{ fill: '#444' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-              <Tooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', fontSize: '13px' }} labelStyle={{ color: '#888' }} formatter={(v) => [`$${v}`, 'Profit']} />
-              <Line type="monotone" dataKey="profit" stroke="#f97316" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: '#f97316' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+
  
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        {[{ id: 'actifs', label: `Active (${parisActifs.length})` }, { id: 'traites', label: `History (${parisTraites.length})` }, { id: 'bankroll', label: 'Bankroll' }].map(t => (
+        {[{ id: 'actifs', label: `Active (${parisActifs.length})` }, { id: 'traites', label: `History (${parisTraites.length})` }].map(t => (
           <button key={t.id} onClick={() => setOnglet(t.id)} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: onglet === t.id ? '#f97316' : 'transparent', color: onglet === t.id ? 'white' : '#555', fontSize: '13px', fontWeight: onglet === t.id ? '600' : 'normal' }}>{t.label}</button>
         ))}
       </div>
