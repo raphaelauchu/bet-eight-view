@@ -36,56 +36,76 @@ def telecharger_shots(season):
     print(str(len(df)) + " tirs charges")
     return df
 
-def calculer_shotchart(df, player_id):
-    df_reg = df[df['isPlayoffGame'] == 0].copy()
-    df_player = df_reg[df_reg['shooterPlayerId'] == player_id].copy()
+def agregat(subset):
+    stats = {}
+    for zone in ZONES:
+        zone_df = subset[subset['zone'] == zone]
+        stats[zone] = {
+            "shotsOnGoal": int(zone_df['shotWasOnGoal'].sum()),
+            "goals": int(zone_df['goal'].sum()),
+            "attempts": int(len(zone_df)),
+            "xGoals": round(float(zone_df['xGoal'].sum()), 2)
+        }
+    stats["total"] = {
+        "shotsOnGoal": int(subset['shotWasOnGoal'].sum()),
+        "goals": int(subset['goal'].sum()),
+        "attempts": int(len(subset)),
+        "xGoals": round(float(subset['xGoal'].sum()), 2)
+    }
+    return stats
+
+def stats_derniers_matchs(df_player, jeux, n):
+    derniers_jeux = jeux[-n:] if len(jeux) >= n else jeux
+    return agregat(df_player[df_player['game_id'].isin(derniers_jeux)])
+
+def calculer_section(df_player):
     if df_player.empty:
+        return None
+    jeux = sorted(df_player['game_id'].unique())
+    total_matchs = len(jeux)
+    return {
+        "totalGames": total_matchs,
+        "szn": agregat(df_player),
+        "l5": stats_derniers_matchs(df_player, jeux, 5),
+        "l10": stats_derniers_matchs(df_player, jeux, 10),
+        "l20": stats_derniers_matchs(df_player, jeux, 20)
+    }
+
+def calculer_shotchart(df, player_id):
+    df_player_all = df[df['shooterPlayerId'] == player_id].copy()
+    if df_player_all.empty:
         print("Joueur " + str(player_id) + " introuvable.")
         return None
-    df_player['zone'] = df_player.apply(
+
+    df_player_all['zone'] = df_player_all.apply(
         lambda row: assigner_zone(row['arenaAdjustedXCordABS'], row['arenaAdjustedYCord']),
         axis=1
     )
-    jeux = sorted(df_player['game_id'].unique())
-    total_matchs = len(jeux)
-    print(str(len(df_player)) + " tirs sur " + str(total_matchs) + " matchs")
 
-    def agregat(subset):
-        stats = {}
-        for zone in ZONES:
-            zone_df = subset[subset['zone'] == zone]
-            stats[zone] = {
-                "shotsOnGoal": int(zone_df['shotWasOnGoal'].sum()),
-                "goals": int(zone_df['goal'].sum()),
-                "attempts": int(len(zone_df)),
-                "xGoals": round(float(zone_df['xGoal'].sum()), 2)
-            }
-        stats["total"] = {
-            "shotsOnGoal": int(subset['shotWasOnGoal'].sum()),
-            "goals": int(subset['goal'].sum()),
-            "attempts": int(len(subset)),
-            "xGoals": round(float(subset['xGoal'].sum()), 2)
-        }
-        return stats
+    df_reg = df_player_all[df_player_all['isPlayoffGame'] == 0]
+    df_playoffs = df_player_all[df_player_all['isPlayoffGame'] == 1]
 
-    def stats_derniers_matchs(n):
-        derniers_jeux = jeux[-n:] if total_matchs >= n else jeux
-        return agregat(df_player[df_player['game_id'].isin(derniers_jeux)])
+    section_reg = calculer_section(df_reg)
+    section_playoffs = calculer_section(df_playoffs)
 
-    nom = df_player['shooterName'].iloc[0] if 'shooterName' in df_player.columns else str(player_id)
-    equipe = df_player['team'].iloc[-1] if 'team' in df_player.columns else ""
+    if section_reg is None and section_playoffs is None:
+        return None
+
+    nom = df_player_all['shooterName'].iloc[0] if 'shooterName' in df_player_all.columns else str(player_id)
+    equipe = df_player_all['team'].iloc[-1] if 'team' in df_player_all.columns else ""
+
+    reg_games = section_reg['totalGames'] if section_reg else 0
+    playoff_games = section_playoffs['totalGames'] if section_playoffs else 0
+    print(str(nom) + " — reg: " + str(reg_games) + " matchs, playoffs: " + str(playoff_games) + " matchs")
 
     return {
         "playerId": player_id,
         "playerName": nom,
         "team": equipe,
-        "season": int(df_player['season'].iloc[0]),
-        "totalGames": total_matchs,
+        "season": int(df_player_all['season'].iloc[0]),
         "lastUpdated": datetime.now().isoformat(),
-        "szn": agregat(df_player),
-        "l5": stats_derniers_matchs(5),
-        "l10": stats_derniers_matchs(10),
-        "l20": stats_derniers_matchs(20)
+        "reg": section_reg,
+        "playoffs": section_playoffs
     }
 
 def sauvegarder_json(data, player_id):
@@ -101,15 +121,16 @@ def main():
     parser.add_argument("--player", type=int)
     parser.add_argument("--season", type=int, default=CURRENT_SEASON)
     args = parser.parse_args()
+
     df = telecharger_shots(args.season)
+
     if args.player:
         print("Traitement joueur " + str(args.player))
         data = calculer_shotchart(df, args.player)
         if data:
             sauvegarder_json(data, args.player)
-            print("Termine! " + data["playerName"] + " " + str(data["totalGames"]) + " matchs")
     else:
-        player_ids = df[df['isPlayoffGame'] == 0]['shooterPlayerId'].unique()
+        player_ids = df['shooterPlayerId'].unique()
         print("Traitement de " + str(len(player_ids)) + " joueurs...")
         succes = 0
         for pid in player_ids:
