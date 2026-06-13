@@ -856,13 +856,19 @@ function App() {
 
         {/* Contenu */}
         <div style={{ padding: '0' }}>
-          {activeTab === 'home' && <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} />}
-          {activeTab === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
-          {activeTab === 'props' && <PropsPage />}
-          {page === 'bets' && <Dashboard />}
-          {page === 'profile' && <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} />}
-          {page === 'admin' && <AdminPage />}
-          {page === 'admin' && <AdminPage />}
+          {page === 'profile' ? (
+            <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} />
+          ) : page === 'bets' ? (
+            <Dashboard />
+          ) : page === 'admin' ? (
+            <AdminPage />
+          ) : activeTab === 'home' ? (
+            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} />
+          ) : activeTab === 'analyses' ? (
+            <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
+          ) : activeTab === 'props' ? (
+            <PropsPage />
+          ) : null}
         </div>
 
         {/* Bottom Nav style Oura */}
