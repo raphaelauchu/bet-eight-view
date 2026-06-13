@@ -562,7 +562,7 @@ function PropsPage() {
   );
 }
 
-function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
+function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }) {
   const [firstName, setFirstName] = React.useState('');
   const [bankroll, setBankroll] = React.useState(null);
   const [paris, setParis] = React.useState([]);
@@ -735,7 +735,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
-          <span style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>See all →</span>
+          <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>See all →</span>
         </div>
         {recentParis.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
@@ -1120,7 +1120,7 @@ function App() {
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
-            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} />
+            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} onGoToBets={() => setPage('bets')} />
           ) : activeTab === 'analyses' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
