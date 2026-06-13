@@ -573,7 +573,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
         .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
       supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).single()
         .then(({ data }) => { if (data) setBankroll(data.montant); });
-      supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false }).limit(3)
+      supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false })
         .then(({ data }) => { if (data) setParis(data); });
     }
   }, [utilisateur?.id]);
