@@ -564,15 +564,30 @@ function PropsPage() {
 
 function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
   const [firstName, setFirstName] = React.useState('');
+  const [bankroll, setBankroll] = React.useState(null);
+  const [paris, setParis] = React.useState([]);
 
   React.useEffect(() => {
     if (utilisateur?.id) {
       supabase.from('profiles').select('first_name').eq('id', utilisateur.id).single()
         .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
+      supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).single()
+        .then(({ data }) => { if (data) setBankroll(data.montant); });
+      supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false }).limit(3)
+        .then(({ data }) => { if (data) setParis(data); });
     }
   }, [utilisateur?.id]);
 
   const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
+  const parisActifs = paris.filter(p => p.statut === 'actif');
+  const parisTraites = paris.filter(p => p.statut !== 'actif');
+  const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
+  const parisGagnes = parisTraites.filter(p => p.statut === 'gagne').length;
+  const winRate = parisTraites.length > 0 ? Math.round((parisGagnes / parisTraites.length) * 100) : 0;
+  const miseTotale = parisTraites.reduce((acc, p) => acc + (p.mise || 0), 0);
+  const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
+  const bankrollDisplay = bankroll !== null ? bankroll.toFixed(2) : '...';
+  const kellyStake = bankroll !== null ? (bankroll * 0.05).toFixed(2) : '...';
 
   return (
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
@@ -589,9 +604,9 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
             <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>● Live</span>
           </div>
         </div>
-        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>$1,000<span style={{ fontSize: '24px', color: '#555' }}>.00</span></h1>
+        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay.split('.')[0]}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay.split('.')[1] || '00'}</span></h1>
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
-          {[['ROI', '+0.0%', '#22c55e'], ['Win Rate', '0%', 'white'], ['Active', '0 bets', '#f97316']].map(([label, val, color], i) => (
+          {[[`ROI`, `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], ['Win Rate', `${winRate}%`, 'white'], ['Active', `${parisActifs.length} bets`, '#f97316']].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
               <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
               <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color }}>{val}</p>
@@ -624,17 +639,35 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics }) {
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
           <span style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>See all →</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
-          <span style={{ fontSize: '28px' }}>🏒</span>
-          <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>No bets yet</p>
-          <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>Start tracking from the Bets menu</p>
-        </div>
+        {paris.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
+            <span style={{ fontSize: '28px' }}>🏒</span>
+            <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>No bets yet</p>
+            <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>Start tracking from the Bets menu</p>
+          </div>
+        ) : paris.map((p, i) => (
+          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+            <div>
+              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.match}</p>
+              <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{p.bookmaker} · Odds {p.cote}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {p.statut === 'actif' ? (
+                <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>Active</span>
+              ) : (
+                <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
+                  {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <p style={{ margin: '0 0 3px', color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Kelly 5% · Recommended Stake</p>
-            <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>$50<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.00</span></p>
+            <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>${kellyStake.split('.')[0]}<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.{kellyStake.split('.')[1] || '00'}</span></p>
           </div>
           <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: '14px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.15)' }}>
             <p style={{ margin: '0 0 2px', color: '#22c55e', fontSize: '11px', fontWeight: '600', textAlign: 'center' }}>Per bet</p>
