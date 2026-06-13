@@ -957,7 +957,7 @@ function ProfilePage({ utilisateur, onBack }) {
         </div>
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. raphael_bets"
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username"
             style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : '#222'), borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
           />
           {username.length > 0 && (
