@@ -17,24 +17,27 @@ function Auth({ onConnexion }) {
     setErreur('');
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password: motDePasse });
+      const { data: signUpData, error } = await supabase.auth.signUp({ email, password: motDePasse });
       if (error) setErreur(error.message);
-      else setConfirmation(true);
+      else {
+        if (signUpData?.user) {
+          await supabase.from('profiles').upsert({ id: signUpData.user.id, email: email });
+        }
+        setConfirmation(true);
+      }
     } else {
       let loginEmail = identifier;
       if (!identifier.includes('@')) {
-        const { data } = await supabase.from('profiles').select('id').eq('username', identifier).single();
-        if (!data) {
-          setErreur('Username not found. Please sign in with your email.');
+        const { data, error } = await supabase.from('profiles').select('email').eq('username', identifier).single();
+        if (error || !data || !data.email) {
+          setErreur('Username not found or no email associated. Try signing in with your email.');
           setChargement(false);
           return;
         }
-        setErreur('Username found! Please sign in with your email address.');
-        setChargement(false);
-        return;
+        loginEmail = data.email;
       }
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: motDePasse });
-      if (error) setErreur('Incorrect email or password.');
+      if (error) setErreur('Incorrect email/username or password.');
       else onConnexion();
     }
     setChargement(false);
