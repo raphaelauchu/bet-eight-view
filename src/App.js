@@ -642,54 +642,77 @@ function ProfilePage({ utilisateur, onBack }) {
   const [uploading, setUploading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [cropModal, setCropModal] = React.useState(false);
+  const [imgSrc, setImgSrc] = React.useState('');
+  const [crop, setCrop] = React.useState({ unit: '%', width: 80, height: 80, x: 10, y: 10 });
+  const [completedCrop, setCompletedCrop] = React.useState(null);
+  const imgRef = React.useRef(null);
   const fileInputRef = React.useRef(null);
 
-  React.useEffect(() => {
-    chargerProfil();
-  }, []);
+  React.useEffect(() => { chargerProfil(); }, []);
 
   async function chargerProfil() {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', utilisateur.id)
-        .single();
-      if (data) {
-        setUsername(data.username || '');
-        setAvatarUrl(data.avatar_url || null);
-      }
+      const { data } = await supabase.from('profiles').select('username, avatar_url').eq('id', utilisateur.id).single();
+      if (data) { setUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); }
     } catch {}
   }
 
   async function sauvegarderProfil() {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({ id: utilisateur.id, username, updated_at: new Date().toISOString() });
+      const { error } = await supabase.from('profiles').upsert({ id: utilisateur.id, username, updated_at: new Date().toISOString() });
       if (!error) { setSaved(true); setTimeout(() => setSaved(false), 2000); }
     } catch {}
     setSaving(false);
   }
 
-  async function uploadAvatar(e) {
+  function onSelectFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { setImgSrc(reader.result); setCropModal(true); };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  async function getCroppedBlob() {
+    const image = imgRef.current;
+    if (!image || !completedCrop) return null;
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
+    ctx.clip();
+    ctx.drawImage(
+      image,
+      completedCrop.x * scaleX, completedCrop.y * scaleY,
+      completedCrop.width * scaleX, completedCrop.height * scaleY,
+      0, 0, size, size
+    );
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+  }
+
+  async function uploadCropped() {
     setUploading(true);
+    setCropModal(false);
     try {
-      const ext = file.name.split('.').pop();
-      const path = utilisateur.id + '/avatar.' + ext;
-      const { error: uploadError } = await supabase.storage
-        .from('Avatars')
-        .upload(path, file, { upsert: true });
-      if (!uploadError) {
+      const blob = await getCroppedBlob();
+      if (!blob) return;
+      const path = utilisateur.id + '/avatar.jpg';
+      const { error } = await supabase.storage.from('Avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (!error) {
         const { data } = supabase.storage.from('Avatars').getPublicUrl(path);
         const url = data.publicUrl + '?t=' + Date.now();
         setAvatarUrl(url);
         await supabase.from('profiles').upsert({ id: utilisateur.id, avatar_url: url });
       }
-    } catch {}
+    } catch(e) { console.error(e); }
     setUploading(false);
   }
 
@@ -697,6 +720,48 @@ function ProfilePage({ utilisateur, onBack }) {
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <style>{'.crop-container img { max-width: 100%; max-height: 60vh; } .ReactCrop { border-radius: 12px; overflow: hidden; }'}</style>
+
+      {/* Crop Modal */}
+      {cropModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <h3 style={{ color: 'white', margin: '0 0 16px', fontWeight: '700' }}>Crop your photo</h3>
+          <div style={{ position: 'relative', maxWidth: '100%', marginBottom: '20px' }}>
+            {imgSrc && (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img
+                  ref={imgRef}
+                  src={imgSrc}
+                  alt="crop"
+                  style={{ maxWidth: '340px', maxHeight: '340px', borderRadius: '12px', display: 'block' }}
+                  onLoad={e => {
+                    const { width, height } = e.currentTarget;
+                    const size = Math.min(width, height) * 0.8;
+                    const x = (width - size) / 2;
+                    const y = (height - size) / 2;
+                    setCompletedCrop({ x, y, width: size, height: size, unit: 'px' });
+                  }}
+                />
+                <div style={{
+                  position: 'absolute',
+                  top: '10%', left: '10%',
+                  width: '80%', height: '80%',
+                  border: '3px solid #f97316',
+                  borderRadius: '50%',
+                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+                  pointerEvents: 'none'
+                }} />
+              </div>
+            )}
+          </div>
+          <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px', textAlign: 'center' }}>Your photo will be cropped as a circle</p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => setCropModal(false)} style={{ padding: '12px 24px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
+            <button onClick={uploadCropped} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>Use this photo</button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
         <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Back</button>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>My Profile</h2>
@@ -704,7 +769,7 @@ function ProfilePage({ utilisateur, onBack }) {
 
       {/* Avatar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-        <div onClick={() => fileInputRef.current?.click()} style={{ position: 'relative', cursor: 'pointer', marginBottom: '12px' }}>
+        <div onClick={() => !uploading && fileInputRef.current?.click()} style={{ position: 'relative', cursor: 'pointer', marginBottom: '12px' }}>
           {avatarUrl ? (
             <img src={avatarUrl} alt="avatar" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f97316' }} />
           ) : (
@@ -714,7 +779,7 @@ function ProfilePage({ utilisateur, onBack }) {
             {uploading ? '⟳' : '✎'}
           </div>
         </div>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={uploadAvatar} style={{ display: 'none' }} />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} style={{ display: 'none' }} />
         <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>{uploading ? 'Uploading...' : 'Tap to change photo'}</p>
       </div>
 
@@ -722,14 +787,10 @@ function ProfilePage({ utilisateur, onBack }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
-          <input
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            placeholder="e.g. raphael_bets"
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. raphael_bets"
             style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
             onFocus={e => e.target.style.borderColor = '#f97316'}
-            onBlur={e => e.target.style.borderColor = '#222'}
-          />
+            onBlur={e => e.target.style.borderColor = '#222'} />
         </div>
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
@@ -737,7 +798,6 @@ function ProfilePage({ utilisateur, onBack }) {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
         <p style={{ margin: '0 0 12px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Account</p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -746,8 +806,8 @@ function ProfilePage({ utilisateur, onBack }) {
         </div>
       </div>
 
-      {/* Save button */}
-      <button onClick={sauvegarderProfil} disabled={saving} style={{ width: '100%', padding: '14px', background: saved ? 'rgba(34,197,94,0.15)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: saved ? '#22c55e' : 'white', border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>
+      <button onClick={sauvegarderProfil} disabled={saving}
+        style={{ width: '100%', padding: '14px', background: saved ? 'rgba(34,197,94,0.15)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: saved ? '#22c55e' : 'white', border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
         {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Changes'}
       </button>
     </div>
