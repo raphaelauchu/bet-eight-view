@@ -675,27 +675,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-        <div onClick={onGoToProps} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.backgroundColor = '#111'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#161616'; e.currentTarget.style.backgroundColor = '#0d0d0d'; }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '18px', color: '#f97316' }}>◆</span>
-          </div>
-          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Today's Props</p>
-          <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>Best odds today</p>
-        </div>
-        <div onClick={onGoToAnalytics} style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', cursor: 'pointer' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'; e.currentTarget.style.backgroundColor = '#111'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = '#161616'; e.currentTarget.style.backgroundColor = '#0d0d0d'; }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(249,115,22,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '18px', color: '#f97316' }}>◎</span>
-          </div>
-          <p style={{ margin: '0 0 3px', fontWeight: '700', fontSize: '14px', color: 'white' }}>Analytics</p>
-          <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>Player & team stats</p>
-        </div>
-      </div>
+
 
       {/* Matchs du soir */}
       {matchsSoir.length > 0 && (

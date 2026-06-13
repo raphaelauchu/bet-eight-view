@@ -1428,18 +1428,16 @@ function FicheJoueur({ joueur, onBack }) {
   const [chargementShotChart, setChargementShotChart] = useState(false);
   const [typeChart, setTypeChart] = useState('SOG');
 
+  
   useEffect(() => {
-    if (!shotChartData) return;
-    if (shotChartData?.[ongletChart]) return;
+    setShotChartData(null);
     setChargementShotChart(true);
-    getShotChartData(joueur.id, null, ongletChart).then(data => {
-      setShotChartData(prev => ({ ...prev, [ongletChart]: data }));
+    getShotChartData(joueur.id, null, ongletChart, modeStats).then(data => {
+      setShotChartData({ [ongletChart]: data });
       setChargementShotChart(false);
     });
-  }, [ongletChart, shotChartData]);
-  const [chargement, setChargement] = useState(true);
-  const [edgeValue, setEdgeValue] = useState('');
-  const [modeStats, setModeStats] = useState('playoffs');
+  }, [ongletChart, modeStats]);
+  
  
   useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
  
@@ -1507,14 +1505,7 @@ function FicheJoueur({ joueur, onBack }) {
         setStatsAvancees(prev => ({ ...prev, toi: `${minutes}:${secondes}` }));
       }
 
-      // Shot chart SZN
-      const gameIdsSZN = log.map(m => m.gameId).filter(Boolean);
-      if (gameIdsSZN.length > 0) {
-        setChargementShotChart(true);
-        const shotData = await getShotChartData(joueur.id, null, 'SZN');
-        setShotChartData({ SZN: shotData });
-        setChargementShotChart(false);
-      }
+      
 
     } catch (err) { console.error(err); }
     setChargement(false);
