@@ -733,6 +733,8 @@ function ProfilePage({ utilisateur, onBack }) {
   const [uploading, setUploading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [usernameStatus, setUsernameStatus] = React.useState(null); // null, 'checking', 'available', 'taken', 'invalid'
+  const [originalUsername, setOriginalUsername] = React.useState('');
   const [cropModal, setCropModal] = React.useState(false);
   const [imgSrc, setImgSrc] = React.useState('');
   const [crop, setCrop] = React.useState({ unit: '%', width: 80, height: 80, x: 10, y: 10 });
@@ -745,15 +747,16 @@ function ProfilePage({ utilisateur, onBack }) {
   async function chargerProfil() {
     try {
       const { data } = await supabase.from('profiles').select('username, avatar_url').eq('id', utilisateur.id).single();
-      if (data) { setUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); }
+      if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); }
     } catch {}
   }
 
   async function sauvegarderProfil() {
+    if (usernameStatus === 'taken' || usernameStatus === 'invalid') return;
     setSaving(true);
     try {
       const { error } = await supabase.from('profiles').upsert({ id: utilisateur.id, username, updated_at: new Date().toISOString() });
-      if (!error) { setSaved(true); setTimeout(() => setSaved(false), 2000); }
+      if (!error) { setOriginalUsername(username); setSaved(true); setTimeout(() => setSaved(false), 2000); }
     } catch {}
     setSaving(false);
   }
@@ -774,6 +777,22 @@ function ProfilePage({ utilisateur, onBack }) {
       };
     }
   }, [cropModal]);
+
+  const checkUsername = React.useCallback(async (val) => {
+    if (!val || val.length < 3) { setUsernameStatus('invalid'); return; }
+    if (val === originalUsername) { setUsernameStatus('available'); return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(val)) { setUsernameStatus('invalid'); return; }
+    setUsernameStatus('checking');
+    try {
+      const { data } = await supabase.from('profiles').select('username').eq('username', val).neq('id', utilisateur.id).single();
+      setUsernameStatus(data ? 'taken' : 'available');
+    } catch { setUsernameStatus('available'); }
+  }, [originalUsername, utilisateur.id]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => { if (username) checkUsername(username); }, 500);
+    return () => clearTimeout(timer);
+  }, [username, checkUsername]);
 
   function onSelectFile(e) {
     const file = e.target.files?.[0];
@@ -889,9 +908,16 @@ function ProfilePage({ utilisateur, onBack }) {
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
           <input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. raphael_bets"
-            style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
-            onFocus={e => e.target.style.borderColor = '#f97316'}
-            onBlur={e => e.target.style.borderColor = '#222'} />
+            style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : '#222'), borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
+          />
+          {username.length >= 3 && (
+            <div style={{ marginTop: '6px', fontSize: '12px', color: usernameStatus === 'taken' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : usernameStatus === 'invalid' ? '#ef4444' : '#555' }}>
+              {usernameStatus === 'checking' && '⟳ Checking availability...'}
+              {usernameStatus === 'available' && '✓ Username available!'}
+              {usernameStatus === 'taken' && '✗ Username already taken'}
+              {usernameStatus === 'invalid' && '✗ Only letters, numbers and _ allowed (min 3 chars)'}
+            </div>
+          )}
         </div>
         <div>
           <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
