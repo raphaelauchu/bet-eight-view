@@ -109,7 +109,7 @@ function Dashboard() {
   return (
     <div style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>Dashboard</h2>
+        <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>My Bets</h2>
         <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Track and manage your wagers</p>
       </div>
  
