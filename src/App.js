@@ -910,7 +910,7 @@ function ProfilePage({ utilisateur, onBack }) {
           <input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. raphael_bets"
             style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : '#222'), borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
           />
-          {username.length >= 3 && (
+          {username.length > 0 && (
             <div style={{ marginTop: '6px', fontSize: '12px', color: usernameStatus === 'taken' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : usernameStatus === 'invalid' ? '#ef4444' : '#555' }}>
               {usernameStatus === 'checking' && '⟳ Checking availability...'}
               {usernameStatus === 'available' && '✓ Username available!'}
