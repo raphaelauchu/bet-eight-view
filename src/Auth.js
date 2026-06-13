@@ -2,111 +2,131 @@ import React, { useState } from 'react';
 import { supabase } from './supabase';
 
 function Auth({ onConnexion }) {
-  const [mode, setMode] = useState('connexion');
-  const [email, setEmail] = useState('');
+  const [mode, setMode] = useState('login');
+  const [identifier, setIdentifier] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
+  const [email, setEmail] = useState('');
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   async function handleSoumission(e) {
     e.preventDefault();
     setChargement(true);
     setErreur('');
 
-    if (mode === 'inscription') {
+    if (mode === 'signup') {
       const { error } = await supabase.auth.signUp({ email, password: motDePasse });
-      if (error) {
-        setErreur(error.message);
-      } else {
-        setConfirmation(true);
-      }
+      if (error) setErreur(error.message);
+      else setConfirmation(true);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse });
-      if (error) {
-        setErreur('Email ou mot de passe incorrect.');
-      } else {
-        onConnexion();
+      let loginEmail = identifier;
+      if (!identifier.includes('@')) {
+        const { data } = await supabase.from('profiles').select('id').eq('username', identifier).single();
+        if (!data) {
+          setErreur('Username not found. Please sign in with your email.');
+          setChargement(false);
+          return;
+        }
+        setErreur('Username found! Please sign in with your email address.');
+        setChargement(false);
+        return;
       }
+      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: motDePasse });
+      if (error) setErreur('Incorrect email or password.');
+      else onConnexion();
     }
     setChargement(false);
   }
 
+  const inp = {
+    width: '100%', padding: '13px 16px', backgroundColor: '#0d0d0d',
+    border: '1px solid #222', borderRadius: '12px', color: 'white',
+    fontSize: '15px', boxSizing: 'border-box', outline: 'none',
+    fontFamily: '-apple-system, sans-serif',
+  };
+
   if (confirmation) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ backgroundColor: '#1a1a1a', padding: '48px', borderRadius: '16px', textAlign: 'center', maxWidth: '400px' }}>
-          <h2 style={{ color: '#6366f1', marginBottom: '16px' }}>Vérifie ton email!</h2>
-          <p style={{ color: '#888' }}>On t'a envoyé un lien de confirmation à <strong style={{ color: 'white' }}>{email}</strong>. Clique dessus pour activer ton compte.</p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#080808', padding: '20px' }}>
+        <div style={{ backgroundColor: '#0d0d0d', padding: '40px 32px', borderRadius: '20px', textAlign: 'center', maxWidth: '380px', width: '100%', border: '1px solid #161616' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📧</div>
+          <h2 style={{ color: 'white', marginBottom: '12px', fontWeight: '800', letterSpacing: '-0.5px' }}>Check your email!</h2>
+          <p style={{ color: '#555', lineHeight: '1.6', margin: 0 }}>We sent a confirmation link to <strong style={{ color: '#f97316' }}>{email}</strong>.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <div style={{ backgroundColor: '#1a1a1a', padding: '48px', borderRadius: '16px', width: '100%', maxWidth: '400px' }}>
-        
-        {/* Logo */}
-        <h1 style={{ color: '#6366f1', textAlign: 'center', marginBottom: '8px' }}>Bet Eight View</h1>
-        <p style={{ color: '#888', textAlign: 'center', marginBottom: '32px' }}>
-          {mode === 'connexion' ? 'Connecte-toi à ton compte' : 'Crée ton compte gratuitement'}
-        </p>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', marginBottom: '24px', backgroundColor: '#252525', borderRadius: '8px', padding: '4px' }}>
-          <button
-            onClick={() => setMode('connexion')}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: mode === 'connexion' ? '#6366f1' : 'transparent', color: 'white', fontSize: '14px' }}
-          >
-            Connexion
-          </button>
-          <button
-            onClick={() => setMode('inscription')}
-            style={{ flex: 1, padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: mode === 'inscription' ? '#6366f1' : 'transparent', color: 'white', fontSize: '14px' }}
-          >
-            Inscription
-          </button>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#080808', padding: '20px' }}>
+      <div style={{ width: '100%', maxWidth: '380px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <h1 style={{ color: '#f97316', margin: '0 0 6px', fontSize: '32px', fontWeight: '900', letterSpacing: '-1px' }}>Betrics</h1>
+          <p style={{ color: '#444', margin: 0, fontSize: '14px' }}>
+            {mode === 'login' ? 'Sign in to your account' : 'Create your free account'}
+          </p>
         </div>
 
-        {/* Formulaire */}
-        <form onSubmit={handleSoumission}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#888', fontSize: '14px' }}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="ton@email.com"
-              required
-              style={{ width: '100%', padding: '12px', backgroundColor: '#252525', border: '1px solid #333', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
-            />
-          </div>
+        <div style={{ display: 'flex', marginBottom: '28px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '4px', border: '1px solid #161616' }}>
+          {[['login', 'Sign in'], ['signup', 'Sign up']].map(([m, label]) => (
+            <button key={m} onClick={() => { setMode(m); setErreur(''); }}
+              style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '9px', cursor: 'pointer', backgroundColor: mode === m ? '#f97316' : 'transparent', color: mode === m ? 'white' : '#555', fontSize: '14px', fontWeight: mode === m ? '700' : '400' }}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#888', fontSize: '14px' }}>Mot de passe</label>
-            <input
-              type="password"
-              value={motDePasse}
-              onChange={e => setMotDePasse(e.target.value)}
-              placeholder="••••••••"
-              required
-              style={{ width: '100%', padding: '12px', backgroundColor: '#252525', border: '1px solid #333', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
-            />
+        <form onSubmit={handleSoumission} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {mode === 'login' ? (
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Email or Username</label>
+              <input value={identifier} onChange={e => setIdentifier(e.target.value)}
+                placeholder="your@email.com or username" required style={inp}
+                onFocus={e => e.target.style.borderColor = '#f97316'}
+                onBlur={e => e.target.style.borderColor = '#222'} />
+            </div>
+          ) : (
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="your@email.com" required style={inp}
+                onFocus={e => e.target.style.borderColor = '#f97316'}
+                onBlur={e => e.target.style.borderColor = '#222'} />
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPass ? 'text' : 'password'} value={motDePasse}
+                onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" required
+                style={{ ...inp, paddingRight: '48px' }}
+                onFocus={e => e.target.style.borderColor = '#f97316'}
+                onBlur={e => e.target.style.borderColor = '#222'} />
+              <button type="button" onClick={() => setShowPass(!showPass)}
+                style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: '16px' }}>
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
           </div>
 
           {erreur && (
-            <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px', textAlign: 'center' }}>{erreur}</p>
+            <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
+              <p style={{ color: '#ef4444', fontSize: '13px', margin: 0 }}>{erreur}</p>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={chargement}
-            style={{ width: '100%', padding: '14px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', opacity: chargement ? 0.7 : 1 }}
-          >
-            {chargement ? 'Chargement...' : mode === 'connexion' ? 'Se connecter' : "S'inscrire"}
+          <button type="submit" disabled={chargement}
+            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: chargement ? 0.7 : 1, marginTop: '4px' }}>
+            {chargement ? 'Loading...' : mode === 'login' ? 'Sign in →' : 'Create account →'}
           </button>
         </form>
+
+        <p style={{ textAlign: 'center', color: '#333', fontSize: '12px', marginTop: '24px' }}>
+          By continuing you agree to our Terms of Service
+        </p>
       </div>
     </div>
   );
