@@ -128,24 +128,131 @@ function Dashboard() {
       )}
  
       {afficherFormulaire && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', marginBottom: '20px', border: '1px solid #1a1a1a' }}>
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '24px', marginBottom: '20px', border: '1px solid #1a1a1a' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>New Bet</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-            <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Match</div>
-              <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-            </div>
-            <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Bet Type</div>
-              <select style={inp} value={nouveauPari.type_pari} onChange={e => setNouveauPari({ ...nouveauPari, type_pari: e.target.value })}>
-                {BET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+
+          {/* Bet Type selector - toujours visible */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#555', fontSize: '12px', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Bet Type</div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {BET_TYPES.map(t => (
+                <button key={t.value} onClick={() => setNouveauPari({ ...nouveauPari, type_pari: t.value, selection: '', match: '' })}
+                  style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: nouveauPari.type_pari === t.value ? '#f97316' : '#1a1a1a', color: nouveauPari.type_pari === t.value ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+                  {t.label}
+                </button>
+              ))}
             </div>
           </div>
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Selection</div>
-            <input style={inp} placeholder="e.g. Canadiens win" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
-          </div>
+
+          {/* Champs dynamiques selon le type */}
+          {nouveauPari.type_pari === 'moneyline' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Match</div>
+                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
+              </div>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Team to win</div>
+                <input style={inp} placeholder="e.g. Canadiens" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
+              </div>
+            </div>
+          )}
+
+          {nouveauPari.type_pari === 'spread' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Match</div>
+                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Team</div>
+                  <input style={inp} placeholder="e.g. Canadiens" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
+                </div>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Puck Line</div>
+                  <select style={inp} value={nouveauPari.handicap || '-1.5'} onChange={e => setNouveauPari({ ...nouveauPari, handicap: e.target.value })}>
+                    <option value="-1.5">-1.5</option>
+                    <option value="+1.5">+1.5</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {nouveauPari.type_pari === 'total' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Match</div>
+                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Over / Under</div>
+                  <select style={inp} value={nouveauPari.overunder || 'over'} onChange={e => setNouveauPari({ ...nouveauPari, overunder: e.target.value })}>
+                    <option value="over">Over</option>
+                    <option value="under">Under</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Total Goals</div>
+                  <input style={inp} type="number" step="0.5" placeholder="5.5" value={nouveauPari.total || ''} onChange={e => setNouveauPari({ ...nouveauPari, total: e.target.value, selection: (nouveauPari.overunder || 'Over') + ' ' + e.target.value })} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {nouveauPari.type_pari === 'prop' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Match</div>
+                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
+              </div>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Player</div>
+                <input style={inp} placeholder="e.g. Cole Caufield" value={nouveauPari.joueur || ''} onChange={e => setNouveauPari({ ...nouveauPari, joueur: e.target.value })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Stat</div>
+                  <select style={inp} value={nouveauPari.stat || 'SOG'} onChange={e => setNouveauPari({ ...nouveauPari, stat: e.target.value })}>
+                    {['SOG', 'Goals', 'Assists', 'Points', 'Saves'].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Line</div>
+                  <input style={inp} type="number" step="0.5" placeholder="2.5" value={nouveauPari.ligne || ''} onChange={e => setNouveauPari({ ...nouveauPari, ligne: e.target.value })} />
+                </div>
+                <div>
+                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Over/Under</div>
+                  <select style={inp} value={nouveauPari.overunder || 'over'} onChange={e => setNouveauPari({ ...nouveauPari, overunder: e.target.value })}>
+                    <option value="over">Over</option>
+                    <option value="under">Under</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: '8px', padding: '8px 12px' }}>
+                <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600' }}>
+                  {nouveauPari.joueur || 'Player'} — {nouveauPari.overunder === 'under' ? 'Under' : 'Over'} {nouveauPari.ligne || '?'} {nouveauPari.stat || 'SOG'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {nouveauPari.type_pari === 'parlay' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Parlay Description</div>
+                <input style={inp} placeholder="e.g. MTL ML + EDM -1.5 + Over 6.5" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
+              </div>
+              <div>
+                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Selections</div>
+                <input style={inp} placeholder="e.g. 3-leg parlay" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
+              </div>
+            </div>
+          )}
+
+          {/* Mise, Cote, Bookmaker - toujours visible */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div>
               <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Stake ($)</div>
@@ -162,6 +269,7 @@ function Dashboard() {
               </select>
             </div>
           </div>
+
           {nouveauPari.mise && nouveauPari.cote && (
             <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#22c55e' }}>
               Potential profit: +${(parseFloat(nouveauPari.mise) * parseFloat(nouveauPari.cote) - parseFloat(nouveauPari.mise)).toFixed(2)}
