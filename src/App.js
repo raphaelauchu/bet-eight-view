@@ -758,6 +758,23 @@ function ProfilePage({ utilisateur, onBack }) {
     setSaving(false);
   }
 
+  React.useEffect(() => {
+    if (cropModal) {
+      const prevent = (e) => e.preventDefault();
+      document.addEventListener('gesturestart', prevent, { passive: false });
+      document.addEventListener('gesturechange', prevent, { passive: false });
+      document.addEventListener('wheel', prevent, { passive: false });
+      const meta = document.querySelector('meta[name=viewport]');
+      if (meta) meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+      return () => {
+        document.removeEventListener('gesturestart', prevent);
+        document.removeEventListener('gesturechange', prevent);
+        document.removeEventListener('wheel', prevent);
+        if (meta) meta.setAttribute('content', 'width=device-width, initial-scale=1');
+      };
+    }
+  }, [cropModal]);
+
   function onSelectFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
