@@ -19,7 +19,7 @@ function Dashboard() {
   const [onglet, setOnglet] = useState('actifs');
   const [montantBankroll, setMontantBankroll] = useState('');
   const [filtreGraphique, setFiltreGraphique] = useState('30d');
-  const [filtrePeriode, setFiltrePeriode] = useState('all');
+  const [filtrePeriode, setFiltrePeriode] = useState('1m');
   const [filtreAnnee, setFiltreAnnee] = useState('all');
   const [filtreCustomDebut, setFiltreCustomDebut] = useState('');
   const [filtreCustomFin, setFiltreCustomFin] = useState('');
@@ -342,15 +342,15 @@ function Dashboard() {
  
       {onglet === 'traites' && (
         <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
-          {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'All']].map(([val, label]) => (
+          {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
             <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreAnnee('all'); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
               style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && filtreAnnee === 'all' && !filtreCustomDebut ? '#f97316' : '#0d0d0d', color: filtrePeriode === val && filtreAnnee === 'all' && !filtreCustomDebut ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
               {label}
             </button>
           ))}
           <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
-            style={{ padding: '6px 14px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances ? '#1a1a1a' : 'transparent', color: '#888', fontSize: '12px', fontWeight: '600' }}>
-            ⚙ Advanced
+            style={{ padding: '6px 10px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : '#555', fontSize: '13px', fontWeight: '600' }}>
+            ⚙
           </button>
         </div>
       )}
