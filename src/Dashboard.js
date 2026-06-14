@@ -100,7 +100,6 @@ function Dashboard() {
     if (p.statut === 'actif') return false;
     if (!p.date_pari) return true;
     const diff = (maintenant - new Date(p.date_pari)) / (1000 * 60 * 60 * 24);
-    console.log('Paris:', p.match, 'Date:', p.date_pari, 'Diff jours:', Math.round(diff), 'Filtre:', periodeJours[filtrePeriode]);
     return diff <= periodeJours[filtrePeriode];
   });
   const parisTraites = paris.filter(p => p.statut !== 'actif');
