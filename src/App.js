@@ -1190,7 +1190,7 @@ function BankrollPage({ utilisateur, onBack }) {
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
         <p style={{ margin: '0 0 4px', color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Current Bankroll</p>
         <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>
-          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '...'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
+          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
         </h1>
 
         {/* Stats 30 derniers jours */}
