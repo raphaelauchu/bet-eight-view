@@ -567,6 +567,10 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
   const [bankroll, setBankroll] = React.useState(null);
   const [paris, setParis] = React.useState([]);
   const [matchsSoir, setMatchsSoir] = React.useState([]);
+  const [filtreGraph, setFiltreGraph] = React.useState('1m');
+  const [filtreCustomDebut, setFiltreCustomDebut] = React.useState('');
+  const [filtreCustomFin, setFiltreCustomFin] = React.useState('');
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   const getDateStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
   const getUrl = (path) => {
@@ -608,7 +612,32 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
   const recentParis = paris.slice(0, 3);
 
   // Profit curve data
-  const parisTraitesSorted = [...parisTraites].sort((a,b) => new Date(a.date_pari) - new Date(b.date_pari));
+  const now = new Date();
+  const periodeJoursHome = { '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
+
+  // Stats 30 derniers jours
+  const paris30 = parisTraites.filter(p => p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
+  const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
+  const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
+  const winRate30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
+  const mise30 = paris30.reduce((a, p) => a + (p.mise || 0), 0);
+  const roi30 = mise30 > 0 ? ((profit30 / mise30) * 100).toFixed(1) : '0.0';
+
+  // Paris filtrés pour le graphique
+  const parisFiltresGraph = parisTraites.filter(p => {
+    if (!p.date_pari) return false;
+    const datePari = new Date(p.date_pari);
+    if (filtreCustomDebut && filtreCustomFin) {
+      const debut = new Date(filtreCustomDebut);
+      const fin = new Date(filtreCustomFin);
+      fin.setHours(23,59,59);
+      return datePari >= debut && datePari <= fin;
+    }
+    const diff = (now - datePari) / 86400000;
+    return diff <= periodeJoursHome[filtreGraph];
+  });
+
+  const parisTraitesSorted = [...parisFiltresGraph].sort((a,b) => new Date(a.date_pari) - new Date(b.date_pari));
   let cumul = 0;
   const curveData = parisTraitesSorted.map(p => { cumul += (p.profit || 0); return cumul; });
   const maxVal = Math.max(...curveData, 1);
@@ -621,6 +650,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
     const y = H - ((v - minVal) / range) * H;
     return x + ',' + y;
   }).join(' ');
+  const profitFiltre = parisFiltresGraph.reduce((a, p) => a + (p.profit || 0), 0);
 
   return (
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
@@ -641,29 +671,74 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
         </div>
         <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay.split('.')[0]}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay.split('.')[1] || '00'}</span></h1>
 
-        {/* Mini Profit Curve */}
-        {curveData.length > 1 && (
-          <div style={{ marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '10px 12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        {/* Stats 30 derniers jours */}
+        <div style={{ marginBottom: '12px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Last 30 days</span>
+            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>● Live</span>
+          </div>
+          <div style={{ display: 'flex' }}>
+            {[
+              ['Profit', (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
+              ['Win Rate', winRate30 + '%', 'white'],
+              ['ROI', (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
+            ].map(([label, val, color], i) => (
+              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
+                <p style={{ margin: '0 0 2px', color: '#444', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color }}>{val}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Profit Curve avec filtres */}
+        <div style={{ marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Profit Curve</span>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: profitTotal >= 0 ? '#22c55e' : '#ef4444' }}>{profitTotal >= 0 ? '+' : ''}${profitTotal.toFixed(2)}</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: profitFiltre >= 0 ? '#22c55e' : '#ef4444' }}>{profitFiltre >= 0 ? '+' : ''}${profitFiltre.toFixed(2)}</span>
             </div>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
+                <button key={val} onClick={() => { setFiltreGraph(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                  style={{ padding: '2px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraph === val && !filtreCustomDebut ? '#f97316' : '#1a1a1a', color: filtreGraph === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '10px', fontWeight: '600' }}>
+                  {label}
+                </button>
+              ))}
+              <button onClick={() => setShowAdvanced(!showAdvanced)}
+                style={{ padding: '2px 6px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showAdvanced || filtreCustomDebut ? '#f97316' : 'transparent', color: showAdvanced || filtreCustomDebut ? 'white' : '#555', fontSize: '11px' }}>
+                ⚙
+              </button>
+            </div>
+          </div>
+          {showAdvanced && (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
+              <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltreGraph('1m'); }}
+                style={{ flex: 1, padding: '6px 8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', color: 'white', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
+              <span style={{ color: '#444', fontSize: '10px' }}>→</span>
+              <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltreGraph('1m'); }}
+                style={{ flex: 1, padding: '6px 8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', color: 'white', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
+              {(filtreCustomDebut || filtreCustomFin) && (
+                <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                  style={{ padding: '6px 8px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '8px', color: '#555', cursor: 'pointer', fontSize: '10px' }}>✕</button>
+              )}
+            </div>
+          )}
+          {curveData.length > 1 ? (
             <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
               <defs>
                 <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={profitTotal >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={profitTotal >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
+                  <stop offset="0%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
                 </linearGradient>
               </defs>
-              {curveData.length > 1 && (
-                <>
-                  <polyline points={points} fill="none" stroke={profitTotal >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="#333" strokeWidth="0.5" strokeDasharray="4,4" />
-                </>
-              )}
+              <polyline points={points} fill="none" stroke={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="#333" strokeWidth="0.5" strokeDasharray="4,4" />
             </svg>
-          </div>
-        )}
+          ) : (
+            <div style={{ textAlign: 'center', padding: '16px 0', color: '#333', fontSize: '11px' }}>No settled bets for this period</div>
+          )}
+        </div>
 
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[[`ROI`, `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], ['Win Rate', `${winRate}%`, 'white'], ['Active', `${parisActifs.length} bets`, '#f97316']].map(([label, val, color], i) => (
