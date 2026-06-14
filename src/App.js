@@ -1145,11 +1145,15 @@ function BankrollPage({ utilisateur, onBack }) {
             <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Bankroll Evolution</span>
             <div style={{ display: 'flex', gap: '4px' }}>
               {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
-                <button key={val} onClick={() => setFiltrePeriode(val)}
-                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val ? '#f97316' : '#1a1a1a', color: filtrePeriode === val ? 'white' : '#555', fontSize: '11px', fontWeight: '600' }}>
+                <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : '#1a1a1a', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '11px', fontWeight: '600' }}>
                   {label}
                 </button>
               ))}
+              <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
+                style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+                ⚙
+              </button>
             </div>
           </div>
           {curveData.length > 1 ? (
