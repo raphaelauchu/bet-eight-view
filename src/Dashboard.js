@@ -19,6 +19,7 @@ function Dashboard() {
   const [onglet, setOnglet] = useState('actifs');
   const [montantBankroll, setMontantBankroll] = useState('');
   const [filtreGraphique, setFiltreGraphique] = useState('30d');
+  const [filtrePeriode, setFiltrePeriode] = useState('all');
  
   useEffect(() => { chargerDonnees(); }, []);
  
@@ -92,7 +93,14 @@ function Dashboard() {
     });
   }
  
+  const maintenant = new Date();
+  const periodeJours = { '1m': 30, '3m': 90, '6m': 180, '1y': 365, 'all': 99999 };
   const parisActifs = paris.filter(p => p.statut === 'actif');
+  const parisHistorique = paris.filter(p => {
+    if (p.statut === 'actif') return false;
+    const diff = (maintenant - new Date(p.date_pari)) / (1000 * 60 * 60 * 24);
+    return diff <= periodeJours[filtrePeriode];
+  });
   const parisTraites = paris.filter(p => p.statut !== 'actif');
   const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
   const parisGagnes = parisTraites.filter(p => p.statut === 'gagne').length;
@@ -303,9 +311,19 @@ function Dashboard() {
       )}
  
       {onglet === 'traites' && (
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
+          {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'All']].map(([val, label]) => (
+            <button key={val} onClick={() => setFiltrePeriode(val)}
+              style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val ? '#f97316' : '#0d0d0d', color: filtrePeriode === val ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {onglet === 'traites' && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', border: '1px solid #161616' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>Bet History</div>
-          {parisTraites.length === 0 ? (
+          {parisHistorique.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>No settled bets yet</div>
           ) : parisTraites.map((pari, i) => (
             <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
