@@ -20,6 +20,11 @@ function Dashboard() {
   const [montantBankroll, setMontantBankroll] = useState('');
   const [filtreGraphique, setFiltreGraphique] = useState('30d');
   const [filtrePeriode, setFiltrePeriode] = useState('all');
+  const [filtreAnnee, setFiltreAnnee] = useState('all');
+  const [filtreCustomDebut, setFiltreCustomDebut] = useState('');
+  const [filtreCustomFin, setFiltreCustomFin] = useState('');
+  const [filtreRecherche, setFiltreRecherche] = useState('');
+  const [showFiltresAvances, setShowFiltresAvances] = useState(false);
  
   useEffect(() => { chargerDonnees(); }, []);
  
@@ -96,11 +101,35 @@ function Dashboard() {
   const maintenant = new Date();
   const periodeJours = { '1m': 30, '3m': 90, '6m': 180, '1y': 365, 'all': 99999 };
   const parisActifs = paris.filter(p => p.statut === 'actif');
+  const anneesDisponibles = [...new Set(paris.filter(p => p.statut !== 'actif' && p.date_pari).map(p => new Date(p.date_pari).getFullYear()))].sort((a,b) => b-a);
+
   const parisHistorique = paris.filter(p => {
     if (p.statut === 'actif') return false;
     if (!p.date_pari) return true;
-    const diff = (maintenant - new Date(p.date_pari)) / (1000 * 60 * 60 * 24);
-    return diff <= periodeJours[filtrePeriode];
+    const datePari = new Date(p.date_pari);
+    const diff = (maintenant - datePari) / (1000 * 60 * 60 * 24);
+
+    // Filtre custom date
+    if (filtreCustomDebut && filtreCustomFin) {
+      const debut = new Date(filtreCustomDebut);
+      const fin = new Date(filtreCustomFin);
+      fin.setHours(23,59,59);
+      if (datePari < debut || datePari > fin) return false;
+    } else if (filtreAnnee !== 'all') {
+      if (datePari.getFullYear() !== parseInt(filtreAnnee)) return false;
+    } else if (filtrePeriode !== 'all') {
+      if (diff > periodeJours[filtrePeriode]) return false;
+    }
+
+    // Filtre recherche
+    if (filtreRecherche) {
+      const q = filtreRecherche.toLowerCase();
+      return (p.match || '').toLowerCase().includes(q) ||
+             (p.selection || '').toLowerCase().includes(q) ||
+             (p.bookmaker || '').toLowerCase().includes(q) ||
+             (p.joueur || '').toLowerCase().includes(q);
+    }
+    return true;
   });
   const parisTraites = paris.filter(p => p.statut !== 'actif');
   const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
@@ -319,6 +348,58 @@ function Dashboard() {
               {label}
             </button>
           ))}
+        </div>
+      )}
+      {onglet === 'traites' && showFiltresAvances && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '16px', border: '1px solid #1a1a1a', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Recherche */}
+            <div>
+              <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Search</div>
+              <input value={filtreRecherche} onChange={e => setFiltreRecherche(e.target.value)}
+                placeholder="Match, player, bookmaker..."
+                style={{ width: '100%', padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
+                onFocus={e => e.target.style.borderColor = '#f97316'}
+                onBlur={e => e.target.style.borderColor = '#222'} />
+            </div>
+            {/* Filtre par année */}
+            {anneesDisponibles.length > 0 && (
+              <div>
+                <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>By Year</div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button onClick={() => { setFiltreAnnee('all'); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                    style={{ padding: '5px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreAnnee === 'all' ? '#f97316' : '#1a1a1a', color: filtreAnnee === 'all' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>All years</button>
+                  {anneesDisponibles.map(yr => (
+                    <button key={yr} onClick={() => { setFiltreAnnee(String(yr)); setFiltrePeriode('all'); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                      style={{ padding: '5px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreAnnee === String(yr) ? '#f97316' : '#1a1a1a', color: filtreAnnee === String(yr) ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+                      {yr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Filtre custom date */}
+            <div>
+              <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Custom Range</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); setFiltreAnnee('all'); }}
+                  style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                <span style={{ color: '#444' }}>→</span>
+                <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltrePeriode('all'); setFiltreAnnee('all'); }}
+                  style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                {(filtreCustomDebut || filtreCustomFin) && (
+                  <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                    style={{ padding: '9px 12px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '10px', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                )}
+              </div>
+            </div>
+            {/* Stats de la période */}
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', gap: '16px' }}>
+              <div><span style={{ color: '#444', fontSize: '11px' }}>Results </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{parisHistorique.length} bets</span></div>
+              <div><span style={{ color: '#444', fontSize: '11px' }}>Profit </span><span style={{ color: parisHistorique.reduce((a,p) => a+(p.profit||0),0) >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{parisHistorique.reduce((a,p) => a+(p.profit||0),0) >= 0 ? '+' : ''}${parisHistorique.reduce((a,p) => a+(p.profit||0),0).toFixed(2)}</span></div>
+              <div><span style={{ color: '#444', fontSize: '11px' }}>Win Rate </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{parisHistorique.length > 0 ? Math.round(parisHistorique.filter(p=>p.statut==='gagne').length/parisHistorique.length*100) : 0}%</span></div>
+            </div>
+          </div>
         </div>
       )}
       {onglet === 'traites' && (
