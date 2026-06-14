@@ -325,7 +325,7 @@ function Dashboard() {
           <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>Bet History</div>
           {parisHistorique.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>No settled bets yet</div>
-          ) : parisTraites.map((pari, i) => (
+          ) : parisHistorique.map((pari, i) => (
             <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>{pari.match}</div>
