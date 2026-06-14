@@ -1094,6 +1094,16 @@ function BankrollPage({ utilisateur, onBack }) {
     if (pr) setParisList(pr);
   }
 
+  async function supprimerTransaction(tx) {
+    const { error } = await supabase.from('transactions').delete().eq('id', tx.id);
+    if (!error) {
+      const nouvelleBankroll = tx.type === 'deposit' ? (bankroll || 0) - tx.montant : (bankroll || 0) + tx.montant;
+      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll });
+      setBankroll(nouvelleBankroll);
+      charger();
+    }
+  }
+
   async function ajouterTransaction() {
     if (!montant || parseFloat(montant) <= 0) return;
     setSaving(true);
@@ -1353,9 +1363,17 @@ function BankrollPage({ utilisateur, onBack }) {
                 <p style={{ margin: 0, color: '#333', fontSize: '11px' }}>{new Date(tx.date_transaction).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
               </div>
             </div>
-            <span style={{ fontWeight: '700', fontSize: '16px', color: tx.type === 'deposit' ? '#22c55e' : '#ef4444' }}>
-              {tx.type === 'deposit' ? '+' : '-'}${tx.montant.toFixed(2)}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontWeight: '700', fontSize: '16px', color: tx.type === 'deposit' ? '#22c55e' : '#ef4444' }}>
+                {tx.type === 'deposit' ? '+' : '-'}${tx.montant.toFixed(2)}
+              </span>
+              <button onClick={() => supprimerTransaction(tx)}
+                style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#444', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' }}
+                onMouseEnter={e => { e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
+                onMouseLeave={e => { e.target.style.borderColor = '#222'; e.target.style.color = '#444'; }}>
+                ✕
+              </button>
+            </div>
           </div>
         ))}
       </div>
