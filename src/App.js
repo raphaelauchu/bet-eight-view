@@ -1004,6 +1004,8 @@ function BankrollPage({ utilisateur, onBack }) {
   const [showForm, setShowForm] = React.useState(false);
   const [showFiltresAvances, setShowFiltresAvances] = React.useState(false);
 
+  const [parisList, setParisList] = React.useState([]);
+
   React.useEffect(() => {
     charger();
   }, []);
@@ -1013,6 +1015,8 @@ function BankrollPage({ utilisateur, onBack }) {
     if (bk) setBankroll(bk.montant);
     const { data: tx } = await supabase.from('transactions').select('*').eq('user_id', utilisateur.id).order('date_transaction', { ascending: false });
     if (tx) setTransactions(tx);
+    const { data: pr } = await supabase.from('paris').select('*').eq('user_id', utilisateur.id).neq('statut', 'actif');
+    if (pr) setParisList(pr);
   }
 
   async function ajouterTransaction() {
@@ -1050,7 +1054,25 @@ function BankrollPage({ utilisateur, onBack }) {
 
   const totalDepose = txFiltrees.filter(t => t.type === 'deposit').reduce((a, t) => a + t.montant, 0);
   const totalRetire = txFiltrees.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
-  const profitReel = totalRetire - totalDepose;
+
+  // Profit des paris dans la periode filtree
+  const maintenant2 = new Date();
+  const parisFiltres = parisList.filter(p => {
+    if (!p.date_pari) return true;
+    const datePari = new Date(p.date_pari);
+    if (filtreCustomDebut && filtreCustomFin) {
+      const debut = new Date(filtreCustomDebut);
+      const fin = new Date(filtreCustomFin);
+      fin.setHours(23,59,59);
+      return datePari >= debut && datePari <= fin;
+    }
+    const diff = (maintenant2 - datePari) / (1000 * 60 * 60 * 24);
+    return diff <= periodeJours[filtrePeriode];
+  });
+  const profitParis = parisFiltres.reduce((a, p) => a + (p.profit || 0), 0);
+  const parisGagnes = parisFiltres.filter(p => p.statut === 'gagne').length;
+  const winRate = parisFiltres.length > 0 ? Math.round(parisGagnes / parisFiltres.length * 100) : 0;
+  const profitReel = totalRetire - totalDepose + profitParis;
 
   // Courbe bankroll
   const txSorted = [...txFiltrees].sort((a,b) => new Date(a.date_transaction) - new Date(b.date_transaction));
@@ -1097,8 +1119,8 @@ function BankrollPage({ utilisateur, onBack }) {
 
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[
-            ['Deposited', '$' + totalDepose.toFixed(2), '#888'],
-            ['Withdrawn', '$' + totalRetire.toFixed(2), '#888'],
+            ['Bet Profit', (profitParis >= 0 ? '+' : '') + '$' + profitParis.toFixed(2), profitParis >= 0 ? '#22c55e' : '#ef4444'],
+            ['Win Rate', winRate + '%', 'white'],
             ['Net P&L', (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
           ].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
