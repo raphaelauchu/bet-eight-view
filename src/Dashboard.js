@@ -215,7 +215,7 @@ function Dashboard() {
                 <div>
                   <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Stat</div>
                   <select style={inp} value={nouveauPari.stat || 'SOG'} onChange={e => setNouveauPari({ ...nouveauPari, stat: e.target.value })}>
-                    {['SOG', 'Goals', 'Assists', 'Points', 'Saves'].map(s => <option key={s}>{s}</option>)}
+                    {['SOG', 'Goals', 'Assists', 'Points'].map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
