@@ -1108,20 +1108,70 @@ function BankrollPage({ utilisateur, onBack }) {
           ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '...'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
         </h1>
 
-        {/* Courbe */}
-        {curveData.length > 1 && (
-          <div style={{ marginBottom: '20px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '12px' }}>
+        {/* Stats 30 derniers jours */}
+        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Last 30 days</span>
+            <span style={{ color: '#f97316', fontSize: '10px', fontWeight: '600' }}>● Live</span>
+          </div>
+          <div style={{ display: 'flex' }}>
+            {(() => {
+              const now = new Date();
+              const paris30 = parisList.filter(p => p.statut !== 'actif' && p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
+              const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
+              const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
+              const wr30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
+              const tx30 = transactions.filter(t => t.date_transaction && (now - new Date(t.date_transaction)) / 86400000 <= 30);
+              const dep30 = tx30.filter(t => t.type === 'deposit').reduce((a, t) => a + t.montant, 0);
+              const ret30 = tx30.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
+              const net30 = ret30 - dep30 + profit30;
+              return [
+                ['Bet Profit', (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
+                ['Win Rate', wr30 + '%', 'white'],
+                ['Net P&L', (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
+              ].map(([label, val, color], i) => (
+                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+                  <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+
+        {/* Graphique avec filtre */}
+        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Bankroll Evolution</span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
+                <button key={val} onClick={() => setFiltrePeriode(val)}
+                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val ? '#f97316' : '#1a1a1a', color: filtrePeriode === val ? 'white' : '#555', fontSize: '11px', fontWeight: '600' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {curveData.length > 1 ? (
             <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                </linearGradient>
+              </defs>
               <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </div>
-        )}
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: '#333', fontSize: '12px' }}>Add transactions to see your evolution</div>
+          )}
+        </div>
 
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[
-            ['Bet Profit', (profitParis >= 0 ? '+' : '') + '$' + profitParis.toFixed(2), profitParis >= 0 ? '#22c55e' : '#ef4444'],
-            ['Win Rate', winRate + '%', 'white'],
-            ['Net P&L', (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
+            ['Total Deposited', '$' + totalDepose.toFixed(2), '#888'],
+            ['Total Withdrawn', '$' + totalRetire.toFixed(2), '#888'],
+            ['All-time P&L', (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
           ].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
               <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
