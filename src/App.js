@@ -669,7 +669,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
             <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>● Live</span>
           </div>
         </div>
-        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay.split('.')[0]}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay.split('.')[1] || '00'}</span></h1>
+        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span></h1>
 
         {/* Stats 30 derniers jours */}
         <div style={{ marginBottom: '12px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
