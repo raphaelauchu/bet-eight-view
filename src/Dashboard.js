@@ -366,22 +366,7 @@ function Dashboard() {
                 onFocus={e => e.target.style.borderColor = '#f97316'}
                 onBlur={e => e.target.style.borderColor = '#222'} />
             </div>
-            {/* Filtre par année */}
-            {anneesDisponibles.length > 0 && (
-              <div>
-                <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>By Year</div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button onClick={() => { setFiltreAnnee('all'); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                    style={{ padding: '5px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreAnnee === 'all' ? '#f97316' : '#1a1a1a', color: filtreAnnee === 'all' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>All years</button>
-                  {anneesDisponibles.map(yr => (
-                    <button key={yr} onClick={() => { setFiltreAnnee(String(yr)); setFiltrePeriode('all'); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                      style={{ padding: '5px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreAnnee === String(yr) ? '#f97316' : '#1a1a1a', color: filtreAnnee === String(yr) ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
-                      {yr}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
             {/* Filtre custom date */}
             <div>
               <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Custom Range</div>
