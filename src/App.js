@@ -1237,7 +1237,7 @@ function App() {
       { id: 'analyses', label: 'Analytics', icon: '◎' },
       { id: 'props', label: 'Props', icon: '◆' },
     ];
-    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' ? page : 'home';
+    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
 
     return (
       <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
