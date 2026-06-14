@@ -1002,6 +1002,7 @@ function BankrollPage({ utilisateur, onBack }) {
   const [filtreCustomDebut, setFiltreCustomDebut] = React.useState('');
   const [filtreCustomFin, setFiltreCustomFin] = React.useState('');
   const [showForm, setShowForm] = React.useState(false);
+  const [showFiltresAvances, setShowFiltresAvances] = React.useState(false);
 
   React.useEffect(() => {
     charger();
@@ -1052,7 +1053,7 @@ function BankrollPage({ utilisateur, onBack }) {
   const profitReel = totalRetire - totalDepose;
 
   // Courbe bankroll
-  const txSorted = [...transactions].sort((a,b) => new Date(a.date_transaction) - new Date(b.date_transaction));
+  const txSorted = [...txFiltrees].sort((a,b) => new Date(a.date_transaction) - new Date(b.date_transaction));
   let cumul = 0;
   const curveData = txSorted.map(tx => {
     cumul += tx.type === 'deposit' ? tx.montant : -tx.montant;
@@ -1152,20 +1153,34 @@ function BankrollPage({ utilisateur, onBack }) {
             {label}
           </button>
         ))}
+        <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
+          style={{ padding: '6px 14px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances ? '#1a1a1a' : 'transparent', color: '#888', fontSize: '12px', fontWeight: '600' }}>
+          ⚙ Advanced
+        </button>
       </div>
 
-      {/* Custom range */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
-        <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
-          style={{ flex: 1, padding: '8px 12px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-        <span style={{ color: '#444' }}>→</span>
-        <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltrePeriode('all'); }}
-          style={{ flex: 1, padding: '8px 12px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-        {(filtreCustomDebut || filtreCustomFin) && (
-          <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-            style={{ padding: '8px 12px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '10px', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
-        )}
-      </div>
+      {/* Filtres avancés */}
+      {showFiltresAvances && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '16px', border: '1px solid #1a1a1a', marginBottom: '12px' }}>
+          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Custom Range</div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+            <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
+              style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+            <span style={{ color: '#444' }}>→</span>
+            <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltrePeriode('all'); }}
+              style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+            {(filtreCustomDebut || filtreCustomFin) && (
+              <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                style={{ padding: '9px 12px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '10px', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+            )}
+          </div>
+          <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', gap: '16px' }}>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>Transactions </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{txFiltrees.length}</span></div>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>Deposited </span><span style={{ color: '#22c55e', fontSize: '13px', fontWeight: '700' }}>${totalDepose.toFixed(2)}</span></div>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>Net P&L </span><span style={{ color: profitReel >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{profitReel >= 0 ? '+' : ''}${profitReel.toFixed(2)}</span></div>
+          </div>
+        </div>
+      )}
 
       {/* Liste transactions */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
