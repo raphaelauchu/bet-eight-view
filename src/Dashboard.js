@@ -3,18 +3,17 @@ import { supabase } from './supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
  
 const BET_TYPES = [
-  { value: 'moneyline', label: 'Moneyline' },
-  { value: 'differentiel', label: 'Spread' },
-  { value: 'total_buts', label: 'Over/Under' },
-  { value: 'but_joueur', label: 'Player Prop' },
-  { value: 'periode', label: 'Period Result' },
+  { value: 'moneyline', label: 'Money Line' },
+  { value: 'spread', label: 'Puck Line' },
+  { value: 'total', label: 'Total Goals' },
+  { value: 'prop', label: 'Player Prop' },
   { value: 'parlay', label: 'Parlay' },
 ];
  
 function Dashboard() {
   const [paris, setParis] = useState([]);
   const [bankroll, setBankrollState] = useState(1000);
-  const [nouveauPari, setNouveauPari] = useState({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '' });
+  const [nouveauPari, setNouveauPari] = useState({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '', joueur: '', stat: 'SOG', ligne: '', overunder: 'over', handicap: '-1.5', total: '' });
   const [afficherFormulaire, setAfficherFormulaire] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState('actifs');
@@ -50,7 +49,7 @@ function Dashboard() {
       const { error } = await supabase.from('paris').insert({ user_id: user.id, match: nouveauPari.match, mise: parseFloat(nouveauPari.mise), cote: parseFloat(nouveauPari.cote), bookmaker: nouveauPari.bookmaker, sport: nouveauPari.sport, statut: 'actif', profit: 0, date_pari: new Date().toISOString(), type_pari: nouveauPari.type_pari, selection: nouveauPari.selection });
       if (!error) {
         await mettreAJourBankroll(bankroll - parseFloat(nouveauPari.mise));
-        setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '' });
+        setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '', joueur: '', stat: 'SOG', ligne: '', overunder: 'over', handicap: '-1.5', total: '' });
         setAfficherFormulaire(false);
         chargerDonnees();
       }
