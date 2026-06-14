@@ -1303,6 +1303,8 @@ function App() {
             <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} />
           ) : page === 'bets' ? (
             <Dashboard />
+          ) : page === 'bankroll' ? (
+            <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} />
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
