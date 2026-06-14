@@ -991,6 +991,212 @@ function ProfilePage({ utilisateur, onBack }) {
   );
 }
 
+function BankrollPage({ utilisateur, onBack }) {
+  const [transactions, setTransactions] = React.useState([]);
+  const [bankroll, setBankroll] = React.useState(null);
+  const [montant, setMontant] = React.useState('');
+  const [type, setType] = React.useState('deposit');
+  const [note, setNote] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [filtrePeriode, setFiltrePeriode] = React.useState('all');
+  const [filtreCustomDebut, setFiltreCustomDebut] = React.useState('');
+  const [filtreCustomFin, setFiltreCustomFin] = React.useState('');
+  const [showForm, setShowForm] = React.useState(false);
+
+  React.useEffect(() => {
+    charger();
+  }, []);
+
+  async function charger() {
+    const { data: bk } = await supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).single();
+    if (bk) setBankroll(bk.montant);
+    const { data: tx } = await supabase.from('transactions').select('*').eq('user_id', utilisateur.id).order('date_transaction', { ascending: false });
+    if (tx) setTransactions(tx);
+  }
+
+  async function ajouterTransaction() {
+    if (!montant || parseFloat(montant) <= 0) return;
+    setSaving(true);
+    const m = parseFloat(montant);
+    const { error } = await supabase.from('transactions').insert({
+      user_id: utilisateur.id, type, montant: m, note, date_transaction: new Date().toISOString()
+    });
+    if (!error) {
+      const nouvelleBankroll = type === 'deposit' ? (bankroll || 0) + m : (bankroll || 0) - m;
+      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll });
+      setBankroll(nouvelleBankroll);
+      setMontant(''); setNote(''); setShowForm(false);
+      charger();
+    }
+    setSaving(false);
+  }
+
+  const maintenant = new Date();
+  const periodeJours = { '1m': 30, '3m': 90, '6m': 180, '1y': 365, 'all': 99999 };
+
+  const txFiltrees = transactions.filter(tx => {
+    if (!tx.date_transaction) return true;
+    const dateTx = new Date(tx.date_transaction);
+    if (filtreCustomDebut && filtreCustomFin) {
+      const debut = new Date(filtreCustomDebut);
+      const fin = new Date(filtreCustomFin);
+      fin.setHours(23,59,59);
+      return dateTx >= debut && dateTx <= fin;
+    }
+    const diff = (maintenant - dateTx) / (1000 * 60 * 60 * 24);
+    return diff <= periodeJours[filtrePeriode];
+  });
+
+  const totalDepose = txFiltrees.filter(t => t.type === 'deposit').reduce((a, t) => a + t.montant, 0);
+  const totalRetire = txFiltrees.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
+  const profitReel = totalRetire - totalDepose;
+
+  // Courbe bankroll
+  const txSorted = [...transactions].sort((a,b) => new Date(a.date_transaction) - new Date(b.date_transaction));
+  let cumul = 0;
+  const curveData = txSorted.map(tx => {
+    cumul += tx.type === 'deposit' ? tx.montant : -tx.montant;
+    return cumul;
+  });
+  const maxVal = Math.max(...curveData, 1);
+  const minVal = Math.min(...curveData, 0);
+  const range = maxVal - minVal || 1;
+  const H = 80; const W = 300;
+  const points = curveData.map((v, i) => {
+    const x = curveData.length === 1 ? W/2 : (i / (curveData.length - 1)) * W;
+    const y = H - ((v - minVal) / range) * H;
+    return x + ',' + y;
+  }).join(' ');
+
+  const inp = { width: '100%', padding: '11px 14px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' };
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Back</button>
+        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>Bankroll</h2>
+      </div>
+
+      {/* Bankroll card */}
+      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
+        <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
+        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Current Bankroll</p>
+        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>
+          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '...'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
+        </h1>
+
+        {/* Courbe */}
+        {curveData.length > 1 && (
+          <div style={{ marginBottom: '20px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '12px' }}>
+            <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
+              <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
+          {[
+            ['Deposited', '$' + totalDepose.toFixed(2), '#888'],
+            ['Withdrawn', '$' + totalRetire.toFixed(2), '#888'],
+            ['Net P&L', (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
+          ].map(([label, val, color], i) => (
+            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+              <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+              <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bouton + New Transaction */}
+      <button onClick={() => setShowForm(!showForm)}
+        style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? '#555' : 'white', border: showForm ? '1px solid #333' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
+        {showForm ? 'Cancel' : '+ New Transaction'}
+      </button>
+
+      {/* Formulaire */}
+      {showForm && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #1a1a1a', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            {[['deposit', '↓ Deposit'], ['withdrawal', '↑ Withdrawal']].map(([val, label]) => (
+              <button key={val} onClick={() => setType(val)}
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: type === val ? (val === 'deposit' ? '#22c55e' : '#ef4444') : '#1a1a1a', color: 'white', fontSize: '13px', fontWeight: '700' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Amount ($)</div>
+              <input style={inp} type="number" placeholder="500.00" value={montant} onChange={e => setMontant(e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
+            </div>
+            <div>
+              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Note (optional)</div>
+              <input style={inp} placeholder="e.g. Initial deposit" value={note} onChange={e => setNote(e.target.value)}
+                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
+            </div>
+            <button onClick={ajouterTransaction} disabled={saving}
+              style={{ padding: '12px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', opacity: saving ? 0.7 : 1 }}>
+              {saving ? 'Saving...' : 'Confirm'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filtres */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y'], ['all', 'All']].map(([val, label]) => (
+          <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+            style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : '#0d0d0d', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom range */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+        <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
+          style={{ flex: 1, padding: '8px 12px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+        <span style={{ color: '#444' }}>→</span>
+        <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltrePeriode('all'); }}
+          style={{ flex: 1, padding: '8px 12px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+        {(filtreCustomDebut || filtreCustomFin) && (
+          <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+            style={{ padding: '8px 12px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '10px', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+        )}
+      </div>
+
+      {/* Liste transactions */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Transactions</h3>
+          <span style={{ color: '#555', fontSize: '12px' }}>{txFiltrees.length} transactions</span>
+        </div>
+        {txFiltrees.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#333', fontSize: '13px' }}>No transactions for this period</div>
+        ) : txFiltrees.map((tx, i) => (
+          <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: tx.type === 'deposit' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                {tx.type === 'deposit' ? '↓' : '↑'}
+              </div>
+              <div>
+                <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white', textTransform: 'capitalize' }}>{tx.type}</p>
+                {tx.note && <p style={{ margin: '0 0 2px', color: '#555', fontSize: '11px' }}>{tx.note}</p>}
+                <p style={{ margin: 0, color: '#333', fontSize: '11px' }}>{new Date(tx.date_transaction).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            </div>
+            <span style={{ fontWeight: '700', fontSize: '16px', color: tx.type === 'deposit' ? '#22c55e' : '#ef4444' }}>
+              {tx.type === 'deposit' ? '+' : '-'}${tx.montant.toFixed(2)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -1060,6 +1266,7 @@ function App() {
                 {[
                   { icon: '👤', label: 'My Profile', page: 'profile' },
                   { icon: '◐', label: 'Bets', page: 'bets' },
+                  { icon: '💰', label: 'Bankroll', page: 'bankroll' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
                     <span style={{ fontSize: '18px', color: page === item.page ? '#f97316' : '#555' }}>{item.icon}</span>
