@@ -1,9 +1,9 @@
 {
   "playerId": 8476906,
   "playerName": "Shayne Gostisbehere",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:00.598084",
+  "lastUpdated": "2026-06-15T15:49:12.635867",
   "reg": {
     "totalGames": 52,
     "szn": {
@@ -208,19 +208,19 @@
     }
   },
   "playoffs": {
-    "totalGames": 16,
+    "totalGames": 17,
     "szn": {
       "slot": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 10,
         "goals": 1,
-        "attempts": 19,
-        "xGoals": 0.58
+        "attempts": 20,
+        "xGoals": 0.63
       },
       "low": {
-        "shotsOnGoal": 4,
+        "shotsOnGoal": 5,
         "goals": 2,
-        "attempts": 6,
-        "xGoals": 0.61
+        "attempts": 7,
+        "xGoals": 0.62
       },
       "lowLeft": {
         "shotsOnGoal": 4,
@@ -253,24 +253,24 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 23,
+        "shotsOnGoal": 25,
         "goals": 3,
-        "attempts": 44,
-        "xGoals": 1.58
+        "attempts": 46,
+        "xGoals": 1.64
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 3,
-        "goals": 1,
-        "attempts": 4,
-        "xGoals": 0.12
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "attempts": 3,
+        "xGoals": 0.06
       },
       "low": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.05
+        "attempts": 2,
+        "xGoals": 0.06
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -304,35 +304,35 @@
       },
       "total": {
         "shotsOnGoal": 4,
-        "goals": 1,
+        "goals": 0,
         "attempts": 7,
-        "xGoals": 0.23
+        "xGoals": 0.18
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 4,
         "goals": 1,
-        "attempts": 9,
-        "xGoals": 0.24
+        "attempts": 10,
+        "xGoals": 0.29
       },
       "low": {
-        "shotsOnGoal": 4,
+        "shotsOnGoal": 5,
         "goals": 2,
-        "attempts": 6,
-        "xGoals": 0.61
+        "attempts": 7,
+        "xGoals": 0.62
       },
       "lowLeft": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.1
+        "attempts": 3,
+        "xGoals": 0.09
       },
       "lowRight": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
+        "attempts": 1,
+        "xGoals": 0.02
       },
       "point": {
         "shotsOnGoal": 0,
@@ -353,24 +353,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 11,
         "goals": 3,
         "attempts": 22,
-        "xGoals": 1.01
+        "xGoals": 1.04
       }
     },
     "l20": {
       "slot": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 10,
         "goals": 1,
-        "attempts": 19,
-        "xGoals": 0.58
+        "attempts": 20,
+        "xGoals": 0.63
       },
       "low": {
-        "shotsOnGoal": 4,
+        "shotsOnGoal": 5,
         "goals": 2,
-        "attempts": 6,
-        "xGoals": 0.61
+        "attempts": 7,
+        "xGoals": 0.62
       },
       "lowLeft": {
         "shotsOnGoal": 4,
@@ -403,10 +403,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 23,
+        "shotsOnGoal": 25,
         "goals": 3,
-        "attempts": 44,
-        "xGoals": 1.58
+        "attempts": 46,
+        "xGoals": 1.64
       }
     }
   }

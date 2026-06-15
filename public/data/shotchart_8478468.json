@@ -1,9 +1,9 @@
 {
   "playerId": 8478468,
   "playerName": "Jeremy Lauzon",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.129315",
+  "lastUpdated": "2026-06-15T15:49:08.355826",
   "reg": {
     "totalGames": 58,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 6,
+    "totalGames": 7,
     "szn": {
       "slot": {
         "shotsOnGoal": 5,
@@ -247,24 +247,24 @@
         "xGoals": 0.01
       },
       "right": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 6,
         "goals": 0,
-        "attempts": 13,
-        "xGoals": 0.37
+        "attempts": 14,
+        "xGoals": 0.38
       }
     },
     "l5": {
       "slot": {
         "shotsOnGoal": 5,
         "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.28
+        "attempts": 6,
+        "xGoals": 0.16
       },
       "low": {
         "shotsOnGoal": 0,
@@ -293,20 +293,20 @@
       "left": {
         "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
         "attempts": 0,
         "xGoals": 0.0
       },
-      "total": {
-        "shotsOnGoal": 5,
+      "right": {
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 12,
-        "xGoals": 0.37
+        "attempts": 1,
+        "xGoals": 0.01
+      },
+      "total": {
+        "shotsOnGoal": 6,
+        "goals": 0,
+        "attempts": 11,
+        "xGoals": 0.25
       }
     },
     "l10": {
@@ -347,16 +347,16 @@
         "xGoals": 0.01
       },
       "right": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 6,
         "goals": 0,
-        "attempts": 13,
-        "xGoals": 0.37
+        "attempts": 14,
+        "xGoals": 0.38
       }
     },
     "l20": {
@@ -397,16 +397,16 @@
         "xGoals": 0.01
       },
       "right": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 6,
         "goals": 0,
-        "attempts": 13,
-        "xGoals": 0.37
+        "attempts": 14,
+        "xGoals": 0.38
       }
     }
   }

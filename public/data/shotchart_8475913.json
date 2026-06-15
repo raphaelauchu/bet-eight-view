@@ -1,9 +1,9 @@
 {
   "playerId": 8475913,
   "playerName": "Mark Stone",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.428167",
+  "lastUpdated": "2026-06-15T15:49:08.733489",
   "reg": {
     "totalGames": 58,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 15,
+    "totalGames": 16,
     "szn": {
       "slot": {
         "shotsOnGoal": 7,
@@ -217,10 +217,10 @@
         "xGoals": 0.51
       },
       "low": {
-        "shotsOnGoal": 24,
+        "shotsOnGoal": 26,
         "goals": 7,
-        "attempts": 36,
-        "xGoals": 4.26
+        "attempts": 39,
+        "xGoals": 4.89
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -253,10 +253,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 33,
+        "shotsOnGoal": 35,
         "goals": 7,
-        "attempts": 49,
-        "xGoals": 4.82
+        "attempts": 52,
+        "xGoals": 5.45
       }
     },
     "l5": {
@@ -267,10 +267,10 @@
         "xGoals": 0.29
       },
       "low": {
-        "shotsOnGoal": 8,
+        "shotsOnGoal": 10,
         "goals": 2,
-        "attempts": 14,
-        "xGoals": 1.64
+        "attempts": 16,
+        "xGoals": 2.26
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -303,24 +303,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 12,
+        "shotsOnGoal": 14,
         "goals": 2,
-        "attempts": 18,
-        "xGoals": 1.95
+        "attempts": 20,
+        "xGoals": 2.57
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 4,
         "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.32
+        "attempts": 4,
+        "xGoals": 0.31
       },
       "low": {
-        "shotsOnGoal": 14,
+        "shotsOnGoal": 16,
         "goals": 5,
-        "attempts": 23,
-        "xGoals": 3.16
+        "attempts": 26,
+        "xGoals": 3.79
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -353,10 +353,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 5,
-        "attempts": 30,
-        "xGoals": 3.52
+        "attempts": 32,
+        "xGoals": 4.13
       }
     },
     "l20": {
@@ -367,10 +367,10 @@
         "xGoals": 0.51
       },
       "low": {
-        "shotsOnGoal": 24,
+        "shotsOnGoal": 26,
         "goals": 7,
-        "attempts": 36,
-        "xGoals": 4.26
+        "attempts": 39,
+        "xGoals": 4.89
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -403,10 +403,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 33,
+        "shotsOnGoal": 35,
         "goals": 7,
-        "attempts": 49,
-        "xGoals": 4.82
+        "attempts": 52,
+        "xGoals": 5.45
       }
     }
   }

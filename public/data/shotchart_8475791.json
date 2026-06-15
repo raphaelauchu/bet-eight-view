@@ -1,9 +1,9 @@
 {
   "playerId": 8475791,
   "playerName": "Taylor Hall",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:00.455353",
+  "lastUpdated": "2026-06-15T15:49:12.460359",
   "reg": {
     "totalGames": 72,
     "szn": {
@@ -208,13 +208,13 @@
     }
   },
   "playoffs": {
-    "totalGames": 17,
+    "totalGames": 18,
     "szn": {
       "slot": {
-        "shotsOnGoal": 11,
-        "goals": 0,
-        "attempts": 19,
-        "xGoals": 0.71
+        "shotsOnGoal": 13,
+        "goals": 1,
+        "attempts": 21,
+        "xGoals": 0.78
       },
       "low": {
         "shotsOnGoal": 29,
@@ -225,8 +225,8 @@
       "lowLeft": {
         "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.12
+        "attempts": 6,
+        "xGoals": 0.16
       },
       "lowRight": {
         "shotsOnGoal": 8,
@@ -253,36 +253,36 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 53,
-        "goals": 6,
-        "attempts": 74,
-        "xGoals": 6.77
+        "shotsOnGoal": 55,
+        "goals": 7,
+        "attempts": 78,
+        "xGoals": 6.88
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 4,
-        "goals": 0,
-        "attempts": 8,
-        "xGoals": 0.3
+        "shotsOnGoal": 6,
+        "goals": 1,
+        "attempts": 9,
+        "xGoals": 0.34
       },
       "low": {
         "shotsOnGoal": 5,
         "goals": 1,
-        "attempts": 8,
-        "xGoals": 0.85
+        "attempts": 7,
+        "xGoals": 0.7
       },
       "lowLeft": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
+        "attempts": 3,
+        "xGoals": 0.05
       },
       "lowRight": {
         "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.08
+        "attempts": 4,
+        "xGoals": 0.07
       },
       "point": {
         "shotsOnGoal": 1,
@@ -291,10 +291,10 @@
         "xGoals": 0.01
       },
       "left": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
+        "attempts": 0,
+        "xGoals": 0.0
       },
       "right": {
         "shotsOnGoal": 1,
@@ -304,17 +304,17 @@
       },
       "total": {
         "shotsOnGoal": 16,
-        "goals": 1,
-        "attempts": 26,
-        "xGoals": 1.29
+        "goals": 2,
+        "attempts": 25,
+        "xGoals": 1.17
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 6,
-        "goals": 0,
-        "attempts": 12,
-        "xGoals": 0.43
+        "shotsOnGoal": 8,
+        "goals": 1,
+        "attempts": 13,
+        "xGoals": 0.47
       },
       "low": {
         "shotsOnGoal": 15,
@@ -325,14 +325,14 @@
       "lowLeft": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
+        "attempts": 4,
+        "xGoals": 0.08
       },
       "lowRight": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 4,
         "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.13
+        "attempts": 6,
+        "xGoals": 0.09
       },
       "point": {
         "shotsOnGoal": 1,
@@ -353,18 +353,18 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 30,
-        "goals": 3,
-        "attempts": 44,
-        "xGoals": 3.82
+        "shotsOnGoal": 31,
+        "goals": 4,
+        "attempts": 46,
+        "xGoals": 3.87
       }
     },
     "l20": {
       "slot": {
-        "shotsOnGoal": 11,
-        "goals": 0,
-        "attempts": 19,
-        "xGoals": 0.71
+        "shotsOnGoal": 13,
+        "goals": 1,
+        "attempts": 21,
+        "xGoals": 0.78
       },
       "low": {
         "shotsOnGoal": 29,
@@ -375,8 +375,8 @@
       "lowLeft": {
         "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.12
+        "attempts": 6,
+        "xGoals": 0.16
       },
       "lowRight": {
         "shotsOnGoal": 8,
@@ -403,10 +403,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 53,
-        "goals": 6,
-        "attempts": 74,
-        "xGoals": 6.77
+        "shotsOnGoal": 55,
+        "goals": 7,
+        "attempts": 78,
+        "xGoals": 6.88
       }
     }
   }

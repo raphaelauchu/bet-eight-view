@@ -1,9 +1,9 @@
 {
   "playerId": 8476921,
   "playerName": "Jordan Martinook",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:01.067163",
+  "lastUpdated": "2026-06-15T15:49:13.191935",
   "reg": {
     "totalGames": 70,
     "szn": {
@@ -208,19 +208,19 @@
     }
   },
   "playoffs": {
-    "totalGames": 16,
+    "totalGames": 17,
     "szn": {
       "slot": {
-        "shotsOnGoal": 8,
+        "shotsOnGoal": 9,
         "goals": 1,
-        "attempts": 11,
-        "xGoals": 1.59
+        "attempts": 12,
+        "xGoals": 1.62
       },
       "low": {
-        "shotsOnGoal": 15,
+        "shotsOnGoal": 16,
         "goals": 1,
-        "attempts": 23,
-        "xGoals": 2.89
+        "attempts": 24,
+        "xGoals": 2.99
       },
       "lowLeft": {
         "shotsOnGoal": 6,
@@ -229,10 +229,10 @@
         "xGoals": 0.12
       },
       "lowRight": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 4,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.07
+        "attempts": 5,
+        "xGoals": 0.09
       },
       "point": {
         "shotsOnGoal": 2,
@@ -253,36 +253,36 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 35,
+        "shotsOnGoal": 38,
         "goals": 2,
-        "attempts": 52,
-        "xGoals": 4.71
+        "attempts": 55,
+        "xGoals": 4.86
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.16
+        "attempts": 4,
+        "xGoals": 0.19
       },
       "low": {
         "shotsOnGoal": 5,
         "goals": 1,
-        "attempts": 7,
-        "xGoals": 1.06
+        "attempts": 6,
+        "xGoals": 1.05
       },
       "lowLeft": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "lowRight": {
         "shotsOnGoal": 0,
         "goals": 0,
         "attempts": 0,
         "xGoals": 0.0
+      },
+      "lowRight": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "attempts": 1,
+        "xGoals": 0.02
       },
       "point": {
         "shotsOnGoal": 1,
@@ -303,24 +303,24 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 10,
         "goals": 1,
         "attempts": 13,
-        "xGoals": 1.26
+        "xGoals": 1.28
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 6,
+        "shotsOnGoal": 5,
         "goals": 0,
-        "attempts": 8,
-        "xGoals": 1.26
+        "attempts": 7,
+        "xGoals": 1.18
       },
       "low": {
         "shotsOnGoal": 10,
         "goals": 1,
         "attempts": 16,
-        "xGoals": 1.86
+        "xGoals": 1.89
       },
       "lowLeft": {
         "shotsOnGoal": 4,
@@ -329,10 +329,10 @@
         "xGoals": 0.06
       },
       "lowRight": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
+        "attempts": 1,
+        "xGoals": 0.02
       },
       "point": {
         "shotsOnGoal": 1,
@@ -356,21 +356,21 @@
         "shotsOnGoal": 21,
         "goals": 1,
         "attempts": 31,
-        "xGoals": 3.19
+        "xGoals": 3.17
       }
     },
     "l20": {
       "slot": {
-        "shotsOnGoal": 8,
+        "shotsOnGoal": 9,
         "goals": 1,
-        "attempts": 11,
-        "xGoals": 1.59
+        "attempts": 12,
+        "xGoals": 1.62
       },
       "low": {
-        "shotsOnGoal": 15,
+        "shotsOnGoal": 16,
         "goals": 1,
-        "attempts": 23,
-        "xGoals": 2.89
+        "attempts": 24,
+        "xGoals": 2.99
       },
       "lowLeft": {
         "shotsOnGoal": 6,
@@ -379,10 +379,10 @@
         "xGoals": 0.12
       },
       "lowRight": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 4,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.07
+        "attempts": 5,
+        "xGoals": 0.09
       },
       "point": {
         "shotsOnGoal": 2,
@@ -403,10 +403,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 35,
+        "shotsOnGoal": 38,
         "goals": 2,
-        "attempts": 52,
-        "xGoals": 4.71
+        "attempts": 55,
+        "xGoals": 4.86
       }
     }
   }

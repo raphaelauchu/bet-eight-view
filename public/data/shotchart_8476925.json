@@ -1,9 +1,9 @@
 {
   "playerId": 8476925,
   "playerName": "Colton Sissons",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.460289",
+  "lastUpdated": "2026-06-15T15:49:08.774027",
   "reg": {
     "totalGames": 55,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 19,
+    "totalGames": 20,
     "szn": {
       "slot": {
         "shotsOnGoal": 1,
@@ -217,10 +217,10 @@
         "xGoals": 0.11
       },
       "low": {
-        "shotsOnGoal": 12,
+        "shotsOnGoal": 13,
         "goals": 2,
-        "attempts": 17,
-        "xGoals": 3.02
+        "attempts": 18,
+        "xGoals": 3.18
       },
       "lowLeft": {
         "shotsOnGoal": 1,
@@ -253,10 +253,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 20,
+        "shotsOnGoal": 21,
         "goals": 2,
-        "attempts": 31,
-        "xGoals": 3.34
+        "attempts": 32,
+        "xGoals": 3.5
       }
     },
     "l5": {
@@ -270,12 +270,12 @@
         "shotsOnGoal": 4,
         "goals": 0,
         "attempts": 4,
-        "xGoals": 0.43
+        "xGoals": 0.54
       },
       "lowLeft": {
         "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 2,
+        "attempts": 1,
         "xGoals": 0.07
       },
       "lowRight": {
@@ -305,22 +305,22 @@
       "total": {
         "shotsOnGoal": 7,
         "goals": 0,
-        "attempts": 10,
-        "xGoals": 0.55
+        "attempts": 9,
+        "xGoals": 0.65
       }
     },
     "l10": {
       "slot": {
         "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.08
+        "attempts": 0,
+        "xGoals": 0.0
       },
       "low": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 6,
         "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.68
+        "attempts": 7,
+        "xGoals": 0.84
       },
       "lowLeft": {
         "shotsOnGoal": 1,
@@ -331,8 +331,8 @@
       "lowRight": {
         "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.06
+        "attempts": 4,
+        "xGoals": 0.04
       },
       "point": {
         "shotsOnGoal": 0,
@@ -353,10 +353,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 11,
         "goals": 0,
-        "attempts": 16,
-        "xGoals": 0.91
+        "attempts": 15,
+        "xGoals": 0.98
       }
     },
     "l20": {
@@ -367,10 +367,10 @@
         "xGoals": 0.11
       },
       "low": {
-        "shotsOnGoal": 12,
+        "shotsOnGoal": 13,
         "goals": 2,
-        "attempts": 17,
-        "xGoals": 3.02
+        "attempts": 18,
+        "xGoals": 3.18
       },
       "lowLeft": {
         "shotsOnGoal": 1,
@@ -403,10 +403,10 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 20,
+        "shotsOnGoal": 21,
         "goals": 2,
-        "attempts": 31,
-        "xGoals": 3.34
+        "attempts": 32,
+        "xGoals": 3.5
       }
     }
   }

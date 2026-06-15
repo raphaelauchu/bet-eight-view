@@ -1,9 +1,9 @@
 {
   "playerId": 8479353,
   "playerName": "Brett Howden",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.493119",
+  "lastUpdated": "2026-06-15T15:49:08.815110",
   "reg": {
     "totalGames": 43,
     "szn": {
@@ -208,19 +208,19 @@
     }
   },
   "playoffs": {
-    "totalGames": 20,
+    "totalGames": 21,
     "szn": {
       "slot": {
         "shotsOnGoal": 8,
         "goals": 3,
-        "attempts": 9,
-        "xGoals": 1.01
+        "attempts": 10,
+        "xGoals": 1.14
       },
       "low": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 9,
-        "attempts": 31,
-        "xGoals": 5.3
+        "attempts": 32,
+        "xGoals": 5.42
       },
       "lowLeft": {
         "shotsOnGoal": 3,
@@ -253,24 +253,24 @@
         "xGoals": 0.4
       },
       "total": {
-        "shotsOnGoal": 40,
+        "shotsOnGoal": 41,
         "goals": 14,
-        "attempts": 54,
-        "xGoals": 7.3
+        "attempts": 56,
+        "xGoals": 7.55
       }
     },
     "l5": {
       "slot": {
         "shotsOnGoal": 3,
         "goals": 1,
-        "attempts": 3,
-        "xGoals": 0.32
+        "attempts": 4,
+        "xGoals": 0.45
       },
       "low": {
-        "shotsOnGoal": 6,
-        "goals": 2,
-        "attempts": 11,
-        "xGoals": 1.83
+        "shotsOnGoal": 5,
+        "goals": 1,
+        "attempts": 9,
+        "xGoals": 1.7
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -303,30 +303,30 @@
         "xGoals": 0.01
       },
       "total": {
-        "shotsOnGoal": 12,
-        "goals": 4,
-        "attempts": 17,
-        "xGoals": 2.19
+        "shotsOnGoal": 11,
+        "goals": 3,
+        "attempts": 16,
+        "xGoals": 2.18
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 4,
         "goals": 1,
         "attempts": 5,
         "xGoals": 0.48
       },
       "low": {
         "shotsOnGoal": 10,
-        "goals": 4,
-        "attempts": 18,
-        "xGoals": 2.89
+        "goals": 3,
+        "attempts": 17,
+        "xGoals": 2.68
       },
       "lowLeft": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.03
+        "attempts": 0,
+        "xGoals": 0.0
       },
       "lowRight": {
         "shotsOnGoal": 1,
@@ -353,30 +353,30 @@
         "xGoals": 0.4
       },
       "total": {
-        "shotsOnGoal": 23,
-        "goals": 7,
-        "attempts": 32,
-        "xGoals": 4.26
+        "shotsOnGoal": 21,
+        "goals": 6,
+        "attempts": 30,
+        "xGoals": 4.03
       }
     },
     "l20": {
       "slot": {
         "shotsOnGoal": 8,
         "goals": 3,
-        "attempts": 9,
-        "xGoals": 1.01
+        "attempts": 10,
+        "xGoals": 1.14
       },
       "low": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 9,
-        "attempts": 31,
-        "xGoals": 5.3
+        "attempts": 32,
+        "xGoals": 5.42
       },
       "lowLeft": {
         "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.11
+        "attempts": 3,
+        "xGoals": 0.09
       },
       "lowRight": {
         "shotsOnGoal": 1,
@@ -403,10 +403,10 @@
         "xGoals": 0.4
       },
       "total": {
-        "shotsOnGoal": 40,
+        "shotsOnGoal": 41,
         "goals": 14,
-        "attempts": 54,
-        "xGoals": 7.3
+        "attempts": 55,
+        "xGoals": 7.53
       }
     }
   }

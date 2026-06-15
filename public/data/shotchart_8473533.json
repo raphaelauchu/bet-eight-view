@@ -1,9 +1,9 @@
 {
   "playerId": 8473533,
   "playerName": "Jordan Staal",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:06.046610",
+  "lastUpdated": "2026-06-15T15:49:19.391903",
   "reg": {
     "totalGames": 67,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 18,
+    "totalGames": 19,
     "szn": {
       "slot": {
         "shotsOnGoal": 8,
@@ -217,10 +217,10 @@
         "xGoals": 1.41
       },
       "low": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 7,
-        "attempts": 31,
-        "xGoals": 5.51
+        "attempts": 33,
+        "xGoals": 5.7
       },
       "lowLeft": {
         "shotsOnGoal": 2,
@@ -253,24 +253,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 34,
+        "shotsOnGoal": 35,
         "goals": 8,
-        "attempts": 55,
-        "xGoals": 7.03
+        "attempts": 57,
+        "xGoals": 7.22
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 2,
-        "goals": 1,
-        "attempts": 4,
-        "xGoals": 0.42
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 2,
+        "xGoals": 0.27
       },
       "low": {
         "shotsOnGoal": 14,
         "goals": 5,
-        "attempts": 14,
-        "xGoals": 1.91
+        "attempts": 15,
+        "xGoals": 1.87
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -303,24 +303,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 17,
-        "goals": 6,
-        "attempts": 19,
-        "xGoals": 2.37
+        "shotsOnGoal": 15,
+        "goals": 5,
+        "attempts": 18,
+        "xGoals": 2.18
       }
     },
     "l10": {
       "slot": {
         "shotsOnGoal": 3,
         "goals": 1,
-        "attempts": 9,
-        "xGoals": 0.73
+        "attempts": 6,
+        "xGoals": 0.55
       },
       "low": {
-        "shotsOnGoal": 16,
+        "shotsOnGoal": 17,
         "goals": 6,
-        "attempts": 21,
-        "xGoals": 2.96
+        "attempts": 22,
+        "xGoals": 3.09
       },
       "lowLeft": {
         "shotsOnGoal": 0,
@@ -353,10 +353,10 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 7,
-        "attempts": 32,
-        "xGoals": 3.73
+        "attempts": 30,
+        "xGoals": 3.69
       }
     },
     "l20": {
@@ -367,10 +367,10 @@
         "xGoals": 1.41
       },
       "low": {
-        "shotsOnGoal": 21,
+        "shotsOnGoal": 22,
         "goals": 7,
-        "attempts": 31,
-        "xGoals": 5.51
+        "attempts": 33,
+        "xGoals": 5.7
       },
       "lowLeft": {
         "shotsOnGoal": 2,
@@ -403,10 +403,10 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 34,
+        "shotsOnGoal": 35,
         "goals": 8,
-        "attempts": 55,
-        "xGoals": 7.03
+        "attempts": 57,
+        "xGoals": 7.22
       }
     }
   }

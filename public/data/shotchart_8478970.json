@@ -1,9 +1,9 @@
 {
   "playerId": 8478970,
   "playerName": "Jalen Chatfield",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:01.100583",
+  "lastUpdated": "2026-06-15T15:49:13.234187",
   "reg": {
     "totalGames": 67,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 17,
+    "totalGames": 18,
     "szn": {
       "slot": {
         "shotsOnGoal": 6,
@@ -231,8 +231,8 @@
       "lowRight": {
         "shotsOnGoal": 8,
         "goals": 0,
-        "attempts": 11,
-        "xGoals": 0.23
+        "attempts": 12,
+        "xGoals": 0.25
       },
       "point": {
         "shotsOnGoal": 0,
@@ -255,16 +255,16 @@
       "total": {
         "shotsOnGoal": 30,
         "goals": 1,
-        "attempts": 43,
-        "xGoals": 1.14
+        "attempts": 44,
+        "xGoals": 1.16
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.21
+        "attempts": 4,
+        "xGoals": 0.19
       },
       "low": {
         "shotsOnGoal": 0,
@@ -281,14 +281,14 @@
       "lowRight": {
         "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
+        "attempts": 1,
+        "xGoals": 0.02
       },
       "point": {
         "shotsOnGoal": 0,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.02
+        "attempts": 0,
+        "xGoals": 0.0
       },
       "left": {
         "shotsOnGoal": 2,
@@ -303,10 +303,10 @@
         "xGoals": 0.04
       },
       "total": {
-        "shotsOnGoal": 7,
+        "shotsOnGoal": 6,
         "goals": 0,
-        "attempts": 11,
-        "xGoals": 0.31
+        "attempts": 10,
+        "xGoals": 0.29
       }
     },
     "l10": {
@@ -332,7 +332,7 @@
         "shotsOnGoal": 4,
         "goals": 0,
         "attempts": 5,
-        "xGoals": 0.11
+        "xGoals": 0.12
       },
       "point": {
         "shotsOnGoal": 0,
@@ -341,22 +341,22 @@
         "xGoals": 0.02
       },
       "left": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.02
+        "attempts": 2,
+        "xGoals": 0.01
       },
       "right": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.06
+        "attempts": 2,
+        "xGoals": 0.04
       },
       "total": {
-        "shotsOnGoal": 15,
+        "shotsOnGoal": 13,
         "goals": 0,
-        "attempts": 21,
-        "xGoals": 0.58
+        "attempts": 19,
+        "xGoals": 0.55
       }
     },
     "l20": {
@@ -381,8 +381,8 @@
       "lowRight": {
         "shotsOnGoal": 8,
         "goals": 0,
-        "attempts": 11,
-        "xGoals": 0.23
+        "attempts": 12,
+        "xGoals": 0.25
       },
       "point": {
         "shotsOnGoal": 0,
@@ -405,8 +405,8 @@
       "total": {
         "shotsOnGoal": 30,
         "goals": 1,
-        "attempts": 43,
-        "xGoals": 1.14
+        "attempts": 44,
+        "xGoals": 1.16
       }
     }
   }

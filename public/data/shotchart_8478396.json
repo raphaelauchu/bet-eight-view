@@ -1,9 +1,9 @@
 {
   "playerId": 8478396,
   "playerName": "Noah Hanifin",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.395103",
+  "lastUpdated": "2026-06-15T15:49:08.691908",
   "reg": {
     "totalGames": 63,
     "szn": {
@@ -208,13 +208,13 @@
     }
   },
   "playoffs": {
-    "totalGames": 18,
+    "totalGames": 19,
     "szn": {
       "slot": {
         "shotsOnGoal": 7,
         "goals": 0,
-        "attempts": 12,
-        "xGoals": 0.94
+        "attempts": 13,
+        "xGoals": 0.95
       },
       "low": {
         "shotsOnGoal": 2,
@@ -255,13 +255,13 @@
       "total": {
         "shotsOnGoal": 25,
         "goals": 0,
-        "attempts": 38,
-        "xGoals": 1.71
+        "attempts": 39,
+        "xGoals": 1.72
       }
     },
     "l5": {
       "slot": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
         "attempts": 2,
         "xGoals": 0.1
@@ -285,16 +285,16 @@
         "xGoals": 0.0
       },
       "point": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.06
-      },
-      "left": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
+        "attempts": 1,
         "xGoals": 0.02
+      },
+      "left": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "right": {
         "shotsOnGoal": 0,
@@ -303,36 +303,36 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 6,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 10,
-        "xGoals": 0.31
+        "attempts": 7,
+        "xGoals": 0.26
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 4,
+        "shotsOnGoal": 3,
         "goals": 0,
         "attempts": 5,
-        "xGoals": 0.19
+        "xGoals": 0.17
       },
       "low": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.41
+        "attempts": 2,
+        "xGoals": 0.19
       },
       "lowLeft": {
         "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.1
+        "attempts": 3,
+        "xGoals": 0.09
       },
       "lowRight": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "point": {
         "shotsOnGoal": 3,
@@ -353,18 +353,18 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 15,
+        "shotsOnGoal": 12,
         "goals": 0,
-        "attempts": 20,
-        "xGoals": 0.85
+        "attempts": 17,
+        "xGoals": 0.57
       }
     },
     "l20": {
       "slot": {
         "shotsOnGoal": 7,
         "goals": 0,
-        "attempts": 12,
-        "xGoals": 0.94
+        "attempts": 13,
+        "xGoals": 0.95
       },
       "low": {
         "shotsOnGoal": 2,
@@ -405,8 +405,8 @@
       "total": {
         "shotsOnGoal": 25,
         "goals": 0,
-        "attempts": 38,
-        "xGoals": 1.71
+        "attempts": 39,
+        "xGoals": 1.72
       }
     }
   }

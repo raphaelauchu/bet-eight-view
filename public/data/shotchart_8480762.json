@@ -1,9 +1,9 @@
 {
   "playerId": 8480762,
   "playerName": "Eric Robinson",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:00.706263",
+  "lastUpdated": "2026-06-15T15:49:12.769262",
   "reg": {
     "totalGames": 53,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 16,
+    "totalGames": 17,
     "szn": {
       "slot": {
         "shotsOnGoal": 4,
@@ -235,9 +235,9 @@
         "xGoals": 0.08
       },
       "point": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
+        "attempts": 1,
         "xGoals": 0.0
       },
       "left": {
@@ -253,10 +253,10 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 25,
+        "shotsOnGoal": 26,
         "goals": 3,
-        "attempts": 39,
-        "xGoals": 3.97
+        "attempts": 40,
+        "xGoals": 3.98
       }
     },
     "l5": {
@@ -267,27 +267,27 @@
         "xGoals": 0.17
       },
       "low": {
-        "shotsOnGoal": 2,
-        "goals": 1,
-        "attempts": 2,
-        "xGoals": 0.22
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "attempts": 1,
+        "xGoals": 0.05
       },
       "lowLeft": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.1
+        "attempts": 1,
+        "xGoals": 0.08
       },
       "lowRight": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.06
+        "attempts": 1,
+        "xGoals": 0.01
       },
       "point": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
+        "attempts": 1,
         "xGoals": 0.0
       },
       "left": {
@@ -303,24 +303,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 8,
-        "goals": 1,
-        "attempts": 10,
-        "xGoals": 0.56
+        "shotsOnGoal": 6,
+        "goals": 0,
+        "attempts": 8,
+        "xGoals": 0.33
       }
     },
     "l10": {
       "slot": {
         "shotsOnGoal": 2,
         "goals": 1,
-        "attempts": 5,
-        "xGoals": 0.39
+        "attempts": 4,
+        "xGoals": 0.26
       },
       "low": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 4,
         "goals": 2,
-        "attempts": 7,
-        "xGoals": 0.58
+        "attempts": 6,
+        "xGoals": 0.51
       },
       "lowLeft": {
         "shotsOnGoal": 3,
@@ -331,13 +331,13 @@
       "lowRight": {
         "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.08
+        "attempts": 2,
+        "xGoals": 0.06
       },
       "point": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
+        "attempts": 1,
         "xGoals": 0.0
       },
       "left": {
@@ -355,8 +355,8 @@
       "total": {
         "shotsOnGoal": 13,
         "goals": 3,
-        "attempts": 20,
-        "xGoals": 1.2
+        "attempts": 18,
+        "xGoals": 1.0
       }
     },
     "l20": {
@@ -385,9 +385,9 @@
         "xGoals": 0.08
       },
       "point": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 0,
+        "attempts": 1,
         "xGoals": 0.0
       },
       "left": {
@@ -403,10 +403,10 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 25,
+        "shotsOnGoal": 26,
         "goals": 3,
-        "attempts": 39,
-        "xGoals": 3.97
+        "attempts": 40,
+        "xGoals": 3.98
       }
     }
   }

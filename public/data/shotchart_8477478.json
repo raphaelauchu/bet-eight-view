@@ -1,9 +1,9 @@
 {
   "playerId": 8477478,
   "playerName": "William Carrier",
-  "team": "HOME",
+  "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-14T12:00:00.820604",
+  "lastUpdated": "2026-06-15T15:49:12.895481",
   "reg": {
     "totalGames": 57,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 13,
+    "totalGames": 14,
     "szn": {
       "slot": {
         "shotsOnGoal": 2,
@@ -229,10 +229,10 @@
         "xGoals": 0.13
       },
       "lowRight": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.02
+        "attempts": 4,
+        "xGoals": 0.04
       },
       "point": {
         "shotsOnGoal": 0,
@@ -253,10 +253,10 @@
         "xGoals": 0.02
       },
       "total": {
-        "shotsOnGoal": 14,
+        "shotsOnGoal": 15,
         "goals": 0,
-        "attempts": 23,
-        "xGoals": 1.21
+        "attempts": 24,
+        "xGoals": 1.22
       }
     },
     "l5": {
@@ -279,7 +279,7 @@
         "xGoals": 0.03
       },
       "lowRight": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
         "attempts": 1,
         "xGoals": 0.01
@@ -303,10 +303,10 @@
         "xGoals": 0.02
       },
       "total": {
-        "shotsOnGoal": 7,
+        "shotsOnGoal": 8,
         "goals": 0,
         "attempts": 11,
-        "xGoals": 0.67
+        "xGoals": 0.68
       }
     },
     "l10": {
@@ -325,14 +325,14 @@
       "lowLeft": {
         "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.07
+        "attempts": 4,
+        "xGoals": 0.05
       },
       "lowRight": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.02
+        "attempts": 3,
+        "xGoals": 0.03
       },
       "point": {
         "shotsOnGoal": 0,
@@ -353,7 +353,7 @@
         "xGoals": 0.02
       },
       "total": {
-        "shotsOnGoal": 11,
+        "shotsOnGoal": 12,
         "goals": 0,
         "attempts": 18,
         "xGoals": 1.03
@@ -379,10 +379,10 @@
         "xGoals": 0.13
       },
       "lowRight": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.02
+        "attempts": 4,
+        "xGoals": 0.04
       },
       "point": {
         "shotsOnGoal": 0,
@@ -403,10 +403,10 @@
         "xGoals": 0.02
       },
       "total": {
-        "shotsOnGoal": 14,
+        "shotsOnGoal": 15,
         "goals": 0,
-        "attempts": 23,
-        "xGoals": 1.21
+        "attempts": 24,
+        "xGoals": 1.22
       }
     }
   }

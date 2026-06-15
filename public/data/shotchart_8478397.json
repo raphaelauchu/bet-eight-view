@@ -1,9 +1,9 @@
 {
   "playerId": 8478397,
   "playerName": "Rasmus Andersson",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:56.347735",
+  "lastUpdated": "2026-06-15T15:49:07.374735",
   "reg": {
     "totalGames": 77,
     "szn": {
@@ -208,7 +208,7 @@
     }
   },
   "playoffs": {
-    "totalGames": 19,
+    "totalGames": 20,
     "szn": {
       "slot": {
         "shotsOnGoal": 10,
@@ -237,8 +237,8 @@
       "point": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.02
+        "attempts": 2,
+        "xGoals": 0.03
       },
       "left": {
         "shotsOnGoal": 2,
@@ -255,8 +255,8 @@
       "total": {
         "shotsOnGoal": 34,
         "goals": 0,
-        "attempts": 60,
-        "xGoals": 3.69
+        "attempts": 61,
+        "xGoals": 3.7
       }
     },
     "l5": {
@@ -273,10 +273,10 @@
         "xGoals": 0.51
       },
       "lowLeft": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 4,
         "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.12
+        "attempts": 5,
+        "xGoals": 0.1
       },
       "lowRight": {
         "shotsOnGoal": 2,
@@ -285,10 +285,10 @@
         "xGoals": 0.1
       },
       "point": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
         "attempts": 1,
-        "xGoals": 0.02
+        "xGoals": 0.01
       },
       "left": {
         "shotsOnGoal": 0,
@@ -303,42 +303,42 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 12,
+        "shotsOnGoal": 10,
         "goals": 0,
-        "attempts": 21,
-        "xGoals": 0.84
+        "attempts": 20,
+        "xGoals": 0.82
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 4,
-        "goals": 0,
-        "attempts": 8,
-        "xGoals": 0.82
-      },
-      "low": {
         "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 8,
-        "xGoals": 1.78
+        "attempts": 6,
+        "xGoals": 0.79
+      },
+      "low": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "attempts": 6,
+        "xGoals": 1.33
       },
       "lowLeft": {
-        "shotsOnGoal": 6,
+        "shotsOnGoal": 5,
         "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.15
+        "attempts": 6,
+        "xGoals": 0.12
       },
       "lowRight": {
         "shotsOnGoal": 3,
         "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.16
+        "attempts": 6,
+        "xGoals": 0.14
       },
       "point": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.02
+        "attempts": 2,
+        "xGoals": 0.03
       },
       "left": {
         "shotsOnGoal": 0,
@@ -353,10 +353,10 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 17,
+        "shotsOnGoal": 14,
         "goals": 0,
-        "attempts": 33,
-        "xGoals": 2.95
+        "attempts": 28,
+        "xGoals": 2.43
       }
     },
     "l20": {
@@ -387,8 +387,8 @@
       "point": {
         "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.02
+        "attempts": 2,
+        "xGoals": 0.03
       },
       "left": {
         "shotsOnGoal": 2,
@@ -405,8 +405,8 @@
       "total": {
         "shotsOnGoal": 34,
         "goals": 0,
-        "attempts": 60,
-        "xGoals": 3.69
+        "attempts": 61,
+        "xGoals": 3.7
       }
     }
   }

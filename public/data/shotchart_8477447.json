@@ -1,9 +1,9 @@
 {
   "playerId": 8477447,
   "playerName": "Shea Theodore",
-  "team": "AWAY",
+  "team": "HOME",
   "season": 2025,
-  "lastUpdated": "2026-06-14T11:59:57.199465",
+  "lastUpdated": "2026-06-15T15:49:08.443399",
   "reg": {
     "totalGames": 66,
     "szn": {
@@ -208,13 +208,13 @@
     }
   },
   "playoffs": {
-    "totalGames": 20,
+    "totalGames": 21,
     "szn": {
       "slot": {
-        "shotsOnGoal": 26,
+        "shotsOnGoal": 27,
         "goals": 6,
-        "attempts": 37,
-        "xGoals": 1.67
+        "attempts": 40,
+        "xGoals": 1.76
       },
       "low": {
         "shotsOnGoal": 3,
@@ -253,24 +253,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 41,
+        "shotsOnGoal": 42,
         "goals": 6,
-        "attempts": 61,
-        "xGoals": 2.41
+        "attempts": 64,
+        "xGoals": 2.5
       }
     },
     "l5": {
       "slot": {
         "shotsOnGoal": 5,
-        "goals": 2,
-        "attempts": 8,
-        "xGoals": 0.18
+        "goals": 1,
+        "attempts": 10,
+        "xGoals": 0.25
       },
       "low": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.16
+        "attempts": 1,
+        "xGoals": 0.05
       },
       "lowLeft": {
         "shotsOnGoal": 1,
@@ -303,24 +303,24 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 10,
-        "goals": 2,
+        "shotsOnGoal": 9,
+        "goals": 1,
         "attempts": 16,
-        "xGoals": 0.44
+        "xGoals": 0.41
       }
     },
     "l10": {
       "slot": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 11,
         "goals": 3,
-        "attempts": 15,
-        "xGoals": 0.75
+        "attempts": 17,
+        "xGoals": 0.82
       },
       "low": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.38
+        "attempts": 3,
+        "xGoals": 0.16
       },
       "lowLeft": {
         "shotsOnGoal": 1,
@@ -329,10 +329,10 @@
         "xGoals": 0.05
       },
       "lowRight": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 1,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.05
+        "attempts": 2,
+        "xGoals": 0.02
       },
       "point": {
         "shotsOnGoal": 1,
@@ -353,18 +353,18 @@
         "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 19,
+        "shotsOnGoal": 18,
         "goals": 3,
-        "attempts": 28,
-        "xGoals": 1.28
+        "attempts": 27,
+        "xGoals": 1.1
       }
     },
     "l20": {
       "slot": {
-        "shotsOnGoal": 26,
+        "shotsOnGoal": 27,
         "goals": 6,
-        "attempts": 37,
-        "xGoals": 1.67
+        "attempts": 40,
+        "xGoals": 1.76
       },
       "low": {
         "shotsOnGoal": 3,
@@ -391,10 +391,10 @@
         "xGoals": 0.02
       },
       "left": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 2,
         "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.07
+        "attempts": 3,
+        "xGoals": 0.05
       },
       "right": {
         "shotsOnGoal": 0,
@@ -405,8 +405,8 @@
       "total": {
         "shotsOnGoal": 41,
         "goals": 6,
-        "attempts": 61,
-        "xGoals": 2.41
+        "attempts": 63,
+        "xGoals": 2.48
       }
     }
   }
