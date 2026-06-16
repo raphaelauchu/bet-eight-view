@@ -1441,19 +1441,6 @@ function FicheJoueur({ joueur, onBack }) {
   }, [ongletChart, modeStats]);
 
   useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
-
-  
-  useEffect(() => {
-    setShotChartData(null);
-    setChargementShotChart(true);
-    getShotChartData(joueur.id, null, ongletChart, modeStats).then(data => {
-      setShotChartData({ [ongletChart]: data });
-      setChargementShotChart(false);
-    });
-  }, [ongletChart, modeStats]);
-  
- 
-  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
  
   async function chargerStats() {
     setChargement(true);
@@ -1599,44 +1586,39 @@ const getMatchsChart = () => {
  
   const matchsChart = getMatchsChart();
   const currentShotData = shotChartData?.[ongletChart] || shotChartData?.['SZN'];
-const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).reduce((a, b) => a + b, 0) : 0;
-  const sog = matchsChart && matchsChart.length > 0
+ const sog = currentShotData?.totals?.all?.shotsOnGoal
+  ?? (matchsChart && matchsChart.length > 0
     ? matchsChart.reduce((s, m) => s + (m.shots || 0), 0)
-    : sogSaison;
+    : sogSaison);
 
-  const zones = currentShotData ? [
-    { label: 'LOW LEFT', sog: currentShotData.zones['LOW LEFT'] || 0, goals: currentShotData.goals['LOW LEFT'] || 0 },
-    { label: 'LOW', sog: currentShotData.zones['LOW'] || 0, goals: currentShotData.goals['LOW'] || 0 },
-    { label: 'LOW RIGHT', sog: currentShotData.zones['LOW RIGHT'] || 0, goals: currentShotData.goals['LOW RIGHT'] || 0 },
-    { label: 'BOARDS', sog: currentShotData.zones['LEFT'] || 0, goals: currentShotData.goals['LEFT'] || 0 },
-    { label: 'SLOT', sog: currentShotData.zones['SLOT'] || 0, goals: currentShotData.goals['SLOT'] || 0 },
-    { label: 'BOARDS', sog: currentShotData.zones['RIGHT'] || 0, goals: currentShotData.goals['RIGHT'] || 0 },
-    { label: 'LEFT', sog: currentShotData.zones['LEFT'] || 0, goals: currentShotData.goals['LEFT'] || 0 },
-    { label: 'POINT', sog: currentShotData.zones['POINT'] || 0, goals: currentShotData.goals['POINT'] || 0 },
-    { label: 'RIGHT', sog: currentShotData.zones['RIGHT'] || 0, goals: currentShotData.goals['RIGHT'] || 0 },
-  ] : [
-    { label: 'LOW LEFT', sog: Math.round(sog * 0.18), goals: 0 }, { label: 'LOW', sog: Math.round(sog * 0.22), goals: 0 },
-    { label: 'LOW RIGHT', sog: Math.round(sog * 0.16), goals: 0 }, { label: 'BOARDS', sog: Math.round(sog * 0.12), goals: 0 },
-    { label: 'SLOT', sog: Math.round(sog * 0.35), goals: 0 }, { label: 'BOARDS', sog: Math.round(sog * 0.08), goals: 0 },
-    { label: 'LEFT', sog: Math.round(sog * 0.05), goals: 0 }, { label: 'POINT', sog: Math.round(sog * 0.04), goals: 0 },
-    { label: 'RIGHT', sog: Math.round(sog * 0.05), goals: 0 },
+  const ZONE_KEYS = [
+    'SLOT', 'HIGH SLOT',
+    'L CIRCLE', 'R CIRCLE',
+    'L CORNER', 'R CORNER',
+    'L POINT', 'R POINT', 'C POINT',
   ];
+  const zones = currentShotData
+  ? ZONE_KEYS.map(label => ({
+      label,
+      sog:      currentShotData.zones[label]     ?? 0,
+      goals:    currentShotData.goals[label]     ?? 0,
+      sogPct:   currentShotData.sogPct?.[label]  ?? 0,
+      goalsPct: currentShotData.goalsPct?.[label] ?? 0,
+    }))
+  : ZONE_KEYS.map(label => ({ label, sog: 0, goals: 0, sogPct: 0, goalsPct: 0 }));
  
-  const pctZones = zones.map(z => ({ ...z, pct: sog > 0 ? Math.round((z.sog / sog) * 100) : 0 }));
+  const totalShotsChart = zones.reduce((s, z) => s + z.sog, 0);
   const getValeurZone = (z) => {
-  if (typeChart === 'SOG') return z.sog;
-  if (typeChart === 'Buts') return z.goals;
-  const pct = totalShotsChart > 0 ? Math.round((z.sog / totalShotsChart) * 100) : 0;
-  return `${pct}%`;
-};
-  const getTendanceZone = (z) => {
-    if (sog === 0) return 'neutre';
-    const pct = z.sog / sog;
-    const attendu = 1 / zones.length;
-    if (pct > attendu * 1.15) return 'haut';
-    if (pct < attendu * 0.85) return 'bas';
-    return 'neutre';
+    if (typeChart === 'SOG')   return z.sog;
+    if (typeChart === 'Goals') return z.goals;
+    return totalShotsChart > 0 ? `${Math.round((z.sog / totalShotsChart) * 100)}%` : '0%';
   };
+  const getTendanceZone = (z) => {
+  const pct = typeChart === 'Goals' ? z.goalsPct : z.sogPct;
+  if (pct >= 0.80) return 'haut';
+  if (pct <= 0.40) return 'bas';
+  return 'neutre';
+};
  
   const positionsZones = [
     { x: 75, y: 130 }, { x: 220, y: 110 }, { x: 365, y: 130 },
@@ -1852,7 +1834,7 @@ const totalShotsChart = currentShotData ? Object.values(currentShotData.zones).r
                   <circle cx="320" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
                   <line x1="0" y1="360" x2="440" y2="360" stroke="#3b82f6" strokeWidth="2" opacity="0.4" />
                   <path d="M170 360 Q220 325 270 360" fill="none" stroke="#444" strokeWidth="1.2" />
-                  {pctZones.map((z, i) => {
+                  {zones.map((z, i) => {
                     const pos = positionsZones[i];
                     const tendance = getTendanceZone(z);
                     const val = getValeurZone(z);

@@ -87,54 +87,84 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
 }
 
 export async function getShotChartData(playerId, gameIds, onglet = 'SZN', modeStats = 'reg') {
-  const mapZone = {
-    slot: 'SLOT',
-    low: 'LOW',
-    lowLeft: 'LOW LEFT',
-    lowRight: 'LOW RIGHT',
-    point: 'POINT',
-    left: 'LEFT',
-    right: 'RIGHT'
+  // Mapping zones NHL EDGE → labels affichés dans le SVG
+  const ZONES = [
+    'slot', 'highSlot',
+    'leftCircle', 'rightCircle',
+    'cornerLeft', 'cornerRight',
+    'pointLeft', 'pointRight', 'pointCenter',
+  ];
+ 
+  const ZONE_LABELS = {
+    slot:        'SLOT',
+    highSlot:    'HIGH SLOT',
+    leftCircle:  'L CIRCLE',
+    rightCircle: 'R CIRCLE',
+    cornerLeft:  'L CORNER',
+    cornerRight: 'R CORNER',
+    pointLeft:   'L POINT',
+    pointRight:  'R POINT',
+    pointCenter: 'C POINT',
   };
-
+ 
+  const empty = () => ({
+    zones:      Object.fromEntries(ZONES.map(z => [ZONE_LABELS[z], 0])),
+    goals:      Object.fromEntries(ZONES.map(z => [ZONE_LABELS[z], 0])),
+    pctg:       Object.fromEntries(ZONES.map(z => [ZONE_LABELS[z], 0])),
+    sogPct:     Object.fromEntries(ZONES.map(z => [ZONE_LABELS[z], 0])),
+    goalsPct:   Object.fromEntries(ZONES.map(z => [ZONE_LABELS[z], 0])),
+    totals:     null,
+    hasPlayoffs: false,
+    totalGames: 0,
+  });
+ 
   try {
     const res = await fetch(`/data/shotchart_${playerId}.json`);
     if (!res.ok) throw new Error('JSON introuvable');
     const data = await res.json();
-
+ 
     const section = modeStats === 'playoffs' && data.playoffs?.totalGames > 0
       ? data.playoffs
       : data.reg;
-
+ 
     if (!section) throw new Error('Section introuvable');
-
+ 
     const ongletKey = onglet.toLowerCase() === 'szn' ? 'szn'
-      : onglet.toLowerCase() === 'l5' ? 'l5'
+      : onglet.toLowerCase() === 'l5'  ? 'l5'
       : onglet.toLowerCase() === 'l10' ? 'l10'
       : onglet.toLowerCase() === 'l20' ? 'l20'
       : 'szn';
-
+ 
     const source = section[ongletKey] || section.szn;
-
-    const zones = {};
-    const goals = {};
-    for (const [mpKey, nhlKey] of Object.entries(mapZone)) {
-      zones[nhlKey] = source[mpKey]?.shotsOnGoal || 0;
-      goals[nhlKey] = source[mpKey]?.goals || 0;
+    if (!source) return empty();
+ 
+    const zones    = {};
+    const goals    = {};
+    const pctg     = {};
+    const sogPct   = {};
+    const goalsPct = {};
+ 
+    for (const z of ZONES) {
+      const label = ZONE_LABELS[z];
+      const zdata = source[z] || {};
+      zones[label]    = zdata.shotsOnGoal    ?? 0;
+      goals[label]    = zdata.goals          ?? 0;
+      pctg[label]     = zdata.shootingPctg   ?? 0;
+      sogPct[label]   = zdata.sogPercentile  ?? 0;
+      goalsPct[label] = zdata.goalsPercentile ?? 0;
     }
-
+ 
     return {
       zones,
       goals,
-      hasPlayoffs: data.playoffs?.totalGames > 0,
-      totalGames: section.totalGames || 0,
+      pctg,
+      sogPct,
+      goalsPct,
+      totals:     source.totals  ?? null,   // { all, high, mid, long }
+      hasPlayoffs: (data.playoffs?.totalGames ?? 0) > 0,
+      totalGames: section.totalGames ?? 0,
     };
   } catch {
-    return {
-      zones: { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 },
-      goals: { SLOT: 0, LOW: 0, 'LOW LEFT': 0, 'LOW RIGHT': 0, LEFT: 0, RIGHT: 0, POINT: 0 },
-      hasPlayoffs: false,
-      totalGames: 0,
-    };
+    return empty();
   }
 }
