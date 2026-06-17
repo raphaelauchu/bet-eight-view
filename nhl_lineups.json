@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-16 21:09",
+  "last_updated": "2026-06-17 20:21",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -1180,22 +1180,22 @@
       "name": "Philadelphia Flyers",
       "forwards": {
         "L1": {
-          "LW": "Alex Bump",
+          "LW": "Travis Konecny",
           "C": "Christian Dvorak",
-          "RW": "Travis Konecny"
+          "RW": "Porter Martone"
         },
         "L2": {
           "LW": "Tyson Foerster",
           "C": "Trevor Zegras",
-          "RW": "Porter Martone"
+          "RW": "Owen Tippett"
         },
         "L3": {
-          "LW": "Carl Grundstrom",
-          "C": "Denver Barkey",
-          "RW": "Jett Luchanko"
+          "LW": "Alex Bump",
+          "C": "Noah Cates",
+          "RW": "Matvei Michkov"
         },
         "L4": {
-          "LW": "Luke Glendening",
+          "LW": "Denver Barkey",
           "C": "Sean Couturier",
           "RW": "Garnet Hathaway"
         }
@@ -1211,28 +1211,28 @@
         },
         "D3": {
           "LD": "Nick Seeler",
-          "RD": "Oliver Bonk"
+          "RD": "David Jiricek"
         }
       },
       "pp_units": {
         "PP1": [
-          "Alex Bump",
-          "Trevor Zegras",
           "Tyson Foerster",
+          "Trevor Zegras",
+          "Porter Martone",
           "Jamie Drysdale",
           "Travis Konecny"
         ],
         "PP2": [
-          "Denver Barkey",
           "Christian Dvorak",
-          "Porter Martone",
-          "Jett Luchanko",
-          "Rasmus Ristolainen"
+          "Noah Cates",
+          "Matvei Michkov",
+          "Owen Tippett",
+          "Cam York"
         ]
       },
       "goalies": [
         "Dan Vladar",
-        "Samuel Ersson"
+        "Joseph Woll"
       ]
     },
     "pittsburgh-penguins": {
@@ -1534,59 +1534,59 @@
       "name": "Toronto Maple Leafs",
       "forwards": {
         "L1": {
-          "LW": "Easton Cowan",
+          "LW": "Matthew Knies",
+          "C": "Auston Matthews",
+          "RW": "Easton Cowan"
+        },
+        "L2": {
+          "LW": "Matias Maccelli",
           "C": "John Tavares",
           "RW": "William Nylander"
         },
-        "L2": {
-          "LW": "Matthew Knies",
-          "C": "Max Domi",
-          "RW": "Nicholas Robertson"
-        },
         "L3": {
-          "LW": "Matias Maccelli",
-          "C": "Luke Haymes",
-          "RW": "Steven Lorentz"
+          "LW": "Dakota Joshua",
+          "C": "Bo Groulx",
+          "RW": "Nicholas Robertson"
         },
         "L4": {
           "LW": "Michael Pezzetta",
           "C": "Jacob Quillan",
-          "RW": "Ryan Tverberg"
+          "RW": "Steven Lorentz"
         }
       },
       "defence": {
         "D1": {
           "LD": "Morgan Rielly",
-          "RD": "Troy Stecher"
+          "RD": "Brandon Carlo"
         },
         "D2": {
-          "LD": "Simon Benoit",
+          "LD": "Oliver Ekman-Larsson",
           "RD": "Jake McCabe"
         },
         "D3": {
-          "LD": "Oliver Ekman-Larsson",
-          "RD": "William Villeneuve"
+          "LD": "Emil Andrae",
+          "RD": "Chris Tanev"
         }
       },
       "pp_units": {
         "PP1": [
           "Matthew Knies",
           "John Tavares",
-          "Easton Cowan",
+          "William Nylander",
           "Oliver Ekman-Larsson",
-          "William Nylander"
+          "Auston Matthews"
         ],
         "PP2": [
-          "Luke Haymes",
-          "Max Domi",
           "Nicholas Robertson",
+          "Bo Groulx",
+          "Easton Cowan",
           "Morgan Rielly",
           "Matias Maccelli"
         ]
       },
       "goalies": [
-        "Joseph Woll",
-        "Dennis Hildeby"
+        "Anthony Stolarz",
+        "Samuel Ersson"
       ]
     },
     "utah-mammoth": {
