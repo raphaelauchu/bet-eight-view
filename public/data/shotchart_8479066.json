@@ -1,129 +1,211 @@
 {
   "playerId": 8479066,
   "playerName": "Ryan Lomberg",
-<<<<<<< HEAD
   "team": "AWAY",
   "season": 2025,
-  "lastUpdated": "2026-06-16T15:12:28.222023",
-=======
-  "team": "CGY",
-  "position": "L",
-  "season": 2026,
-  "lastUpdated": "2026-06-14T15:35:44.880629",
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
+  "lastUpdated": "2026-06-17T13:43:35.797532",
   "reg": {
-    "totalGames": 57,
+    "totalGames": 44,
     "szn": {
       "slot": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 21,
         "goals": 2,
-        "shootingPctg": 0.2222,
-        "sogPercentile": 0.1352,
-        "goalsPercentile": 0.1572
+        "attempts": 28,
+        "xGoals": 1.65
       },
-      "highSlot": {
-        "shotsOnGoal": 7,
-        "goals": 1,
-        "shootingPctg": 0.1429,
-        "sogPercentile": 0.5016,
-        "goalsPercentile": 0.4316
+      "low": {
+        "shotsOnGoal": 16,
+        "goals": 2,
+        "attempts": 27,
+        "xGoals": 2.83
       },
-      "leftCircle": {
-        "shotsOnGoal": 9,
+      "lowLeft": {
+        "shotsOnGoal": 8,
         "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.5977,
-        "goalsPercentile": 0.0
+        "attempts": 18,
+        "xGoals": 0.32
       },
-      "rightCircle": {
-        "shotsOnGoal": 6,
-        "goals": 1,
-        "shootingPctg": 0.1667,
-        "sogPercentile": 0.4528,
-        "goalsPercentile": 0.5293
-      },
-      "cornerLeft": {
-        "shotsOnGoal": 5,
+      "lowRight": {
+        "shotsOnGoal": 8,
         "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.4039,
-        "goalsPercentile": 0.0
+        "attempts": 11,
+        "xGoals": 0.27
       },
-      "cornerRight": {
-        "shotsOnGoal": 1,
+      "point": {
+        "shotsOnGoal": 0,
         "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.158,
-        "goalsPercentile": 0.0
+        "attempts": 0,
+        "xGoals": 0.0
       },
-      "pointLeft": {
-        "shotsOnGoal": 1,
+      "left": {
+        "shotsOnGoal": 0,
         "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.3013,
-        "goalsPercentile": 0.0
+        "attempts": 1,
+        "xGoals": 0.01
       },
-      "pointRight": {
-        "shotsOnGoal": 4,
+      "right": {
+        "shotsOnGoal": 0,
         "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.7345,
-        "goalsPercentile": 0.0
-      },
-      "pointCenter": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.772,
-        "goalsPercentile": 0.0
+        "attempts": 0,
+        "xGoals": 0.0
       },
       "total": {
-        "shotsOnGoal": 47,
+        "shotsOnGoal": 53,
         "goals": 4,
-        "shootingPctg": 0.0851
-      },
-      "totals": {
-        "all": {
-          "shotsOnGoal": 53,
-          "goals": 4,
-          "shootingPctg": 0.0755,
-          "sogPercentile": 0.3941,
-          "goalsPercentile": 0.3404,
-          "sogLeagueAvg": 85.9138,
-          "goalsLeagueAvg": 11.1545
-        },
-        "high": {
-          "shotsOnGoal": 9,
-          "goals": 2,
-          "shootingPctg": 0.2222,
-          "sogPercentile": 0.2508,
-          "goalsPercentile": 0.2834,
-          "sogLeagueAvg": 31.6244,
-          "goalsLeagueAvg": 6.1935
-        },
-        "long": {
-          "shotsOnGoal": 10,
-          "goals": 0,
-          "shootingPctg": 0.0,
-          "sogPercentile": 0.6889,
-          "goalsPercentile": 0.0,
-          "sogLeagueAvg": 8.0081,
-          "goalsLeagueAvg": 0.3106
-        },
-        "mid": {
-          "shotsOnGoal": 22,
-          "goals": 2,
-          "shootingPctg": 0.0909,
-          "sogPercentile": 0.5244,
-          "goalsPercentile": 0.4381,
-          "sogLeagueAvg": 27.2195,
-          "goalsLeagueAvg": 3.3008
-        }
+        "attempts": 85,
+        "xGoals": 5.07
       }
     },
-    "l5": null,
-    "l10": null,
-    "l20": null
+    "l5": {
+      "slot": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "attempts": 2,
+        "xGoals": 0.11
+      },
+      "low": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "attempts": 6,
+        "xGoals": 0.27
+      },
+      "lowLeft": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "attempts": 1,
+        "xGoals": 0.01
+      },
+      "lowRight": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "attempts": 2,
+        "xGoals": 0.06
+      },
+      "point": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "left": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "right": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "total": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "attempts": 11,
+        "xGoals": 0.46
+      }
+    },
+    "l10": {
+      "slot": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "attempts": 6,
+        "xGoals": 0.25
+      },
+      "low": {
+        "shotsOnGoal": 4,
+        "goals": 1,
+        "attempts": 10,
+        "xGoals": 0.82
+      },
+      "lowLeft": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "attempts": 6,
+        "xGoals": 0.08
+      },
+      "lowRight": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "attempts": 3,
+        "xGoals": 0.1
+      },
+      "point": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "left": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "right": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "total": {
+        "shotsOnGoal": 13,
+        "goals": 1,
+        "attempts": 25,
+        "xGoals": 1.24
+      }
+    },
+    "l20": {
+      "slot": {
+        "shotsOnGoal": 8,
+        "goals": 1,
+        "attempts": 12,
+        "xGoals": 0.68
+      },
+      "low": {
+        "shotsOnGoal": 6,
+        "goals": 2,
+        "attempts": 15,
+        "xGoals": 1.47
+      },
+      "lowLeft": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "attempts": 8,
+        "xGoals": 0.13
+      },
+      "lowRight": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "attempts": 6,
+        "xGoals": 0.15
+      },
+      "point": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "left": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 1,
+        "xGoals": 0.01
+      },
+      "right": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "attempts": 0,
+        "xGoals": 0.0
+      },
+      "total": {
+        "shotsOnGoal": 22,
+        "goals": 3,
+        "attempts": 42,
+        "xGoals": 2.45
+      }
+    }
   },
   "playoffs": null
 }
