@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-18 20:32",
+  "last_updated": "2026-06-19 19:55",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -192,57 +192,57 @@
           "RW": "Matt Coronato"
         },
         "L3": {
-          "LW": "Victor Olofsson",
+          "LW": "Connor Zary",
           "C": "Ryan Strome",
-          "RW": "Aydar Suniev"
+          "RW": "Jonathan Huberdeau"
         },
         "L4": {
           "LW": "Yegor Sharangovich",
-          "C": "Rory Kerins",
+          "C": "Martin Pospisil",
           "RW": "Adam Klapka"
         }
       },
       "defence": {
         "D1": {
-          "LD": "Zayne Parekh",
+          "LD": "Kevin Bahl",
           "RD": "Zach Whitecloud"
         },
         "D2": {
-          "LD": "Olli Maatta",
-          "RD": "Hunter Brzustewicz"
+          "LD": "Yan Kuznetsov",
+          "RD": "Zayne Parekh"
         },
         "D3": {
-          "LD": "Abram Wiebe",
-          "RD": "Brayden Pachal"
+          "LD": "Olli Maatta",
+          "RD": "Hunter Brzustewicz"
         }
       },
       "pp_units": {
         "PP1": [
           "Matvei Gridin",
           "Morgan Frost",
-          "Joel Farabee",
-          "Zayne Parekh",
-          "Matt Coronato"
+          "Jonathan Huberdeau",
+          "Matt Coronato",
+          "Zayne Parekh"
         ],
         "PP2": [
-          "Rory Kerins",
+          "Blake Coleman",
           "Ryan Strome",
-          "Yegor Sharangovich",
+          "Connor Zary",
           "Hunter Brzustewicz",
-          "Victor Olofsson"
+          "Yegor Sharangovich"
         ]
       },
       "goalies": [
-        "Arsenii Sergeev",
-        "Dustin Wolf"
+        "Dustin Wolf",
+        "Devin Cooley"
       ]
     },
     "carolina-hurricanes": {
       "name": "Carolina Hurricanes",
       "forwards": {
         "L1": {
-          "LW": "Nikolaj Ehlers",
-          "C": "Jordan Staal",
+          "LW": "Andrei Svechnikov",
+          "C": "Sebastian Aho",
           "RW": "Seth Jarvis"
         },
         "L2": {
@@ -251,8 +251,8 @@
           "RW": "Jackson Blake"
         },
         "L3": {
-          "LW": "Andrei Svechnikov",
-          "C": "Sebastian Aho",
+          "LW": "Nikolaj Ehlers",
+          "C": "Jordan Staal",
           "RW": "Jordan Martinook"
         },
         "L4": {
@@ -300,24 +300,24 @@
       "name": "Chicago Blackhawks",
       "forwards": {
         "L1": {
-          "LW": "Frank Nazar",
+          "LW": "Anton Frondell",
           "C": "Connor Bedard",
-          "RW": "Nick Lardis"
+          "RW": "Roman Kantserov"
         },
         "L2": {
-          "LW": "Ilya Mikheyev",
-          "C": "Anton Frondell",
-          "RW": "Tyler Bertuzzi"
+          "LW": "Tyler Bertuzzi",
+          "C": "Frank Nazar",
+          "RW": "Teuvo Teravainen"
         },
         "L3": {
-          "LW": "Ryan Donato",
-          "C": "Ryan Greene",
-          "RW": "Andre Burakovsky"
+          "LW": "Nick Lardis",
+          "C": "Oliver Moore",
+          "RW": "Ryan Greene"
         },
         "L4": {
-          "LW": "Teuvo Teravainen",
-          "C": "Sam Lafferty",
-          "RW": "Landon Slaggert"
+          "LW": "Andrew Mangiapane",
+          "C": "Ryan Donato",
+          "RW": "Andre Burakovsky"
         }
       },
       "defence": {
@@ -330,24 +330,24 @@
           "RD": "Sam Rinzel"
         },
         "D3": {
-          "LD": "Kevin Korchinski",
-          "RD": "Ethan Del Mastro"
+          "LD": "Ethan Del Mastro",
+          "RD": "Artyom Levshunov"
         }
       },
       "pp_units": {
         "PP1": [
-          "Tyler Bertuzzi",
-          "Frank Nazar",
+          "Roman Kantserov",
+          "Anton Frondell",
           "Teuvo Teravainen",
           "Connor Bedard",
-          "Anton Frondell"
+          "Artyom Levshunov"
         ],
         "PP2": [
-          "Ryan Donato",
-          "Ryan Greene",
+          "Tyler Bertuzzi",
+          "Frank Nazar",
           "Nick Lardis",
-          "Andre Burakovsky",
-          "Sam Rinzel"
+          "Sam Rinzel",
+          "Andre Burakovsky"
         ]
       },
       "goalies": [
@@ -361,22 +361,22 @@
         "L1": {
           "LW": "Artturi Lehkonen",
           "C": "Nathan MacKinnon",
-          "RW": "Gabriel Landeskog"
+          "RW": "Martin Necas"
         },
         "L2": {
           "LW": "Nazem Kadri",
           "C": "Brock Nelson",
-          "RW": "Martin Necas"
+          "RW": "Gabriel Landeskog"
         },
         "L3": {
-          "LW": "Ross Colton",
+          "LW": "Valeri Nichushkin",
           "C": "Nicolas Roy",
           "RW": "Logan O'Connor"
         },
         "L4": {
           "LW": "Parker Kelly",
           "C": "Jack Drury",
-          "RW": "Joel Kiviranta"
+          "RW": "Zakhar Bardakov"
         }
       },
       "defence": {
@@ -385,12 +385,12 @@
           "RD": "Cale Makar"
         },
         "D2": {
-          "LD": "Brett Kulak",
+          "LD": "Josh Manson",
           "RD": "Sam Malinski"
         },
         "D3": {
-          "LD": "Josh Manson",
-          "RD": "Brent Burns"
+          "LD": "Wyatt Aamodt",
+          "RD": "Keaton Middleton"
         }
       },
       "pp_units": {
@@ -403,15 +403,15 @@
         ],
         "PP2": [
           "Artturi Lehkonen",
-          "Brock Nelson",
           "Nicolas Roy",
+          "Valeri Nichushkin",
           "Devon Toews",
-          "Brent Burns"
+          "Brock Nelson"
         ]
       },
       "goalies": [
-        "Mackenzie Blackwood",
-        "Scott Wedgewood"
+        "Scott Wedgewood",
+        "Mackenzie Blackwood"
       ]
     },
     "columbus-blue-jackets": {
@@ -885,37 +885,37 @@
       "name": "Nashville Predators",
       "forwards": {
         "L1": {
-          "LW": "Steven Stamkos",
-          "C": "Ryan O'Reilly",
-          "RW": "Cole O'Hara"
-        },
-        "L2": {
           "LW": "Filip Forsberg",
-          "C": "Matthew Wood",
+          "C": "Ryan O'Reilly",
           "RW": "Luke Evangelista"
         },
+        "L2": {
+          "LW": "Steven Stamkos",
+          "C": "Matthew Wood",
+          "RW": "Jonathan Marchessault"
+        },
         "L3": {
-          "LW": "Zachary L'Heureux",
+          "LW": "Ross Colton",
           "C": "Fedor Svechkov",
-          "RW": "Joakim Kemell"
+          "RW": "Brady Martin"
         },
         "L4": {
           "LW": "Reid Schaefer",
-          "C": "Tyson Jost",
-          "RW": "Ozzy Wiesblatt"
+          "C": "Vitali Pinchuk",
+          "RW": "Joakim Kemell"
         }
       },
       "defence": {
         "D1": {
-          "LD": "Brady Skjei",
-          "RD": "Nick Perbix"
+          "LD": "Roman Josi",
+          "RD": "Brady Skjei"
         },
         "D2": {
-          "LD": "Adam Wilsby",
-          "RD": "Justin Barron"
+          "LD": "Nicolas Hague",
+          "RD": "Nick Perbix"
         },
         "D3": {
-          "LD": "Kevin Gravel",
+          "LD": "Adam Wilsby",
           "RD": "Ryan Ufko"
         }
       },
@@ -923,16 +923,16 @@
         "PP1": [
           "Filip Forsberg",
           "Ryan O'Reilly",
-          "Luke Evangelista",
+          "Jonathan Marchessault",
           "Steven Stamkos",
-          "Ryan Ufko"
+          "Roman Josi"
         ],
         "PP2": [
+          "Brady Martin",
           "Matthew Wood",
-          "Joakim Kemell",
           "Luke Evangelista",
-          "Brady Skjei",
-          "Zachary L'Heureux"
+          "Ryan Ufko",
+          "Brady Skjei"
         ]
       },
       "goalies": [
@@ -1561,10 +1561,10 @@
         },
         "D2": {
           "LD": "Oliver Ekman-Larsson",
-          "RD": "Jake McCabe"
+          "RD": "Darren Raddysh"
         },
         "D3": {
-          "LD": "Emil Andrae",
+          "LD": "Jake McCabe",
           "RD": "Chris Tanev"
         }
       },
@@ -1573,15 +1573,15 @@
           "Matthew Knies",
           "John Tavares",
           "William Nylander",
-          "Oliver Ekman-Larsson",
+          "Darren Raddysh",
           "Auston Matthews"
         ],
         "PP2": [
+          "Matias Maccelli",
           "Nicholas Robertson",
-          "Bo Groulx",
           "Easton Cowan",
           "Morgan Rielly",
-          "Matias Maccelli"
+          "Oliver Ekman-Larsson"
         ]
       },
       "goalies": [
