@@ -1,16 +1,10 @@
 {
   "playerId": 8473533,
   "playerName": "Jordan Staal",
-<<<<<<< HEAD
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-16T15:12:30.905042",
-=======
   "team": "CAR",
   "position": "C",
   "season": 2026,
   "lastUpdated": "2026-06-14T15:23:25.676937",
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   "reg": {
     "totalGames": 75,
     "szn": {
@@ -129,24 +123,11 @@
     "totalGames": 19,
     "szn": {
       "slot": {
-<<<<<<< HEAD
-        "shotsOnGoal": 8,
-        "goals": 1,
-        "attempts": 17,
-        "xGoals": 1.41
-      },
-      "low": {
-        "shotsOnGoal": 22,
-        "goals": 7,
-        "attempts": 33,
-        "xGoals": 5.7
-=======
         "shotsOnGoal": 19,
         "goals": 7,
         "shootingPctg": 0.3684,
         "sogPercentile": 0.9505,
         "goalsPercentile": 0.9708
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       },
       "highSlot": {
         "shotsOnGoal": 6,
@@ -162,47 +143,6 @@
         "sogPercentile": 0.7973,
         "goalsPercentile": 0.0
       },
-<<<<<<< HEAD
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 35,
-        "goals": 8,
-        "attempts": 57,
-        "xGoals": 7.22
-      }
-    },
-    "l5": {
-      "slot": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.27
-      },
-      "low": {
-        "shotsOnGoal": 14,
-        "goals": 5,
-        "attempts": 15,
-        "xGoals": 1.87
-      },
-      "lowLeft": {
-=======
       "rightCircle": {
         "shotsOnGoal": 2,
         "goals": 0,
@@ -211,7 +151,6 @@
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
@@ -247,112 +186,6 @@
         "goalsPercentile": 0.0
       },
       "total": {
-<<<<<<< HEAD
-        "shotsOnGoal": 15,
-        "goals": 5,
-        "attempts": 18,
-        "xGoals": 2.18
-      }
-    },
-    "l10": {
-      "slot": {
-        "shotsOnGoal": 3,
-        "goals": 1,
-        "attempts": 6,
-        "xGoals": 0.55
-      },
-      "low": {
-        "shotsOnGoal": 17,
-        "goals": 6,
-        "attempts": 22,
-        "xGoals": 3.09
-      },
-      "lowLeft": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "lowRight": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
-      },
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 22,
-        "goals": 7,
-        "attempts": 30,
-        "xGoals": 3.69
-      }
-    },
-    "l20": {
-      "slot": {
-        "shotsOnGoal": 8,
-        "goals": 1,
-        "attempts": 17,
-        "xGoals": 1.41
-      },
-      "low": {
-        "shotsOnGoal": 22,
-        "goals": 7,
-        "attempts": 33,
-        "xGoals": 5.7
-      },
-      "lowLeft": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.04
-      },
-      "lowRight": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.07
-      },
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 35,
-        "goals": 8,
-        "attempts": 57,
-        "xGoals": 7.22
-=======
         "shotsOnGoal": 31,
         "goals": 8,
         "shootingPctg": 0.2581
@@ -394,7 +227,6 @@
           "sogLeagueAvg": 4.6099,
           "goalsLeagueAvg": 0.4978
         }
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       }
     },
     "l5": null,

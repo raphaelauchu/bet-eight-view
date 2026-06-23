@@ -1,16 +1,10 @@
 {
   "playerId": 8477447,
   "playerName": "Shea Theodore",
-<<<<<<< HEAD
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-16T15:12:19.922533",
-=======
   "team": "VGK",
   "position": "D",
   "season": 2026,
   "lastUpdated": "2026-06-14T15:22:40.438058",
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   "reg": {
     "totalGames": 70,
     "szn": {
@@ -129,72 +123,12 @@
     "totalGames": 21,
     "szn": {
       "slot": {
-<<<<<<< HEAD
-        "shotsOnGoal": 27,
-        "goals": 6,
-        "attempts": 40,
-        "xGoals": 1.76
-      },
-      "low": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.38
-      },
-      "lowLeft": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.14
-      },
-      "lowRight": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "attempts": 8,
-        "xGoals": 0.14
-      },
-      "point": {
-=======
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3483,
         "goalsPercentile": 0.0
       },
-<<<<<<< HEAD
-      "left": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.07
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 42,
-        "goals": 6,
-        "attempts": 64,
-        "xGoals": 2.5
-      }
-    },
-    "l5": {
-      "slot": {
-        "shotsOnGoal": 5,
-        "goals": 1,
-        "attempts": 10,
-        "xGoals": 0.25
-      },
-      "low": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.05
-=======
       "highSlot": {
         "shotsOnGoal": 4,
         "goals": 2,
@@ -208,7 +142,6 @@
         "shootingPctg": 0.0,
         "sogPercentile": 0.8115,
         "goalsPercentile": 0.0
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       },
       "rightCircle": {
         "shotsOnGoal": 4,
@@ -231,85 +164,6 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-<<<<<<< HEAD
-      "total": {
-        "shotsOnGoal": 9,
-        "goals": 1,
-        "attempts": 16,
-        "xGoals": 0.41
-      }
-    },
-    "l10": {
-      "slot": {
-        "shotsOnGoal": 11,
-        "goals": 3,
-        "attempts": 17,
-        "xGoals": 0.82
-      },
-      "low": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.16
-      },
-      "lowLeft": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.05
-      },
-      "lowRight": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.02
-      },
-      "point": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "left": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 18,
-        "goals": 3,
-        "attempts": 27,
-        "xGoals": 1.1
-      }
-    },
-    "l20": {
-      "slot": {
-        "shotsOnGoal": 27,
-        "goals": 6,
-        "attempts": 40,
-        "xGoals": 1.76
-      },
-      "low": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 4,
-        "xGoals": 0.38
-      },
-      "lowLeft": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.14
-      },
-      "lowRight": {
-=======
       "pointLeft": {
         "shotsOnGoal": 4,
         "goals": 0,
@@ -318,47 +172,22 @@
         "goalsPercentile": 0.0
       },
       "pointRight": {
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
         "shotsOnGoal": 5,
         "goals": 1,
         "shootingPctg": 0.2,
         "sogPercentile": 0.8852,
         "goalsPercentile": 0.9344
       },
-<<<<<<< HEAD
-      "point": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.02
-      },
-      "left": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.05
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-=======
       "pointCenter": {
         "shotsOnGoal": 15,
         "goals": 3,
         "shootingPctg": 0.2,
         "sogPercentile": 1.0,
         "goalsPercentile": 1.0
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       },
       "total": {
         "shotsOnGoal": 35,
         "goals": 6,
-<<<<<<< HEAD
-        "attempts": 63,
-        "xGoals": 2.48
-=======
         "shootingPctg": 0.1714
       },
       "totals": {
@@ -398,7 +227,6 @@
           "sogLeagueAvg": 2.0569,
           "goalsLeagueAvg": 0.2683
         }
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       }
     },
     "l5": null,

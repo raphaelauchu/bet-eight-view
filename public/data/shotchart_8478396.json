@@ -1,16 +1,10 @@
 {
   "playerId": 8478396,
   "playerName": "Noah Hanifin",
-<<<<<<< HEAD
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-16T15:12:20.171749",
-=======
   "team": "VGK",
   "position": "D",
   "season": 2026,
   "lastUpdated": "2026-06-14T15:26:45.087409",
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   "reg": {
     "totalGames": 71,
     "szn": {
@@ -126,21 +120,9 @@
     "l20": null
   },
   "playoffs": {
-<<<<<<< HEAD
-    "totalGames": 19,
-    "szn": {
-      "slot": {
-        "shotsOnGoal": 7,
-        "goals": 0,
-        "attempts": 13,
-        "xGoals": 0.95
-      },
-      "low": {
-=======
     "totalGames": 21,
     "szn": {
       "slot": {
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
@@ -196,165 +178,6 @@
         "sogPercentile": 0.4508,
         "goalsPercentile": 0.0
       },
-<<<<<<< HEAD
-      "total": {
-        "shotsOnGoal": 25,
-        "goals": 0,
-        "attempts": 39,
-        "xGoals": 1.72
-      }
-    },
-    "l5": {
-      "slot": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.1
-      },
-      "low": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.05
-      },
-      "lowLeft": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.07
-      },
-      "lowRight": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "point": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.02
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.26
-      }
-    },
-    "l10": {
-      "slot": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.17
-      },
-      "low": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.19
-      },
-      "lowLeft": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.09
-      },
-      "lowRight": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "point": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.06
-      },
-      "left": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.04
-      },
-      "right": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "total": {
-        "shotsOnGoal": 12,
-        "goals": 0,
-        "attempts": 17,
-        "xGoals": 0.57
-      }
-    },
-    "l20": {
-      "slot": {
-        "shotsOnGoal": 7,
-        "goals": 0,
-        "attempts": 13,
-        "xGoals": 0.95
-      },
-      "low": {
-        "shotsOnGoal": 2,
-        "goals": 0,
-        "attempts": 3,
-        "xGoals": 0.41
-      },
-      "lowLeft": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.13
-      },
-      "lowRight": {
-        "shotsOnGoal": 4,
-        "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.09
-      },
-      "point": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.08
-      },
-      "left": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "attempts": 5,
-        "xGoals": 0.06
-      },
-      "right": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "total": {
-        "shotsOnGoal": 25,
-        "goals": 0,
-        "attempts": 39,
-        "xGoals": 1.72
-      }
-    }
-=======
       "pointCenter": {
         "shotsOnGoal": 4,
         "goals": 0,
@@ -409,6 +232,5 @@
     "l5": null,
     "l10": null,
     "l20": null
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   }
 }

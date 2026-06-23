@@ -1,16 +1,10 @@
 {
   "playerId": 8478468,
   "playerName": "Jeremy Lauzon",
-<<<<<<< HEAD
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-16T15:12:19.834500",
-=======
   "team": "VGK",
   "position": "D",
   "season": 2026,
   "lastUpdated": "2026-06-14T15:33:48.409121",
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   "reg": {
     "totalGames": 68,
     "szn": {
@@ -126,11 +120,7 @@
     "l20": null
   },
   "playoffs": {
-<<<<<<< HEAD
-    "totalGames": 7,
-=======
     "totalGames": 11,
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
     "szn": {
       "slot": {
         "shotsOnGoal": 0,
@@ -167,13 +157,6 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-<<<<<<< HEAD
-      "right": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-=======
       "cornerRight": {
         "shotsOnGoal": 0,
         "goals": 0,
@@ -201,167 +184,10 @@
         "shootingPctg": 0.0,
         "sogPercentile": 0.8197,
         "goalsPercentile": 0.0
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
       },
       "total": {
         "shotsOnGoal": 6,
         "goals": 0,
-<<<<<<< HEAD
-        "attempts": 14,
-        "xGoals": 0.38
-      }
-    },
-    "l5": {
-      "slot": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "attempts": 6,
-        "xGoals": 0.16
-      },
-      "low": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.03
-      },
-      "lowLeft": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "lowRight": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
-      },
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 0,
-        "xGoals": 0.0
-      },
-      "right": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "total": {
-        "shotsOnGoal": 6,
-        "goals": 0,
-        "attempts": 11,
-        "xGoals": 0.25
-      }
-    },
-    "l10": {
-      "slot": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.28
-      },
-      "low": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.03
-      },
-      "lowLeft": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "lowRight": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
-      },
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "right": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "total": {
-        "shotsOnGoal": 6,
-        "goals": 0,
-        "attempts": 14,
-        "xGoals": 0.38
-      }
-    },
-    "l20": {
-      "slot": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "attempts": 7,
-        "xGoals": 0.28
-      },
-      "low": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.03
-      },
-      "lowLeft": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "lowRight": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 2,
-        "xGoals": 0.04
-      },
-      "point": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "left": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "right": {
-        "shotsOnGoal": 1,
-        "goals": 0,
-        "attempts": 1,
-        "xGoals": 0.01
-      },
-      "total": {
-        "shotsOnGoal": 6,
-        "goals": 0,
-        "attempts": 14,
-        "xGoals": 0.38
-      }
-    }
-=======
         "shootingPctg": 0.0
       },
       "totals": {
@@ -406,6 +232,5 @@
     "l5": null,
     "l10": null,
     "l20": null
->>>>>>> 0c2e99c (NHL EDGE shot chart zones)
   }
 }
