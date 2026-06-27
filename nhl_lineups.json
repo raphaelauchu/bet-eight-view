@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-26 19:58",
+  "last_updated": "2026-06-27 19:36",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -15,14 +15,14 @@
           "RW": "Beckett Sennecke"
         },
         "L3": {
-          "LW": "Mason McTavish",
+          "LW": "Cutter Gauthier",
           "C": "Ryan Poehling",
-          "RW": "Cutter Gauthier"
+          "RW": "Sam Colangelo"
         },
         "L4": {
-          "LW": "Frank Vatrano",
+          "LW": "Nikita Nesterenko",
           "C": "Tim Washe",
-          "RW": "Ian Moore"
+          "RW": "Frank Vatrano"
         }
       },
       "defence": {
@@ -32,7 +32,7 @@
         },
         "D2": {
           "LD": "Pavel Mintyukov",
-          "RD": "Olen Zellweger"
+          "RD": "Ian Moore"
         },
         "D3": {
           "LD": "Tyson Hinds",
@@ -43,16 +43,16 @@
         "PP1": [
           "Chris Kreider",
           "Leo Carlsson",
-          "Mikael Granlund",
+          "Cutter Gauthier",
           "Troy Terry",
           "Jackson Lacombe"
         ],
         "PP2": [
           "Alex Killorn",
-          "Mason McTavish",
+          "Mikael Granlund",
           "Beckett Sennecke",
-          "Olen Zellweger",
-          "Cutter Gauthier"
+          "Pavel Mintyukov",
+          "Frank Vatrano"
         ]
       },
       "goalies": [
@@ -64,7 +64,7 @@
       "name": "Boston Bruins",
       "forwards": {
         "L1": {
-          "LW": "Marat Khusnutdinov",
+          "LW": "JJ Peterka",
           "C": "Pavel Zacha",
           "RW": "David Pastrnak"
         },
@@ -74,7 +74,7 @@
           "RW": "Morgan Geekie"
         },
         "L3": {
-          "LW": "James Hagens",
+          "LW": "Marat Khusnutdinov",
           "C": "Fraser Minten",
           "RW": "Michael Eyssimont"
         },
@@ -107,7 +107,7 @@
           "Charlie McAvoy"
         ],
         "PP2": [
-          "Marat Khusnutdinov",
+          "JJ Peterka",
           "Fraser Minten",
           "Casey Mittelstadt",
           "Hampus Lindholm",
@@ -241,9 +241,9 @@
       "name": "Carolina Hurricanes",
       "forwards": {
         "L1": {
-          "LW": "Andrei Svechnikov",
+          "LW": "Nikolaj Ehlers",
           "C": "Sebastian Aho",
-          "RW": "Seth Jarvis"
+          "RW": "Andrei Svechnikov"
         },
         "L2": {
           "LW": "Taylor Hall",
@@ -251,12 +251,12 @@
           "RW": "Jackson Blake"
         },
         "L3": {
-          "LW": "Nikolaj Ehlers",
+          "LW": "William Carrier",
           "C": "Jordan Staal",
           "RW": "Jordan Martinook"
         },
         "L4": {
-          "LW": "William Carrier",
+          "LW": "Nicolas Deslauriers",
           "C": "Mark Jankowski",
           "RW": "Eric Robinson"
         }
@@ -277,7 +277,7 @@
       },
       "pp_units": {
         "PP1": [
-          "Seth Jarvis",
+          "Nikolaj Ehlers",
           "Jordan Staal",
           "Andrei Svechnikov",
           "Shayne Gostisbehere",
@@ -286,9 +286,9 @@
         "PP2": [
           "Taylor Hall",
           "Logan Stankoven",
+          "Mark Jankowski",
           "Jackson Blake",
-          "Alexander Nikishin",
-          "Nikolaj Ehlers"
+          "Alexander Nikishin"
         ]
       },
       "goalies": [
@@ -315,9 +315,9 @@
           "RW": "Ryan Greene"
         },
         "L4": {
-          "LW": "Andrew Mangiapane",
+          "LW": "Jordan Greenway",
           "C": "Ryan Donato",
-          "RW": "Andre Burakovsky"
+          "RW": "Andrew Mangiapane"
         }
       },
       "defence": {
@@ -345,7 +345,7 @@
         "PP2": [
           "Tyler Bertuzzi",
           "Frank Nazar",
-          "Andre Burakovsky",
+          "Nick Lardis",
           "Sam Rinzel",
           "Bowen Byram"
         ]
@@ -588,7 +588,7 @@
       },
       "goalies": [
         "John Gibson",
-        "Sebastian Cossa"
+        "Michal Postava"
       ]
     },
     "edmonton-oilers": {
@@ -654,12 +654,12 @@
       "name": "Florida Panthers",
       "forwards": {
         "L1": {
-          "LW": "Carter Verhaeghe",
+          "LW": "Brady Tkachuk",
           "C": "Aleksander Barkov",
           "RW": "Sam Reinhart"
         },
         "L2": {
-          "LW": "Brady Tkachuk",
+          "LW": "Carter Verhaeghe",
           "C": "Sam Bennett",
           "RW": "Matthew Tkachuk"
         },
@@ -1067,7 +1067,7 @@
       "name": "New York Rangers",
       "forwards": {
         "L1": {
-          "LW": "Gabriel Perreault",
+          "LW": "Pavel Dorofeyev",
           "C": "Mika Zibanejad",
           "RW": "Alexis Lafrenière"
         },
@@ -1077,12 +1077,12 @@
           "RW": "J.T. Miller"
         },
         "L3": {
-          "LW": "Tye Kartye",
+          "LW": "Gabriel Perreault",
           "C": "Noah Laba",
-          "RW": "Jaroslav Chmelar"
+          "RW": "Taylor Raddysh"
         },
         "L4": {
-          "LW": "Taylor Raddysh",
+          "LW": "Tye Kartye",
           "C": "Adam Edstrom",
           "RW": "Matt Rempe"
         }
@@ -1103,16 +1103,16 @@
       },
       "pp_units": {
         "PP1": [
-          "Alexis Lafrenière",
-          "Vincent Trocheck",
           "J.T. Miller",
+          "Vincent Trocheck",
+          "Pavel Dorofeyev",
           "Mika Zibanejad",
           "Adam Fox"
         ],
         "PP2": [
           "Will Cuylle",
           "Noah Laba",
-          "Taylor Raddysh",
+          "Alexis Lafrenière",
           "Vladislav Gavrikov",
           "Gabriel Perreault"
         ]
@@ -1143,7 +1143,7 @@
         "L4": {
           "LW": "Kurtis MacDermid",
           "C": "Stephen Halliday",
-          "RW": "Arthur Kaliyev"
+          "RW": "Andre Burakovsky"
         }
       },
       "defence": {
@@ -1171,7 +1171,7 @@
         "PP2": [
           "Fabian Zetterlund",
           "Shane Pinto",
-          "Arthur Kaliyev",
+          "Andre Burakovsky",
           "Carter Yakemchuk",
           "Thomas Chabot"
         ]
@@ -1202,7 +1202,7 @@
         "L4": {
           "LW": "Denver Barkey",
           "C": "Sean Couturier",
-          "RW": "Garnet Hathaway"
+          "RW": "Jett Luchanko"
         }
       },
       "defence": {
@@ -1427,7 +1427,7 @@
         },
         "L2": {
           "LW": "Connor McMichael",
-          "C": "Pius Suter",
+          "C": "Mason McTavish",
           "RW": "Pavel Buchnevich"
         },
         "L3": {
@@ -1437,7 +1437,7 @@
         },
         "L4": {
           "LW": "Alexey Toropchenko",
-          "C": "Jack Finley",
+          "C": "Pius Suter",
           "RW": "Jonatan Berggren"
         }
       },
@@ -1465,10 +1465,10 @@
         ],
         "PP2": [
           "Jake Neighbours",
+          "Mason McTavish",
           "Pavel Buchnevich",
-          "Connor McMichael",
           "Logan Mailloux",
-          "Dalibor Dvorsky"
+          "Connor McMichael"
         ]
       },
       "goalies": [
@@ -1598,24 +1598,19 @@
       "name": "Utah Mammoth",
       "forwards": {
         "L1": {
-          "LW": "Lawson Crouse",
-          "C": "Nick Schmaltz",
+          "LW": "Nick Schmaltz",
+          "C": "Barrett Hayton",
           "RW": "Clayton Keller"
         },
         "L2": {
-          "LW": "JJ Peterka",
+          "LW": "Daniil But",
           "C": "Logan Cooley",
           "RW": "Dylan Guenther"
         },
         "L3": {
-          "LW": "Daniil But",
+          "LW": "Lawson Crouse",
           "C": "Jack McBain",
           "RW": "Michael Carcone"
-        },
-        "L4": {
-          "LW": "Brandon Tanev",
-          "C": "Barrett Hayton",
-          "RW": "Liam O'Brien"
         }
       },
       "defence": {
@@ -1645,12 +1640,12 @@
           "Barrett Hayton",
           "Daniil But",
           "MacKenzie Weegar",
-          "JJ Peterka"
+          "Sean Durzi"
         ]
       },
       "goalies": [
         "Karel Vejmelka",
-        "Jaxson Stauber"
+        "Sebastian Cossa"
       ]
     },
     "vancouver-canucks": {
@@ -1716,24 +1711,24 @@
       "name": "Vegas Golden Knights",
       "forwards": {
         "L1": {
-          "LW": "Pavel Dorofeyev",
+          "LW": "Ivan Barbashev",
           "C": "Jack Eichel",
           "RW": "Mark Stone"
         },
         "L2": {
-          "LW": "Ivan Barbashev",
-          "C": "Brett Howden",
+          "LW": "Brett Howden",
+          "C": "William Karlsson",
           "RW": "Mitch Marner"
         },
         "L3": {
-          "LW": "Tomas Hertl",
-          "C": "Colton Sissons",
-          "RW": "Reilly Smith"
+          "LW": "Braeden Bowman",
+          "C": "Tomas Hertl",
+          "RW": "Alexander Holtz"
         },
         "L4": {
-          "LW": "Cole Smith",
+          "LW": "Kai Uchacz",
           "C": "Nic Dowd",
-          "RW": "Braeden Bowman"
+          "RW": "Keegan Kolesar"
         }
       },
       "defence": {
@@ -1743,27 +1738,27 @@
         },
         "D2": {
           "LD": "Noah Hanifin",
-          "RD": "Rasmus Andersson"
+          "RD": "Kaedan Korczak"
         },
         "D3": {
-          "LD": "Jeremy Lauzon",
-          "RD": "Kaedan Korczak"
+          "LD": "Jeremy Davies",
+          "RD": "Jaycob Megna"
         }
       },
       "pp_units": {
         "PP1": [
-          "Mark Stone",
-          "Tomas Hertl",
-          "Pavel Dorofeyev",
           "Jack Eichel",
+          "Tomas Hertl",
+          "Mark Stone",
+          "Shea Theodore",
           "Mitch Marner"
         ],
         "PP2": [
           "Ivan Barbashev",
-          "Colton Sissons",
+          "William Karlsson",
           "Brett Howden",
-          "Rasmus Andersson",
-          "Shea Theodore"
+          "Alexander Holtz",
+          "Noah Hanifin"
         ]
       },
       "goalies": [
