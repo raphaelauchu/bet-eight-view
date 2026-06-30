@@ -1,9 +1,10 @@
 {
   "playerId": 8473512,
   "playerName": "Claude Giroux",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:11.698423",
+  "team": "OTT",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:38:39.270467",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 3,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.298,
-        "goalsPercentile": 0.0
+        "shotsOnGoal": 7,
+        "goals": 1,
+        "shootingPctg": 0.1429,
+        "sogPercentile": 0.4177,
+        "goalsPercentile": 0.4096
       },
       "rightCircle": {
-        "shotsOnGoal": 23,
+        "shotsOnGoal": 30,
         "goals": 1,
-        "shootingPctg": 0.0435,
-        "sogPercentile": 0.8909,
-        "goalsPercentile": 0.5293
+        "shootingPctg": 0.0333,
+        "sogPercentile": 0.8193,
+        "goalsPercentile": 0.2646
       },
       "cornerLeft": {
         "shotsOnGoal": 3,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 6,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.8127,
-        "goalsPercentile": 0.0
+        "shotsOnGoal": 23,
+        "goals": 2,
+        "shootingPctg": 0.087,
+        "sogPercentile": 0.9055,
+        "goalsPercentile": 0.4926
       },
       "total": {
-        "shotsOnGoal": 100,
-        "goals": 9,
-        "shootingPctg": 0.09
+        "shotsOnGoal": 128,
+        "goals": 12,
+        "shootingPctg": 0.0938
       },
       "totals": {
         "all": {
@@ -146,7 +147,7 @@
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.6323,
+        "sogPercentile": 0.3161,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {

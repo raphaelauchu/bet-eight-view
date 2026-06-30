@@ -1,9 +1,10 @@
 {
   "playerId": 8479525,
   "playerName": "Ross Colton",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:05.262823",
+  "team": "COL",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:46:06.046969",
   "reg": {
     "totalGames": 73,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.4316
       },
       "leftCircle": {
+        "shotsOnGoal": 31,
+        "goals": 1,
+        "shootingPctg": 0.0323,
+        "sogPercentile": 0.8779,
+        "goalsPercentile": 0.285
+      },
+      "rightCircle": {
         "shotsOnGoal": 16,
         "goals": 1,
         "shootingPctg": 0.0625,
-        "sogPercentile": 0.8094,
-        "goalsPercentile": 0.57
-      },
-      "rightCircle": {
-        "shotsOnGoal": 9,
-        "goals": 1,
-        "shootingPctg": 0.1111,
-        "sogPercentile": 0.5945,
-        "goalsPercentile": 0.5293
+        "sogPercentile": 0.6711,
+        "goalsPercentile": 0.2646
       },
       "cornerLeft": {
         "shotsOnGoal": 4,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 10,
-        "goals": 1,
-        "shootingPctg": 0.1,
-        "sogPercentile": 0.9283,
-        "goalsPercentile": 0.8893
+        "shotsOnGoal": 15,
+        "goals": 2,
+        "shootingPctg": 0.1333,
+        "sogPercentile": 0.8982,
+        "goalsPercentile": 0.8966
       },
       "total": {
-        "shotsOnGoal": 120,
-        "goals": 7,
-        "shootingPctg": 0.0583
+        "shotsOnGoal": 147,
+        "goals": 8,
+        "shootingPctg": 0.0544
       },
       "totals": {
         "all": {
@@ -136,17 +137,17 @@
         "goalsPercentile": 0.8386
       },
       "leftCircle": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.3991,
         "goalsPercentile": 0.0
       },
       "rightCircle": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.3812,
+        "sogPercentile": 0.1906,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -185,9 +186,9 @@
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 17,
+        "shotsOnGoal": 19,
         "goals": 2,
-        "shootingPctg": 0.1176
+        "shootingPctg": 0.1053
       },
       "totals": {
         "all": {

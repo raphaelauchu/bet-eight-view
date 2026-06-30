@@ -1,9 +1,10 @@
 {
   "playerId": 8480023,
   "playerName": "Robert Thomas",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:15.076181",
+  "team": "STL",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:36:26.473256",
   "reg": {
     "totalGames": 64,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.9381
       },
       "leftCircle": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 12,
         "goals": 2,
-        "shootingPctg": 0.2,
-        "sogPercentile": 0.6303,
-        "goalsPercentile": 0.7769
+        "shootingPctg": 0.1667,
+        "sogPercentile": 0.478,
+        "goalsPercentile": 0.3885
       },
       "rightCircle": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 14,
         "goals": 3,
-        "shootingPctg": 0.3,
-        "sogPercentile": 0.6417,
-        "goalsPercentile": 0.8811
+        "shootingPctg": 0.2143,
+        "sogPercentile": 0.5986,
+        "goalsPercentile": 0.4405
       },
       "cornerLeft": {
         "shotsOnGoal": 6,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
-        "goalsPercentile": 0.0
+        "shotsOnGoal": 4,
+        "goals": 1,
+        "shootingPctg": 0.25,
+        "sogPercentile": 0.3982,
+        "goalsPercentile": 0.452
       },
       "total": {
-        "shotsOnGoal": 88,
-        "goals": 23,
-        "shootingPctg": 0.2614
+        "shotsOnGoal": 98,
+        "goals": 24,
+        "shootingPctg": 0.2449
       },
       "totals": {
         "all": {

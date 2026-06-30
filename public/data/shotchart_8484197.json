@@ -1,9 +1,10 @@
 {
   "playerId": 8484197,
   "playerName": "Oliver Moore",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:25.085243",
+  "team": "CHI",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:48:07.167026",
   "reg": {
     "totalGames": 51,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
+        "shotsOnGoal": 14,
+        "goals": 2,
+        "shootingPctg": 0.1429,
+        "sogPercentile": 0.6083,
+        "goalsPercentile": 0.6946
+      },
+      "rightCircle": {
         "shotsOnGoal": 9,
         "goals": 1,
         "shootingPctg": 0.1111,
-        "sogPercentile": 0.5977,
-        "goalsPercentile": 0.57
-      },
-      "rightCircle": {
-        "shotsOnGoal": 7,
-        "goals": 1,
-        "shootingPctg": 0.1429,
-        "sogPercentile": 0.5081,
-        "goalsPercentile": 0.5293
+        "sogPercentile": 0.434,
+        "goalsPercentile": 0.2646
       },
       "cornerLeft": {
         "shotsOnGoal": 1,
@@ -67,13 +68,13 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.3046,
+        "sogPercentile": 0.1523,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 49,
-        "goals": 4,
-        "shootingPctg": 0.0816
+        "shotsOnGoal": 56,
+        "goals": 5,
+        "shootingPctg": 0.0893
       },
       "totals": {
         "all": {

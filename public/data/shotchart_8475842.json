@@ -1,9 +1,10 @@
 {
   "playerId": 8475842,
   "playerName": "Sam Carrick",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:04.308310",
+  "team": "NYR,BUF",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:49:52.892391",
   "reg": {
     "totalGames": 73,
     "szn": {
@@ -25,15 +26,15 @@
         "shotsOnGoal": 2,
         "goals": 1,
         "shootingPctg": 0.5,
-        "sogPercentile": 0.2199,
-        "goalsPercentile": 0.57
+        "sogPercentile": 0.11,
+        "goalsPercentile": 0.285
       },
       "rightCircle": {
-        "shotsOnGoal": 8,
-        "goals": 2,
-        "shootingPctg": 0.25,
-        "sogPercentile": 0.5521,
-        "goalsPercentile": 0.7687
+        "shotsOnGoal": 18,
+        "goals": 3,
+        "shootingPctg": 0.1667,
+        "sogPercentile": 0.7092,
+        "goalsPercentile": 0.8086
       },
       "cornerLeft": {
         "shotsOnGoal": 2,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 6,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.4561,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 50,
-        "goals": 7,
-        "shootingPctg": 0.14
+        "shotsOnGoal": 66,
+        "goals": 8,
+        "shootingPctg": 0.1212
       },
       "totals": {
         "all": {
@@ -143,10 +144,10 @@
         "goalsPercentile": 0.0
       },
       "rightCircle": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.2758,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -185,7 +186,7 @@
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0
       },

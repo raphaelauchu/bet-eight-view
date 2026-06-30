@@ -1593,9 +1593,9 @@ const getMatchsChart = () => {
 
   const ZONE_KEYS = [
     'SLOT', 'HIGH SLOT',
-    'L CIRCLE', 'R CIRCLE',
-    'L CORNER', 'R CORNER',
-    'L POINT', 'R POINT', 'C POINT',
+    'R CIRCLE', 'L CIRCLE',
+    'R CORNER', 'L CORNER',
+    'R POINT', 'L POINT', 'C POINT',
   ];
   const zones = currentShotData
   ? ZONE_KEYS.map(label => ({

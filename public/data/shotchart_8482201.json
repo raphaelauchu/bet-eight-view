@@ -1,9 +1,10 @@
 {
   "playerId": 8482201,
   "playerName": "Gage Goncalves",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:12.027799",
+  "team": "TBL",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:42:47.416125",
   "reg": {
     "totalGames": 74,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 6,
+        "shotsOnGoal": 8,
         "goals": 1,
-        "shootingPctg": 0.1667,
-        "sogPercentile": 0.4756,
-        "goalsPercentile": 0.57
+        "shootingPctg": 0.125,
+        "sogPercentile": 0.4007,
+        "goalsPercentile": 0.285
       },
       "rightCircle": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 12,
         "goals": 1,
-        "shootingPctg": 0.1111,
-        "sogPercentile": 0.5945,
-        "goalsPercentile": 0.5293
+        "shootingPctg": 0.0833,
+        "sogPercentile": 0.5342,
+        "goalsPercentile": 0.2646
       },
       "cornerLeft": {
         "shotsOnGoal": 3,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.3322,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 66,
+        "shotsOnGoal": 74,
         "goals": 11,
-        "shootingPctg": 0.1667
+        "shootingPctg": 0.1486
       },
       "totals": {
         "all": {
@@ -139,14 +140,14 @@
         "shotsOnGoal": 4,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.852,
+        "sogPercentile": 0.426,
         "goalsPercentile": 0.0
       },
       "rightCircle": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.2758,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -185,9 +186,9 @@
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 10,
         "goals": 1,
-        "shootingPctg": 0.1111
+        "shootingPctg": 0.1
       },
       "totals": {
         "all": {

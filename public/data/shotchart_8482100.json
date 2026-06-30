@@ -1,9 +1,10 @@
 {
   "playerId": 8482100,
   "playerName": "Alexander Nikishin",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:13.330548",
+  "team": "CAR",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:42:42.999555",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.8519
       },
       "leftCircle": {
-        "shotsOnGoal": 7,
+        "shotsOnGoal": 16,
         "goals": 1,
-        "shootingPctg": 0.1429,
-        "sogPercentile": 0.7253,
-        "goalsPercentile": 0.7222
+        "shootingPctg": 0.0625,
+        "sogPercentile": 0.7793,
+        "goalsPercentile": 0.3611
       },
       "rightCircle": {
-        "shotsOnGoal": 13,
+        "shotsOnGoal": 15,
         "goals": 2,
-        "shootingPctg": 0.1538,
-        "sogPercentile": 0.9167,
-        "goalsPercentile": 0.8951
+        "shootingPctg": 0.1333,
+        "sogPercentile": 0.7284,
+        "goalsPercentile": 0.4476
       },
       "cornerLeft": {
         "shotsOnGoal": 1,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.8148
       },
       "pointCenter": {
-        "shotsOnGoal": 30,
+        "shotsOnGoal": 32,
         "goals": 3,
-        "shootingPctg": 0.1,
-        "sogPercentile": 0.9012,
-        "goalsPercentile": 0.929
+        "shootingPctg": 0.0938,
+        "sogPercentile": 0.8348,
+        "goalsPercentile": 0.4645
       },
       "total": {
-        "shotsOnGoal": 106,
+        "shotsOnGoal": 119,
         "goals": 11,
-        "shootingPctg": 0.1038
+        "shootingPctg": 0.0924
       },
       "totals": {
         "all": {
@@ -136,17 +137,17 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 0,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
-        "goalsPercentile": 0.0
-      },
-      "rightCircle": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.623,
+        "sogPercentile": 0.3155,
+        "goalsPercentile": 0.0
+      },
+      "rightCircle": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.664,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -178,14 +179,14 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 6,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8934,
+        "sogPercentile": 0.8524,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 9,
+        "shotsOnGoal": 12,
         "goals": 0,
         "shootingPctg": 0.0
       },

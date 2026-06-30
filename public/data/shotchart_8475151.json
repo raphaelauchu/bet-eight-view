@@ -1,9 +1,10 @@
 {
   "playerId": 8475151,
   "playerName": "Kyle Palmieri",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:12.795644",
+  "team": "NYI",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:48:43.242479",
   "reg": {
     "totalGames": 25,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.4316
       },
       "leftCircle": {
+        "shotsOnGoal": 12,
+        "goals": 1,
+        "shootingPctg": 0.0833,
+        "sogPercentile": 0.478,
+        "goalsPercentile": 0.285
+      },
+      "rightCircle": {
         "shotsOnGoal": 10,
         "goals": 1,
         "shootingPctg": 0.1,
-        "sogPercentile": 0.6303,
-        "goalsPercentile": 0.57
-      },
-      "rightCircle": {
-        "shotsOnGoal": 6,
-        "goals": 1,
-        "shootingPctg": 0.1667,
-        "sogPercentile": 0.4528,
-        "goalsPercentile": 0.5293
+        "sogPercentile": 0.5041,
+        "goalsPercentile": 0.2646
       },
       "cornerLeft": {
         "shotsOnGoal": 6,
@@ -71,9 +72,9 @@
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 63,
+        "shotsOnGoal": 69,
         "goals": 6,
-        "shootingPctg": 0.0952
+        "shootingPctg": 0.087
       },
       "totals": {
         "all": {

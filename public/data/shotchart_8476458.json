@@ -1,9 +1,10 @@
 {
   "playerId": 8476458,
   "playerName": "Ryan Strome",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:25.798667",
+  "team": "ANA,CGY",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:47:32.934254",
   "reg": {
     "totalGames": 52,
     "szn": {
@@ -22,17 +23,17 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 2,
         "goals": 1,
-        "shootingPctg": 1.0,
-        "sogPercentile": 0.1417,
-        "goalsPercentile": 0.57
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.1743,
+        "goalsPercentile": 0.285
       },
       "rightCircle": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 14,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4088,
+        "sogPercentile": 0.6172,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4886,
+        "sogPercentile": 0.3982,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 44,
+        "shotsOnGoal": 55,
         "goals": 8,
-        "shootingPctg": 0.1818
+        "shootingPctg": 0.1455
       },
       "totals": {
         "all": {

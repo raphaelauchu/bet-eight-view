@@ -1,9 +1,10 @@
 {
   "playerId": 8476473,
   "playerName": "Connor Murphy",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:03.462456",
+  "team": "CHI,EDM",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:49:07.704194",
   "reg": {
     "totalGames": 80,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.8519
       },
       "leftCircle": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.2778,
+        "sogPercentile": 0.3179,
         "goalsPercentile": 0.0
       },
       "rightCircle": {
-        "shotsOnGoal": 5,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.6512,
-        "goalsPercentile": 0.0
+        "shotsOnGoal": 13,
+        "goals": 1,
+        "shootingPctg": 0.0769,
+        "sogPercentile": 0.7546,
+        "goalsPercentile": 0.4552
       },
       "cornerLeft": {
         "shotsOnGoal": 0,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.8148
       },
       "pointCenter": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 12,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.5401,
+        "sogPercentile": 0.6543,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 53,
-        "goals": 4,
-        "shootingPctg": 0.0755
+        "shotsOnGoal": 64,
+        "goals": 5,
+        "shootingPctg": 0.0781
       },
       "totals": {
         "all": {
@@ -143,10 +144,10 @@
         "goalsPercentile": 0.0
       },
       "rightCircle": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.623,
+        "sogPercentile": 0.75,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -181,13 +182,13 @@
         "shotsOnGoal": 1,
         "goals": 1,
         "shootingPctg": 1.0,
-        "sogPercentile": 0.4344,
-        "goalsPercentile": 0.9426
+        "sogPercentile": 0.2172,
+        "goalsPercentile": 0.4713
       },
       "total": {
-        "shotsOnGoal": 8,
+        "shotsOnGoal": 10,
         "goals": 2,
-        "shootingPctg": 0.25
+        "shootingPctg": 0.2
       },
       "totals": {
         "all": {

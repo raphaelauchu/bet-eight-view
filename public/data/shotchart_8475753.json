@@ -1,9 +1,10 @@
 {
   "playerId": 8475753,
   "playerName": "Justin Faulk",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:14.530882",
+  "team": "STL,DET",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:40:40.901004",
   "reg": {
     "totalGames": 78,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.9198
       },
       "leftCircle": {
-        "shotsOnGoal": 9,
-        "goals": 0,
-        "shootingPctg": 0.0,
-        "sogPercentile": 0.7963,
-        "goalsPercentile": 0.0
+        "shotsOnGoal": 12,
+        "goals": 1,
+        "shootingPctg": 0.0833,
+        "sogPercentile": 0.7037,
+        "goalsPercentile": 0.4552
       },
       "rightCircle": {
-        "shotsOnGoal": 29,
+        "shotsOnGoal": 39,
         "goals": 5,
-        "shootingPctg": 0.1724,
-        "sogPercentile": 0.9969,
-        "goalsPercentile": 0.9907
+        "shootingPctg": 0.1282,
+        "sogPercentile": 0.9383,
+        "goalsPercentile": 0.4954
       },
       "cornerLeft": {
         "shotsOnGoal": 2,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.8148
       },
       "pointCenter": {
-        "shotsOnGoal": 30,
+        "shotsOnGoal": 34,
         "goals": 3,
-        "shootingPctg": 0.1,
-        "sogPercentile": 0.9012,
-        "goalsPercentile": 0.929
+        "shootingPctg": 0.0882,
+        "sogPercentile": 0.9228,
+        "goalsPercentile": 0.4645
       },
       "total": {
-        "shotsOnGoal": 126,
-        "goals": 14,
-        "shootingPctg": 0.1111
+        "shotsOnGoal": 143,
+        "goals": 15,
+        "shootingPctg": 0.1049
       },
       "totals": {
         "all": {

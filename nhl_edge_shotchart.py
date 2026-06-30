@@ -75,9 +75,10 @@ AREA_TO_ZONE = {
     "L Point":                "pointLeft",
     "R Point":                "pointRight",
     "Center Point":           "pointCenter",
-    # Zones ignorées / hors territoire offensif utile :
-    # "Behind the Net", "Beyond Red Line", "Offensive Neutral Zone",
-    # "Outside L", "Outside R"
+    "Outside L":              "leftCircle",
+    "Outside R":              "rightCircle",
+    "Offensive Neutral Zone": "pointCenter",
+    # "Behind the Net" et "Beyond Red Line" ignorés (derrière le filet)
 }
 
 ZONES_OUTPUT = [

@@ -1,9 +1,10 @@
 {
   "playerId": 8478133,
   "playerName": "Jake Evans",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:06.865670",
+  "team": "MTL",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:46:15.829628",
   "reg": {
     "totalGames": 68,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 6,
-        "goals": 1,
-        "shootingPctg": 0.1667,
-        "sogPercentile": 0.4756,
-        "goalsPercentile": 0.57
-      },
-      "rightCircle": {
         "shotsOnGoal": 7,
         "goals": 1,
         "shootingPctg": 0.1429,
-        "sogPercentile": 0.5081,
-        "goalsPercentile": 0.5293
+        "sogPercentile": 0.3412,
+        "goalsPercentile": 0.285
+      },
+      "rightCircle": {
+        "shotsOnGoal": 11,
+        "goals": 2,
+        "shootingPctg": 0.1818,
+        "sogPercentile": 0.5317,
+        "goalsPercentile": 0.6889
       },
       "cornerLeft": {
         "shotsOnGoal": 1,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.943
       },
       "pointCenter": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.3322,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 58,
-        "goals": 8,
-        "shootingPctg": 0.1379
+        "shotsOnGoal": 66,
+        "goals": 9,
+        "shootingPctg": 0.1364
       },
       "totals": {
         "all": {
@@ -139,15 +140,15 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.3946,
+        "sogPercentile": 0.1973,
         "goalsPercentile": 0.0
       },
       "rightCircle": {
-        "shotsOnGoal": 5,
+        "shotsOnGoal": 7,
         "goals": 1,
-        "shootingPctg": 0.2,
-        "sogPercentile": 0.9238,
-        "goalsPercentile": 0.8744
+        "shootingPctg": 0.1429,
+        "sogPercentile": 0.8543,
+        "goalsPercentile": 0.4372
       },
       "cornerLeft": {
         "shotsOnGoal": 1,
@@ -178,16 +179,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 0,
+        "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.0,
+        "sogPercentile": 0.3318,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 16,
+        "shotsOnGoal": 19,
         "goals": 2,
-        "shootingPctg": 0.125
+        "shootingPctg": 0.1053
       },
       "totals": {
         "all": {

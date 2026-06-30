@@ -1,9 +1,10 @@
 {
   "playerId": 8476906,
   "playerName": "Shayne Gostisbehere",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:13.600495",
+  "team": "CAR",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-06-30T23:38:31.035538",
   "reg": {
     "totalGames": 55,
     "szn": {
@@ -22,18 +23,18 @@
         "goalsPercentile": 0.9198
       },
       "leftCircle": {
+        "shotsOnGoal": 21,
+        "goals": 4,
+        "shootingPctg": 0.1905,
+        "sogPercentile": 0.8673,
+        "goalsPercentile": 0.9352
+      },
+      "rightCircle": {
         "shotsOnGoal": 11,
         "goals": 3,
         "shootingPctg": 0.2727,
-        "sogPercentile": 0.8704,
-        "goalsPercentile": 0.9599
-      },
-      "rightCircle": {
-        "shotsOnGoal": 9,
-        "goals": 3,
-        "shootingPctg": 0.3333,
-        "sogPercentile": 0.8395,
-        "goalsPercentile": 0.9599
+        "sogPercentile": 0.6898,
+        "goalsPercentile": 0.4799
       },
       "cornerLeft": {
         "shotsOnGoal": 3,
@@ -64,16 +65,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 20,
+        "shotsOnGoal": 23,
         "goals": 2,
-        "shootingPctg": 0.1,
-        "sogPercentile": 0.8025,
-        "goalsPercentile": 0.8457
+        "shootingPctg": 0.087,
+        "sogPercentile": 0.8457,
+        "goalsPercentile": 0.4229
       },
       "total": {
-        "shotsOnGoal": 93,
-        "goals": 12,
-        "shootingPctg": 0.129
+        "shotsOnGoal": 108,
+        "goals": 13,
+        "shootingPctg": 0.1204
       },
       "totals": {
         "all": {
@@ -136,17 +137,17 @@
         "goalsPercentile": 0.0
       },
       "leftCircle": {
-        "shotsOnGoal": 7,
+        "shotsOnGoal": 10,
         "goals": 2,
-        "shootingPctg": 0.2857,
-        "sogPercentile": 1.0,
-        "goalsPercentile": 1.0
+        "shootingPctg": 0.2,
+        "sogPercentile": 0.9549,
+        "goalsPercentile": 0.5
       },
       "rightCircle": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.623,
+        "sogPercentile": 0.664,
         "goalsPercentile": 0.0
       },
       "cornerLeft": {
@@ -181,13 +182,13 @@
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8934,
+        "sogPercentile": 0.4467,
         "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 22,
+        "shotsOnGoal": 26,
         "goals": 3,
-        "shootingPctg": 0.1364
+        "shootingPctg": 0.1154
       },
       "totals": {
         "all": {
