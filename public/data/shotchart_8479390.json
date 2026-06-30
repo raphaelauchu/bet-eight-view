@@ -1,10 +1,9 @@
 {
   "playerId": 8479390,
   "playerName": "Taylor Raddysh",
-  "team": "NYR",
-  "position": "R",
-  "season": 2026,
-  "lastUpdated": "2026-06-30T23:47:47.139583",
+  "team": "AWAY",
+  "season": 2025,
+  "lastUpdated": "2026-06-30T12:12:04.125150",
   "reg": {
     "totalGames": 68,
     "szn": {
@@ -23,18 +22,18 @@
         "goalsPercentile": 0.4316
       },
       "leftCircle": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.2199,
+        "goalsPercentile": 0.57
+      },
+      "rightCircle": {
         "shotsOnGoal": 4,
         "goals": 1,
         "shootingPctg": 0.25,
-        "sogPercentile": 0.2728,
-        "goalsPercentile": 0.285
-      },
-      "rightCircle": {
-        "shotsOnGoal": 8,
-        "goals": 1,
-        "shootingPctg": 0.125,
-        "sogPercentile": 0.4609,
-        "goalsPercentile": 0.2646
+        "sogPercentile": 0.3664,
+        "goalsPercentile": 0.5293
       },
       "cornerLeft": {
         "shotsOnGoal": 0,
@@ -68,13 +67,13 @@
         "shotsOnGoal": 3,
         "goals": 1,
         "shootingPctg": 0.3333,
-        "sogPercentile": 0.2997,
-        "goalsPercentile": 0.4446
+        "sogPercentile": 0.5993,
+        "goalsPercentile": 0.8893
       },
       "total": {
-        "shotsOnGoal": 50,
+        "shotsOnGoal": 44,
         "goals": 9,
-        "shootingPctg": 0.18
+        "shootingPctg": 0.2045
       },
       "totals": {
         "all": {

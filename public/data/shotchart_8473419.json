@@ -1,10 +1,9 @@
 {
   "playerId": 8473419,
   "playerName": "Brad Marchand",
-  "team": "FLA",
-  "position": "L",
-  "season": 2026,
-  "lastUpdated": "2026-06-30T23:37:47.560717",
+  "team": "AWAY",
+  "season": 2025,
+  "lastUpdated": "2026-06-30T12:12:03.168454",
   "reg": {
     "totalGames": 52,
     "szn": {
@@ -23,18 +22,18 @@
         "goalsPercentile": 0.9381
       },
       "leftCircle": {
-        "shotsOnGoal": 26,
-        "goals": 2,
-        "shootingPctg": 0.0769,
-        "sogPercentile": 0.8233,
-        "goalsPercentile": 0.6946
-      },
-      "rightCircle": {
         "shotsOnGoal": 17,
         "goals": 1,
         "shootingPctg": 0.0588,
-        "sogPercentile": 0.6197,
-        "goalsPercentile": 0.2646
+        "sogPercentile": 0.8274,
+        "goalsPercentile": 0.57
+      },
+      "rightCircle": {
+        "shotsOnGoal": 14,
+        "goals": 1,
+        "shootingPctg": 0.0714,
+        "sogPercentile": 0.7655,
+        "goalsPercentile": 0.5293
       },
       "cornerLeft": {
         "shotsOnGoal": 1,
@@ -65,16 +64,16 @@
         "goalsPercentile": 0.0
       },
       "pointCenter": {
-        "shotsOnGoal": 9,
-        "goals": 1,
-        "shootingPctg": 0.1111,
-        "sogPercentile": 0.7842,
-        "goalsPercentile": 0.452
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.772,
+        "goalsPercentile": 0.0
       },
       "total": {
-        "shotsOnGoal": 134,
-        "goals": 25,
-        "shootingPctg": 0.1866
+        "shotsOnGoal": 118,
+        "goals": 23,
+        "shootingPctg": 0.1949
       },
       "totals": {
         "all": {
