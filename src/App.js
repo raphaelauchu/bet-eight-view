@@ -5,6 +5,7 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses from './Analyses';
 import { supabase } from './supabase';
+import { getT } from './i18n';
  
 function MockupJoueur() {
   return (
@@ -1389,6 +1390,7 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
+  const [lang, setLang] = useState('en');
  
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1409,7 +1411,7 @@ function App() {
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
-        <Auth onConnexion={() => { setShowAuth(false); setPage('dashboard'); }} />
+        <Auth onConnexion={() => { setShowAuth(false); setPage('dashboard'); }} lang={lang} />
       </div>
     );
   }
@@ -1530,6 +1532,14 @@ function App() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', backgroundColor: '#111', borderRadius: '8px', padding: '2px', border: '1px solid #222' }}>
+            {['fr', 'en'].map(l => (
+              <button key={l} onClick={() => setLang(l)}
+                style={{ padding: '4px 10px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : 'transparent', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
           <button onClick={() => setShowAuth(true)} style={{ backgroundColor: 'transparent', color: '#9ca3af', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>Sign in</button>
           <button onClick={() => setShowAuth(true)} style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>Get started →</button>
         </div>
@@ -1541,7 +1551,7 @@ function App() {
 
       {page === 'home' && <LandingPage onCommencer={() => setShowAuth(true)} onVoirPricing={() => setPage('pricing')} onVoirAnalyses={() => setPage('analyses')} nombreMatchs={nombreMatchs} />}
       {page === 'analyses' && <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />}
-      {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} />}
+      {page === 'pricing' && <Pricing onChoisirPlan={(plan) => console.log('Plan choisi:', plan)} lang={lang} />}
     </div>
   );
 }

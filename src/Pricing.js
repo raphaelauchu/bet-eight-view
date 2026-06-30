@@ -1,10 +1,11 @@
 import React from 'react';
+import { getT } from './i18n';
 
-function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisir }) {
+function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisir, labelPopular, labelMonth, labelChoose, labelFree }) {
   return (
     <div style={{
       backgroundColor: populaire ? '#1e1b4b' : '#1a1a1a',
-      border: populaire ? '2px solid #6366f1' : '1px solid #333',
+      border: populaire ? '2px solid #f97316' : '1px solid #333',
       borderRadius: '16px',
       padding: '32px',
       flex: 1,
@@ -17,14 +18,15 @@ function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisi
           top: '-14px',
           left: '50%',
           transform: 'translateX(-50%)',
-          backgroundColor: '#6366f1',
+          backgroundColor: '#f97316',
           color: 'white',
           padding: '4px 16px',
           borderRadius: '20px',
           fontSize: '12px',
           fontWeight: 'bold',
+          whiteSpace: 'nowrap',
         }}>
-          ⭐ Le plus populaire
+          {labelPopular}
         </div>
       )}
 
@@ -32,8 +34,8 @@ function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisi
       <p style={{ color: '#888', margin: '0 0 24px', fontSize: '14px' }}>{description}</p>
 
       <div style={{ marginBottom: '24px' }}>
-        <span style={{ fontSize: '48px', fontWeight: 'bold', color: populaire ? '#a5b4fc' : 'white' }}>${prix}</span>
-        <span style={{ color: '#888', fontSize: '14px' }}>/mois</span>
+        <span style={{ fontSize: '48px', fontWeight: 'bold', color: populaire ? '#fdba74' : 'white' }}>${prix}</span>
+        <span style={{ color: '#888', fontSize: '14px' }}>{labelMonth}</span>
       </div>
 
       <button
@@ -41,7 +43,7 @@ function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisi
         style={{
           width: '100%',
           padding: '14px',
-          backgroundColor: populaire ? '#6366f1' : 'transparent',
+          background: populaire ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'transparent',
           color: 'white',
           border: populaire ? 'none' : '1px solid #444',
           borderRadius: '8px',
@@ -50,7 +52,7 @@ function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisi
           marginBottom: '24px',
         }}
       >
-        {prix === 0 ? 'Commencer gratuitement' : 'Choisir ce plan'}
+        {prix === 0 ? labelFree : labelChoose}
       </button>
 
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -65,58 +67,15 @@ function PlanCard({ nom, prix, description, fonctionnalites, populaire, onChoisi
   );
 }
 
-function Pricing({ onChoisirPlan }) {
-  const plans = [
-    {
-      nom: 'Gratuit',
-      prix: 0,
-      description: 'Parfait pour découvrir la plateforme',
-      fonctionnalites: [
-        'Matchs NHL du jour',
-        'Ticker en direct',
-        'Cotes de 2 bookmakers',
-        'Statistiques de base',
-        'Accès communauté',
-      ],
-      populaire: false,
-    },
-    {
-      nom: 'Pro',
-      prix: 19,
-      description: 'Pour le parieur sérieux',
-      fonctionnalites: [
-        'Tout du plan Gratuit',
-        'Cotes de tous les bookmakers',
-        'Modèles statistiques avancés',
-        'Alertes en temps réel',
-        'Value bets automatiques',
-        'Historique complet',
-        'Support prioritaire',
-      ],
-      populaire: true,
-    },
-    {
-      nom: 'Elite',
-      prix: 49,
-      description: 'Pour les professionnels',
-      fonctionnalites: [
-        'Tout du plan Pro',
-        'Modèles IA prédictifs',
-        'Backtesting de stratégies',
-        'API personnelle',
-        'Accès données historiques',
-        'Gestionnaire de bankroll',
-        'Support dédié 24/7',
-      ],
-      populaire: false,
-    },
-  ];
+function Pricing({ onChoisirPlan, lang = 'en' }) {
+  const t = getT(lang);
+  const plans = t('plans');
 
   return (
     <div style={{ padding: '64px 32px' }}>
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-        <h2 style={{ fontSize: '40px', margin: '0 0 16px' }}>Choisis ton plan</h2>
-        <p style={{ color: '#888', fontSize: '18px' }}>Commence gratuitement, upgrade quand tu es prêt.</p>
+        <h2 style={{ fontSize: '40px', margin: '0 0 16px' }}>{t('pricing_title')}</h2>
+        <p style={{ color: '#888', fontSize: '18px' }}>{t('pricing_sub')}</p>
       </div>
 
       <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -125,6 +84,10 @@ function Pricing({ onChoisirPlan }) {
             key={index}
             {...plan}
             onChoisir={() => onChoisirPlan(plan)}
+            labelPopular={t('pricing_popular')}
+            labelMonth={t('pricing_month')}
+            labelChoose={t('pricing_choose')}
+            labelFree={t('pricing_free_btn')}
           />
         ))}
       </div>

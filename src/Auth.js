@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { supabase } from './supabase';
+import { getT } from './i18n';
 
-function Auth({ onConnexion }) {
-  const [mode, setMode] = useState('login');
+function Auth({ onConnexion, lang = 'en' }) {
+  const t = getT(lang);
+  const [mode, setMode] = useState('login'); // login | signup | forgot
   const [identifier, setIdentifier] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [email, setEmail] = useState('');
@@ -10,11 +12,23 @@ function Auth({ onConnexion }) {
   const [chargement, setChargement] = useState(false);
   const [confirmation, setConfirmation] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleSoumission(e) {
     e.preventDefault();
     setChargement(true);
     setErreur('');
+
+    if (mode === 'forgot') {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        identifier.includes('@') ? identifier : email,
+        { redirectTo: window.location.origin }
+      );
+      if (error) setErreur(error.message);
+      else setResetSent(true);
+      setChargement(false);
+      return;
+    }
 
     if (mode === 'signup') {
       const { data: signUpData, error } = await supabase.auth.signUp({ email, password: motDePasse });
@@ -62,6 +76,24 @@ function Auth({ onConnexion }) {
     );
   }
 
+  if (resetSent) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#080808', padding: '20px' }}>
+        <div style={{ backgroundColor: '#0d0d0d', padding: '40px 32px', borderRadius: '20px', textAlign: 'center', maxWidth: '380px', width: '100%', border: '1px solid #161616' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📧</div>
+          <h2 style={{ color: 'white', marginBottom: '12px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('auth_reset_sent_title')}</h2>
+          <p style={{ color: '#555', lineHeight: '1.6', marginBottom: '24px' }}>
+            {t('auth_reset_sent_text')} <strong style={{ color: '#f97316' }}>{identifier || email}</strong>, {t('auth_reset_sent_text2')}
+          </p>
+          <button onClick={() => { setResetSent(false); setMode('login'); }}
+            style={{ background: 'none', border: 'none', color: '#f97316', cursor: 'pointer', fontSize: '14px', textDecoration: 'underline' }}>
+            {t('auth_back')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#080808', padding: '20px' }}>
       <div style={{ width: '100%', maxWidth: '380px' }}>
@@ -72,17 +104,23 @@ function Auth({ onConnexion }) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', marginBottom: '28px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '4px', border: '1px solid #161616' }}>
-          {[['login', 'Sign in'], ['signup', 'Sign up']].map(([m, label]) => (
-            <button key={m} onClick={() => { setMode(m); setErreur(''); }}
-              style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '9px', cursor: 'pointer', backgroundColor: mode === m ? '#f97316' : 'transparent', color: mode === m ? 'white' : '#555', fontSize: '14px', fontWeight: mode === m ? '700' : '400' }}>
-              {label}
-            </button>
-          ))}
-        </div>
+        {mode !== 'forgot' && (
+          <div style={{ display: 'flex', marginBottom: '28px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '4px', border: '1px solid #161616' }}>
+            {[['login', 'Sign in'], ['signup', 'Sign up']].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setErreur(''); }}
+                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '9px', cursor: 'pointer', backgroundColor: mode === m ? '#f97316' : 'transparent', color: mode === m ? 'white' : '#555', fontSize: '14px', fontWeight: mode === m ? '700' : '400' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {mode === 'forgot' && (
+          <p style={{ color: '#555', fontSize: '14px', textAlign: 'center', marginBottom: '28px', lineHeight: '1.6' }}>{t('auth_reset_sub')}</p>
+        )}
 
         <form onSubmit={handleSoumission} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {mode === 'login' ? (
+          {mode === 'login' || mode === 'forgot' ? (
             <div>
               <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Email or Username</label>
               <input value={identifier} onChange={e => setIdentifier(e.target.value)}
@@ -100,20 +138,31 @@ function Auth({ onConnexion }) {
             </div>
           )}
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
-            <div style={{ position: 'relative' }}>
-              <input type={showPass ? 'text' : 'password'} value={motDePasse}
-                onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" required
-                style={{ ...inp, paddingRight: '48px' }}
-                onFocus={e => e.target.style.borderColor = '#f97316'}
-                onBlur={e => e.target.style.borderColor = '#222'} />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: '16px' }}>
-                {showPass ? '🙈' : '👁'}
+          {mode !== 'forgot' && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input type={showPass ? 'text' : 'password'} value={motDePasse}
+                  onChange={e => setMotDePasse(e.target.value)} placeholder="••••••••" required
+                  style={{ ...inp, paddingRight: '48px' }}
+                  onFocus={e => e.target.style.borderColor = '#f97316'}
+                  onBlur={e => e.target.style.borderColor = '#222'} />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', backgroundColor: 'transparent', border: 'none', color: '#555', cursor: 'pointer', fontSize: '16px' }}>
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <div style={{ textAlign: 'right', marginTop: '-6px' }}>
+              <button type="button" onClick={() => { setMode('forgot'); setErreur(''); }}
+                style={{ background: 'none', border: 'none', color: '#f97316', cursor: 'pointer', fontSize: '13px', padding: 0 }}>
+                {t('auth_forgot')}
               </button>
             </div>
-          </div>
+          )}
 
           {erreur && (
             <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
@@ -123,13 +172,22 @@ function Auth({ onConnexion }) {
 
           <button type="submit" disabled={chargement}
             style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', opacity: chargement ? 0.7 : 1, marginTop: '4px' }}>
-            {chargement ? 'Loading...' : mode === 'login' ? 'Sign in →' : 'Create account →'}
+            {chargement ? 'Loading...' : mode === 'forgot' ? t('auth_reset_btn') : mode === 'login' ? 'Sign in →' : 'Create account →'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', color: '#333', fontSize: '12px', marginTop: '24px' }}>
-          By continuing you agree to our Terms of Service
-        </p>
+        {mode === 'forgot' ? (
+          <p style={{ textAlign: 'center', marginTop: '20px' }}>
+            <button onClick={() => { setMode('login'); setErreur(''); }}
+              style={{ background: 'none', border: 'none', color: '#f97316', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}>
+              {t('auth_back')}
+            </button>
+          </p>
+        ) : (
+          <p style={{ textAlign: 'center', color: '#333', fontSize: '12px', marginTop: '24px' }}>
+            By continuing you agree to our Terms of Service
+          </p>
+        )}
       </div>
     </div>
   );
