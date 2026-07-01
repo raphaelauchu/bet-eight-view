@@ -63,29 +63,31 @@ DELAY      = 0.35
 # ---------------------------------------------------------------------------
 
 AREA_TO_ZONE = {
-    "Low Slot":               "slot",
-    "Crease":                 "slot",
+    "Low Slot":               "lowSlot",
+    "Crease":                 "crease",
     "High Slot":              "highSlot",
-    "L Circle":               "leftCircle",
-    "R Circle":               "rightCircle",
-    "L Net Side":             "cornerLeft",
-    "L Corner":               "cornerLeft",
-    "R Net Side":             "cornerRight",
-    "R Corner":               "cornerRight",
-    "L Point":                "pointLeft",
-    "R Point":                "pointRight",
-    "Center Point":           "pointCenter",
-    "Outside L":              "leftCircle",
-    "Outside R":              "rightCircle",
-    "Offensive Neutral Zone": "pointCenter",
-    # "Behind the Net" et "Beyond Red Line" ignorés (derrière le filet)
+    "L Circle":               "lCircle",
+    "R Circle":               "rCircle",
+    "L Net Side":             "lNetSide",
+    "L Corner":               "lCorner",
+    "R Net Side":             "rNetSide",
+    "R Corner":               "rCorner",
+    "L Point":                "lPoint",
+    "R Point":                "rPoint",
+    "Center Point":           "centerPoint",
+    "Outside L":              "outsideL",
+    "Outside R":              "outsideR",
+    "Offensive Neutral Zone": "offNeutralZone",
+    # "Behind the Net" et "Beyond Red Line" ignorés
 }
 
 ZONES_OUTPUT = [
-    "slot", "highSlot",
-    "leftCircle", "rightCircle",
-    "cornerLeft", "cornerRight",
-    "pointLeft", "pointRight", "pointCenter",
+    "lowSlot", "crease", "highSlot",
+    "lCircle", "rCircle",
+    "lNetSide", "lCorner",
+    "rNetSide", "rCorner",
+    "lPoint", "rPoint", "centerPoint",
+    "outsideL", "outsideR", "offNeutralZone",
 ]
 
 SESSION = requests.Session()

@@ -89,22 +89,30 @@ export async function getHitsBlocksParMatch(playerId, gameLog) {
 export async function getShotChartData(playerId, gameIds, onglet = 'SZN', modeStats = 'reg') {
   // Mapping zones NHL EDGE → labels affichés dans le SVG
   const ZONES = [
-    'slot', 'highSlot',
-    'leftCircle', 'rightCircle',
-    'cornerLeft', 'cornerRight',
-    'pointLeft', 'pointRight', 'pointCenter',
+    'lowSlot', 'crease', 'highSlot',
+    'lCircle', 'rCircle',
+    'lNetSide', 'lCorner',
+    'rNetSide', 'rCorner',
+    'lPoint', 'rPoint', 'centerPoint',
+    'outsideL', 'outsideR', 'offNeutralZone',
   ];
- 
+
   const ZONE_LABELS = {
-    slot:        'SLOT',
-    highSlot:    'HIGH SLOT',
-    leftCircle:  'L CIRCLE',
-    rightCircle: 'R CIRCLE',
-    cornerLeft:  'L CORNER',
-    cornerRight: 'R CORNER',
-    pointLeft:   'L POINT',
-    pointRight:  'R POINT',
-    pointCenter: 'C POINT',
+    lowSlot:        'LOW SLOT',
+    crease:         'CREASE',
+    highSlot:       'HIGH SLOT',
+    lCircle:        'L CIRCLE',
+    rCircle:        'R CIRCLE',
+    lNetSide:       'L NET SIDE',
+    lCorner:        'L CORNER',
+    rNetSide:       'R NET SIDE',
+    rCorner:        'R CORNER',
+    lPoint:         'L POINT',
+    rPoint:         'R POINT',
+    centerPoint:    'C POINT',
+    outsideL:       'OUTSIDE L',
+    outsideR:       'OUTSIDE R',
+    offNeutralZone: 'NEUTRAL ZONE',
   };
  
   const empty = () => ({

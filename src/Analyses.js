@@ -1592,10 +1592,12 @@ const getMatchsChart = () => {
     : sogSaison);
 
   const ZONE_KEYS = [
-    'SLOT', 'HIGH SLOT',
-    'R CIRCLE', 'L CIRCLE',
-    'R CORNER', 'L CORNER',
-    'R POINT', 'L POINT', 'C POINT',
+    'LOW SLOT', 'CREASE', 'HIGH SLOT',
+    'L CIRCLE', 'R CIRCLE',
+    'L NET SIDE', 'L CORNER',
+    'R NET SIDE', 'R CORNER',
+    'L POINT', 'R POINT', 'C POINT',
+    'OUTSIDE L', 'OUTSIDE R', 'NEUTRAL ZONE',
   ];
   const zones = currentShotData
   ? ZONE_KEYS.map(label => ({
@@ -1621,9 +1623,21 @@ const getMatchsChart = () => {
 };
  
   const positionsZones = [
-    { x: 75, y: 130 }, { x: 220, y: 110 }, { x: 365, y: 130 },
-    { x: 50, y: 225 }, { x: 220, y: 210 }, { x: 390, y: 225 },
-    { x: 75, y: 335 }, { x: 220, y: 335 }, { x: 365, y: 335 },
+    { x: 220, y: 200 },  // LOW SLOT
+    { x: 220, y: 155 },  // CREASE
+    { x: 220, y: 110 },  // HIGH SLOT
+    { x: 100, y: 155 },  // L CIRCLE
+    { x: 340, y: 155 },  // R CIRCLE
+    { x: 80,  y: 220 },  // L NET SIDE
+    { x: 60,  y: 270 },  // L CORNER
+    { x: 360, y: 220 },  // R NET SIDE
+    { x: 380, y: 270 },  // R CORNER
+    { x: 80,  y: 335 },  // L POINT
+    { x: 360, y: 335 },  // R POINT
+    { x: 220, y: 335 },  // C POINT
+    { x: 50,  y: 120 },  // OUTSIDE L
+    { x: 390, y: 120 },  // OUTSIDE R
+    { x: 220, y: 370 },  // NEUTRAL ZONE
   ];
  
   const pad = isMobile ? '14px' : '20px';
