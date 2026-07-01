@@ -379,7 +379,8 @@ function AdminPage() {
 const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 
-function PropsPage() {
+function PropsPage({ lang = 'en' }) {
+  const t = getT(lang);
   const [props, setProps] = React.useState([]);
   const [chargement, setChargement] = React.useState(true);
   const [filtre, setFiltre] = React.useState('ALL');
@@ -490,13 +491,13 @@ function PropsPage() {
       {/* Header */}
       <div style={{ padding: '20px 20px 12px' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Props</h2>
-        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>Ranked by L5·L10·L20 model · {propsFiltres.length} props</p>
+        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{t('props_subtitle')} · {propsFiltres.length} {t('props_unit')}</p>
       </div>
 
       {/* Match filter */}
       {matches.length > 0 && (
         <div style={{ padding: '0 20px 12px', overflowX: 'auto', display: 'flex', gap: '6px', scrollbarWidth: 'none' }}>
-          <button onClick={() => setFiltreMatch('ALL')} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: filtreMatch === 'ALL' ? '#f97316' : '#0d0d0d', color: filtreMatch === 'ALL' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>All games</button>
+          <button onClick={() => setFiltreMatch('ALL')} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: filtreMatch === 'ALL' ? '#f97316' : '#0d0d0d', color: filtreMatch === 'ALL' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>{t('props_all_games')}</button>
           {matches.map((m, i) => {
             const label = (m.awayTeam?.abbrev || '') + ' vs ' + (m.homeTeam?.abbrev || '');
             const isActive = filtreMatch === m.awayTeam?.abbrev || filtreMatch === m.homeTeam?.abbrev;
@@ -519,10 +520,10 @@ function PropsPage() {
         {chargement ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ width: '36px', height: '36px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
-            <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Calculating props...</p>
+            <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>{t('props_loading')}</p>
           </div>
         ) : propsFiltres.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#333', fontSize: '13px' }}>No props for this category today.</div>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: '#333', fontSize: '13px' }}>{t('props_none')}</div>
         ) : propsFiltres.map((p, i) => (
           <div key={p.id + p.stat + p.line + i} style={{ backgroundColor: getBg(p.prob), borderRadius: '16px', padding: '14px 16px', border: '1px solid ' + getBorder(p.prob), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Rank */}
@@ -563,7 +564,8 @@ function PropsPage() {
   );
 }
 
-function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }) {
+function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, lang = 'en' }) {
+  const t = getT(lang);
   const [firstName, setFirstName] = React.useState('');
   const [bankroll, setBankroll] = React.useState(null);
   const [paris, setParis] = React.useState([]);
@@ -657,7 +659,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       {/* Greeting */}
       <div style={{ marginBottom: '20px' }}>
-        <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>Welcome back</p>
+        <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>{t('home_welcome')}</p>
         <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{displayName}</h2>
       </div>
 
@@ -665,9 +667,9 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
       <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <p style={{ margin: 0, color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Bankroll</p>
+          <p style={{ margin: 0, color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
           <div style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '20px', padding: '3px 10px' }}>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>● Live</span>
+            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{t('home_live')}</span>
           </div>
         </div>
         <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span></h1>
@@ -675,14 +677,14 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
         {/* Stats 30 derniers jours */}
         <div style={{ marginBottom: '12px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Last 30 days</span>
-            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>● Live</span>
+            <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_last30')}</span>
+            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>{t('home_live')}</span>
           </div>
           <div style={{ display: 'flex' }}>
             {[
-              ['Profit', (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
-              ['Win Rate', winRate30 + '%', 'white'],
-              ['ROI', (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
+              [t('home_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
+              [t('home_win_rate'), winRate30 + '%', 'white'],
+              [t('home_roi'), (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
             ].map(([label, val, color], i) => (
               <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
                 <p style={{ margin: '0 0 2px', color: '#444', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
@@ -696,7 +698,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
         <div style={{ marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Profit Curve</span>
+              <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
               <span style={{ fontSize: '11px', fontWeight: '700', color: profitFiltre >= 0 ? '#22c55e' : '#ef4444' }}>{profitFiltre >= 0 ? '+' : ''}${profitFiltre.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '3px' }}>
@@ -737,12 +739,12 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
               <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="#333" strokeWidth="0.5" strokeDasharray="4,4" />
             </svg>
           ) : (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: '#333', fontSize: '11px' }}>No settled bets for this period</div>
+            <div style={{ textAlign: 'center', padding: '16px 0', color: '#333', fontSize: '11px' }}>{t('home_no_bets_period')}</div>
           )}
         </div>
 
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
-          {[[`ROI`, `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], ['Win Rate', `${winRate}%`, 'white'], ['Active', `${parisActifs.length} bets`, '#f97316']].map(([label, val, color], i) => (
+          {[[t('home_roi'), `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], [t('home_win_rate'), `${winRate}%`, 'white'], [t('home_active'), `${parisActifs.length} ${t('home_bets_unit')}`, '#f97316']].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
               <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
               <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color }}>{val}</p>
@@ -757,8 +759,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
       {matchsSoir.length > 0 && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Tonight's Games</h3>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} games</span>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_tonight')}</h3>
+            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} {t('home_games_unit')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {matchsSoir.map((m, i) => {
@@ -790,24 +792,24 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
       {/* Recent Bets */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>Recent Bets</h3>
-          <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>See all →</span>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_recent_bets')}</h3>
+          <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>{t('home_see_all')}</span>
         </div>
         {recentParis.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
             <span style={{ fontSize: '28px' }}>🏒</span>
-            <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>No bets yet</p>
-            <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>Start tracking from the Bets menu</p>
+            <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
+            <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
           </div>
         ) : recentParis.map((p, i) => (
           <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
             <div>
               <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.match}</p>
-              <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{p.bookmaker} · Odds {p.cote}</p>
+              <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               {p.statut === 'actif' ? (
-                <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>Active</span>
+                <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>{t('home_active_badge')}</span>
               ) : (
                 <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
                   {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
@@ -822,12 +824,12 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: '0 0 3px', color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Kelly 5% · Recommended Stake</p>
+            <p style={{ margin: '0 0 3px', color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('home_kelly')}</p>
             <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>${kellyStake.split('.')[0]}<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.{kellyStake.split('.')[1] || '00'}</span></p>
           </div>
           <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: '14px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.15)' }}>
-            <p style={{ margin: '0 0 2px', color: '#22c55e', fontSize: '11px', fontWeight: '600', textAlign: 'center' }}>Per bet</p>
-            <p style={{ margin: 0, color: '#1a6b3c', fontSize: '10px', textAlign: 'center' }}>Max risk</p>
+            <p style={{ margin: '0 0 2px', color: '#22c55e', fontSize: '11px', fontWeight: '600', textAlign: 'center' }}>{t('home_per_bet')}</p>
+            <p style={{ margin: 0, color: '#1a6b3c', fontSize: '10px', textAlign: 'center' }}>{t('home_max_risk')}</p>
           </div>
         </div>
       </div>
@@ -835,7 +837,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets }
   );
 }
 
-function ProfilePage({ utilisateur, onBack }) {
+function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
+  const t = getT(lang);
   const [username, setUsername] = React.useState('');
   const [avatarUrl, setAvatarUrl] = React.useState(null);
   const [uploading, setUploading] = React.useState(false);
@@ -971,8 +974,8 @@ function ProfilePage({ utilisateur, onBack }) {
             .crop-img { position: absolute; cursor: grab; user-select: none; }
             .crop-img:active { cursor: grabbing; }
           `}</style>
-          <h3 style={{ color: 'white', margin: '0 0 8px', fontWeight: '700', fontSize: '18px' }}>Crop your photo</h3>
-          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 20px' }}>Drag to reposition · Pinch to zoom</p>
+          <h3 style={{ color: 'white', margin: '0 0 8px', fontWeight: '700', fontSize: '18px' }}>{t('profile_crop_title')}</h3>
+          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 20px' }}>{t('profile_crop_sub')}</p>
 
           {imgSrc && (() => {
             const SIZE = Math.min(window.innerWidth - 40, 320);
@@ -986,15 +989,15 @@ function ProfilePage({ utilisateur, onBack }) {
           })()}
 
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setCropModal(false)} style={{ padding: '13px 28px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '15px' }}>Cancel</button>
-            <button onClick={uploadCropped} style={{ padding: '13px 28px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>Use this photo</button>
+            <button onClick={() => setCropModal(false)} style={{ padding: '13px 28px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '15px' }}>{t('profile_crop_cancel')}</button>
+            <button onClick={uploadCropped} style={{ padding: '13px 28px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>{t('profile_crop_use')}</button>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Back</button>
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>My Profile</h2>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
+        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('profile_title')}</h2>
       </div>
 
       {/* Avatar */}
@@ -1010,38 +1013,38 @@ function ProfilePage({ utilisateur, onBack }) {
           </div>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} style={{ display: 'none' }} />
-        <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>{uploading ? 'Uploading...' : 'Tap to change photo'}</p>
+        <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>{uploading ? t('profile_uploading') : t('profile_tap_photo')}</p>
       </div>
 
       {/* Fields */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>First Name</label>
-            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name"
+            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_first_name')}</label>
+            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder={t('profile_first_name_ph')}
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
               onBlur={e => e.target.style.borderColor = '#222'} />
           </div>
           <div>
-            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Last Name</label>
-            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name"
+            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_last_name')}</label>
+            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder={t('profile_last_name_ph')}
               style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
               onBlur={e => e.target.style.borderColor = '#222'} />
           </div>
         </div>
         <div>
-          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username"
+          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_username')}</label>
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder={t('profile_username_ph')}
             style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : '#222'), borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
           />
           {username.length > 0 && (
             <div style={{ marginTop: '6px', fontSize: '12px', color: usernameStatus === 'taken' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : usernameStatus === 'invalid' ? '#ef4444' : '#555' }}>
-              {usernameStatus === 'checking' && '⟳ Checking availability...'}
-              {usernameStatus === 'available' && '✓ Username available!'}
-              {usernameStatus === 'taken' && '✗ Username already taken'}
-              {usernameStatus === 'invalid' && '✗ Only letters, numbers and _ allowed (min 3 chars)'}
+              {usernameStatus === 'checking' && t('profile_checking')}
+              {usernameStatus === 'available' && t('profile_available')}
+              {usernameStatus === 'taken' && t('profile_taken')}
+              {usernameStatus === 'invalid' && t('profile_invalid')}
             </div>
           )}
         </div>
@@ -1052,22 +1055,23 @@ function ProfilePage({ utilisateur, onBack }) {
       </div>
 
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
-        <p style={{ margin: '0 0 12px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Account</p>
+        <p style={{ margin: '0 0 12px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('profile_account')}</p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#666', fontSize: '13px' }}>Member since</span>
+          <span style={{ color: '#666', fontSize: '13px' }}>{t('profile_member_since')}</span>
           <span style={{ color: 'white', fontSize: '13px', fontWeight: '600' }}>{new Date(utilisateur?.created_at || Date.now()).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}</span>
         </div>
       </div>
 
       <button onClick={sauvegarderProfil} disabled={saving}
         style={{ width: '100%', padding: '14px', background: saved ? 'rgba(34,197,94,0.15)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: saved ? '#22c55e' : 'white', border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
-        {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Changes'}
+        {saved ? t('profile_saved') : saving ? t('saving_text') : t('profile_save')}
       </button>
     </div>
   );
 }
 
-function BankrollPage({ utilisateur, onBack }) {
+function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
+  const t = getT(lang);
   const [transactions, setTransactions] = React.useState([]);
   const [bankroll, setBankroll] = React.useState(null);
   const [montant, setMontant] = React.useState('');
@@ -1182,14 +1186,14 @@ function BankrollPage({ utilisateur, onBack }) {
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>← Back</button>
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>Bankroll</h2>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
+        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('home_bankroll')}</h2>
       </div>
 
       {/* Bankroll card */}
       <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Current Bankroll</p>
+        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('bank_current')}</p>
         <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>
           ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
         </h1>
@@ -1197,7 +1201,7 @@ function BankrollPage({ utilisateur, onBack }) {
         {/* Stats 30 derniers jours */}
         <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Last 30 days</span>
+            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_last30')}</span>
             <span style={{ color: '#f97316', fontSize: '10px', fontWeight: '600' }}>● Live</span>
           </div>
           <div style={{ display: 'flex' }}>
@@ -1212,9 +1216,9 @@ function BankrollPage({ utilisateur, onBack }) {
               const ret30 = tx30.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
               const net30 = ret30 - dep30 + profit30;
               return [
-                ['Bet Profit', (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
-                ['Win Rate', wr30 + '%', 'white'],
-                ['Net P&L', (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
+                [t('bank_bet_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
+                [t('bank_win_rate'), wr30 + '%', 'white'],
+                [t('bank_net_pnl'), (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
               ].map(([label, val, color], i) => (
                 <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
                   <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
@@ -1228,7 +1232,7 @@ function BankrollPage({ utilisateur, onBack }) {
         {/* Graphique avec filtre */}
         <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Bankroll Evolution</span>
+            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
             <div style={{ display: 'flex', gap: '4px' }}>
               {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
                 <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
@@ -1253,15 +1257,15 @@ function BankrollPage({ utilisateur, onBack }) {
               <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: '#333', fontSize: '12px' }}>Add transactions to see your evolution</div>
+            <div style={{ textAlign: 'center', padding: '20px 0', color: '#333', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
           )}
         </div>
 
         <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
           {[
-            ['Total Deposited', '$' + totalDepose.toFixed(2), '#888'],
-            ['Total Withdrawn', '$' + totalRetire.toFixed(2), '#888'],
-            ['All-time P&L', (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
+            [t('bank_total_deposited'), '$' + totalDepose.toFixed(2), '#888'],
+            [t('bank_total_withdrawn'), '$' + totalRetire.toFixed(2), '#888'],
+            [t('bank_alltime'), (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
           ].map(([label, val, color], i) => (
             <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
               <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
@@ -1274,14 +1278,14 @@ function BankrollPage({ utilisateur, onBack }) {
       {/* Bouton + New Transaction */}
       <button onClick={() => setShowForm(!showForm)}
         style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? '#555' : 'white', border: showForm ? '1px solid #333' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
-        {showForm ? 'Cancel' : '+ New Transaction'}
+        {showForm ? t('cancel_btn') : t('bank_new_tx')}
       </button>
 
       {/* Formulaire */}
       {showForm && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #1a1a1a', marginBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            {[['deposit', '↓ Deposit'], ['withdrawal', '↑ Withdrawal']].map(([val, label]) => (
+            {[['deposit', t('deposit_btn')], ['withdrawal', t('withdrawal_btn')]].map(([val, label]) => (
               <button key={val} onClick={() => setType(val)}
                 style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: type === val ? (val === 'deposit' ? '#22c55e' : '#ef4444') : '#1a1a1a', color: 'white', fontSize: '13px', fontWeight: '700' }}>
                 {label}
@@ -1290,18 +1294,18 @@ function BankrollPage({ utilisateur, onBack }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Amount ($)</div>
+              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_amount')}</div>
               <input style={inp} type="number" placeholder="500.00" value={montant} onChange={e => setMontant(e.target.value)}
                 onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
             </div>
             <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Note (optional)</div>
-              <input style={inp} placeholder="e.g. Initial deposit" value={note} onChange={e => setNote(e.target.value)}
+              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_note')}</div>
+              <input style={inp} placeholder={t('bank_note_placeholder')} value={note} onChange={e => setNote(e.target.value)}
                 onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
             </div>
             <button onClick={ajouterTransaction} disabled={saving}
               style={{ padding: '12px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', opacity: saving ? 0.7 : 1 }}>
-              {saving ? 'Saving...' : 'Confirm'}
+              {saving ? t('saving_text') : t('confirm_btn')}
             </button>
           </div>
         </div>
@@ -1324,7 +1328,7 @@ function BankrollPage({ utilisateur, onBack }) {
       {/* Filtres avancés */}
       {showFiltresAvances && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '16px', border: '1px solid #1a1a1a', marginBottom: '12px' }}>
-          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Custom Range</div>
+          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('bank_custom_range')}</div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
             <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
               style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
@@ -1337,9 +1341,9 @@ function BankrollPage({ utilisateur, onBack }) {
             )}
           </div>
           <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', gap: '16px' }}>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>Transactions </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{txFiltrees.length}</span></div>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>Deposited </span><span style={{ color: '#22c55e', fontSize: '13px', fontWeight: '700' }}>${totalDepose.toFixed(2)}</span></div>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>Net P&L </span><span style={{ color: profitReel >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{profitReel >= 0 ? '+' : ''}${profitReel.toFixed(2)}</span></div>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_transactions')} </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{txFiltrees.length}</span></div>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_deposited_label')} </span><span style={{ color: '#22c55e', fontSize: '13px', fontWeight: '700' }}>${totalDepose.toFixed(2)}</span></div>
+            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_net_pnl')} </span><span style={{ color: profitReel >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{profitReel >= 0 ? '+' : ''}${profitReel.toFixed(2)}</span></div>
           </div>
         </div>
       )}
@@ -1347,11 +1351,11 @@ function BankrollPage({ utilisateur, onBack }) {
       {/* Liste transactions */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Transactions</h3>
+          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>{t('bank_transactions')}</h3>
           <span style={{ color: '#555', fontSize: '12px' }}>{txFiltrees.length} transactions</span>
         </div>
         {txFiltrees.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#333', fontSize: '13px' }}>No transactions for this period</div>
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#333', fontSize: '13px' }}>{t('bank_no_tx')}</div>
         ) : txFiltrees.map((tx, i) => (
           <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1418,9 +1422,10 @@ function App() {
  
   // App connectée avec bottom nav style Oura
   if (utilisateur) {
+    const t = getT(lang);
     const tabs = [
-      { id: 'home', label: 'Home', icon: '⌂' },
-      { id: 'analyses', label: 'Analytics', icon: '◎' },
+      { id: 'home', label: t('nav_tab_home'), icon: '⌂' },
+      { id: 'analyses', label: t('nav_tab_analytics'), icon: '◎' },
       { id: 'props', label: 'Props', icon: '◆' },
     ];
     const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
@@ -1450,9 +1455,9 @@ function App() {
               <div style={{ padding: '12px', flex: 1 }}>
                 <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
                 {[
-                  { icon: '👤', label: 'My Profile', page: 'profile' },
-                  { icon: '◐', label: 'Bets', page: 'bets' },
-                  { icon: '💰', label: 'Bankroll', page: 'bankroll' },
+                  { icon: '👤', label: t('menu_profile'), page: 'profile' },
+                  { icon: '◐', label: t('menu_bets'), page: 'bets' },
+                  { icon: '💰', label: t('menu_bankroll'), page: 'bankroll' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
                     <span style={{ fontSize: '18px', color: page === item.page ? '#f97316' : '#555' }}>{item.icon}</span>
@@ -1471,7 +1476,7 @@ function App() {
               </div>
               <div style={{ padding: '20px', borderTop: '1px solid #111' }}>
                 <div style={{ color: '#444', fontSize: '12px', marginBottom: '12px' }}>{utilisateur?.email}</div>
-                <button onClick={() => { handleDeconnexion(); setMenuOuvert(false); }} style={{ width: '100%', padding: '12px', backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>Sign out</button>
+                <button onClick={() => { handleDeconnexion(); setMenuOuvert(false); }} style={{ width: '100%', padding: '12px', backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>{t('menu_signout')}</button>
               </div>
             </div>
             <div onClick={() => setMenuOuvert(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} />
@@ -1486,19 +1491,19 @@ function App() {
         {/* Contenu */}
         <div style={{ padding: '0' }}>
           {page === 'profile' ? (
-            <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} />
+            <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
           ) : page === 'bets' ? (
-            <Dashboard />
+            <Dashboard lang={lang} />
           ) : page === 'bankroll' ? (
-            <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} />
+            <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
-            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} onGoToBets={() => setPage('bets')} />
+            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} onGoToBets={() => setPage('bets')} lang={lang} />
           ) : activeTab === 'analyses' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
-            <PropsPage />
+            <PropsPage lang={lang} />
           ) : null}
         </div>
 
