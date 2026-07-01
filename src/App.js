@@ -1441,7 +1441,14 @@ function App() {
             <div style={{ width: '14px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
           </button>
           <h1 style={{ color: '#f97316', margin: 0, fontSize: '20px', fontWeight: '900', letterSpacing: '-0.5px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Betrics</h1>
-          <div style={{ width: '30px' }} />
+          <div style={{ display: 'flex', backgroundColor: '#111', borderRadius: '8px', padding: '2px', border: '1px solid #222' }}>
+            {['fr', 'en'].map(l => (
+              <button key={l} onClick={() => setLang(l)}
+                style={{ padding: '3px 8px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : 'transparent', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Menu hamburger overlay */}
