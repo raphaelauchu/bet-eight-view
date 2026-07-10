@@ -64,6 +64,47 @@ const LIGUES = [
   { id: 'nhl', label: 'NHL', disponible: true, logo: 'https://assets.nhle.com/logos/nhl/svg/NHL_light.svg', description: 'Ligue nationale de hockey' },
   { id: 'nfl', label: 'NFL', disponible: false, logo: 'https://static.www.nfl.com/image/upload/v1554321393/league/nvfr7ogywskqrfaiu38m.svg', description: 'Ligue nationale de football' },
 ];
+
+const SAISON_ACTUELLE = { id: 'actuelle', seasonId: '20252026', gameType: 2, label: 'Saison en cours' };
+const SAISON_REG_2425 = { id: 'reg2425', seasonId: '20242025', gameType: 2, label: 'Saison régulière 2024-2025' };
+const SAISON_PO_2425 = { id: 'po2425', seasonId: '20242025', gameType: 3, label: 'Playoffs 2024-2025' };
+const SAISONS_DISPONIBLES = [SAISON_ACTUELLE, SAISON_REG_2425, SAISON_PO_2425];
+
+// Dernier jour de la saison reguliere, utilise pour interroger /standings/{date} sur une saison passee
+const FIN_SAISON_REGULIERE = { '20242025': '2025-04-17' };
+// Date ancre a l'interieur de la saison choisie, pour reutiliser schedule/{date} (semaine de 7 jours) sur une saison passee
+const ANCRE_SEMAINE = { reg2425: '2025-04-11', po2425: '2025-04-21' };
+
+// Les stats "featuredStats" de player/landing ne couvrent que la saison courante.
+// Pour une saison passee on va plutot chercher dans seasonTotals l'entree qui correspond au seasonId + gameType choisis.
+function extraireStatsSaisonJoueur(data, saison, gameType) {
+  if (saison.id === 'actuelle') {
+    return gameType === 3 ? (data.featuredStats?.playoffs?.subSeason || null) : (data.featuredStats?.regularSeason?.subSeason || null);
+  }
+  const entries = data.seasonTotals || [];
+  return entries.find(s => String(s.season) === String(saison.seasonId) && s.gameTypeId === gameType) || null;
+}
+
+function SelecteurSaison({ saison, onChange }) {
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '20px' }}>
+      <div style={{ color: '#f97316', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px', textTransform: 'uppercase' }}>
+        Aucun match dans les 7 prochains jours — choisis une saison a consulter
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {SAISONS_DISPONIBLES.map(s => (
+          <button
+            key={s.id}
+            onClick={() => onChange(s)}
+            style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: saison.id === s.id ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '13px', fontWeight: saison.id === s.id ? 'bold' : 'normal' }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
  
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -371,7 +412,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   );
 }
  
-function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
+function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
   const [roster1, setRoster1] = useState([]);
@@ -405,9 +446,9 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
         try {
           const res = await fetch(getUrl(`player/${j.id}/landing`));
           const data = await res.json();
-          const saison = data.featuredStats?.regularSeason?.subSeason;
+          const statsSaison = extraireStatsSaisonJoueur(data, saison, saison.gameType);
           const isGardien = j.position === 'G';
-          return { ...j, goals: isGardien ? null : (saison?.goals ?? 0), assists: isGardien ? null : (saison?.assists ?? 0), points: isGardien ? null : (saison?.points ?? 0), gaa: isGardien ? (saison?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-') : null };
+          return { ...j, goals: isGardien ? null : (statsSaison?.goals ?? 0), assists: isGardien ? null : (statsSaison?.assists ?? 0), points: isGardien ? null : (statsSaison?.points ?? 0), gaa: isGardien ? (statsSaison?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (statsSaison?.savePctg ? (statsSaison.savePctg * 100).toFixed(1) + '%' : '-') : null };
         } catch { return j; }
       }));
       stats.forEach((s, idx) => { result[i + idx] = s; });
@@ -416,7 +457,8 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
   }
  
   async function chargerDepuisRoster() {
-    const [r1, r2] = await Promise.all([fetch(getUrl(`roster/${abbrev1}/current`)), fetch(getUrl(`roster/${abbrev2}/current`))]);
+    const rosterSaison = saison.id === 'actuelle' ? 'current' : saison.seasonId;
+    const [r1, r2] = await Promise.all([fetch(getUrl(`roster/${abbrev1}/${rosterSaison}`)), fetch(getUrl(`roster/${abbrev2}/${rosterSaison}`))]);
     const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
     const fmt = (data, equipe) => [...(data.forwards || []), ...(data.defensemen || []), ...(data.goalies || [])].map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), numero: j.sweaterNumber || '', position: j.positionCode || '', equipe, ligne: null, goals: null, assists: null, points: null, gaa: null, svp: null }));
     return { j1: fmt(d1, abbrev1), j2: fmt(d2, abbrev2) };
@@ -516,7 +558,7 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
   );
 }
  
-function PageStatsJoueurs({ onSelectJoueur }) {
+function PageStatsJoueurs({ onSelectJoueur, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
@@ -528,18 +570,20 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
 
-  useEffect(() => { chargerSemaine(); }, []);
+  useEffect(() => { chargerSemaine(); }, [saison]);
 
   async function chargerSemaine() {
     setChargement(true);
-    const aujourdhui = new Date();
-    const jours = Array(7).fill(null).map((_, i) => { const d = new Date(aujourdhui); d.setDate(d.getDate() + i); return getDateStr(d); });
+    const estCourante = saison.id === 'actuelle';
+    const dateAncre = estCourante ? new Date() : new Date(`${ANCRE_SEMAINE[saison.id]}T12:00:00`);
+    const jours = Array(7).fill(null).map((_, i) => { const d = new Date(dateAncre); d.setDate(d.getDate() + i); return getDateStr(d); });
     const resultats = {};
     await Promise.all(jours.map(async (jour) => {
       try {
         const res = await fetch(getUrl(`schedule/${jour}`));
         const data = await res.json();
-        const games = data.gameWeek?.[0]?.games || [];
+        let games = data.gameWeek?.[0]?.games || [];
+        if (!estCourante) games = games.filter(g => g.gameType === saison.gameType);
         if (games.length > 0) resultats[jour] = games;
       } catch (err) { }
     }));
@@ -564,7 +608,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
         for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
           if (!abbrev) continue;
           try {
-            const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+            const res = await fetch(getUrl('roster/' + abbrev + '/' + saison.seasonId));
             const data = await res.json();
             (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
             (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
@@ -576,7 +620,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
         const batch = joueursDuJour.slice(i, i + 5);
         const batchRes = await Promise.all(batch.map(async (j) => {
           try {
-            const res = await fetch(getUrl('player/' + j.id + '/game-log/20252026/2'));
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/' + saison.seasonId + '/' + saison.gameType));
             const data = await res.json();
             const log = (data.gameLog || []).slice(0, 20);
             if (log.length < 5) return null;
@@ -699,14 +743,14 @@ function PageStatsJoueurs({ onSelectJoueur }) {
               );
             })}
           </div>
-          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} saison={saison} />)}
         </>
       )}
     </div>
   );
 }
  
-function PageStatsEquipes({ classement, onSelectJoueur, lineupDF }) {
+function PageStatsEquipes({ classement, onSelectJoueur, lineupDF, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
@@ -726,14 +770,15 @@ async function rechercherJoueur(query) {
   setChargementRecherche(false);
 }
   const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
- 
-  useEffect(() => { chargerSemaine(); }, []);
- 
+
+  useEffect(() => { chargerSemaine(); }, [saison]);
+
   async function chargerSemaine() {
     setChargement(true);
-    const aujourdhui = new Date();
+    const estCourante = saison.id === 'actuelle';
+    const dateAncre = estCourante ? new Date() : new Date(`${ANCRE_SEMAINE[saison.id]}T12:00:00`);
     const jours = Array(7).fill(null).map((_, i) => {
-      const d = new Date(aujourdhui);
+      const d = new Date(dateAncre);
       d.setDate(d.getDate() + i);
       return getDateStr(d);
     });
@@ -742,7 +787,8 @@ async function rechercherJoueur(query) {
       try {
         const res = await fetch(getUrl(`schedule/${jour}`));
         const data = await res.json();
-        const games = data.gameWeek?.[0]?.games || [];
+        let games = data.gameWeek?.[0]?.games || [];
+        if (!estCourante) games = games.filter(g => g.gameType === saison.gameType);
         if (games.length > 0) resultats[jour] = games;
       } catch (err) { }
     }));
@@ -750,7 +796,7 @@ async function rechercherJoueur(query) {
     setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
     setChargement(false);
   }
- 
+
   if (equipeSelectionnee) {
     const matchActif = Object.values(matchsParJour).flat().find(m =>
       m.awayTeam?.abbrev === equipeSelectionnee?.teamAbbrev?.default ||
@@ -760,7 +806,7 @@ async function rechercherJoueur(query) {
     const equipeAdverse = matchActif
       ? classement.find(e => e.teamAbbrev?.default === (matchActif.awayTeam?.abbrev === abbrevEq ? matchActif.homeTeam?.abbrev : matchActif.awayTeam?.abbrev))
       : null;
-    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />;
+    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} saison={saison} />;
   }
  
   const jours = Object.keys(matchsParJour).sort();
@@ -961,7 +1007,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
  
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -987,16 +1033,16 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   const ga = equipe?.goalAgainst || 0;
   const rang = equipe?.leagueSequence || (classement.findIndex(e => e.teamAbbrev?.default === abbrev) + 1);
  
-  useEffect(() => { chargerStats(); }, [abbrev]);
+  useEffect(() => { chargerStats(); }, [abbrev, saison]);
 
   useEffect(() => {
     if (ongletFiche === 'lineup') chargerRoster();
-  }, [ongletFiche]);
+  }, [ongletFiche, saison]);
 
   async function chargerRoster() {
     setChargementRoster(true);
     try {
-      const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+      const res = await fetch(getUrl('roster/' + abbrev + '/' + saison.seasonId));
       const data = await res.json();
       const fmt = (joueurs, pos) => (joueurs || []).map(j => ({
         id: j.id,
@@ -1017,7 +1063,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
           try {
             const r = await fetch(getUrl('player/' + j.id + '/landing'));
             const d = await r.json();
-            const s = d.featuredStats?.regularSeason?.subSeason;
+            const s = extraireStatsSaisonJoueur(d, saison, saison.gameType);
             const isG = j.position === 'G';
             if (isG) {
               return { ...j, gaa: s?.goalsAgainstAvg?.toFixed(2) ?? '-', svp: s?.savePctg ? (s.savePctg * 100).toFixed(1) + '%' : '-' };
@@ -1031,12 +1077,13 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
     } catch (err) { console.error(err); }
     setChargementRoster(false);
   }
- 
+
   async function chargerStats() {
     setChargement(true);
     try {
+      const estCourante = saison.id === 'actuelle';
       const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
-      const statsPath = 'https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId%3D20252026';
+      const statsPath = `https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=seasonId%3D${saison.seasonId}%20and%20gameTypeId%3D${saison.gameType}`;
       const urlStats = estEnProduction ? `/api/nhl?path=${encodeURIComponent(statsPath)}` : statsPath;
       const resStats = await fetch(urlStats);
       const dataStats = await resStats.json();
@@ -1045,7 +1092,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
         t.teamFullName?.toLowerCase().includes((equipe?.placeName?.default || '').toLowerCase())
       );
       setStatsEquipe(teamStats || null);
- 
+
       if (abbrevAdv) {
         const nomAdv = equipeAdverse?.teamName?.default || equipeAdverse?.teamCommonName?.default || abbrevAdv;
         const teamStatsAdv = dataStats.data?.find(t =>
@@ -1054,10 +1101,13 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
         );
         setStatsAdverse(teamStatsAdv || null);
       }
- 
-      const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/now`));
+
+      const saisonClub = estCourante ? 'now' : saison.seasonId;
+      const res2 = await fetch(getUrl(`club-schedule-season/${abbrev}/${saisonClub}`));
       const data2 = await res2.json();
-      const matchsJoues = (data2.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL').slice(-20);
+      let matchsJoues = (data2.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL');
+      if (!estCourante) matchsJoues = matchsJoues.filter(g => g.gameType === saison.gameType);
+      matchsJoues = matchsJoues.slice(-20);
       const matchsAvecSog = await getSOGParPeriode(matchsJoues, abbrev);
       setGameLog(matchsAvecSog);
     } catch (err) { console.error(err); }
@@ -1417,7 +1467,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   );
 }
  
-function FicheJoueur({ joueur, onBack }) {
+function FicheJoueur({ joueur, onBack, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [dernierMatchs, setDernierMatchs] = useState([]);
@@ -1429,7 +1479,7 @@ function FicheJoueur({ joueur, onBack }) {
   const [typeChart, setTypeChart] = useState('SOG');
   const [chargement, setChargement] = useState(true);
   const [edgeValue, setEdgeValue] = useState('');
-  const [modeStats, setModeStats] = useState('reg');
+  const [modeStats, setModeStats] = useState(saison.gameType === 3 ? 'playoffs' : 'reg');
 
   useEffect(() => {
     setShotChartData(null);
@@ -1440,45 +1490,44 @@ function FicheJoueur({ joueur, onBack }) {
     });
   }, [ongletChart, modeStats]);
 
-  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
- 
+  useEffect(() => { chargerStats(); }, [joueur.id, modeStats, saison]);
+
   async function chargerStats() {
     setChargement(true);
     try {
+      const gameType = modeStats === 'playoffs' ? 3 : 2;
       const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
-      const saison = modeStats === 'playoffs' 
-        ? data.featuredStats?.playoffs?.subSeason 
-        : data.featuredStats?.regularSeason?.subSeason;
+      const statsSaison = extraireStatsSaisonJoueur(data, saison, gameType);
       const isGardien = joueur.position === 'G';
 
       if (isGardien) {
         setStatsAvancees({
-          gp: saison?.gamesPlayed ?? 0,
-          gaa: saison?.goalsAgainstAvg?.toFixed(2) ?? '-',
-          svp: saison?.savePctg ? (saison.savePctg * 100).toFixed(1) + '%' : '-',
-          wins: saison?.wins ?? 0,
-          losses: saison?.losses ?? 0,
-          shutouts: saison?.shutouts ?? 0,
-          gamesStarted: saison?.gamesStarted ?? 0,
+          gp: statsSaison?.gamesPlayed ?? 0,
+          gaa: statsSaison?.goalsAgainstAvg?.toFixed(2) ?? '-',
+          svp: statsSaison?.savePctg ? (statsSaison.savePctg * 100).toFixed(1) + '%' : '-',
+          wins: statsSaison?.wins ?? 0,
+          losses: statsSaison?.losses ?? 0,
+          shutouts: statsSaison?.shutouts ?? 0,
+          gamesStarted: statsSaison?.gamesStarted ?? 0,
         });
       } else {
         const statsBase = {
-          gp: saison?.gamesPlayed ?? 0,
-          goals: saison?.goals ?? 0,
-          assists: saison?.assists ?? 0,
-          points: saison?.points ?? 0,
-          plusMinus: saison?.plusMinus ?? 0,
-          ppp: saison?.powerPlayPoints ?? 0,
-          sog: saison?.shots ?? 0,
-          toi: saison?.avgToi ?? '-',
+          gp: statsSaison?.gamesPlayed ?? 0,
+          goals: statsSaison?.goals ?? 0,
+          assists: statsSaison?.assists ?? 0,
+          points: statsSaison?.points ?? 0,
+          plusMinus: statsSaison?.plusMinus ?? 0,
+          ppp: statsSaison?.powerPlayPoints ?? 0,
+          sog: statsSaison?.shots ?? 0,
+          toi: statsSaison?.avgToi ?? '-',
           hits: 0,
           blocks: 0,
         };
 
         try {
           const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
-          const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId%3D${joueur.id}%20and%20seasonId%3D20252026`;
+          const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId%3D${joueur.id}%20and%20seasonId%3D${saison.seasonId}%20and%20gameTypeId%3D${gameType}`;
           const urlRealtime = estEnProduction ? `/api/nhl?path=${encodeURIComponent(realtimePath)}` : realtimePath;
           const resRealtime = await fetch(urlRealtime);
           const dataRealtime = await resRealtime.json();
@@ -1490,8 +1539,7 @@ function FicheJoueur({ joueur, onBack }) {
         setStatsAvancees({ ...statsBase });
       }
 
-      const gameType = modeStats === 'playoffs' ? 3 : 2;
-      const log = await getGameLogJoueur(joueur.id, gameType);
+      const log = await getGameLogJoueur(joueur.id, gameType, saison.seasonId);
       const logAvecHits = await getHitsBlocksParMatch(joueur.id, log);
       setDernierMatchs(logAvecHits);
 
@@ -1962,36 +2010,60 @@ function Analyses({ onLigueChange }) {
   const lineupDF = useLineupsDailyFaceoff();
   const [playoffBracket, setPlayoffBracket] = useState(null);
   const [estPlayoffs, setEstPlayoffs] = useState(false);
- 
-  useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
-  useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
- 
- async function chargerPreview() {
+  const [saison, setSaison] = useState(SAISON_ACTUELLE);
+  const [saisonMorte, setSaisonMorte] = useState(false);
+
+  useEffect(() => { if (ligue === 'nhl') verifierSaisonMorte(); }, [ligue]);
+  useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie, saison]);
+  useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie, saison]);
+
+  async function verifierSaisonMorte() {
     try {
-      const res = await fetch(getUrl('standings/now'));
+      const aujourdhui = new Date();
+      const jours = Array(7).fill(null).map((_, i) => { const d = new Date(aujourdhui); d.setDate(d.getDate() + i); return getDateStr(d); });
+      const resultats = await Promise.all(jours.map(async (jour) => {
+        try {
+          const res = await fetch(getUrl(`schedule/${jour}`));
+          const data = await res.json();
+          return (data.gameWeek?.[0]?.games || []).length;
+        } catch { return 0; }
+      }));
+      setSaisonMorte(resultats.reduce((a, b) => a + b, 0) === 0);
+    } catch (err) { console.error(err); }
+  }
+
+  async function chargerPreview() {
+    try {
+      const estCourante = saison.id === 'actuelle';
+      const urlStandings = estCourante ? getUrl('standings/now') : getUrl(`standings/${FIN_SAISON_REGULIERE[saison.seasonId]}`);
+      const res = await fetch(urlStandings);
       const data = await res.json();
       setClassement(data.standings || []);
       await chargerMeneurs();
-      await detecterEtChargerPlayoffs();
+      await chargerPlayoffsSelonSaison();
     } catch (err) { console.error(err); }
   }
- 
+
   async function chargerDonneesNHL() {
     setChargement(true);
     try {
-      const res = await fetch(getUrl('standings/now'));
+      const estCourante = saison.id === 'actuelle';
+      const urlStandings = estCourante ? getUrl('standings/now') : getUrl(`standings/${FIN_SAISON_REGULIERE[saison.seasonId]}`);
+      const res = await fetch(urlStandings);
       const data = await res.json();
       setClassement(data.standings || []);
     } catch (err) { console.error(err); }
     setChargement(false);
   }
- 
+
   async function chargerMeneurs() {
     try {
+      const estCourante = saison.id === 'actuelle';
+      const base = estCourante ? 'skater-stats-leaders/current' : `skater-stats-leaders/${saison.seasonId}/${saison.gameType}`;
       const [r1, r2, r3] = await Promise.all([
-        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=10')),
-        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=10')),
-        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=10')),
+        fetch(getUrl(`${base}?categories=goals&limit=10`)),
+        fetch(getUrl(`${base}?categories=assists&limit=10`)),
+        fetch(getUrl(`${base}?categories=points&limit=10`)),
       ]);
       const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
       const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({ rang: i + 1, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), equipe: j.teamAbbrevs || j.teamAbbrev || '', position: j.position || '', valeur: j.value || 0, playerId: j.playerId || j.id || '' }));
@@ -1999,18 +2071,30 @@ function Analyses({ onLigueChange }) {
     } catch (err) { console.error(err); }
   }
 
-  async function detecterEtChargerPlayoffs() {
+  async function chargerPlayoffsSelonSaison() {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const resSchedule = await fetch(getUrl(`schedule/${today}`));
-      const dataSchedule = await resSchedule.json();
-      const allGames = (dataSchedule.gameWeek || []).flatMap(w => w.games || []);
-      const enPlayoffs = allGames.some(g => g.gameType === 3);
-      setEstPlayoffs(enPlayoffs);
-      if (enPlayoffs) {
-        const resBracket = await fetch(getUrl('playoff-series/carousel/20252026'));
-        const dataBracket = await resBracket.json();
-        setPlayoffBracket(dataBracket);
+      if (saison.id === 'actuelle') {
+        const today = new Date().toISOString().split('T')[0];
+        const resSchedule = await fetch(getUrl(`schedule/${today}`));
+        const dataSchedule = await resSchedule.json();
+        const allGames = (dataSchedule.gameWeek || []).flatMap(w => w.games || []);
+        const enPlayoffs = allGames.some(g => g.gameType === 3);
+        setEstPlayoffs(enPlayoffs);
+        if (enPlayoffs) {
+          const resBracket = await fetch(getUrl('playoff-series/carousel/20252026'));
+          const dataBracket = await resBracket.json();
+          setPlayoffBracket(dataBracket);
+        }
+      } else {
+        const enPlayoffs = saison.gameType === 3;
+        setEstPlayoffs(enPlayoffs);
+        if (enPlayoffs) {
+          const resBracket = await fetch(getUrl(`playoff-series/carousel/${saison.seasonId}`));
+          const dataBracket = await resBracket.json();
+          setPlayoffBracket(dataBracket);
+        } else {
+          setPlayoffBracket(null);
+        }
       }
     } catch (err) { console.error(err); }
   }
@@ -2020,7 +2104,7 @@ function Analyses({ onLigueChange }) {
   if (joueurSelectionne) {
     return (
       <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
+        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} saison={saison} />
       </div>
     );
   }
@@ -2052,6 +2136,7 @@ function Analyses({ onLigueChange }) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
       <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
+        {saisonMorte && <SelecteurSaison saison={saison} onChange={setSaison} />}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
           <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2101,8 +2186,8 @@ function Analyses({ onLigueChange }) {
           </div>
         </div>
       </div>
-      {categorie === 'equipes' && <PageStatsEquipes classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
-      {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />}
+      {categorie === 'equipes' && <PageStatsEquipes classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} saison={saison} />}
+      {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} saison={saison} />}
     </div>
   );
 }
