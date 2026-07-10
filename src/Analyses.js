@@ -1177,10 +1177,16 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
     { label: 'LEFT', pct: 0.05 }, { label: 'POINT', pct: 0.04 }, { label: 'RIGHT', pct: 0.05 },
   ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
  
-  const positionsZones = [
-    { x: 75, y: 130 }, { x: 220, y: 110 }, { x: 365, y: 130 },
-    { x: 50, y: 225 }, { x: 220, y: 210 }, { x: 390, y: 225 },
-    { x: 75, y: 335 }, { x: 220, y: 335 }, { x: 365, y: 335 },
+  const ZONE_RECTS_EQUIPE = [
+    { x: 100, y: 50,  w: 90,  h: 45,  hatch: false }, // LOW LEFT
+    { x: 175, y: 50,  w: 90,  h: 95,  hatch: false }, // LOW (crease/slot)
+    { x: 265, y: 50,  w: 90,  h: 45,  hatch: false }, // LOW RIGHT
+    { x: 20,  y: 95,  w: 80,  h: 165, hatch: false }, // BOARDS (gauche)
+    { x: 160, y: 145, w: 120, h: 115, hatch: false }, // SLOT (centre, grand)
+    { x: 340, y: 95,  w: 80,  h: 165, hatch: false }, // BOARDS (droite)
+    { x: 20,  y: 260, w: 133, h: 70,  hatch: false }, // LEFT (point)
+    { x: 153, y: 260, w: 134, h: 70,  hatch: false }, // POINT (centre)
+    { x: 287, y: 260, w: 133, h: 70,  hatch: false }, // RIGHT (point)
   ];
  
   const getTendanceZone = (z) => {
@@ -1410,27 +1416,27 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
  
             <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
               <svg viewBox="0 0 440 420" style={{ width: isMobile ? '75%' : '60%', display: 'block', margin: '0 auto' }}>
-                <rect x="0" y="0" width="440" height="420" fill="#1a1a1a" />
-                <rect x="175" y="8" width="90" height="40" rx="3" fill="none" stroke="#888" strokeWidth="2" />
-                <line x1="50" y1="55" x2="390" y2="55" stroke="#ef4444" strokeWidth="1.5" opacity="0.5" />
-                <path d="M175 55 Q175 100 220 100 Q265 100 265 55" fill="none" stroke="#3b82f6" strokeWidth="1.5" opacity="0.5" />
-                <circle cx="120" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
-                <circle cx="320" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
-                <line x1="0" y1="360" x2="440" y2="360" stroke="#3b82f6" strokeWidth="2" opacity="0.4" />
-                <path d="M170 360 Q220 325 270 360" fill="none" stroke="#444" strokeWidth="1.2" />
+                <defs>
+                  <pattern id="hatchZoneEq" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                    <line x1="0" y1="0" x2="0" y2="6" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
+                  </pattern>
+                </defs>
+                <rect x="0" y="0" width="440" height="420" fill="#0a0f1a" />
+                <path d="M20,410 L20,150 Q20,20 220,20 Q420,20 420,150 L420,410" fill="none" stroke="#2a2a2a" strokeWidth="2" />
                 {zonesEquipe.map((z, i) => {
-                  const pos = positionsZones[i];
-                  const tendance = getTendanceZone(z);
+                  const r = ZONE_RECTS_EQUIPE[i];
+                  const attendu = 1 / zonesEquipe.length;
+                  const pct = Math.max(0, Math.min(1, z.pct / (attendu * 2)));
                   return (
                     <g key={i}>
-                      <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill="#777" fontSize="9" fontWeight="bold">{z.label}</text>
-                      {tendance === 'haut' && <polygon points={`${pos.x},${pos.y - 7} ${pos.x - 5},${pos.y} ${pos.x + 5},${pos.y}`} fill="#f97316" />}
-                      {tendance === 'bas' && <polygon points={`${pos.x},${pos.y} ${pos.x - 5},${pos.y - 7} ${pos.x + 5},${pos.y - 7}`} fill="#ef4444" />}
-                      {tendance === 'neutre' && <circle cx={pos.x} cy={pos.y - 4} r="4" fill="#555" />}
-                      <text x={pos.x + 10} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="15" fontWeight="bold">{z.moy}</text>
+                      <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={heatColor(pct)} stroke="#0a0f1a" strokeWidth="2" />
+                      {r.hatch && <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#hatchZoneEq)" />}
+                      <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 6} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold">{z.label}</text>
+                      <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 12} textAnchor="middle" fill="white" fontSize="16" fontWeight="900">{z.moy}</text>
                     </g>
                   );
                 })}
+                <rect x="185" y="15" width="70" height="30" rx="2" fill="#0a0f1a" stroke="#aaa" strokeWidth="2" />
               </svg>
             </div>
  
@@ -1467,6 +1473,24 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   );
 }
  
+function heatColor(pct) {
+  const stops = [
+    { p: 0,    c: [8, 47, 88] },
+    { p: 0.35, c: [3, 105, 161] },
+    { p: 0.6,  c: [6, 182, 212] },
+    { p: 0.8,  c: [250, 204, 21] },
+    { p: 1,    c: [234, 88, 12] },
+  ];
+  const v = Math.max(0, Math.min(1, pct || 0));
+  let a = stops[0], b = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (v >= stops[i].p && v <= stops[i + 1].p) { a = stops[i]; b = stops[i + 1]; break; }
+  }
+  const t = (v - a.p) / ((b.p - a.p) || 1);
+  const rgb = a.c.map((ch, i) => Math.round(ch + (b.c[i] - ch) * t));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
 function FicheJoueur({ joueur, onBack, saison = SAISON_ACTUELLE }) {
   const isMobile = useIsMobile();
   const [statsAvancees, setStatsAvancees] = useState(null);
@@ -1670,22 +1694,22 @@ const getMatchsChart = () => {
   return 'neutre';
 };
  
-  const positionsZones = [
-    { x: 220, y: 200 },  // LOW SLOT
-    { x: 220, y: 155 },  // CREASE
-    { x: 220, y: 110 },  // HIGH SLOT
-    { x: 100, y: 155 },  // L CIRCLE
-    { x: 340, y: 155 },  // R CIRCLE
-    { x: 80,  y: 220 },  // L NET SIDE
-    { x: 60,  y: 270 },  // L CORNER
-    { x: 360, y: 220 },  // R NET SIDE
-    { x: 380, y: 270 },  // R CORNER
-    { x: 80,  y: 335 },  // L POINT
-    { x: 360, y: 335 },  // R POINT
-    { x: 220, y: 335 },  // C POINT
-    { x: 50,  y: 120 },  // OUTSIDE L
-    { x: 390, y: 120 },  // OUTSIDE R
-    { x: 220, y: 370 },  // NEUTRAL ZONE
+  const ZONE_RECTS = [
+    { x: 160, y: 95,  w: 120, h: 95,  hatch: false }, // LOW SLOT
+    { x: 175, y: 50,  w: 90,  h: 45,  hatch: false }, // CREASE
+    { x: 160, y: 190, w: 120, h: 70,  hatch: false }, // HIGH SLOT
+    { x: 60,  y: 95,  w: 100, h: 165, hatch: false }, // L CIRCLE
+    { x: 280, y: 95,  w: 100, h: 165, hatch: false }, // R CIRCLE
+    { x: 100, y: 50,  w: 75,  h: 45,  hatch: false }, // L NET SIDE
+    { x: 20,  y: 50,  w: 40,  h: 210, hatch: false }, // L CORNER
+    { x: 265, y: 50,  w: 75,  h: 45,  hatch: false }, // R NET SIDE
+    { x: 380, y: 50,  w: 40,  h: 210, hatch: false }, // R CORNER
+    { x: 20,  y: 260, w: 140, h: 70,  hatch: false }, // L POINT
+    { x: 280, y: 260, w: 140, h: 70,  hatch: false }, // R POINT
+    { x: 160, y: 260, w: 120, h: 70,  hatch: false }, // C POINT
+    { x: 20,  y: 15,  w: 155, h: 35,  hatch: true },  // OUTSIDE L
+    { x: 265, y: 15,  w: 155, h: 35,  hatch: true },  // OUTSIDE R
+    { x: 20,  y: 330, w: 400, h: 70,  hatch: true },  // NEUTRAL ZONE
   ];
  
   const pad = isMobile ? '14px' : '20px';
@@ -1886,30 +1910,29 @@ const getMatchsChart = () => {
                   <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
                 ))}
               </div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ backgroundColor: '#0a0f1a', borderRadius: '10px', overflow: 'hidden' }}>
                 <svg viewBox="0 0 440 420" style={{ width: '100%', display: 'block' }}>
-                  <rect x="0" y="0" width="440" height="420" fill="#1a1a1a" />
-                  <rect x="175" y="8" width="90" height="40" rx="3" fill="none" stroke="#888" strokeWidth="2" />
-                  <line x1="50" y1="55" x2="390" y2="55" stroke="#ef4444" strokeWidth="1.5" opacity="0.5" />
-                  <path d="M175 55 Q175 100 220 100 Q265 100 265 55" fill="none" stroke="#3b82f6" strokeWidth="1.5" opacity="0.5" />
-                  <circle cx="120" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
-                  <circle cx="320" cy="220" r="65" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
-                  <line x1="0" y1="360" x2="440" y2="360" stroke="#3b82f6" strokeWidth="2" opacity="0.4" />
-                  <path d="M170 360 Q220 325 270 360" fill="none" stroke="#444" strokeWidth="1.2" />
+                  <defs>
+                    <pattern id="hatchZone" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                      <line x1="0" y1="0" x2="0" y2="6" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
+                    </pattern>
+                  </defs>
+                  <rect x="0" y="0" width="440" height="420" fill="#0a0f1a" />
+                  <path d="M20,410 L20,150 Q20,20 220,20 Q420,20 420,150 L420,410" fill="none" stroke="#2a2a2a" strokeWidth="2" />
                   {zones.map((z, i) => {
-                    const pos = positionsZones[i];
-                    const tendance = getTendanceZone(z);
+                    const r = ZONE_RECTS[i];
+                    const pct = typeChart === 'Goals' ? z.goalsPct : z.sogPct;
                     const val = getValeurZone(z);
                     return (
                       <g key={i}>
-                        <text x={pos.x} y={pos.y - 14} textAnchor="middle" fill="#777" fontSize="9" fontWeight="bold">{z.label}</text>
-                        {tendance === 'haut' && <polygon points={`${pos.x},${pos.y - 7} ${pos.x - 5},${pos.y} ${pos.x + 5},${pos.y}`} fill="#f97316" />}
-                        {tendance === 'bas' && <polygon points={`${pos.x},${pos.y} ${pos.x - 5},${pos.y - 7} ${pos.x + 5},${pos.y - 7}`} fill="#ef4444" />}
-                        {tendance === 'neutre' && <circle cx={pos.x} cy={pos.y - 4} r="4" fill="#555" />}
-                        <text x={pos.x + 10} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">{val}</text>
+                        <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={heatColor(pct)} stroke="#0a0f1a" strokeWidth="2" />
+                        {r.hatch && <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#hatchZone)" />}
+                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 6} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold">{z.label}</text>
+                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 12} textAnchor="middle" fill="white" fontSize="17" fontWeight="900">{val}</text>
                       </g>
                     );
                   })}
+                  <rect x="185" y="15" width="70" height="30" rx="2" fill="#0a0f1a" stroke="#aaa" strokeWidth="2" />
                 </svg>
               </div>
             </div>
