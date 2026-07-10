@@ -76,6 +76,26 @@ function extraireStatsSaisonJoueur(data, seasonId, gameType) {
   return entries.find(s => String(s.season) === String(seasonId) && s.gameTypeId === gameType) || null;
 }
 
+const ABBREV_TO_TEAM_ID = {
+  'ANA': 24, 'BOS': 6, 'BUF': 7, 'CGY': 20, 'CAR': 12, 'CHI': 16, 'COL': 21, 'CBJ': 29,
+  'DAL': 25, 'DET': 17, 'EDM': 22, 'FLA': 13, 'LAK': 26, 'MIN': 30, 'MTL': 8, 'NSH': 18,
+  'NJD': 1, 'NYI': 2, 'NYR': 3, 'OTT': 9, 'PHI': 4, 'PIT': 5, 'SJS': 28, 'SEA': 55,
+  'STL': 19, 'TBL': 14, 'TOR': 10, 'UTA': 68, 'VAN': 23, 'VGK': 54, 'WSH': 15, 'WPG': 52,
+};
+
+function getStatsRestUrl(fullUrl) {
+  const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+  if (estEnProduction) return `/api/nhl?path=${encodeURIComponent(fullUrl)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+}
+
+function buildCayenneExp({ gameType, teamAbbrev, positionCode }) {
+  let exp = `seasonId=20252026 and gameTypeId=${gameType}`;
+  if (teamAbbrev && teamAbbrev !== 'ALL') exp += ` and teamId=${ABBREV_TO_TEAM_ID[teamAbbrev]}`;
+  if (positionCode && positionCode !== 'ALL') exp += ` and positionCode="${positionCode}"`;
+  return exp;
+}
+
 function SelecteurSaisonDiscret({ saison, onChange }) {
   return (
     <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
@@ -543,37 +563,265 @@ function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
   );
 }
  
-function ListeEquipesCliquables({ onSelectEquipe }) {
-  const abbrevs = Object.keys(LOGOS_NHL).sort();
+function FiltreSelect({ label, value, onChange, options, disabled }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '8px' }}>
-      {abbrevs.map(abbrev => (
-        <div
-          key={abbrev}
-          onClick={() => onSelectEquipe(abbrev)}
-          style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '14px 8px', textAlign: 'center', cursor: 'pointer' }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
-        >
-          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
-          <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{abbrev}</div>
+    <div>
+      <label style={{ display: 'block', fontSize: '10px', color: '#666', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={e => onChange(e.target.value)}
+        style={{ padding: '8px 10px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: 'white', fontSize: '12px', outline: 'none', minWidth: '140px' }}
+      >
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+const OPTIONS_EQUIPES = [{ value: 'ALL', label: 'All Franchises' }, ...Object.keys(LOGOS_NHL).sort().map(a => ({ value: a, label: a }))];
+const OPTIONS_TYPE = [{ value: 'reg', label: 'Saison régulière' }, { value: 'playoffs', label: 'Playoffs' }];
+const OPTIONS_POSITION = [{ value: 'ALL', label: 'Tous' }, { value: 'C', label: 'Centre' }, { value: 'L', label: 'Ailier gauche' }, { value: 'R', label: 'Ailier droit' }, { value: 'D', label: 'Défenseur' }];
+
+function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
+  if (!joueurs || joueurs.length === 0) return <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>;
+  const [premier, ...reste] = joueurs;
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '14px' }}>
+      <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: '#f97316' }}>{titre}</h3>
+      <div
+        onClick={() => onSelectJoueur({ id: premier.id, nom: premier.nom, position: premier.position, equipe: premier.equipe, numero: '' })}
+        style={{ display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '10px', padding: '12px', cursor: 'pointer', marginBottom: '8px' }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+      >
+        <img src={getPhotoJoueur(premier.id)} alt={premier.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222', border: '2px solid #f97316' }} onError={e => e.target.style.display = 'none'} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: '900', fontSize: '15px', color: 'white' }}>{premier.nom}</div>
+          <div style={{ color: '#666', fontSize: '12px' }}>{premier.equipe}</div>
         </div>
-      ))}
+        <div style={{ fontSize: '24px', fontWeight: '900', color: '#f97316' }}>{premier[statKey]}</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {reste.map(j => (
+          <div
+            key={j.id}
+            onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: j.position, equipe: j.equipe, numero: '' })}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <span style={{ width: '18px', color: '#555', fontSize: '12px', fontWeight: 'bold' }}>{j.rang}</span>
+            <span style={{ flex: 1, fontSize: '13px', color: 'white' }}>{j.nom} <span style={{ color: '#666' }}>· {j.equipe}</span></span>
+            <span style={{ fontWeight: '900', fontSize: '13px', color: '#f97316' }}>{j[statKey]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OngletHomeStats({ onSelectJoueur }) {
+  const [filtreType, setFiltreType] = useState('reg');
+  const [filtreEquipe, setFiltreEquipe] = useState('ALL');
+  const [chargement, setChargement] = useState(false);
+  const [meneurs, setMeneurs] = useState({ points: [], goals: [], assists: [] });
+
+  useEffect(() => { chargerMeneurs(); }, []);
+
+  async function chargerMeneurs() {
+    setChargement(true);
+    try {
+      const gameType = filtreType === 'playoffs' ? 3 : 2;
+      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe });
+      const fetchCat = (sort) => fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=${sort}&dir=DESC&start=0&limit=10`)).then(r => r.json());
+      const [dPoints, dGoals, dAssists] = await Promise.all([fetchCat('points'), fetchCat('goals'), fetchCat('assists')]);
+      const fmt = (d) => (d.data || []).map((j, i) => ({ rang: i + 1, id: j.playerId, nom: j.skaterFullName, equipe: j.teamAbbrevs, position: j.positionCode, points: j.points, goals: j.goals, assists: j.assists }));
+      setMeneurs({ points: fmt(dPoints), goals: fmt(dGoals), assists: fmt(dAssists) });
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
+        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
+        <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
+        <button onClick={chargerMeneurs} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
+      </div>
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+      ) : (
+        <>
+          <ListeMeneurs titre="Points" joueurs={meneurs.points} statKey="points" onSelectJoueur={onSelectJoueur} />
+          <ListeMeneurs titre="Buts" joueurs={meneurs.goals} statKey="goals" onSelectJoueur={onSelectJoueur} />
+          <ListeMeneurs titre="Passes" joueurs={meneurs.assists} statKey="assists" onSelectJoueur={onSelectJoueur} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function OngletSkatersStats({ onSelectJoueur }) {
+  const isMobile = useIsMobile();
+  const [filtreType, setFiltreType] = useState('reg');
+  const [filtreEquipe, setFiltreEquipe] = useState('ALL');
+  const [filtrePosition, setFiltrePosition] = useState('ALL');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [joueurs, setJoueurs] = useState([]);
+  const [chargement, setChargement] = useState(false);
+
+  useEffect(() => { chargerSkaters(0); }, []);
+
+  async function chargerSkaters(nouvellePage) {
+    setChargement(true);
+    try {
+      const gameType = filtreType === 'playoffs' ? 3 : 2;
+      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe, positionCode: filtrePosition });
+      const start = nouvellePage * 50;
+      const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=${start}&limit=50`));
+      const data = await res.json();
+      setJoueurs((data.data || []).map((j, i) => ({ rang: start + i + 1, id: j.playerId, nom: j.skaterFullName, equipe: j.teamAbbrevs, position: j.positionCode, gp: j.gamesPlayed, goals: j.goals, assists: j.assists, points: j.points })));
+      setTotal(data.total || 0);
+      setPage(nouvellePage);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const colonnes = isMobile ? '30px 32px 1fr 40px 34px 34px' : '36px 36px 1fr 56px 56px 40px 40px 40px 48px';
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
+        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
+        <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
+        <FiltreSelect label="Position" value={filtrePosition} onChange={setFiltrePosition} options={OPTIONS_POSITION} />
+        <button onClick={() => chargerSkaters(0)} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
+      </div>
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+      ) : (
+        <>
+          <div style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: '#0d0d0d', borderBottom: '1px solid #222', fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              <span>#</span><span></span><span>Nom</span><span>Équipe</span>{!isMobile && <span>Pos</span>}<span>PJ</span><span>B</span><span>A</span><span>PTS</span>
+            </div>
+            {joueurs.map(j => (
+              <div
+                key={j.id}
+                onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: j.position, equipe: j.equipe, numero: '' })}
+                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', fontSize: '12px' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <span style={{ color: '#555' }}>{j.rang}</span>
+                <img src={getPhotoJoueur(j.id)} alt={j.nom} style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222' }} onError={e => e.target.style.display = 'none'} />
+                <span style={{ color: 'white', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                <span style={{ color: '#888' }}>{j.equipe}</span>
+                {!isMobile && <span style={{ color: '#888' }}>{j.position}</span>}
+                <span style={{ color: '#888' }}>{j.gp}</span>
+                <span style={{ color: '#888' }}>{j.goals}</span>
+                <span style={{ color: '#888' }}>{j.assists}</span>
+                <span style={{ color: '#f97316', fontWeight: '900' }}>{j.points}</span>
+              </div>
+            ))}
+            {joueurs.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
+            <button onClick={() => page > 0 && chargerSkaters(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: page === 0 ? '#444' : 'white', fontSize: '12px' }}>Page précédente</button>
+            <span style={{ color: '#666', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
+            <button onClick={() => (page + 1) * 50 < total && chargerSkaters(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: (page + 1) * 50 >= total ? '#444' : 'white', fontSize: '12px' }}>Page suivante</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function OngletGoaliesStats({ onSelectJoueur }) {
+  const [filtreType, setFiltreType] = useState('reg');
+  const [filtreEquipe, setFiltreEquipe] = useState('ALL');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [gardiens, setGardiens] = useState([]);
+  const [chargement, setChargement] = useState(false);
+
+  useEffect(() => { chargerGoalies(0); }, []);
+
+  async function chargerGoalies(nouvellePage) {
+    setChargement(true);
+    try {
+      const gameType = filtreType === 'playoffs' ? 3 : 2;
+      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe });
+      const start = nouvellePage * 50;
+      const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=goalsAgainstAverage&dir=ASC&start=${start}&limit=50`));
+      const data = await res.json();
+      setGardiens((data.data || []).map((j, i) => ({ rang: start + i + 1, id: j.playerId, nom: j.goalieFullName, equipe: j.teamAbbrevs, gp: j.gamesPlayed, gaa: j.goalsAgainstAverage?.toFixed(2), svp: j.savePct != null ? (j.savePct * 100).toFixed(1) + '%' : '-' })));
+      setTotal(data.total || 0);
+      setPage(nouvellePage);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const colonnes = '36px 36px 1fr 56px 40px 56px 56px';
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
+        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
+        <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
+        <button onClick={() => chargerGoalies(0)} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
+      </div>
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+      ) : (
+        <>
+          <div style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: '#0d0d0d', borderBottom: '1px solid #222', fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              <span>#</span><span></span><span>Nom</span><span>Équipe</span><span>PJ</span><span>GAA</span><span>SV%</span>
+            </div>
+            {gardiens.map(j => (
+              <div
+                key={j.id}
+                onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: 'G', equipe: j.equipe, numero: '' })}
+                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', fontSize: '12px' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <span style={{ color: '#555' }}>{j.rang}</span>
+                <img src={getPhotoJoueur(j.id)} alt={j.nom} style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#222' }} onError={e => e.target.style.display = 'none'} />
+                <span style={{ color: 'white', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                <span style={{ color: '#888' }}>{j.equipe}</span>
+                <span style={{ color: '#888' }}>{j.gp}</span>
+                <span style={{ color: '#f97316', fontWeight: '900' }}>{j.gaa}</span>
+                <span style={{ color: '#888' }}>{j.svp}</span>
+              </div>
+            ))}
+            {gardiens.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
+            <button onClick={() => page > 0 && chargerGoalies(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: page === 0 ? '#444' : 'white', fontSize: '12px' }}>Page précédente</button>
+            <span style={{ color: '#666', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
+            <button onClick={() => (page + 1) * 50 < total && chargerGoalies(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: (page + 1) * 50 >= total ? '#444' : 'white', fontSize: '12px' }}>Page suivante</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 function PageStatsJoueurs({ onSelectJoueur }) {
-  const isMobile = useIsMobile();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
   const lineupDF = useLineupsDailyFaceoff();
-  const [equipeParcourue, setEquipeParcourue] = useState(null);
-  const [rosterEquipeParcourue, setRosterEquipeParcourue] = useState([]);
-  const [chargementRosterParcouru, setChargementRosterParcouru] = useState(false);
+  const [ongletSaisonMorte, setOngletSaisonMorte] = useState('home');
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -602,24 +850,6 @@ function PageStatsJoueurs({ onSelectJoueur }) {
       const data = await res.json();
       setRechercheJoueurs(data || []);
     } catch { setRechercheJoueurs([]); }
-  }
-
-  async function chargerRosterEquipeParcourue(abbrev) {
-    setEquipeParcourue(abbrev);
-    setChargementRosterParcouru(true);
-    try {
-      const res = await fetch(getUrl(`roster/${abbrev}/20252026`));
-      const data = await res.json();
-      const fmt = (joueurs, pos) => (joueurs || []).map(j => ({
-        id: j.id,
-        nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(),
-        numero: j.sweaterNumber || '',
-        position: j.positionCode || pos,
-        equipe: abbrev,
-      }));
-      setRosterEquipeParcourue([...fmt(data.forwards, 'F'), ...fmt(data.defensemen, 'D'), ...fmt(data.goalies, 'G')]);
-    } catch (err) { console.error(err); }
-    setChargementRosterParcouru(false);
   }
 
   const jours = Object.keys(matchsParJour).sort();
@@ -657,33 +887,16 @@ function PageStatsJoueurs({ onSelectJoueur }) {
       {chargement ? (
         <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : aucunMatch ? (
-        equipeParcourue ? (
-          <>
-            <button onClick={() => { setEquipeParcourue(null); setRosterEquipeParcourue([]); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
-            {chargementRosterParcouru ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {rosterEquipeParcourue.map((j, i) => (
-                  <div key={i}
-                    onClick={() => onSelectJoueur(j)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', backgroundColor: '#111', border: '1px solid #222', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
-                  >
-                    <img src={getPhotoJoueur(j.id)} alt={j.nom} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#333' }} onError={e => e.target.style.display = 'none'} />
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.nom}</div>
-                      <div style={{ fontSize: '11px', color: '#666' }}>{j.equipe} · {j.position} · #{j.numero}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <ListeEquipesCliquables onSelectEquipe={chargerRosterEquipeParcourue} />
-        )
+        <>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
+            <button onClick={() => setOngletSaisonMorte('home')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'home' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'home' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'home' ? '600' : 'normal' }}>Home</button>
+            <button onClick={() => setOngletSaisonMorte('skaters')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'skaters' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'skaters' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'skaters' ? '600' : 'normal' }}>Skaters</button>
+            <button onClick={() => setOngletSaisonMorte('goalies')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'goalies' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'goalies' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'goalies' ? '600' : 'normal' }}>Goalies</button>
+          </div>
+          {ongletSaisonMorte === 'home' && <OngletHomeStats onSelectJoueur={onSelectJoueur} />}
+          {ongletSaisonMorte === 'skaters' && <OngletSkatersStats onSelectJoueur={onSelectJoueur} />}
+          {ongletSaisonMorte === 'goalies' && <OngletGoaliesStats onSelectJoueur={onSelectJoueur} />}
+        </>
       ) : (
         <>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
