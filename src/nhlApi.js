@@ -33,9 +33,9 @@ export function calcSOGPeriode(matchs, type) {
   return (total / valides.length).toFixed(1);
 }
 
-export async function getGameLogJoueur(playerId, gameType = 2) {
+export async function getGameLogJoueur(playerId, gameType = 2, seasonId = '20252026') {
   try {
-    const res = await fetch(getUrl(`player/${playerId}/game-log/20252026/${gameType}`));
+    const res = await fetch(getUrl(`player/${playerId}/game-log/${seasonId}/${gameType}`));
     const data = await res.json();
     return (data.gameLog || []).map(m => ({
       gameId: m.gameId,
