@@ -961,6 +961,63 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
  
+function fanX(x, y, cx = 220, minY = 15, maxY = 405, spread = 0.22) {
+  const t = Math.max(0, Math.min(1, (y - minY) / (maxY - minY)));
+  const dx = x - cx;
+  const val = cx + dx * (1 + t * spread);
+  return Math.max(8, Math.min(432, val));
+}
+
+function orangeRed(pct) {
+  const stops = [
+    { p: 0,    c: [255, 255, 255] },
+    { p: 0.15, c: [255, 224, 178] },
+    { p: 0.4,  c: [255, 176, 90]  },
+    { p: 0.7,  c: [237, 108, 42]  },
+    { p: 1,    c: [166, 26, 20]   },
+  ];
+  const v = Math.max(0, Math.min(1, pct || 0));
+  let a = stops[0], b = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (v >= stops[i].p && v <= stops[i + 1].p) { a = stops[i]; b = stops[i + 1]; break; }
+  }
+  const t = (v - a.p) / ((b.p - a.p) || 1);
+  const rgb = a.c.map((ch, i) => Math.round(ch + (b.c[i] - ch) * t));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+function quadPoint(p0, p1, p2, t) {
+  return [
+    (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0],
+    (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1],
+  ];
+}
+
+function zoneRectPath(r) {
+  const yTop = r.y, yBot = r.y + r.h;
+  const xTL = fanX(r.x, yTop), xTR = fanX(r.x + r.w, yTop);
+  const xBL = fanX(r.x, yBot), xBR = fanX(r.x + r.w, yBot);
+  return `M${xTL},${yTop} L${xTR},${yTop} L${xBR},${yBot} L${xBL},${yBot} Z`;
+}
+
+const CIRCLE_Y_TOP = 100, CIRCLE_Y_MID = 180, CIRCLE_Y_BOT = 260, CIRCLE_BULGE = 26;
+const L_P0 = [fanX(160, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
+const L_CTRL = [fanX(160, CIRCLE_Y_MID) - CIRCLE_BULGE, CIRCLE_Y_MID];
+const L_P2 = [fanX(160, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
+const L_MID = quadPoint(L_P0, L_CTRL, L_P2, 0.5);
+const R_P0 = [fanX(280, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
+const R_CTRL = [fanX(280, CIRCLE_Y_MID) + CIRCLE_BULGE, CIRCLE_Y_MID];
+const R_P2 = [fanX(280, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
+const R_MID = quadPoint(R_P0, R_CTRL, R_P2, 0.5);
+
+const LOW_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} L${R_MID[0]},${R_MID[1]} L${L_MID[0]},${L_MID[1]} Z`;
+const HIGH_SLOT_PATH = `M${L_MID[0]},${L_MID[1]} L${R_MID[0]},${R_MID[1]} L${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Z`;
+const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P0[0]},${L_P0[1]} Z`;
+const L_CIRCLE_PATH = `M${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+
+const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,48)},48 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,48)},48 L${fanX(420,405)},405`;
+
 function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
@@ -1128,16 +1185,15 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
  
   const ZONE_RECTS_EQUIPE = [
-    { x: 100, y: 50,  w: 90,  h: 45,  hatch: false }, // LOW LEFT
-    { x: 175, y: 50,  w: 90,  h: 95,  hatch: false }, // LOW (crease/slot)
-    { x: 265, y: 50,  w: 90,  h: 45,  hatch: false }, // LOW RIGHT
-    { x: 20,  y: 95,  w: 80,  h: 165, hatch: false }, // BOARDS (gauche)
-    { x: 160, y: 145, w: 120, h: 115, hatch: false }, // SLOT (centre, grand)
-    { x: 340, y: 95,  w: 80,  h: 165, hatch: false }, // BOARDS (droite)
-    { x: 20,  y: 260, w: 133, h: 70,  hatch: false }, // LEFT (point)
-    { x: 153, y: 260, w: 134, h: 70,  hatch: false }, // POINT (centre)
-    { x: 287, y: 260, w: 133, h: 70,  hatch: false }, // RIGHT (point)
+    { idx: 0, x: 100, y: 50,  w: 75,  h: 50, hatch: false },
+    { idx: 1, x: 175, y: 50,  w: 90,  h: 50, hatch: false },
+    { idx: 2, x: 265, y: 50,  w: 75,  h: 50, hatch: false },
+    { idx: 6, x: 20,  y: 260, w: 140, h: 70, hatch: false },
+    { idx: 7, x: 160, y: 260, w: 120, h: 70, hatch: false },
+    { idx: 8, x: 280, y: 260, w: 140, h: 70, hatch: false },
   ];
+  const attenduEquipe = 1 / zonesEquipe.length;
+  const pctEquipe = (i) => Math.max(0, Math.min(1, zonesEquipe[i].pct / (attenduEquipe * 2)));
  
   const getTendanceZone = (z) => {
     const attendu = 1 / zonesEquipe.length;
@@ -1365,28 +1421,42 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
             </div>
  
             <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
-              <svg viewBox="0 0 440 420" style={{ width: isMobile ? '75%' : '60%', display: 'block', margin: '0 auto' }}>
+              <svg viewBox="0 0 440 415" style={{ width: isMobile ? '85%' : '70%', display: 'block', margin: '0 auto' }}>
                 <defs>
-                  <pattern id="hatchZoneEq" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                    <line x1="0" y1="0" x2="0" y2="6" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
+                  <radialGradient id="iceGradientEq" cx="50%" cy="8%" r="95%">
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="100%" stopColor="#e9f1f8" />
+                  </radialGradient>
+                  <pattern id="iceTextureEq" width="140" height="140" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
+                    <path d="M-10,20 Q30,8 70,22 T150,10" stroke="#cfe0ee" strokeWidth="1" fill="none" opacity="0.5" />
+                    <path d="M-10,60 Q40,45 80,63 T170,50" stroke="#dbe8f2" strokeWidth="1" fill="none" opacity="0.4" />
                   </pattern>
+                  <clipPath id="boardClipEq"><path d={`${BOARD_D} Z`} /></clipPath>
                 </defs>
-                <rect x="0" y="0" width="440" height="420" fill="#0a0f1a" />
-                <path d="M20,410 L20,150 Q20,20 220,20 Q420,20 420,150 L420,410" fill="none" stroke="#2a2a2a" strokeWidth="2" />
-                {zonesEquipe.map((z, i) => {
-                  const r = ZONE_RECTS_EQUIPE[i];
-                  const attendu = 1 / zonesEquipe.length;
-                  const pct = Math.max(0, Math.min(1, z.pct / (attendu * 2)));
-                  return (
-                    <g key={i}>
-                      <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={heatColor(pct)} stroke="#0a0f1a" strokeWidth="2" />
-                      {r.hatch && <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#hatchZoneEq)" />}
-                      <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 6} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold">{z.label}</text>
-                      <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 12} textAnchor="middle" fill="white" fontSize="16" fontWeight="900">{z.moy}</text>
-                    </g>
-                  );
-                })}
-                <rect x="185" y="15" width="70" height="30" rx="2" fill="#0a0f1a" stroke="#aaa" strokeWidth="2" />
+                <rect x="0" y="0" width="440" height="415" fill="#0a0f1a" />
+                <g clipPath="url(#boardClipEq)">
+                  <rect x="0" y="0" width="440" height="415" fill="url(#iceGradientEq)" />
+                  <rect x="0" y="0" width="440" height="415" fill="url(#iceTextureEq)" />
+                  {ZONE_RECTS_EQUIPE.map((r, i) => {
+                    const path = zoneRectPath(r);
+                    const cx = fanX(r.x + r.w / 2, r.y + r.h / 2);
+                    const cy = r.y + r.h / 2;
+                    return (
+                      <g key={i}>
+                        <path d={path} fill={orangeRed(pctEquipe(r.idx))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                        <text x={cx} y={cy + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[r.idx].moy}</text>
+                      </g>
+                    );
+                  })}
+                  <path d={FULL_SLOT_PATH} fill={orangeRed(pctEquipe(4))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                  <text x={(L_P0[0]+R_P0[0]+R_P2[0]+L_P2[0])/4} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[4].moy}</text>
+                  <path d={L_CIRCLE_PATH} fill={orangeRed(pctEquipe(3))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                  <text x={L_CTRL[0] - 20} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[3].moy}</text>
+                  <path d={R_CIRCLE_PATH} fill={orangeRed(pctEquipe(5))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                  <text x={R_CTRL[0] + 20} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[5].moy}</text>
+                </g>
+                <path d={BOARD_D} fill="none" stroke="#0f2942" strokeWidth="3" />
+                <rect x="185" y="16" width="70" height="30" rx="3" fill="#f7fafc" stroke="#0f2942" strokeWidth="2.5" />
               </svg>
             </div>
  
@@ -1421,24 +1491,6 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
       )}
     </div>
   );
-}
- 
-function heatColor(pct) {
-  const stops = [
-    { p: 0,    c: [8, 47, 88] },
-    { p: 0.35, c: [3, 105, 161] },
-    { p: 0.6,  c: [6, 182, 212] },
-    { p: 0.8,  c: [250, 204, 21] },
-    { p: 1,    c: [234, 88, 12] },
-  ];
-  const v = Math.max(0, Math.min(1, pct || 0));
-  let a = stops[0], b = stops[stops.length - 1];
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (v >= stops[i].p && v <= stops[i + 1].p) { a = stops[i]; b = stops[i + 1]; break; }
-  }
-  const t = (v - a.p) / ((b.p - a.p) || 1);
-  const rgb = a.c.map((ch, i) => Math.round(ch + (b.c[i] - ch) * t));
-  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
 function FicheJoueur({ joueur, onBack }) {
@@ -1647,21 +1699,23 @@ const getMatchsChart = () => {
 };
  
   const ZONE_RECTS = [
-    { x: 160, y: 95,  w: 120, h: 95,  hatch: false }, // LOW SLOT
-    { x: 175, y: 50,  w: 90,  h: 45,  hatch: false }, // CREASE
-    { x: 160, y: 190, w: 120, h: 70,  hatch: false }, // HIGH SLOT
-    { x: 60,  y: 95,  w: 100, h: 165, hatch: false }, // L CIRCLE
-    { x: 280, y: 95,  w: 100, h: 165, hatch: false }, // R CIRCLE
-    { x: 100, y: 50,  w: 75,  h: 45,  hatch: false }, // L NET SIDE
-    { x: 20,  y: 50,  w: 40,  h: 210, hatch: false }, // L CORNER
-    { x: 265, y: 50,  w: 75,  h: 45,  hatch: false }, // R NET SIDE
-    { x: 380, y: 50,  w: 40,  h: 210, hatch: false }, // R CORNER
-    { x: 20,  y: 260, w: 140, h: 70,  hatch: false }, // L POINT
-    { x: 280, y: 260, w: 140, h: 70,  hatch: false }, // R POINT
-    { x: 160, y: 260, w: 120, h: 70,  hatch: false }, // C POINT
-    { x: 20,  y: 15,  w: 155, h: 35,  hatch: true },  // OUTSIDE L
-    { x: 265, y: 15,  w: 155, h: 35,  hatch: true },  // OUTSIDE R
-    { x: 20,  y: 330, w: 400, h: 70,  hatch: true },  // NEUTRAL ZONE
+    { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false },
+    { idx: 5,  x: 100, y: 50,  w: 75,  h: 50,  hatch: false },
+    { idx: 6,  x: 20,  y: 50,  w: 40,  h: 210, hatch: true  },
+    { idx: 7,  x: 265, y: 50,  w: 75,  h: 50,  hatch: false },
+    { idx: 8,  x: 380, y: 50,  w: 40,  h: 210, hatch: true  },
+    { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
+    { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
+    { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
+    { idx: 12, x: 20,  y: 15,  w: 155, h: 35,  hatch: true  },
+    { idx: 13, x: 265, y: 15,  w: 155, h: 35,  hatch: true  },
+    { idx: 14, x: 20,  y: 330, w: 400, h: 70,  hatch: true  },
+  ];
+  const CURVED_ZONES_JOUEUR = [
+    { idx: 0, path: LOW_SLOT_PATH,  cx: (L_P0[0]+R_P0[0]+R_MID[0]+L_MID[0])/4, cy: (L_P0[1]+R_MID[1])/2 },
+    { idx: 2, path: HIGH_SLOT_PATH, cx: (L_MID[0]+R_MID[0]+R_P2[0]+L_P2[0])/4, cy: (L_MID[1]+R_P2[1])/2 },
+    { idx: 3, path: L_CIRCLE_PATH,  cx: L_CTRL[0] - 20, cy: CIRCLE_Y_MID },
+    { idx: 4, path: R_CIRCLE_PATH,  cx: R_CTRL[0] + 20, cy: CIRCLE_Y_MID },
   ];
  
   const pad = isMobile ? '14px' : '20px';
@@ -1863,28 +1917,56 @@ const getMatchsChart = () => {
                 ))}
               </div>
               <div style={{ backgroundColor: '#0a0f1a', borderRadius: '10px', overflow: 'hidden' }}>
-                <svg viewBox="0 0 440 420" style={{ width: '100%', display: 'block' }}>
+                <svg viewBox="0 0 440 415" style={{ width: '100%', display: 'block' }}>
                   <defs>
-                    <pattern id="hatchZone" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                      <line x1="0" y1="0" x2="0" y2="6" stroke="#000" strokeOpacity="0.35" strokeWidth="2" />
+                    <radialGradient id="iceGradientP" cx="50%" cy="8%" r="95%">
+                      <stop offset="0%" stopColor="#ffffff" />
+                      <stop offset="100%" stopColor="#e9f1f8" />
+                    </radialGradient>
+                    <pattern id="iceTextureP" width="140" height="140" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
+                      <path d="M-10,20 Q30,8 70,22 T150,10" stroke="#cfe0ee" strokeWidth="1" fill="none" opacity="0.5" />
+                      <path d="M-10,60 Q40,45 80,63 T170,50" stroke="#dbe8f2" strokeWidth="1" fill="none" opacity="0.4" />
                     </pattern>
+                    <pattern id="hatchZoneP" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                      <line x1="0" y1="0" x2="0" y2="6" stroke="#7a1f0f" strokeOpacity="0.25" strokeWidth="2" />
+                    </pattern>
+                    <clipPath id="boardClipP"><path d={`${BOARD_D} Z`} /></clipPath>
                   </defs>
-                  <rect x="0" y="0" width="440" height="420" fill="#0a0f1a" />
-                  <path d="M20,410 L20,150 Q20,20 220,20 Q420,20 420,150 L420,410" fill="none" stroke="#2a2a2a" strokeWidth="2" />
-                  {zones.map((z, i) => {
-                    const r = ZONE_RECTS[i];
-                    const pct = typeChart === 'Goals' ? z.goalsPct : z.sogPct;
-                    const val = getValeurZone(z);
-                    return (
-                      <g key={i}>
-                        <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={heatColor(pct)} stroke="#0a0f1a" strokeWidth="2" />
-                        {r.hatch && <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="url(#hatchZone)" />}
-                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 6} textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold">{z.label}</text>
-                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 12} textAnchor="middle" fill="white" fontSize="17" fontWeight="900">{val}</text>
-                      </g>
-                    );
-                  })}
-                  <rect x="185" y="15" width="70" height="30" rx="2" fill="#0a0f1a" stroke="#aaa" strokeWidth="2" />
+                  <rect x="0" y="0" width="440" height="415" fill="#0a0f1a" />
+                  <g clipPath="url(#boardClipP)">
+                    <rect x="0" y="0" width="440" height="415" fill="url(#iceGradientP)" />
+                    <rect x="0" y="0" width="440" height="415" fill="url(#iceTextureP)" />
+                    {ZONE_RECTS.map((r, i) => {
+                      const z = zones[r.idx];
+                      const pct = typeChart === 'Goals' ? z.goalsPct : z.sogPct;
+                      const val = getValeurZone(z);
+                      const path = zoneRectPath(r);
+                      const cx = fanX(r.x + r.w / 2, r.y + r.h / 2);
+                      const cy = r.y + r.h / 2;
+                      return (
+                        <g key={i}>
+                          <path d={path} fill={orangeRed(pct)} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                          {r.hatch && <path d={path} fill="url(#hatchZoneP)" />}
+                          <text x={cx} y={cy + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{val}</text>
+                        </g>
+                      );
+                    })}
+                    {CURVED_ZONES_JOUEUR.map((c) => {
+                      const z = zones[c.idx];
+                      const pct = typeChart === 'Goals' ? z.goalsPct : z.sogPct;
+                      const val = getValeurZone(z);
+                      return (
+                        <g key={c.idx}>
+                          <path d={c.path} fill={orangeRed(pct)} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                          <text x={c.cx} y={c.cy + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{val}</text>
+                        </g>
+                      );
+                    })}
+                    <line x1="0" y1="100" x2="440" y2="100" stroke="#c81e2c" strokeWidth="1.5" opacity="0.4" />
+                    <line x1="0" y1="330" x2="440" y2="330" stroke="#1e5fc8" strokeWidth="2.5" opacity="0.4" />
+                  </g>
+                  <path d={BOARD_D} fill="none" stroke="#0f2942" strokeWidth="3" />
+                  <rect x="185" y="16" width="70" height="30" rx="3" fill="#f7fafc" stroke="#0f2942" strokeWidth="2.5" />
                 </svg>
               </div>
             </div>
