@@ -1058,6 +1058,12 @@ function zoneRectPath(r) {
   const yTop = r.y, yBot = r.y + r.h;
   const xTL = fanX(r.x, yTop), xTR = fanX(r.x + r.w, yTop);
   const xBL = fanX(r.x, yBot), xBR = fanX(r.x + r.w, yBot);
+  if (r.curveTop || r.curveBottom) {
+    const arcY = (x, baseY, amt) => baseY + (amt || 0) * Math.pow((x - 220) / 220, 2);
+    const yTL = arcY(xTL, yTop, r.curveTop), yTR = arcY(xTR, yTop, r.curveTop);
+    const yBL = arcY(xBL, yBot, r.curveBottom), yBR = arcY(xBR, yBot, r.curveBottom);
+    return `M${xTL},${yTL} Q220,${yTop + (r.curveTop||0)*0} ${xTR},${yTR} L${xBR},${yBR} Q220,${yBot} ${xBL},${yBL} Z`;
+  }
   return roundedPolyPath([[xTL,yTop],[xTR,yTop],[xBR,yBot],[xBL,yBot]], 9);
 }
 
@@ -1079,7 +1085,7 @@ const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${
 
 const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -1246,9 +1252,9 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
  
   const ZONE_RECTS_EQUIPE = [
-    { idx: 0, x: 60,  y: 50,  w: 115, h: 50, hatch: false },
-    { idx: 1, x: 175, y: 50,  w: 90,  h: 50, hatch: false },
-    { idx: 2, x: 265, y: 50,  w: 115, h: 50, hatch: false },
+    { idx: 0, x: 60,  y: 50,  w: 115, h: 50, hatch: false, curveTop: 22 },
+    { idx: 1, x: 175, y: 50,  w: 90,  h: 50, hatch: false, curveTop: 22 },
+    { idx: 2, x: 265, y: 50,  w: 115, h: 50, hatch: false, curveTop: 22 },
     { idx: 6, x: 20,  y: 260, w: 140, h: 70, hatch: false },
     { idx: 7, x: 160, y: 260, w: 120, h: 70, hatch: false },
     { idx: 8, x: 280, y: 260, w: 140, h: 70, hatch: false },
@@ -1759,11 +1765,11 @@ const getMatchsChart = () => {
 };
  
   const ZONE_RECTS = [
-    { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false },
-    { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false },
-    { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true  },
-    { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false },
-    { idx: 8,  x: 265, y: 15,  w: 155, h: 35,  hatch: true  },
+    { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false, curveTop: 22 },
+    { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
+    { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
+    { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
+    { idx: 8,  x: 265, y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
     { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
     { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
     { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
