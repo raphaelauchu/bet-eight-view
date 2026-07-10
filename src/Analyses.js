@@ -1034,11 +1034,31 @@ function quadPoint(p0, p1, p2, t) {
   ];
 }
 
+function roundedPolyPath(pts, radius = 9) {
+  const n = pts.length;
+  const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+  const norm = (v) => { const m = Math.hypot(v[0], v[1]) || 1; return [v[0]/m, v[1]/m]; };
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n];
+    const curr = pts[i];
+    const next = pts[(i + 1) % n];
+    const toPrev = norm([prev[0]-curr[0], prev[1]-curr[1]]);
+    const toNext = norm([next[0]-curr[0], next[1]-curr[1]]);
+    const rr = Math.min(radius, dist(curr, prev)/2, dist(curr, next)/2);
+    const p1 = [curr[0] + toPrev[0]*rr, curr[1] + toPrev[1]*rr];
+    const p2 = [curr[0] + toNext[0]*rr, curr[1] + toNext[1]*rr];
+    d += (i === 0 ? `M${p1[0]},${p1[1]} ` : `L${p1[0]},${p1[1]} `);
+    d += `Q${curr[0]},${curr[1]} ${p2[0]},${p2[1]} `;
+  }
+  return d + 'Z';
+}
+
 function zoneRectPath(r) {
   const yTop = r.y, yBot = r.y + r.h;
   const xTL = fanX(r.x, yTop), xTR = fanX(r.x + r.w, yTop);
   const xBL = fanX(r.x, yBot), xBR = fanX(r.x + r.w, yBot);
-  return `M${xTL},${yTop} L${xTR},${yTop} L${xBR},${yBot} L${xBL},${yBot} Z`;
+  return roundedPolyPath([[xTL,yTop],[xTR,yTop],[xBR,yBot],[xBL,yBot]], 9);
 }
 
 const CIRCLE_Y_TOP = 100, CIRCLE_Y_MID = 180, CIRCLE_Y_BOT = 260, CIRCLE_BULGE = 26;
@@ -1057,7 +1077,7 @@ const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[
 const L_CIRCLE_PATH = `M${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 
-const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,48)},48 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,48)},48 L${fanX(420,405)},405`;
+const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
 function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF }) {
   const isMobile = useIsMobile();
