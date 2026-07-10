@@ -1011,7 +1011,7 @@ function fanX(x, y, cx = 220, minY = 15, maxY = 405, spread = 0.22) {
 
 function orangeRed(pct) {
   const stops = [
-    { p: 0,    c: [255, 255, 255] },
+    { p: 0,    c: [255, 229, 180] },
     { p: 0.15, c: [255, 224, 178] },
     { p: 0.4,  c: [255, 176, 90]  },
     { p: 0.7,  c: [237, 108, 42]  },
@@ -1226,9 +1226,9 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
  
   const ZONE_RECTS_EQUIPE = [
-    { idx: 0, x: 100, y: 50,  w: 75,  h: 50, hatch: false },
+    { idx: 0, x: 60,  y: 50,  w: 115, h: 50, hatch: false },
     { idx: 1, x: 175, y: 50,  w: 90,  h: 50, hatch: false },
-    { idx: 2, x: 265, y: 50,  w: 75,  h: 50, hatch: false },
+    { idx: 2, x: 265, y: 50,  w: 115, h: 50, hatch: false },
     { idx: 6, x: 20,  y: 260, w: 140, h: 70, hatch: false },
     { idx: 7, x: 160, y: 260, w: 120, h: 70, hatch: false },
     { idx: 8, x: 280, y: 260, w: 140, h: 70, hatch: false },
@@ -1740,15 +1740,15 @@ const getMatchsChart = () => {
  
   const ZONE_RECTS = [
     { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false },
-    { idx: 5,  x: 100, y: 50,  w: 75,  h: 50,  hatch: false },
-    { idx: 6,  x: 20,  y: 50,  w: 40,  h: 210, hatch: true  },
-    { idx: 7,  x: 265, y: 50,  w: 75,  h: 50,  hatch: false },
-    { idx: 8,  x: 380, y: 50,  w: 40,  h: 210, hatch: true  },
+    { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false },
+    { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true  },
+    { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false },
+    { idx: 8,  x: 265, y: 15,  w: 155, h: 35,  hatch: true  },
     { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
     { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
     { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
-    { idx: 12, x: 20,  y: 15,  w: 155, h: 35,  hatch: true  },
-    { idx: 13, x: 265, y: 15,  w: 155, h: 35,  hatch: true  },
+    { idx: 12, x: 20,  y: 50,  w: 40,  h: 210, hatch: true  },
+    { idx: 13, x: 380, y: 50,  w: 40,  h: 210, hatch: true  },
     { idx: 14, x: 20,  y: 330, w: 400, h: 70,  hatch: true  },
   ];
   const CURVED_ZONES_JOUEUR = [
