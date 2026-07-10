@@ -1298,7 +1298,7 @@ const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${
 
 const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_REG_2526 }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
