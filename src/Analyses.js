@@ -1291,6 +1291,8 @@ const HIGH_SLOT_PATH = `M${L_MID[0]},${L_MID[1]} L${R_MID[0]},${R_MID[1]} L${R_P
 const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P0[0]},${L_P0[1]} Z`;
 const L_CIRCLE_PATH = `M${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+const L_OUTSIDE_PATH = `M${fanX(20,74)},74 L${fanX(70,74)},74 L${fanX(70,264)},264 L${fanX(20,264)},264 Z`;
+const R_OUTSIDE_PATH = `M${fanX(420,74)},74 L${fanX(370,74)},74 L${fanX(370,264)},264 L${fanX(420,264)},264 Z`;
 
 const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
@@ -1974,7 +1976,6 @@ const getMatchsChart = () => {
 };
  
   const ZONE_RECTS = [
-    { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false, curveTop: 22 },
     { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
     { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
     { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
@@ -1982,8 +1983,6 @@ const getMatchsChart = () => {
     { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
     { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
     { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
-    { idx: 12, x: 20,  y: 50,  w: 40,  h: 210, hatch: true  },
-    { idx: 13, x: 380, y: 50,  w: 40,  h: 210, hatch: true  },
     { idx: 14, x: 20,  y: 330, w: 400, h: 70,  hatch: true  },
   ];
   const CURVED_ZONES_JOUEUR = [
@@ -1991,6 +1990,9 @@ const getMatchsChart = () => {
     { idx: 2, path: HIGH_SLOT_PATH, cx: (L_MID[0]+R_MID[0]+R_P2[0]+L_P2[0])/4, cy: (L_MID[1]+R_P2[1])/2 },
     { idx: 3, path: L_CIRCLE_PATH,  cx: L_CTRL[0] - 20, cy: CIRCLE_Y_MID },
     { idx: 4, path: R_CIRCLE_PATH,  cx: R_CTRL[0] + 20, cy: CIRCLE_Y_MID },
+    { idx: 1, path: `M186,58 L252,58 L252,74 L186,74 Z`, cx: 219, cy: 66 },
+    { idx: 12, path: L_OUTSIDE_PATH, cx: fanX(45,169), cy: 169, hatch: true },
+    { idx: 13, path: R_OUTSIDE_PATH, cx: fanX(395,169), cy: 169, hatch: true },
   ];
  
   const pad = isMobile ? '14px' : '20px';
@@ -2233,6 +2235,7 @@ const getMatchsChart = () => {
                       return (
                         <g key={c.idx}>
                           <path d={c.path} fill={orangeRed(pct)} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
+                          {c.hatch && <path d={c.path} fill="url(#hatchZoneP)" />}
                           <text x={c.cx} y={c.cy + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{val}</text>
                         </g>
                       );
