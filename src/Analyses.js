@@ -2240,6 +2240,8 @@ const getMatchsChart = () => {
                   {EDGE_BORDER_PATHS.map((d, i) => (
                     <path key={`border-${i}`} d={d} fill="none" stroke="black" strokeWidth="2.99369" strokeMiterlimit="10" />
                   ))}
+                  <line x1="63.38" y1="2" x2="63.38" y2="34" stroke="black" strokeWidth="2.99369" />
+                  <line x1="140.33" y1="2" x2="140.33" y2="34" stroke="black" strokeWidth="2.99369" />
                   {EDGE_ZONES.map((z) => {
                     const data = zones[z.idx];
                     const val = getValeurZone(data);
