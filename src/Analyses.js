@@ -1291,8 +1291,14 @@ const HIGH_SLOT_PATH = `M${L_MID[0]},${L_MID[1]} L${R_MID[0]},${R_MID[1]} L${R_P
 const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P0[0]},${L_P0[1]} Z`;
 const L_CIRCLE_PATH = `M${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
-const L_OUTSIDE_PATH = `M${fanX(20,74)},74 L${fanX(70,74)},74 L${fanX(70,264)},264 L${fanX(20,264)},264 Z`;
-const R_OUTSIDE_PATH = `M${fanX(420,74)},74 L${fanX(370,74)},74 L${fanX(370,264)},264 L${fanX(420,264)},264 Z`;
+
+// Bande "net side / crease" (y50 -> CIRCLE_Y_TOP=100), entre le corner-band (y15-50) et les cercles/low slot.
+const CREASE_PATH = `M${fanX(175,50)},50 L${fanX(265,50)},50 L${R_P0[0]},${R_P0[1]} L${L_P0[0]},${L_P0[1]} Z`;
+const L_NET_SIDE_PATH = `M${fanX(60,50)},50 L${fanX(175,50)},50 L${L_P0[0]},${L_P0[1]} L${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} Z`;
+const R_NET_SIDE_PATH = `M${fanX(265,50)},50 L${fanX(380,50)},50 L${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Z`;
+// Bande extérieure le long des bandes, de y50 jusqu'au bas des cercles (CIRCLE_Y_BOT=260).
+const L_OUTSIDE_PATH = `M${fanX(20,50)},50 L${fanX(60,50)},50 L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} L${fanX(20,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+const R_OUTSIDE_PATH = `M${fanX(420,50)},50 L${fanX(380,50)},50 L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} L${fanX(420,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 
 const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
@@ -1976,10 +1982,8 @@ const getMatchsChart = () => {
 };
  
   const ZONE_RECTS = [
-    { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
-    { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
-    { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
-    { idx: 8,  x: 265, y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
+    { idx: 6,  x: 20,  y: 15,  w: 200, h: 35,  hatch: true },
+    { idx: 8,  x: 220, y: 15,  w: 200, h: 35,  hatch: true },
     { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
     { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
     { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
@@ -1990,9 +1994,11 @@ const getMatchsChart = () => {
     { idx: 2, path: HIGH_SLOT_PATH, cx: (L_MID[0]+R_MID[0]+R_P2[0]+L_P2[0])/4, cy: (L_MID[1]+R_P2[1])/2 },
     { idx: 3, path: L_CIRCLE_PATH,  cx: L_CTRL[0] - 20, cy: CIRCLE_Y_MID },
     { idx: 4, path: R_CIRCLE_PATH,  cx: R_CTRL[0] + 20, cy: CIRCLE_Y_MID },
-    { idx: 1, path: `M186,58 L252,58 L252,74 L186,74 Z`, cx: 219, cy: 66 },
-    { idx: 12, path: L_OUTSIDE_PATH, cx: fanX(45,169), cy: 169, hatch: true },
-    { idx: 13, path: R_OUTSIDE_PATH, cx: fanX(395,169), cy: 169, hatch: true },
+    { idx: 1, path: CREASE_PATH,      cx: 220,                cy: 75 },
+    { idx: 5, path: L_NET_SIDE_PATH,  cx: fanX(117, 75),      cy: 75 },
+    { idx: 7, path: R_NET_SIDE_PATH,  cx: fanX(323, 75),      cy: 75 },
+    { idx: 12, path: L_OUTSIDE_PATH,  cx: fanX(40, 155),      cy: 155, hatch: true },
+    { idx: 13, path: R_OUTSIDE_PATH,  cx: fanX(400, 155),     cy: 155, hatch: true },
   ];
  
   const pad = isMobile ? '14px' : '20px';
