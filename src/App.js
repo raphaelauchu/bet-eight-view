@@ -3,7 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses from './Analyses';
+import Analyses, { AnalysesRecherche } from './Analyses';
 import { supabase } from './supabase';
 import { getT } from './i18n';
  
@@ -1425,10 +1425,11 @@ function App() {
     const t = getT(lang);
     const tabs = [
       { id: 'home', label: t('nav_tab_home'), icon: '⌂' },
-      { id: 'analyses', label: t('nav_tab_analytics'), icon: '◎' },
-      { id: 'props', label: 'Props', icon: '◆' },
+      { id: 'stats', label: t('nav_tab_stats'), icon: '◎' },
+      { id: 'analyses', label: t('nav_tab_analyses'), icon: '🔍' },
+      { id: 'props', label: t('nav_tab_models'), icon: '◆' },
     ];
-    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
+    const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
 
     return (
       <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
@@ -1491,9 +1492,9 @@ function App() {
         )}
 
         {/* Ticker NHL */}
-        {activeTab === 'analyses' && ligueAnalyses === 'nhl' && (
+        {(activeTab === 'stats' && ligueAnalyses === 'nhl') || activeTab === 'analyses' ? (
           <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
-        )}
+        ) : null}
 
         {/* Contenu */}
         <div style={{ padding: '0' }}>
@@ -1506,9 +1507,11 @@ function App() {
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
-            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} onGoToBets={() => setPage('bets')} lang={lang} />
-          ) : activeTab === 'analyses' ? (
+            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')} lang={lang} />
+          ) : activeTab === 'stats' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
+          ) : activeTab === 'analyses' ? (
+            <AnalysesRecherche />
           ) : activeTab === 'props' ? (
             <PropsPage lang={lang} />
           ) : null}
