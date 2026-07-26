@@ -1634,6 +1634,15 @@ function orangeRed(pct) {
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
+// Couleur du shot chart FicheJoueur basee sur le nombre brut de tirs (pas un pourcentage).
+function orangeParTirs(val) {
+  const v = Number(val) || 0;
+  if (v === 0) return '#FFFFFF';
+  if (v <= 20) return '#FFE0B2';
+  if (v <= 40) return '#FF9800';
+  return '#E65100';
+}
+
 function roundedPolyPath(pts, radius = 9) {
   const n = pts.length;
   const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
@@ -2627,15 +2636,15 @@ const getMatchsChart = () => {
                   <rect x="0" y="0" width="204" height="214" fill="url(#iceGradientP)" />
                   {EDGE_ZONES.map((z) => {
                     const data = zones[z.idx];
-                    const pct = typeChart === 'Goals' ? data.goalsPct : data.sogPct;
+                    const val = getValeurZone(data);
                     return (
                       <g key={z.idx} transform={`translate(${z.tx},${z.ty})`}>
-                        <path d={z.d} fill={orangeRed(pct)} stroke="none" />
+                        <path d={z.d} fill={orangeParTirs(val)} stroke="none" />
                         {z.hatch && <path d={z.d} fill="url(#hatchZoneP)" />}
                       </g>
                     );
                   })}
-                  <path d={BEHIND_NET_D} fill={orangeRed(0)} stroke="none" />
+                  <path d={BEHIND_NET_D} fill={orangeParTirs(0)} stroke="none" />
                   <path d={BEHIND_NET_D} fill="url(#hatchZoneP)" />
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 4" width="33" height="4" x="85" y="32">
                     <path d="M0.823242 0.435547L32.7559 0.435547V3.42923H0.823242V0.435547Z" fill="black" />
