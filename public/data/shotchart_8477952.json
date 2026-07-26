@@ -4,7 +4,7 @@
   "team": "STL,MIN",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:58:24.710142",
+  "lastUpdated": "2026-07-26T15:48:49.094704",
   "reg": {
     "totalGames": 21,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

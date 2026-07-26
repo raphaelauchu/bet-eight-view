@@ -4,7 +4,7 @@
   "team": "CGY",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:50:17.335144",
+  "lastUpdated": "2026-07-26T15:40:16.128682",
   "reg": {
     "totalGames": 79,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 75,
+        "shotsOnGoal": 76,
         "goals": 6,
-        "shootingPctg": 0.08
+        "shootingPctg": 0.0789
       },
       "totals": {
         "all": {

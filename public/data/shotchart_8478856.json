@@ -4,7 +4,7 @@
   "team": "VAN,CBJ",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:44:24.362530",
+  "lastUpdated": "2026-07-26T15:33:52.881989",
   "reg": {
     "totalGames": 71,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9805,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 129,
+        "shotsOnGoal": 134,
         "goals": 11,
-        "shootingPctg": 0.0853
+        "shootingPctg": 0.0821
       },
       "totals": {
         "all": {

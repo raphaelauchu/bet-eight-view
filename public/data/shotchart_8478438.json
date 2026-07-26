@@ -4,7 +4,7 @@
   "team": "PIT",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:41:32.096451",
+  "lastUpdated": "2026-07-26T15:30:51.759554",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 128,
-        "goals": 15,
-        "shootingPctg": 0.1172
+        "shotsOnGoal": 130,
+        "goals": 16,
+        "shootingPctg": 0.1231
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

@@ -4,7 +4,7 @@
   "team": "WSH,VGK",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:48:53.626093",
+  "lastUpdated": "2026-07-26T15:38:43.486353",
   "reg": {
     "totalGames": 75,
     "szn": {
@@ -111,6 +111,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7964,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {
@@ -269,10 +276,17 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8565,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 22,
+        "shotsOnGoal": 23,
         "goals": 3,
-        "shootingPctg": 0.1364
+        "shootingPctg": 0.1304
       },
       "totals": {
         "all": {

@@ -4,7 +4,7 @@
   "team": "DAL",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:41:09.661537",
+  "lastUpdated": "2026-07-26T15:30:25.391643",
   "reg": {
     "totalGames": 53,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 122,
+        "shotsOnGoal": 123,
         "goals": 14,
-        "shootingPctg": 0.1148
+        "shootingPctg": 0.1138
       },
       "totals": {
         "all": {

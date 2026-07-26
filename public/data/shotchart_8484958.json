@@ -4,7 +4,7 @@
   "team": "NYI,NJD",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:59:06.315485",
+  "lastUpdated": "2026-07-26T15:50:02.175987",
   "reg": {
     "totalGames": 49,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 36,
+        "shotsOnGoal": 38,
         "goals": 2,
-        "shootingPctg": 0.0556
+        "shootingPctg": 0.0526
       },
       "totals": {
         "all": {

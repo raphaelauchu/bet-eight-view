@@ -4,7 +4,7 @@
   "team": "CBJ",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:45:16.189150",
+  "lastUpdated": "2026-07-26T15:34:35.163936",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.7685,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9012,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 148,
+        "shotsOnGoal": 149,
         "goals": 9,
-        "shootingPctg": 0.0608
+        "shootingPctg": 0.0604
       },
       "totals": {
         "all": {

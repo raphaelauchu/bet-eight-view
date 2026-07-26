@@ -4,7 +4,7 @@
   "team": "UTA",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:47:58.503546",
+  "lastUpdated": "2026-07-26T15:37:45.605698",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.7685,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9012,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 53,
+        "shotsOnGoal": 54,
         "goals": 3,
-        "shootingPctg": 0.0566
+        "shootingPctg": 0.0556
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

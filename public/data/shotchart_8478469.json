@@ -4,7 +4,7 @@
   "team": "OTT",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:45:12.221101",
+  "lastUpdated": "2026-07-26T15:34:50.345750",
   "reg": {
     "totalGames": 57,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5586,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9012,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 93,
+        "shotsOnGoal": 94,
         "goals": 7,
-        "shootingPctg": 0.0753
+        "shootingPctg": 0.0745
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8115,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

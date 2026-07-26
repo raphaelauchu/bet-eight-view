@@ -4,7 +4,7 @@
   "team": "CAR",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:45:48.570503",
+  "lastUpdated": "2026-07-26T15:35:22.589360",
   "reg": {
     "totalGames": 77,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9023,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 97,
+        "shotsOnGoal": 100,
         "goals": 10,
-        "shootingPctg": 0.1031
+        "shootingPctg": 0.1
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6637,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

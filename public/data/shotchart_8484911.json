@@ -4,7 +4,7 @@
   "team": "SJS",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:40:45.325380",
+  "lastUpdated": "2026-07-26T15:29:58.446564",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 114,
+        "shotsOnGoal": 115,
         "goals": 21,
-        "shootingPctg": 0.1842
+        "shootingPctg": 0.1826
       },
       "totals": {
         "all": {

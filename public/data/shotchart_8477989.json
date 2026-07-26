@@ -4,7 +4,7 @@
   "team": "PHI",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:39:51.173643",
+  "lastUpdated": "2026-07-26T15:28:47.347211",
   "reg": {
     "totalGames": 80,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9805,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 141,
+        "shotsOnGoal": 146,
         "goals": 18,
-        "shootingPctg": 0.1277
+        "shootingPctg": 0.1233
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9596,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

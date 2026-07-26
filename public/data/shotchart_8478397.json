@@ -4,7 +4,7 @@
   "team": "CGY,VGK",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:40:32.817578",
+  "lastUpdated": "2026-07-26T15:29:56.278818",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -111,6 +111,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8889,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {
@@ -269,8 +276,15 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9836,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 31,
+        "shotsOnGoal": 32,
         "goals": 0,
         "shootingPctg": 0.0
       },

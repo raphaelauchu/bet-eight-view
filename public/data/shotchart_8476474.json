@@ -4,7 +4,7 @@
   "team": "NJD",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:56:36.715724",
+  "lastUpdated": "2026-07-26T15:47:05.869901",
   "reg": {
     "totalGames": 38,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.7964,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9577,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 46,
+        "shotsOnGoal": 50,
         "goals": 3,
-        "shootingPctg": 0.0652
+        "shootingPctg": 0.06
       },
       "totals": {
         "all": {

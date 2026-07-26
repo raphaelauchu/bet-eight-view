@@ -4,7 +4,7 @@
   "team": "STL",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:52:55.871667",
+  "lastUpdated": "2026-07-26T15:43:38.251240",
   "reg": {
     "totalGames": 67,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5586,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9012,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 75,
+        "shotsOnGoal": 76,
         "goals": 5,
-        "shootingPctg": 0.0667
+        "shootingPctg": 0.0658
       },
       "totals": {
         "all": {

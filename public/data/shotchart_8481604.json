@@ -4,7 +4,7 @@
   "team": "VGK",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:37:54.138512",
+  "lastUpdated": "2026-07-26T15:26:48.560114",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -111,6 +111,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5309,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {
@@ -269,10 +276,17 @@
         "sogPercentile": 0.9238,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8565,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 57,
+        "shotsOnGoal": 58,
         "goals": 12,
-        "shootingPctg": 0.2105
+        "shootingPctg": 0.2069
       },
       "totals": {
         "all": {

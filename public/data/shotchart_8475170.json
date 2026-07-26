@@ -4,7 +4,7 @@
   "team": "STL,NYI",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:42:14.164089",
+  "lastUpdated": "2026-07-26T15:31:38.195462",
   "reg": {
     "totalGames": 80,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

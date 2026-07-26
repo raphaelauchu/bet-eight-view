@@ -4,7 +4,7 @@
   "team": "VAN",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:45:58.336453",
+  "lastUpdated": "2026-07-26T15:35:24.738444",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.9039
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 134,
+        "shotsOnGoal": 136,
         "goals": 17,
-        "shootingPctg": 0.1269
+        "shootingPctg": 0.125
       },
       "totals": {
         "all": {

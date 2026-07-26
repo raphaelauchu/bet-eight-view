@@ -4,7 +4,7 @@
   "team": "CHI",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:47:38.175538",
+  "lastUpdated": "2026-07-26T15:37:23.125293",
   "reg": {
     "totalGames": 68,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

@@ -4,7 +4,7 @@
   "team": "BOS",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T14:01:48.620262",
+  "lastUpdated": "2026-07-26T15:54:22.279729",
   "reg": {
     "totalGames": 8,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

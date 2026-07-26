@@ -4,7 +4,7 @@
   "team": "BOS",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:39:13.856026",
+  "lastUpdated": "2026-07-26T15:28:18.881317",
   "reg": {
     "totalGames": 69,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.9446,
         "goalsPercentile": 0.9039
       },
+      "behindNet": {
+        "shotsOnGoal": 3,
+        "goals": 1,
+        "shootingPctg": 0.3333,
+        "sogPercentile": 0.9023,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 168,
-        "goals": 22,
-        "shootingPctg": 0.131
+        "shotsOnGoal": 171,
+        "goals": 23,
+        "shootingPctg": 0.1345
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

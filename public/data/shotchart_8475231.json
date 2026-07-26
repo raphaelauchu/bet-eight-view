@@ -4,7 +4,7 @@
   "team": "NYI",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:50:03.140049",
+  "lastUpdated": "2026-07-26T15:39:45.436221",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -112,6 +112,13 @@
         "shootingPctg": 0.25,
         "sogPercentile": 0.7964,
         "goalsPercentile": 0.9039
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
       },
       "total": {
         "shotsOnGoal": 76,

@@ -4,7 +4,7 @@
   "team": "WPG",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:50:55.646970",
+  "lastUpdated": "2026-07-26T15:40:56.847855",
   "reg": {
     "totalGames": 66,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 79,
-        "goals": 7,
-        "shootingPctg": 0.0886
+        "shotsOnGoal": 80,
+        "goals": 8,
+        "shootingPctg": 0.1
       },
       "totals": {
         "all": {

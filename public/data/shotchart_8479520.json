@@ -4,7 +4,7 @@
   "team": "WSH",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:55:25.640452",
+  "lastUpdated": "2026-07-26T15:46:12.773759",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5309,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 59,
-        "goals": 3,
-        "shootingPctg": 0.0508
+        "shotsOnGoal": 61,
+        "goals": 4,
+        "shootingPctg": 0.0656
       },
       "totals": {
         "all": {

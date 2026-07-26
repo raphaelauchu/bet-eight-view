@@ -4,7 +4,7 @@
   "team": "TOR",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:39:21.591035",
+  "lastUpdated": "2026-07-26T15:28:27.286251",
   "reg": {
     "totalGames": 60,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5309,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9023,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 220,
+        "shotsOnGoal": 223,
         "goals": 26,
-        "shootingPctg": 0.1182
+        "shootingPctg": 0.1166
       },
       "totals": {
         "all": {

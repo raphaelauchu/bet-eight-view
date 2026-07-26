@@ -4,7 +4,7 @@
   "team": "NSH,VGK",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:53:30.020631",
+  "lastUpdated": "2026-07-26T15:44:11.155539",
   "reg": {
     "totalGames": 63,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5309,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 63,
+        "shotsOnGoal": 64,
         "goals": 8,
-        "shootingPctg": 0.127
+        "shootingPctg": 0.125
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6637,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

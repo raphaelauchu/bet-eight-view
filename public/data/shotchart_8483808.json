@@ -4,7 +4,7 @@
   "team": "LAK",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:47:13.570224",
+  "lastUpdated": "2026-07-26T15:36:56.521809",
   "reg": {
     "totalGames": 52,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5309,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 66,
+        "shotsOnGoal": 67,
         "goals": 13,
-        "shootingPctg": 0.197
+        "shootingPctg": 0.194
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

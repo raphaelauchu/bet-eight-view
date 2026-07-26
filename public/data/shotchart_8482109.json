@@ -4,7 +4,7 @@
   "team": "NYR",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:38:48.712467",
+  "lastUpdated": "2026-07-26T15:27:52.371666",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.9039
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 163,
+        "shotsOnGoal": 164,
         "goals": 24,
-        "shootingPctg": 0.1472
+        "shootingPctg": 0.1463
       },
       "totals": {
         "all": {

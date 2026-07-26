@@ -4,7 +4,7 @@
   "team": "MTL",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:36:06.686558",
+  "lastUpdated": "2026-07-26T15:24:43.810813",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 6,
+        "goals": 1,
+        "shootingPctg": 0.1667,
+        "sogPercentile": 0.987,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 249,
-        "goals": 50,
-        "shootingPctg": 0.2008
+        "shotsOnGoal": 255,
+        "goals": 51,
+        "shootingPctg": 0.2
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6637,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

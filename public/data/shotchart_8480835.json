@@ -4,7 +4,7 @@
   "team": "COL",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:46:23.122063",
+  "lastUpdated": "2026-07-26T15:36:14.243013",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.6645,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 94,
-        "goals": 9,
-        "shootingPctg": 0.0957
+        "shotsOnGoal": 95,
+        "goals": 10,
+        "shootingPctg": 0.1053
       },
       "totals": {
         "all": {
@@ -267,6 +274,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6637,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {

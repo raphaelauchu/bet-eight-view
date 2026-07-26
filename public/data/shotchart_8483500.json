@@ -4,7 +4,7 @@
   "team": "BUF",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:46:29.670667",
+  "lastUpdated": "2026-07-26T15:36:00.613512",
   "reg": {
     "totalGames": 60,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.5309,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 57,
+        "shotsOnGoal": 58,
         "goals": 11,
-        "shootingPctg": 0.193
+        "shootingPctg": 0.1897
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

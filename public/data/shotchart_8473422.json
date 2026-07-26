@@ -4,7 +4,7 @@
   "team": "CHI,MIN",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:51:56.268605",
+  "lastUpdated": "2026-07-26T15:41:59.639466",
   "reg": {
     "totalGames": 54,
     "szn": {
@@ -111,6 +111,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5309,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {
@@ -269,10 +276,17 @@
         "sogPercentile": 0.6637,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8565,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 7,
+        "shotsOnGoal": 8,
         "goals": 2,
-        "shootingPctg": 0.2857
+        "shootingPctg": 0.25
       },
       "totals": {
         "all": {

@@ -4,7 +4,7 @@
   "team": "TOR,MTL",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:56:16.954395",
+  "lastUpdated": "2026-07-26T15:46:52.756511",
   "reg": {
     "totalGames": 21,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.5619,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 17,
-        "goals": 2,
-        "shootingPctg": 0.1176
+        "shotsOnGoal": 18,
+        "goals": 3,
+        "shootingPctg": 0.1667
       },
       "totals": {
         "all": {

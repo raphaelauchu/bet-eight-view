@@ -4,7 +4,7 @@
   "team": "MIN",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:46:27.505805",
+  "lastUpdated": "2026-07-26T15:36:05.141713",
   "reg": {
     "totalGames": 73,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9023,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 77,
+        "shotsOnGoal": 80,
         "goals": 12,
-        "shootingPctg": 0.1558
+        "shootingPctg": 0.15
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

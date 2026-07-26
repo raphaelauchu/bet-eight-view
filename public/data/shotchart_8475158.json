@@ -4,7 +4,7 @@
   "team": "NSH",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:36:54.582333",
+  "lastUpdated": "2026-07-26T15:25:35.441037",
   "reg": {
     "totalGames": 81,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.9397
+      },
       "total": {
-        "shotsOnGoal": 149,
-        "goals": 24,
-        "shootingPctg": 0.1611
+        "shotsOnGoal": 151,
+        "goals": 25,
+        "shootingPctg": 0.1656
       },
       "totals": {
         "all": {

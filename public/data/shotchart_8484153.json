@@ -4,7 +4,7 @@
   "team": "ANA",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:37:32.327517",
+  "lastUpdated": "2026-07-26T15:26:25.831002",
   "reg": {
     "totalGames": 70,
     "szn": {
@@ -111,6 +111,13 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3078,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "total": {
@@ -269,10 +276,17 @@
         "sogPercentile": 0.6637,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8565,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 40,
+        "shotsOnGoal": 41,
         "goals": 4,
-        "shootingPctg": 0.1
+        "shootingPctg": 0.0976
       },
       "totals": {
         "all": {

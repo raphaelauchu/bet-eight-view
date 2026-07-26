@@ -4,7 +4,7 @@
   "team": "SEA",
   "position": "D",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:47:11.526771",
+  "lastUpdated": "2026-07-26T15:36:54.173654",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.9105
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

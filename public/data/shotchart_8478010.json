@@ -4,7 +4,7 @@
   "team": "TBL",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:39:55.236847",
+  "lastUpdated": "2026-07-26T15:29:07.519412",
   "reg": {
     "totalGames": 63,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
+      "behindNet": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7964,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 127,
+        "shotsOnGoal": 129,
         "goals": 18,
-        "shootingPctg": 0.1417
+        "shootingPctg": 0.1395
       },
       "totals": {
         "all": {
@@ -263,6 +270,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,

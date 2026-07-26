@@ -4,7 +4,7 @@
   "team": "DET",
   "position": "R",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:36:14.720518",
+  "lastUpdated": "2026-07-26T15:24:52.601656",
   "reg": {
     "totalGames": 82,
     "szn": {
@@ -113,10 +113,17 @@
         "sogPercentile": 0.9788,
         "goalsPercentile": 0.9984
       },
+      "behindNet": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9023,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 284,
+        "shotsOnGoal": 287,
         "goals": 41,
-        "shootingPctg": 0.1444
+        "shootingPctg": 0.1429
       },
       "totals": {
         "all": {

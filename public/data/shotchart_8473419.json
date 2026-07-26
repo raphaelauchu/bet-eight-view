@@ -4,7 +4,7 @@
   "team": "FLA",
   "position": "L",
   "season": 2026,
-  "lastUpdated": "2026-07-26T13:39:07.720832",
+  "lastUpdated": "2026-07-26T15:28:20.943077",
   "reg": {
     "totalGames": 52,
     "szn": {
@@ -112,6 +112,13 @@
         "shootingPctg": 0.25,
         "sogPercentile": 0.7964,
         "goalsPercentile": 0.9039
+      },
+      "behindNet": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
       },
       "total": {
         "shotsOnGoal": 134,
