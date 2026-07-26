@@ -1,18 +1,26 @@
 {
   "playerId": 8477845,
   "playerName": "Trevor van Riemsdyk",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:08.008589",
+  "team": "WSH",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:52:26.443454",
   "reg": {
     "totalGames": 68,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 11,
+      "lowSlot": {
+        "shotsOnGoal": 10,
         "goals": 3,
-        "shootingPctg": 0.2727,
-        "sogPercentile": 0.8302,
-        "goalsPercentile": 0.4676
+        "shootingPctg": 0.3,
+        "sogPercentile": 0.9074,
+        "goalsPercentile": 0.9352
+      },
+      "crease": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7531,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 2,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.4136,
         "goalsPercentile": 0.0
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.2809,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.304,
+        "sogPercentile": 0.608,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3241,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 13,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7006,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.2623,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 6,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7932,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 33,
+        "shotsOnGoal": 39,
         "goals": 3,
-        "shootingPctg": 0.0909
+        "shootingPctg": 0.0769
       },
       "totals": {
         "all": {

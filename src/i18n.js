@@ -34,7 +34,9 @@ const translations = {
     menu_bankroll: 'Bankroll',
     menu_signout: 'Déconnexion',
     nav_tab_home: 'Accueil',
-    nav_tab_analytics: 'Analyses',
+    nav_tab_stats: 'Stats',
+    nav_tab_analyses: 'Analyses',
+    nav_tab_models: 'Modèles',
 
     // HomeDashboard
     home_welcome: 'Bon retour',
@@ -180,7 +182,9 @@ const translations = {
     menu_bankroll: 'Bankroll',
     menu_signout: 'Sign out',
     nav_tab_home: 'Home',
-    nav_tab_analytics: 'Analytics',
+    nav_tab_stats: 'Stats',
+    nav_tab_analyses: 'Analyses',
+    nav_tab_models: 'Models',
 
     // HomeDashboard
     home_welcome: 'Welcome back',

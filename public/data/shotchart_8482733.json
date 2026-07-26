@@ -1,18 +1,26 @@
 {
   "playerId": 8482733,
   "playerName": "Logan Mailloux",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:19.837909",
+  "team": "STL",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:52:55.871667",
   "reg": {
     "totalGames": 67,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 6,
+      "lowSlot": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.6173,
+        "goalsPercentile": 0.0
+      },
+      "crease": {
+        "shotsOnGoal": 2,
         "goals": 1,
-        "shootingPctg": 0.1667,
-        "sogPercentile": 0.767,
-        "goalsPercentile": 0.4738
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.9167,
+        "goalsPercentile": 0.9475
       },
       "highSlot": {
         "shotsOnGoal": 6,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.716,
         "goalsPercentile": 0.6728
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 2,
         "goals": 1,
         "shootingPctg": 0.5,
         "sogPercentile": 0.4228,
         "goalsPercentile": 0.7222
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 14,
         "goals": 2,
         "shootingPctg": 0.1429,
         "sogPercentile": 0.9259,
         "goalsPercentile": 0.8951
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.3256,
+        "sogPercentile": 0.6512,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.304,
+        "sogPercentile": 0.608,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5185,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 26,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8735,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 11,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5648,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.358,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.392,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5586,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 72,
+        "shotsOnGoal": 75,
         "goals": 5,
-        "shootingPctg": 0.0694
+        "shootingPctg": 0.0667
       },
       "totals": {
         "all": {

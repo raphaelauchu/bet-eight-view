@@ -1,18 +1,26 @@
 {
   "playerId": 8482699,
   "playerName": "Dylan Guenther",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:17.192222",
+  "team": "UTA",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:37:04.589086",
   "reg": {
     "totalGames": 79,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 59,
-        "goals": 16,
-        "shootingPctg": 0.2712,
-        "sogPercentile": 0.7761,
-        "goalsPercentile": 0.8249
+      "lowSlot": {
+        "shotsOnGoal": 53,
+        "goals": 14,
+        "shootingPctg": 0.2642,
+        "sogPercentile": 0.8485,
+        "goalsPercentile": 0.9218
+      },
+      "crease": {
+        "shotsOnGoal": 6,
+        "goals": 2,
+        "shootingPctg": 0.3333,
+        "sogPercentile": 0.7036,
+        "goalsPercentile": 0.728
       },
       "highSlot": {
         "shotsOnGoal": 20,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.8762,
         "goalsPercentile": 0.8632
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 43,
         "goals": 7,
         "shootingPctg": 0.1628,
         "sogPercentile": 0.9853,
         "goalsPercentile": 0.9853
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 34,
         "goals": 6,
         "shootingPctg": 0.1765,
         "sogPercentile": 0.9723,
         "goalsPercentile": 0.9837
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 7,
         "goals": 1,
         "shootingPctg": 0.1429,
-        "sogPercentile": 0.4552,
-        "goalsPercentile": 0.408
+        "sogPercentile": 0.9104,
+        "goalsPercentile": 0.816
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.158,
+        "sogPercentile": 0.316,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 13,
         "goals": 1,
         "shootingPctg": 0.0769,
         "sogPercentile": 0.987,
         "goalsPercentile": 0.9153
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 14,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9919,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 13,
         "goals": 2,
         "shootingPctg": 0.1538,
         "sogPercentile": 0.9723,
         "goalsPercentile": 0.9756
       },
+      "outsideL": {
+        "shotsOnGoal": 22,
+        "goals": 3,
+        "shootingPctg": 0.1364,
+        "sogPercentile": 0.9837,
+        "goalsPercentile": 0.9919
+      },
+      "outsideR": {
+        "shotsOnGoal": 12,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9088,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.3078,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 204,
-        "goals": 37,
-        "shootingPctg": 0.1814
+        "shotsOnGoal": 239,
+        "goals": 40,
+        "shootingPctg": 0.1674
       },
       "totals": {
         "all": {
@@ -121,11 +164,18 @@
   "playoffs": {
     "totalGames": 6,
     "szn": {
-      "slot": {
+      "lowSlot": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.2107,
+        "sogPercentile": 0.4215,
+        "goalsPercentile": 0.0
+      },
+      "crease": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
       "highSlot": {
@@ -135,59 +185,94 @@
         "sogPercentile": 0.7982,
         "goalsPercentile": 0.9552
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 6,
         "goals": 1,
         "shootingPctg": 0.1667,
         "sogPercentile": 0.9462,
         "goalsPercentile": 0.8879
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6323,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4753,
+        "sogPercentile": 0.9507,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rNetSide": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9238,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9552,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9103,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9013,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 24,
+        "shotsOnGoal": 27,
         "goals": 3,
-        "shootingPctg": 0.125
+        "shootingPctg": 0.1111
       },
       "totals": {
         "all": {

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-07-10 19:40",
+  "last_updated": "2026-07-25 19:15",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -124,22 +124,22 @@
       "forwards": {
         "L1": {
           "LW": "Zach Benson",
-          "C": "Josh Norris",
+          "C": "Jiri Kulich",
           "RW": "Tage Thompson"
         },
         "L2": {
-          "LW": "Jason Zucker",
-          "C": "Ryan McLeod",
-          "RW": "Jack Quinn"
+          "LW": "Noah Ostlund",
+          "C": "Josh Norris",
+          "RW": "Josh Doan"
         },
         "L3": {
-          "LW": "Noah Ostlund",
+          "LW": "Jason Zucker",
           "C": "Konsta Helenius",
-          "RW": "Josh Doan"
+          "RW": "Jack Quinn"
         },
         "L4": {
           "LW": "Peyton Krebs",
-          "C": "Sam Carrick",
+          "C": "Ryan McLeod",
           "RW": "Beck Malenstyn"
         }
       },
@@ -167,7 +167,7 @@
         ],
         "PP2": [
           "Zach Benson",
-          "Ryan McLeod",
+          "Jiri Kulich",
           "Noah Ostlund",
           "Jack Quinn",
           "Owen Power"
@@ -300,22 +300,22 @@
       "name": "Chicago Blackhawks",
       "forwards": {
         "L1": {
-          "LW": "Tyler Bertuzzi",
+          "LW": "Frank Nazar",
           "C": "Connor Bedard",
-          "RW": "Roman Kantserov"
+          "RW": "Patrick Kane"
         },
         "L2": {
-          "LW": "Teuvo Teravainen",
-          "C": "Frank Nazar",
-          "RW": "Anton Frondell"
+          "LW": "Tyler Bertuzzi",
+          "C": "Anton Frondell",
+          "RW": "Roman Kantserov"
         },
         "L3": {
-          "LW": "Ryan Greene",
+          "LW": "Teuvo Teravainen",
           "C": "Oliver Moore",
           "RW": "Nick Lardis"
         },
         "L4": {
-          "LW": "Jordan Greenway",
+          "LW": "Ryan Greene",
           "C": "Ryan Donato",
           "RW": "Cole Smith"
         }
@@ -338,14 +338,14 @@
         "PP1": [
           "Roman Kantserov",
           "Anton Frondell",
-          "Teuvo Teravainen",
+          "Patrick Kane",
           "Connor Bedard",
           "Artyom Levshunov"
         ],
         "PP2": [
           "Tyler Bertuzzi",
           "Frank Nazar",
-          "Ryan Greene",
+          "Teuvo Teravainen",
           "Sam Rinzel",
           "Bowen Byram"
         ]
@@ -956,17 +956,17 @@
         "L2": {
           "LW": "Jesper Bratt",
           "C": "Jack Hughes",
-          "RW": "Connor Brown"
+          "RW": "Anthony Mantha"
         },
         "L3": {
           "LW": "Arseny Gritsyuk",
           "C": "Cody Glass",
-          "RW": "Evan Rodrigues"
+          "RW": "Connor Brown"
         },
         "L4": {
           "LW": "Jesper Boqvist",
           "C": "Nick Bjugstad",
-          "RW": "Lenni Hameenaho"
+          "RW": "Evan Rodrigues"
         }
       },
       "defence": {
@@ -992,9 +992,9 @@
           "Jack Hughes"
         ],
         "PP2": [
-          "Connor Brown",
-          "Dawson Mercer",
           "Evan Rodrigues",
+          "Dawson Mercer",
+          "Anthony Mantha",
           "Arseny Gritsyuk",
           "Luke Hughes"
         ]
@@ -1119,7 +1119,7 @@
       },
       "goalies": [
         "Igor Shesterkin",
-        "Dylan Garand"
+        "Joonas Korpisalo"
       ]
     },
     "ottawa-senators": {

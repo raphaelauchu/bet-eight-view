@@ -3,7 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses from './Analyses';
+import Analyses, { AnalysesFlux } from './Analyses';
 import { supabase } from './supabase';
 import { getT } from './i18n';
  
@@ -1425,10 +1425,11 @@ function App() {
     const t = getT(lang);
     const tabs = [
       { id: 'home', label: t('nav_tab_home'), icon: '⌂' },
-      { id: 'analyses', label: t('nav_tab_analytics'), icon: '◎' },
-      { id: 'props', label: 'Props', icon: '◆' },
+      { id: 'stats', label: t('nav_tab_stats'), icon: '◎' },
+      { id: 'analyses', label: t('nav_tab_analyses'), icon: '🔍' },
+      { id: 'props', label: t('nav_tab_models'), icon: '◆' },
     ];
-    const activeTab = ['home', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
+    const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
 
     return (
       <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
@@ -1490,10 +1491,18 @@ function App() {
           </div>
         )}
 
-        {/* Ticker NHL */}
-        {activeTab === 'analyses' && ligueAnalyses === 'nhl' && (
-          <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
+        {/* Selecteur de ligue - toujours visible dans Stats et Analyses */}
+        {(activeTab === 'stats' || activeTab === 'analyses') && (
+          <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid #161616' }}>
+            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
+            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#1a1a1a', border: '1px solid #222', color: '#555', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
+          </div>
         )}
+
+        {/* Ticker NHL */}
+        {(activeTab === 'stats' || activeTab === 'analyses') && ligueAnalyses === 'nhl' ? (
+          <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
+        ) : null}
 
         {/* Contenu */}
         <div style={{ padding: '0' }}>
@@ -1506,11 +1515,16 @@ function App() {
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
-            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('analyses')} onGoToBets={() => setPage('bets')} lang={lang} />
-          ) : activeTab === 'analyses' ? (
+            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')} lang={lang} />
+          ) : activeTab === 'stats' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
+          ) : activeTab === 'analyses' ? (
+            <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
-            <PropsPage lang={lang} />
+            <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '48px' }}>🚧</div>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>Bientôt disponible</div>
+            </div>
           ) : null}
         </div>
 

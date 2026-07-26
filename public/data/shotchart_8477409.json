@@ -1,18 +1,26 @@
 {
   "playerId": 8477409,
   "playerName": "Carter Verhaeghe",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:03.306525",
+  "team": "FLA",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:39:02.030325",
   "reg": {
     "totalGames": 77,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 62,
-        "goals": 11,
-        "shootingPctg": 0.1774,
-        "sogPercentile": 0.8257,
-        "goalsPercentile": 0.6653
+      "lowSlot": {
+        "shotsOnGoal": 55,
+        "goals": 10,
+        "shootingPctg": 0.1818,
+        "sogPercentile": 0.8697,
+        "goalsPercentile": 0.8111
+      },
+      "crease": {
+        "shotsOnGoal": 7,
+        "goals": 1,
+        "shootingPctg": 0.1429,
+        "sogPercentile": 0.7818,
+        "goalsPercentile": 0.5195
       },
       "highSlot": {
         "shotsOnGoal": 19,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.8583,
         "goalsPercentile": 0.6661
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 38,
         "goals": 6,
         "shootingPctg": 0.1579,
         "sogPercentile": 0.9739,
         "goalsPercentile": 0.9756
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 13,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7378,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
-        "shotsOnGoal": 4,
-        "goals": 1,
-        "shootingPctg": 0.25,
-        "sogPercentile": 0.7305,
-        "goalsPercentile": 0.4968
-      },
-      "cornerRight": {
+      "lNetSide": {
         "shotsOnGoal": 3,
-        "goals": 2,
-        "shootingPctg": 0.6667,
-        "sogPercentile": 0.6963,
-        "goalsPercentile": 0.9096
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.6189,
+        "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "lCorner": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.842,
+        "goalsPercentile": 0.9935
+      },
+      "rNetSide": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.4984,
+        "goalsPercentile": 0.8192
+      },
+      "rCorner": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.8941,
+        "goalsPercentile": 1.0
+      },
+      "lPoint": {
         "shotsOnGoal": 10,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9739,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3322,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 9,
         "goals": 1,
         "shootingPctg": 0.1111,
         "sogPercentile": 0.9055,
         "goalsPercentile": 0.8893
       },
+      "outsideL": {
+        "shotsOnGoal": 17,
+        "goals": 2,
+        "shootingPctg": 0.1176,
+        "sogPercentile": 0.9609,
+        "goalsPercentile": 0.9691
+      },
+      "outsideR": {
+        "shotsOnGoal": 7,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.7476,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.3078,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 159,
-        "goals": 23,
-        "shootingPctg": 0.1447
+        "shotsOnGoal": 184,
+        "goals": 25,
+        "shootingPctg": 0.1359
       },
       "totals": {
         "all": {

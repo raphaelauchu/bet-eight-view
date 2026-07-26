@@ -1,18 +1,26 @@
 {
   "playerId": 8480281,
   "playerName": "Alexey Toropchenko",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:14.878444",
+  "team": "STL",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:54:07.890590",
   "reg": {
     "totalGames": 65,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 25,
+      "lowSlot": {
+        "shotsOnGoal": 22,
         "goals": 4,
-        "shootingPctg": 0.16,
-        "sogPercentile": 0.4691,
-        "goalsPercentile": 0.2394
+        "shootingPctg": 0.1818,
+        "sogPercentile": 0.4577,
+        "goalsPercentile": 0.4788
+      },
+      "crease": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.4805,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 12,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.6808,
         "goalsPercentile": 0.0
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 4,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3518,
         "goalsPercentile": 0.0
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.4088,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.2467,
+        "sogPercentile": 0.4935,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.158,
+        "sogPercentile": 0.316,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3013,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8046,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.4886,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.3257,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.2329,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8681,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 57,
+        "shotsOnGoal": 65,
         "goals": 4,
-        "shootingPctg": 0.0702
+        "shootingPctg": 0.0615
       },
       "totals": {
         "all": {

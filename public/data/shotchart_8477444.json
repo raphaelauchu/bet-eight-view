@@ -1,18 +1,26 @@
 {
   "playerId": 8477444,
   "playerName": "Andre Burakovsky",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:03.329230",
+  "team": "CHI",
+  "position": "L",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:44:14.336272",
   "reg": {
     "totalGames": 75,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 29,
-        "goals": 6,
-        "shootingPctg": 0.2069,
-        "sogPercentile": 0.5318,
-        "goalsPercentile": 0.5285
+      "lowSlot": {
+        "shotsOnGoal": 25,
+        "goals": 5,
+        "shootingPctg": 0.2,
+        "sogPercentile": 0.5033,
+        "goalsPercentile": 0.5375
+      },
+      "crease": {
+        "shotsOnGoal": 4,
+        "goals": 1,
+        "shootingPctg": 0.25,
+        "sogPercentile": 0.5603,
+        "goalsPercentile": 0.5195
       },
       "highSlot": {
         "shotsOnGoal": 18,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.8436,
         "goalsPercentile": 0.7899
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 9,
         "goals": 1,
         "shootingPctg": 0.1111,
         "sogPercentile": 0.5977,
         "goalsPercentile": 0.57
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 15,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7866,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.2492,
+        "sogPercentile": 0.4984,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3013,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 4,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6971,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5375,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.4739,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.3078,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 78,
+        "shotsOnGoal": 86,
         "goals": 10,
-        "shootingPctg": 0.1282
+        "shootingPctg": 0.1163
       },
       "totals": {
         "all": {

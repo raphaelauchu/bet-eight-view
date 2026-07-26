@@ -1,18 +1,26 @@
 {
   "playerId": 8479983,
   "playerName": "Mario Ferraro",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:18.501261",
+  "team": "SJS",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:48:02.565758",
   "reg": {
     "totalGames": 82,
     "szn": {
-      "slot": {
+      "lowSlot": {
         "shotsOnGoal": 5,
         "goals": 3,
         "shootingPctg": 0.6,
-        "sogPercentile": 0.3395,
-        "goalsPercentile": 0.4676
+        "sogPercentile": 0.679,
+        "goalsPercentile": 0.9352
+      },
+      "crease": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 5,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.6574,
         "goalsPercentile": 0.6728
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5123,
         "goalsPercentile": 0.0
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 5,
         "goals": 1,
         "shootingPctg": 0.2,
         "sogPercentile": 0.6512,
         "goalsPercentile": 0.7562
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rNetSide": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 32,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.929,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 9,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6296,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 12,
         "goals": 1,
         "shootingPctg": 0.0833,
         "sogPercentile": 0.6049,
         "goalsPercentile": 0.6759
       },
+      "outsideL": {
+        "shotsOnGoal": 10,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8642,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.963,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 71,
+        "shotsOnGoal": 86,
         "goals": 6,
-        "shootingPctg": 0.0845
+        "shootingPctg": 0.0698
       },
       "totals": {
         "all": {

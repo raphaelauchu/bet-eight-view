@@ -1,18 +1,26 @@
 {
   "playerId": 8482679,
   "playerName": "Matt Coronato",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:08.766354",
+  "team": "CGY",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:40:57.318982",
   "reg": {
     "totalGames": 80,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 56,
-        "goals": 7,
-        "shootingPctg": 0.125,
-        "sogPercentile": 0.8315,
-        "goalsPercentile": 0.6669
+      "lowSlot": {
+        "shotsOnGoal": 46,
+        "goals": 4,
+        "shootingPctg": 0.087,
+        "sogPercentile": 0.772,
+        "goalsPercentile": 0.4788
+      },
+      "crease": {
+        "shotsOnGoal": 10,
+        "goals": 3,
+        "shootingPctg": 0.3,
+        "sogPercentile": 0.8909,
+        "goalsPercentile": 0.855
       },
       "highSlot": {
         "shotsOnGoal": 30,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.9642,
         "goalsPercentile": 0.7899
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 24,
         "goals": 1,
         "shootingPctg": 0.0417,
         "sogPercentile": 0.9251,
         "goalsPercentile": 0.57
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 30,
         "goals": 4,
         "shootingPctg": 0.1333,
         "sogPercentile": 0.9528,
         "goalsPercentile": 0.9397
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 10,
         "goals": 1,
         "shootingPctg": 0.1,
-        "sogPercentile": 0.4869,
-        "goalsPercentile": 0.408
+        "sogPercentile": 0.9739,
+        "goalsPercentile": 0.816
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.3151,
+        "sogPercentile": 0.6303,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 4,
         "goals": 1,
         "shootingPctg": 0.25,
         "sogPercentile": 0.7215,
         "goalsPercentile": 0.9153
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 6,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8697,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 11,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9463,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 6,
+        "goals": 1,
+        "shootingPctg": 0.1667,
+        "sogPercentile": 0.6775,
+        "goalsPercentile": 0.8192
+      },
+      "outsideR": {
+        "shotsOnGoal": 13,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.93,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.6645,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 174,
-        "goals": 17,
-        "shootingPctg": 0.0977
+        "shotsOnGoal": 196,
+        "goals": 18,
+        "shootingPctg": 0.0918
       },
       "totals": {
         "all": {

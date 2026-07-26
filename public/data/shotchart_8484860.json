@@ -1,18 +1,26 @@
 {
   "playerId": 8484860,
   "playerName": "Matvei Gridin",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:08.220352",
+  "team": "CGY",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:49:11.726628",
   "reg": {
     "totalGames": 37,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 8,
+      "lowSlot": {
+        "shotsOnGoal": 7,
         "goals": 1,
-        "shootingPctg": 0.125,
-        "sogPercentile": 0.2492,
-        "goalsPercentile": 0.101
+        "shootingPctg": 0.1429,
+        "sogPercentile": 0.2329,
+        "goalsPercentile": 0.202
+      },
+      "crease": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.2655,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 8,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.5456,
         "goalsPercentile": 0.0
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 14,
         "goals": 1,
         "shootingPctg": 0.0714,
         "sogPercentile": 0.7622,
         "goalsPercentile": 0.57
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 3,
         "goals": 1,
         "shootingPctg": 0.3333,
         "sogPercentile": 0.3094,
         "goalsPercentile": 0.5293
       },
-      "cornerLeft": {
-        "shotsOnGoal": 3,
+      "lNetSide": {
+        "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.6677,
+        "sogPercentile": 0.4935,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
-        "shotsOnGoal": 7,
-        "goals": 2,
-        "shootingPctg": 0.2857,
-        "sogPercentile": 0.9056,
-        "goalsPercentile": 0.4788
+      "lCorner": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.842,
+        "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rNetSide": {
+        "shotsOnGoal": 5,
+        "goals": 2,
+        "shootingPctg": 0.4,
+        "sogPercentile": 0.8274,
+        "goalsPercentile": 0.9577
+      },
+      "rCorner": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9837,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.6075,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3322,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 8,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8876,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.3257,
+        "goalsPercentile": 0.8192
+      },
+      "outsideR": {
+        "shotsOnGoal": 9,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8257,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 3,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.6645,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 55,
-        "goals": 5,
-        "shootingPctg": 0.0909
+        "shotsOnGoal": 69,
+        "goals": 6,
+        "shootingPctg": 0.087
       },
       "totals": {
         "all": {

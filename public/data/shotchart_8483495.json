@@ -1,18 +1,26 @@
 {
   "playerId": 8483495,
   "playerName": "Simon Nemec",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:14.101293",
+  "team": "NJD",
+  "position": "D",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:46:55.776547",
   "reg": {
     "totalGames": 68,
     "szn": {
-      "slot": {
+      "lowSlot": {
         "shotsOnGoal": 6,
         "goals": 3,
         "shootingPctg": 0.5,
-        "sogPercentile": 0.3658,
-        "goalsPercentile": 0.4676
+        "sogPercentile": 0.7315,
+        "goalsPercentile": 0.9352
+      },
+      "crease": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 10,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.8426,
         "goalsPercentile": 0.9198
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 5,
         "goals": 2,
         "shootingPctg": 0.4,
         "sogPercentile": 0.6543,
         "goalsPercentile": 0.9043
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 9,
         "goals": 1,
         "shootingPctg": 0.1111,
         "sogPercentile": 0.8395,
         "goalsPercentile": 0.7562
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 2,
         "goals": 1,
         "shootingPctg": 0.5,
-        "sogPercentile": 0.4043,
-        "goalsPercentile": 0.4753
+        "sogPercentile": 0.8086,
+        "goalsPercentile": 0.9506
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.304,
+        "sogPercentile": 0.608,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.5185,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 22,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8241,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 24,
         "goals": 1,
         "shootingPctg": 0.0417,
         "sogPercentile": 0.8488,
         "goalsPercentile": 0.6759
       },
+      "outsideL": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.358,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 11,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9012,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5586,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 84,
+        "shotsOnGoal": 97,
         "goals": 11,
-        "shootingPctg": 0.131
+        "shootingPctg": 0.1134
       },
       "totals": {
         "all": {

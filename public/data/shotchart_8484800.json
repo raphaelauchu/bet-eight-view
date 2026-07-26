@@ -1,18 +1,26 @@
 {
   "playerId": 8484800,
   "playerName": "Berkly Catton",
-  "team": "AWAY",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:23.626908",
+  "team": "SEA",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:50:51.676606",
   "reg": {
     "totalGames": 66,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 31,
-        "goals": 5,
-        "shootingPctg": 0.1613,
-        "sogPercentile": 0.5155,
-        "goalsPercentile": 0.5667
+      "lowSlot": {
+        "shotsOnGoal": 28,
+        "goals": 3,
+        "shootingPctg": 0.1071,
+        "sogPercentile": 0.5505,
+        "goalsPercentile": 0.4055
+      },
+      "crease": {
+        "shotsOnGoal": 3,
+        "goals": 2,
+        "shootingPctg": 0.6667,
+        "sogPercentile": 0.4805,
+        "goalsPercentile": 0.728
       },
       "highSlot": {
         "shotsOnGoal": 11,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.6417,
         "goalsPercentile": 0.4316
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 16,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8094,
         "goalsPercentile": 0.0
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.1629,
         "goalsPercentile": 0.0
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.1539,
+        "sogPercentile": 0.3078,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 6,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4438,
+        "sogPercentile": 0.8876,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3013,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3322,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.4886,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 5,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.6189,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 2,
+        "goals": 1,
+        "shootingPctg": 0.5,
+        "sogPercentile": 0.3599,
+        "goalsPercentile": 0.8485
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 70,
-        "goals": 6,
-        "shootingPctg": 0.0857
+        "shotsOnGoal": 77,
+        "goals": 7,
+        "shootingPctg": 0.0909
       },
       "totals": {
         "all": {
