@@ -375,12 +375,6 @@ def main():
             pid = p["playerId"]
             print(f"[{i:4d}/{total}] {p['name']} ({pid})")
 
-            out_path = os.path.join(OUTPUT_DIR, f"shotchart_{pid}.json")
-            if os.path.exists(out_path) and not args.debug_raw:
-                print("    Skip (déjà existant)")
-                succes += 1
-                continue
-
             try:
                 data = calculer_shotchart(
                     pid,
