@@ -1067,21 +1067,21 @@ function zoneRectPath(r) {
   return roundedPolyPath([[xTL,yTop],[xTR,yTop],[xBR,yBot],[xBL,yBot]], 9);
 }
 
-const CIRCLE_Y_TOP = 100, CIRCLE_Y_MID = 180, CIRCLE_Y_BOT = 260, CIRCLE_BULGE = 26;
-const L_P0 = [fanX(160, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
-const L_CTRL = [fanX(160, CIRCLE_Y_MID) - CIRCLE_BULGE, CIRCLE_Y_MID];
-const L_P2 = [fanX(160, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
+const CIRCLE_Y_TOP = 145, CIRCLE_Y_MID = 204, CIRCLE_Y_BOT = 264, CIRCLE_BULGE = 26;
+const L_P0 = [fanX(145, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
+const L_CTRL = [fanX(145, CIRCLE_Y_MID) - CIRCLE_BULGE, CIRCLE_Y_MID];
+const L_P2 = [fanX(145, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
 const L_MID = quadPoint(L_P0, L_CTRL, L_P2, 0.5);
-const R_P0 = [fanX(280, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
-const R_CTRL = [fanX(280, CIRCLE_Y_MID) + CIRCLE_BULGE, CIRCLE_Y_MID];
-const R_P2 = [fanX(280, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
+const R_P0 = [fanX(295, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
+const R_CTRL = [fanX(295, CIRCLE_Y_MID) + CIRCLE_BULGE, CIRCLE_Y_MID];
+const R_P2 = [fanX(295, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
 const R_MID = quadPoint(R_P0, R_CTRL, R_P2, 0.5);
 
 const LOW_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} L${R_MID[0]},${R_MID[1]} L${L_MID[0]},${L_MID[1]} Z`;
 const HIGH_SLOT_PATH = `M${L_MID[0]},${L_MID[1]} L${R_MID[0]},${R_MID[1]} L${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Z`;
 const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P0[0]},${L_P0[1]} Z`;
-const L_CIRCLE_PATH = `M${fanX(60,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(60,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
-const R_CIRCLE_PATH = `M${fanX(380,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(380,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+const L_CIRCLE_PATH = `M${fanX(70,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(70,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
+const R_CIRCLE_PATH = `M${fanX(370,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(370,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
 
 const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
@@ -1252,12 +1252,12 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
  
   const ZONE_RECTS_EQUIPE = [
-    { idx: 0, x: 60,  y: 50,  w: 115, h: 50, hatch: false, curveTop: 22 },
-    { idx: 1, x: 175, y: 50,  w: 90,  h: 50, hatch: false, curveTop: 22 },
-    { idx: 2, x: 265, y: 50,  w: 115, h: 50, hatch: false, curveTop: 22 },
-    { idx: 6, x: 20,  y: 260, w: 140, h: 70, hatch: false },
-    { idx: 7, x: 160, y: 260, w: 120, h: 70, hatch: false },
-    { idx: 8, x: 280, y: 260, w: 140, h: 70, hatch: false },
+    { idx: 0, x: 42,  y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 1, x: 145, y: 74,  w: 150, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 2, x: 295, y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 6, x: 20,  y: 223, w: 128, h: 128, hatch: false },
+    { idx: 7, x: 116, y: 258, w: 214, h: 91,  hatch: false },
+    { idx: 8, x: 292, y: 221, w: 128, h: 128, hatch: false },
   ];
   const attenduEquipe = 1 / zonesEquipe.length;
   const pctEquipe = (i) => Math.max(0, Math.min(1, zonesEquipe[i].pct / (attenduEquipe * 2)));
@@ -1522,8 +1522,9 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
                   <path d={R_CIRCLE_PATH} fill={orangeRed(pctEquipe(5))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
                   <text x={R_CTRL[0] + 20} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[5].moy}</text>
                 </g>
+                <line x1="0" y1="74" x2="440" y2="74" stroke="#c81e2c" strokeWidth="2" opacity="0.7" />
                 <path d={BOARD_D} fill="none" stroke="#0f2942" strokeWidth="3" />
-                <rect x="185" y="16" width="70" height="30" rx="3" fill="#f7fafc" stroke="#0f2942" strokeWidth="2.5" />
+                <rect x="186" y="74" width="66" height="32" rx="3" fill="#0f3d7a" stroke="#062a5c" strokeWidth="2" />
               </svg>
             </div>
  
@@ -1740,6 +1741,7 @@ const getMatchsChart = () => {
     'R NET SIDE', 'R CORNER',
     'L POINT', 'R POINT', 'C POINT',
     'OUTSIDE L', 'OUTSIDE R', 'NEUTRAL ZONE',
+    'BEHIND NET',
   ];
   const zones = currentShotData
   ? ZONE_KEYS.map(label => ({
@@ -1765,17 +1767,18 @@ const getMatchsChart = () => {
 };
  
   const ZONE_RECTS = [
-    { idx: 1,  x: 175, y: 50,  w: 90,  h: 50,  hatch: false, curveTop: 22 },
-    { idx: 5,  x: 60,  y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
-    { idx: 6,  x: 20,  y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
-    { idx: 7,  x: 265, y: 50,  w: 115, h: 50,  hatch: false, curveTop: 22 },
-    { idx: 8,  x: 265, y: 15,  w: 155, h: 35,  hatch: true, curveBottom: 22 },
-    { idx: 9,  x: 20,  y: 260, w: 140, h: 70,  hatch: false },
-    { idx: 10, x: 280, y: 260, w: 140, h: 70,  hatch: false },
-    { idx: 11, x: 160, y: 260, w: 120, h: 70,  hatch: false },
-    { idx: 12, x: 20,  y: 50,  w: 40,  h: 210, hatch: true  },
-    { idx: 13, x: 380, y: 50,  w: 40,  h: 210, hatch: true  },
-    { idx: 14, x: 20,  y: 330, w: 400, h: 70,  hatch: true  },
+    { idx: 15, x: 142, y: 16, w: 156, h: 58, hatch: false },
+    { idx: 1,  x: 145, y: 74,  w: 150, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 5,  x: 42,  y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 6,  x: 42,  y: 16,  w: 100, h: 58,  hatch: true, curveBottom: 22 },
+    { idx: 7,  x: 295, y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
+    { idx: 8,  x: 298, y: 16,  w: 100, h: 58,  hatch: true, curveBottom: 22 },
+    { idx: 9,  x: 20,  y: 223, w: 128, h: 128, hatch: false },
+    { idx: 10, x: 292, y: 221, w: 128, h: 128, hatch: false },
+    { idx: 11, x: 116, y: 258, w: 214, h: 91,  hatch: false },
+    { idx: 12, x: 20,  y: 74,  w: 40,  h: 147, hatch: true  },
+    { idx: 13, x: 380, y: 74,  w: 40,  h: 147, hatch: true  },
+    { idx: 14, x: 20,  y: 346, w: 400, h: 59,  hatch: true  },
   ];
   const CURVED_ZONES_JOUEUR = [
     { idx: 0, path: LOW_SLOT_PATH,  cx: (L_P0[0]+R_P0[0]+R_MID[0]+L_MID[0])/4, cy: (L_P0[1]+R_MID[1])/2 },
@@ -2028,11 +2031,11 @@ const getMatchsChart = () => {
                         </g>
                       );
                     })}
-                    <line x1="0" y1="100" x2="440" y2="100" stroke="#c81e2c" strokeWidth="1.5" opacity="0.4" />
                     <line x1="0" y1="330" x2="440" y2="330" stroke="#1e5fc8" strokeWidth="2.5" opacity="0.4" />
                   </g>
+                  <line x1="0" y1="74" x2="440" y2="74" stroke="#c81e2c" strokeWidth="2" opacity="0.7" />
                   <path d={BOARD_D} fill="none" stroke="#0f2942" strokeWidth="3" />
-                  <rect x="185" y="16" width="70" height="30" rx="3" fill="#f7fafc" stroke="#0f2942" strokeWidth="2.5" />
+                  <rect x="186" y="74" width="66" height="32" rx="3" fill="#0f3d7a" stroke="#062a5c" strokeWidth="2" />
                 </svg>
               </div>
             </div>
