@@ -3,7 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses, { AnalysesRecherche } from './Analyses';
+import Analyses from './Analyses';
 import { supabase } from './supabase';
 import { getT } from './i18n';
  
@@ -1492,7 +1492,7 @@ function App() {
         )}
 
         {/* Ticker NHL */}
-        {(activeTab === 'stats' && ligueAnalyses === 'nhl') || activeTab === 'analyses' ? (
+        {(activeTab === 'stats' || activeTab === 'analyses') && ligueAnalyses === 'nhl' ? (
           <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
         ) : null}
 
@@ -1511,9 +1511,12 @@ function App() {
           ) : activeTab === 'stats' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'analyses' ? (
-            <AnalysesRecherche />
+            <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
-            <PropsPage lang={lang} />
+            <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '48px' }}>🚧</div>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>Bientôt disponible</div>
+            </div>
           ) : null}
         </div>
 
