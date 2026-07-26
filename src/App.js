@@ -3,7 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses from './Analyses';
+import Analyses, { AnalysesFlux } from './Analyses';
 import { supabase } from './supabase';
 import { getT } from './i18n';
  
@@ -1511,7 +1511,7 @@ function App() {
           ) : activeTab === 'stats' ? (
             <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'analyses' ? (
-            <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
+            <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
             <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '20px' }}>
               <div style={{ fontSize: '48px' }}>🚧</div>

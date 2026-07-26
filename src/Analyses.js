@@ -1018,7 +1018,206 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     </div>
   );
 }
- 
+
+// Detecte automatiquement si les matchs disponibles sont en saison reguliere (gameType 2) ou en playoffs (gameType 3).
+function detecterSaisonMatchs(matchsParJour) {
+  const premierMatch = Object.values(matchsParJour).flat()[0];
+  return premierMatch?.gameType === 3 ? SAISON_PO_2526 : SAISON_REG_2526;
+}
+
+// Version de PageStatsJoueurs dediee a l'onglet Analyses : onglet Props restaure, detection auto saison/playoffs,
+// pas de fallback Home/Skaters/Goalies (les onglets jours/matchs restent affiches meme vides en morte-saison).
+function PageStatsJoueursAnalyses({ onSelectJoueur }) {
+  const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
+  const [chargement, setChargement] = useState(true);
+  const [filtre, setFiltre] = useState('');
+  const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+  const lineupDF = useLineupsDailyFaceoff();
+  const [ongletJoueurs, setOngletJoueurs] = useState('lineups');
+  const [props, setProps] = useState([]);
+  const [chargementProps, setChargementProps] = useState(false);
+
+  useEffect(() => { chargerSemaine(); }, []);
+
+  useEffect(() => {
+    if (ongletJoueurs === 'props' && Object.keys(matchsParJour).length > 0) chargerProps();
+  }, [ongletJoueurs, matchsParJour]);
+
+  async function chargerSemaine() {
+    setChargement(true);
+    const aujourdhui = new Date();
+    const jours = Array(7).fill(null).map((_, i) => { const d = new Date(aujourdhui); d.setDate(d.getDate() + i); return getDateStr(d); });
+    const resultats = {};
+    await Promise.all(jours.map(async (jour) => {
+      try {
+        const res = await fetch(getUrl(`schedule/${jour}`));
+        const data = await res.json();
+        const games = data.gameWeek?.[0]?.games || [];
+        if (games.length > 0) resultats[jour] = games;
+      } catch (err) { }
+    }));
+    setMatchsParJour(resultats);
+    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
+    setChargement(false);
+  }
+
+  async function chargerProps() {
+    setChargementProps(true);
+    try {
+      const saisonDetectee = detecterSaisonMatchs(matchsParJour);
+      const aujourd = getDateStr(new Date());
+      const prochainJour = Object.keys(matchsParJour).sort().find(j => matchsParJour[j]?.length > 0) || aujourd;
+      const matchsDuJour = matchsParJour[prochainJour] || [];
+      if (matchsDuJour.length === 0) { setChargementProps(false); return; }
+      const joueursDuJour = [];
+      for (const match of matchsDuJour) {
+        for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
+          if (!abbrev) continue;
+          try {
+            const res = await fetch(getUrl('roster/' + abbrev + '/' + saisonDetectee.seasonId));
+            const data = await res.json();
+            (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
+            (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
+          } catch {}
+        }
+      }
+      const resultats = [];
+      for (let i = 0; i < Math.min(joueursDuJour.length, 80); i += 5) {
+        const batch = joueursDuJour.slice(i, i + 5);
+        const batchRes = await Promise.all(batch.map(async (j) => {
+          try {
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/' + saisonDetectee.seasonId + '/' + saisonDetectee.gameType));
+            const data = await res.json();
+            const log = (data.gameLog || []).slice(0, 20);
+            if (log.length < 5) return null;
+            const l5 = log.slice(0, 5);
+            const l10 = log.slice(0, Math.min(10, log.length));
+            const l20 = log.slice(0, Math.min(20, log.length));
+            const hit = (games, stat, line) => games.filter(g => (g[stat] || 0) > line).length / games.length;
+            const candidates = [];
+            for (const line of [1.5, 2.5, 3.5]) {
+              const r5=hit(l5,'shots',line), r10=hit(l10,'shots',line), r20=hit(l20,'shots',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'SOG', line, prob, r5, r10, r20 });
+            }
+            for (const line of [0.5, 1.5]) {
+              const r5=hit(l5,'points',line), r10=hit(l10,'points',line), r20=hit(l20,'points',line);
+              const prob = r5*0.45 + r10*0.33 + r20*0.22;
+              if (prob >= 0.55) candidates.push({ stat: 'PTS', line, prob, r5, r10, r20 });
+            }
+            const r5g=hit(l5,'goals',0.5), r10g=hit(l10,'goals',0.5), r20g=hit(l20,'goals',0.5);
+            const probG = r5g*0.45 + r10g*0.33 + r20g*0.22;
+            if (probG >= 0.55) candidates.push({ stat: 'GOAL', line: 0.5, prob: probG, r5: r5g, r10: r10g, r20: r20g });
+            if (candidates.length === 0) return null;
+            const best = candidates.sort((a,b) => b.prob-a.prob)[0];
+            const nom = ((j.firstName?.default||'') + ' ' + (j.lastName?.default||'')).trim();
+            return { id: j.id, nom, equipe: j.equipe, position: j.position, ...best };
+          } catch { return null; }
+        }));
+        resultats.push(...batchRes.filter(Boolean));
+      }
+      setProps(resultats.sort((a,b) => b.prob-a.prob));
+    } catch (err) { console.error(err); }
+    setChargementProps(false);
+  }
+
+  async function rechercherJoueur(query) {
+    if (query.length < 2) { setRechercheJoueurs([]); return; }
+    try {
+      const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=10&q=${encodeURIComponent(query)}&active=true`);
+      const data = await res.json();
+      setRechercheJoueurs(data || []);
+    } catch { setRechercheJoueurs([]); }
+  }
+
+  const jours = Object.keys(matchsParJour).sort();
+
+  return (
+    <div>
+      <div style={{ marginBottom: '14px', position: 'relative' }}>
+        <input
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          placeholder="Search players..."
+          value={filtre}
+          onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
+        />
+        {recherchJoueurs.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+            {recherchJoueurs.map((j, i) => (
+              <div key={i}
+                onClick={() => { onSelectJoueur({ id: j.playerId, nom: j.name, position: j.positionCode, equipe: j.teamAbbrev || '', numero: j.sweaterNumber || '' }); setRechercheJoueurs([]); setFiltre(''); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid #222' : 'none' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <img src={`https://assets.nhle.com/mugs/${j.playerId}.png`} alt={j.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#333' }} onError={e => e.target.style.display = 'none'} />
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
+                  <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
+        <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
+        <button onClick={() => setOngletJoueurs('lineups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'lineups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'lineups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'lineups' ? '600' : 'normal' }}>Lineups</button>
+      </div>
+
+      {ongletJoueurs === 'props' && (
+        <div>
+          {chargementProps ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
+          ) : props.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
+          ) : props.map((p, i) => (
+            <div key={p.id} onClick={() => onSelectJoueur({ id: p.id, nom: p.nom, position: p.position, equipe: p.equipe, numero: '' })}
+              style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px 16px', border: '1px solid #161616', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}
+            >
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#555', minWidth: '28px' }}>#{i+1}</div>
+              <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
+                <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+              </div>
+              <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '8px', padding: '8px 14px' }}>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
+                <div style={{ fontSize: '10px', color: '#444', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {ongletJoueurs === 'lineups' && chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : ongletJoueurs === 'lineups' && (
+        <>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {jours.map(jour => {
+              const d = new Date(jour + 'T12:00:00');
+              const estAujourdhui = jour === getDateStr(new Date());
+              const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
+              const nb = matchsParJour[jour]?.length || 0;
+              return (
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                  {label}
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                </button>
+              );
+            })}
+          </div>
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
+        </>
+      )}
+    </div>
+  );
+}
+
 function EquipesParDivision({ classement, onSelectEquipe }) {
   const divisions = {};
   classement.forEach(e => {
@@ -1164,7 +1363,103 @@ async function rechercherJoueur(query) {
     </div>
   );
 }
- 
+
+// Version de PageStatsEquipes dediee a l'onglet Analyses : detection auto saison/playoffs (pas de selecteur manuel),
+// pas de fallback intersaison (les onglets jours/matchs restent affiches meme vides).
+function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
+  const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
+  const [chargement, setChargement] = useState(true);
+  const [filtre, setFiltre] = useState('');
+  const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
+
+  useEffect(() => { chargerSemaine(); }, []);
+
+  async function chargerSemaine() {
+    setChargement(true);
+    const aujourdhui = new Date();
+    const jours = Array(7).fill(null).map((_, i) => {
+      const d = new Date(aujourdhui);
+      d.setDate(d.getDate() + i);
+      return getDateStr(d);
+    });
+    const resultats = {};
+    await Promise.all(jours.map(async (jour) => {
+      try {
+        const res = await fetch(getUrl(`schedule/${jour}`));
+        const data = await res.json();
+        const games = data.gameWeek?.[0]?.games || [];
+        if (games.length > 0) resultats[jour] = games;
+      } catch (err) { }
+    }));
+    setMatchsParJour(resultats);
+    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
+    setChargement(false);
+  }
+
+  const saisonDetectee = detecterSaisonMatchs(matchsParJour);
+
+  if (equipeSelectionnee) {
+    const matchActif = Object.values(matchsParJour).flat().find(m =>
+      m.awayTeam?.abbrev === equipeSelectionnee?.teamAbbrev?.default ||
+      m.homeTeam?.abbrev === equipeSelectionnee?.teamAbbrev?.default
+    );
+    const abbrevEq = equipeSelectionnee?.teamAbbrev?.default;
+    const equipeAdverse = matchActif
+      ? classement.find(e => e.teamAbbrev?.default === (matchActif.awayTeam?.abbrev === abbrevEq ? matchActif.homeTeam?.abbrev : matchActif.awayTeam?.abbrev))
+      : null;
+    return <FicheEquipe equipe={equipeSelectionnee} equipeAdverse={equipeAdverse} classement={classement} onBack={() => setEquipeSelectionnee(null)} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} saison={saisonDetectee} />;
+  }
+
+  const jours = Object.keys(matchsParJour).sort();
+  const matchsFiltres = filtre.length >= 2
+    ? (matchsParJour[jourActif] || []).filter(m =>
+      m.awayTeam?.abbrev?.toLowerCase().includes(filtre.toLowerCase()) ||
+      m.homeTeam?.abbrev?.toLowerCase().includes(filtre.toLowerCase()) ||
+      m.awayTeam?.commonName?.default?.toLowerCase().includes(filtre.toLowerCase()) ||
+      m.homeTeam?.commonName?.default?.toLowerCase().includes(filtre.toLowerCase())
+    )
+    : (matchsParJour[jourActif] || []);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '14px' }}>
+        <input
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          placeholder="Search a team..."
+          value={filtre}
+          onChange={e => setFiltre(e.target.value)}
+        />
+      </div>
+      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
+        <>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {jours.map(jour => {
+              const d = new Date(jour + 'T12:00:00');
+              const estAujourdhui = jour === getDateStr(new Date());
+              const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
+              const nb = matchsParJour[jour]?.length || 0;
+              return (
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                  {label}
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                </button>
+              );
+            })}
+          </div>
+          {matchsFiltres.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: '#111', borderRadius: '16px' }}>
+              <p style={{ color: '#666' }}>Aucun match trouve.</p>
+            </div>
+          ) : matchsFiltres.map((match, i) => (
+            <CarteMatchEquipesDetaille key={i} match={match} classement={classement} onSelectEquipe={setEquipeSelectionnee} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
@@ -2597,6 +2892,165 @@ function Analyses({ onLigueChange }) {
   );
 }
 
+// Flux dedie a l'onglet Analyses (distinct du flux Stats ci-dessus) : meme navigation ligue/categorie,
+// mais utilise PageStatsEquipesAnalyses/PageStatsJoueursAnalyses (Props restaure, detection auto saison/playoffs,
+// sans fallback Home/Skaters/Goalies).
+function AnalysesFlux({ onLigueChange }) {
+  const isMobile = useIsMobile();
+  const [ligue, setLigue] = useState(null);
+  const [categorie, setCategorie] = useState(null);
+  const [classement, setClassement] = useState([]);
+  const [chargement, setChargement] = useState(false);
+  const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
+  const [joueurSelectionne, setJoueurSelectionne] = useState(null);
+  const lineupDF = useLineupsDailyFaceoff();
+  const [playoffBracket, setPlayoffBracket] = useState(null);
+  const [estPlayoffs, setEstPlayoffs] = useState(false);
+
+  useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
+  useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
+
+ async function chargerPreview() {
+    try {
+      const res = await fetch(getUrl('standings/now'));
+      const data = await res.json();
+      setClassement(data.standings || []);
+      await chargerMeneurs();
+      await detecterEtChargerPlayoffs();
+    } catch (err) { console.error(err); }
+  }
+
+  async function chargerDonneesNHL() {
+    setChargement(true);
+    try {
+      const res = await fetch(getUrl('standings/now'));
+      const data = await res.json();
+      setClassement(data.standings || []);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  async function chargerMeneurs() {
+    try {
+      const [r1, r2, r3] = await Promise.all([
+        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=10')),
+        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=10')),
+        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=10')),
+      ]);
+      const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
+      const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({ rang: i + 1, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), equipe: j.teamAbbrevs || j.teamAbbrev || '', position: j.position || '', valeur: j.value || 0, playerId: j.playerId || j.id || '' }));
+      setMeneurs({ buts: fmt(d1, 'goals'), passes: fmt(d2, 'assists'), points: fmt(d3, 'points') });
+    } catch (err) { console.error(err); }
+  }
+
+  async function detecterEtChargerPlayoffs() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const resSchedule = await fetch(getUrl(`schedule/${today}`));
+      const dataSchedule = await resSchedule.json();
+      const allGames = (dataSchedule.gameWeek || []).flatMap(w => w.games || []);
+      const enPlayoffs = allGames.some(g => g.gameType === 3);
+      setEstPlayoffs(enPlayoffs);
+      if (enPlayoffs) {
+        const resBracket = await fetch(getUrl('playoff-series/carousel/20252026'));
+        const dataBracket = await resBracket.json();
+        setPlayoffBracket(dataBracket);
+      }
+    } catch (err) { console.error(err); }
+  }
+  const padding = isMobile ? '16px' : '32px';
+  const maxWidth = isMobile ? '100%' : '1000px';
+
+  if (joueurSelectionne) {
+    return (
+      <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
+        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
+      </div>
+    );
+  }
+
+  if (!ligue) {
+    return (
+      <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
+        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses et Statistiques</h2>
+        <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 300px)', gap: '14px' }}>
+          {LIGUES.map(l => (
+            <div key={l.id} onClick={() => { if (l.disponible) { setLigue(l.id); if (onLigueChange) onLigueChange(l.id); } }} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
+              <div style={{ height: isMobile ? '50px' : '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <img src={l.logo} alt={l.label} style={{ maxHeight: isMobile ? '50px' : '80px', maxWidth: '100px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+              </div>
+              <div style={{ fontWeight: '900', fontSize: isMobile ? '18px' : '22px', marginBottom: '4px', color: 'white' }}>{l.label}</div>
+              {!isMobile && <div style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>{l.description}</div>}
+              {l.disponible
+                ? <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold' }}>Disponible</span>
+                : <span style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#555', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Bientot</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!categorie) {
+    const ligueInfo = LIGUES.find(l => l.id === ligue);
+    return (
+      <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <div>
+              <h2 style={{ margin: '0 0 2px', fontSize: isMobile ? '22px' : '28px', fontWeight: '900', color: 'white' }}>{ligueInfo.label}</h2>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Choisis une categorie</p>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Team Statistics</h3>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Bracket' : 'Classement par division · Top 10'}</p>
+            </div>
+            <div style={{ flex: 1 }}>{estPlayoffs ? <BracketPlayoffs bracket={playoffBracket} /> : <CarrouselDivisions classement={classement} />}</div>
+            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
+          </div>
+          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Player Statistics</h3>
+              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Leaders' : 'Goals, assists and points · Top 10'}</p>
+            </div>
+            <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
+            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const ligueInfo = LIGUES.find(l => l.id === ligue);
+  return (
+    <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <div>
+            <h2 style={{ margin: '0 0 1px', fontSize: isMobile ? '16px' : '20px', fontWeight: '900', color: 'white' }}>
+              {ligueInfo.label} · {categorie === 'equipes' ? 'Teams' : 'Players'}
+            </h2>
+            <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
+              {categorie === 'equipes' ? "Click on a match to analyze" : "Click on a player"}
+            </p>
+          </div>
+        </div>
+      </div>
+      {categorie === 'equipes' && <PageStatsEquipesAnalyses classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
+      {categorie === 'joueurs' && <PageStatsJoueursAnalyses onSelectJoueur={setJoueurSelectionne} />}
+    </div>
+  );
+}
+
 function AnalysesRecherche() {
   const isMobile = useIsMobile();
   const [joueurSelectionne, setJoueurSelectionne] = useState(null);
@@ -2614,6 +3068,6 @@ function AnalysesRecherche() {
   );
 }
 
-export { AnalysesRecherche };
+export { AnalysesRecherche, AnalysesFlux };
 export default Analyses;
  
