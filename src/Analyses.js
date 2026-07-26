@@ -1629,32 +1629,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   );
 }
  
-function fanX(x, y, cx = 220, minY = 15, maxY = 405, spread = 0.22) {
-  const t = Math.max(0, Math.min(1, (y - minY) / (maxY - minY)));
-  const dx = x - cx;
-  const val = cx + dx * (1 + t * spread);
-  return Math.max(8, Math.min(432, val));
-}
-
-function orangeRed(pct) {
-  const stops = [
-    { p: 0,    c: [255, 229, 180] },
-    { p: 0.15, c: [255, 224, 178] },
-    { p: 0.4,  c: [255, 176, 90]  },
-    { p: 0.7,  c: [237, 108, 42]  },
-    { p: 1,    c: [166, 26, 20]   },
-  ];
-  const v = Math.max(0, Math.min(1, pct || 0));
-  let a = stops[0], b = stops[stops.length - 1];
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (v >= stops[i].p && v <= stops[i + 1].p) { a = stops[i]; b = stops[i + 1]; break; }
-  }
-  const t = (v - a.p) / ((b.p - a.p) || 1);
-  const rgb = a.c.map((ch, i) => Math.round(ch + (b.c[i] - ch) * t));
-  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-}
-
-// Couleur du shot chart FicheJoueur basee sur le nombre brut de tirs (pas un pourcentage).
+// Couleur du shot chart EDGE basee sur le nombre brut de tirs (pas un pourcentage).
 function orangeParTirs(val) {
   const v = Number(val) || 0;
   if (v === 0) return '#FFFFFF';
@@ -1662,53 +1637,6 @@ function orangeParTirs(val) {
   if (v <= 40) return '#FF8C00';
   return '#E65100';
 }
-
-function roundedPolyPath(pts, radius = 9) {
-  const n = pts.length;
-  const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
-  const norm = (v) => { const m = Math.hypot(v[0], v[1]) || 1; return [v[0]/m, v[1]/m]; };
-  let d = '';
-  for (let i = 0; i < n; i++) {
-    const prev = pts[(i - 1 + n) % n];
-    const curr = pts[i];
-    const next = pts[(i + 1) % n];
-    const toPrev = norm([prev[0]-curr[0], prev[1]-curr[1]]);
-    const toNext = norm([next[0]-curr[0], next[1]-curr[1]]);
-    const rr = Math.min(radius, dist(curr, prev)/2, dist(curr, next)/2);
-    const p1 = [curr[0] + toPrev[0]*rr, curr[1] + toPrev[1]*rr];
-    const p2 = [curr[0] + toNext[0]*rr, curr[1] + toNext[1]*rr];
-    d += (i === 0 ? `M${p1[0]},${p1[1]} ` : `L${p1[0]},${p1[1]} `);
-    d += `Q${curr[0]},${curr[1]} ${p2[0]},${p2[1]} `;
-  }
-  return d + 'Z';
-}
-
-function zoneRectPath(r) {
-  const yTop = r.y, yBot = r.y + r.h;
-  const xTL = fanX(r.x, yTop), xTR = fanX(r.x + r.w, yTop);
-  const xBL = fanX(r.x, yBot), xBR = fanX(r.x + r.w, yBot);
-  if (r.curveTop || r.curveBottom) {
-    const arcY = (x, baseY, amt) => baseY + (amt || 0) * Math.pow((x - 220) / 220, 2);
-    const yTL = arcY(xTL, yTop, r.curveTop), yTR = arcY(xTR, yTop, r.curveTop);
-    const yBL = arcY(xBL, yBot, r.curveBottom), yBR = arcY(xBR, yBot, r.curveBottom);
-    return `M${xTL},${yTL} Q220,${yTop + (r.curveTop||0)*0} ${xTR},${yTR} L${xBR},${yBR} Q220,${yBot} ${xBL},${yBL} Z`;
-  }
-  return roundedPolyPath([[xTL,yTop],[xTR,yTop],[xBR,yBot],[xBL,yBot]], 9);
-}
-
-const CIRCLE_Y_TOP = 100, CIRCLE_Y_MID = 180, CIRCLE_Y_BOT = 260, CIRCLE_BULGE = 26;
-const L_P0 = [fanX(160, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
-const L_CTRL = [fanX(160, CIRCLE_Y_MID) - CIRCLE_BULGE, CIRCLE_Y_MID];
-const L_P2 = [fanX(160, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
-const R_P0 = [fanX(280, CIRCLE_Y_TOP), CIRCLE_Y_TOP];
-const R_CTRL = [fanX(280, CIRCLE_Y_MID) + CIRCLE_BULGE, CIRCLE_Y_MID];
-const R_P2 = [fanX(280, CIRCLE_Y_BOT), CIRCLE_Y_BOT];
-
-const FULL_SLOT_PATH = `M${L_P0[0]},${L_P0[1]} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${L_P2[0]},${L_P2[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P0[0]},${L_P0[1]} Z`;
-const L_CIRCLE_PATH = `M${fanX(70,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${L_P0[0]},${L_P0[1]} Q${L_CTRL[0]},${L_CTRL[1]} ${L_P2[0]},${L_P2[1]} L${fanX(70,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
-const R_CIRCLE_PATH = `M${fanX(370,CIRCLE_Y_TOP)},${CIRCLE_Y_TOP} L${R_P0[0]},${R_P0[1]} Q${R_CTRL[0]},${R_CTRL[1]} ${R_P2[0]},${R_P2[1]} L${fanX(370,CIRCLE_Y_BOT)},${CIRCLE_Y_BOT} Z`;
-
-const BOARD_D = `M${fanX(20,405)},405 L${fanX(20,50)},50 Q${fanX(20,25)},15 220,15 Q${fanX(420,25)},15 ${fanX(420,50)},50 L${fanX(420,405)},405`;
 
 function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_REG_2526 }) {
   const isMobile = useIsMobile();
@@ -1870,30 +1798,63 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   const sogContrePeriode = matchsShotPeriode ? calcSOGPeriode(matchsShotPeriode, 'CONTRE') : sogContre;
   const sogBase = typeShot === 'POUR' ? parseFloat(sogPourPeriode) || sogPourNum : parseFloat(sogContrePeriode) || sogContreNum;
  
-  const zonesEquipe = [
-    { label: 'LOW LEFT', pct: 0.18 }, { label: 'LOW', pct: 0.22 }, { label: 'LOW RIGHT', pct: 0.16 },
-    { label: 'BOARDS', pct: 0.12 }, { label: 'SLOT', pct: typeShot === 'POUR' ? 0.35 : 0.28 }, { label: 'BOARDS', pct: 0.08 },
-    { label: 'LEFT', pct: 0.05 }, { label: 'POINT', pct: 0.04 }, { label: 'RIGHT', pct: 0.05 },
-  ].map(z => ({ ...z, moy: (sogBase * z.pct).toFixed(1) }));
- 
-  const ZONE_RECTS_EQUIPE = [
-    { idx: 0, x: 42,  y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
-    { idx: 1, x: 145, y: 74,  w: 150, h: 32,  hatch: false, curveTop: 22 },
-    { idx: 2, x: 295, y: 74,  w: 103, h: 32,  hatch: false, curveTop: 22 },
-    { idx: 6, x: 20,  y: 223, w: 128, h: 128, hatch: false },
-    { idx: 7, x: 116, y: 258, w: 214, h: 91,  hatch: false },
-    { idx: 8, x: 292, y: 221, w: 128, h: 128, hatch: false },
+  // Repartition approximative des tirs de l'equipe par zone EDGE (idx 0-15, meme ordre que ZONE_KEYS dans FicheJoueur).
+  const ZONE_PCTS_EQUIPE = [0.14, 0.10, 0.12, 0.08, 0.08, 0.05, 0.04, 0.05, 0.04, 0.06, 0.06, 0.08, 0.03, 0.03, 0.02, 0.02];
+  const zonesEquipeVal = ZONE_PCTS_EQUIPE.map(pct => Math.max(0, Math.round(sogBase * pct)));
+  const getValeurZoneEquipe = (idx) => zonesEquipeVal[idx] ?? 0;
+
+  // Zones du shot chart copiees telles quelles du code NHL EDGE (viewBox 0 0 204 214), identique a FicheJoueur.
+  const EDGE_ZONES = [
+    { idx: 12, tx: 2,   ty: 33,  lx: 25,  ly: 75,
+      d: 'M9.40101 1.57176C9.55325 1.27053 9.73045 0.982587 9.93075 0.710938H32.3784C32.4446 0.975807 32.5108 1.30689 32.577 1.57176C36.2857 14.6735 43.7983 26.3803 54.1638 35.2101C54.6935 35.6737 55.2895 36.1372 55.8854 36.6007C56.1413 36.7829 56.3846 36.982 56.6138 37.1967L26.9486 76.927L0.726569 112.022V33.8196C0.721648 22.4932 3.71446 11.3672 9.40101 1.57176Z' },
+    { idx: 5, tx: 34, ty: 34, lx: 58, ly: 52,
+      d: 'M0.931572 0.930176H51.8242L24.8811 36.3554C24.8811 36.3554 17.3968 31.366 10.4116 20.8881C3.42631 10.4102 0.931572 0.930176 0.931572 0.930176Z' },
+    { idx: 0, tx: 59, ty: 33, lx: 101, ly: 69,
+      d: 'M57.7579 0.932373H28.8189L0.378906 38.3534C2.10057 39.6116 3.87154 42.345 10.3579 45.3387C16.8442 48.3324 33.8084 53.8208 46.781 52.8229C59.7537 51.825 69.2945 48.2524 75.72 44.3408C82.1454 40.4292 82.8163 39.8126 84.701 38.3534L57.7579 0.932373Z' },
+    { idx: 1, tx: 85, ty: 33, lx: 101, ly: 44,
+      d: 'M1.89018 0.909912C1.83305 1.26 1.81087 1.61491 1.82396 1.96939V3.02887C2.08446 6.65021 3.71573 10.036 6.38546 12.4966C9.05519 14.9572 12.5626 16.3075 16.1931 16.2723C17.3087 16.2749 18.4206 16.1414 19.5039 15.875C22.4491 15.2211 25.1117 13.6517 27.1101 11.3916C29.1084 9.13151 30.3401 6.29681 30.6284 3.29374C30.6284 2.89643 30.6946 2.56535 30.6946 2.16804V1.96939C30.7036 1.61497 30.6814 1.26045 30.6284 0.909912 Z' },
+    { idx: 7, tx: 117, ty: 33, lx: 145, ly: 52,
+      d: 'M51.6466 0.930176H0.753906L27.6971 36.3554C27.6971 36.3554 35.1813 31.366 42.1665 20.8881C49.1518 10.4102 51.6466 0.930176 51.6466 0.930176Z' },
+    { idx: 13, tx: 145, ty: 34, lx: 180, ly: 75,
+      d: 'M47.2385 1.8369C47.1061 1.57203 46.9074 1.30716 46.775 0.976074H24.7247C24.6585 1.24094 24.5923 1.57203 24.526 1.8369C20.8929 14.8168 13.4966 26.4297 3.27034 35.2104C2.74061 35.6739 2.14465 36.1375 1.5487 36.601C1.28383 36.7996 1.08518 36.9983 0.820312 37.1969L29.9559 76.5962L55.7143 111.36V33.8198C55.7227 22.6026 52.801 11.5778 47.2385 1.8369Z' },
+    { idx: 3, tx: 27, ty: 72, lx: 57, ly: 105,
+      d: 'M54.3228 11.6458L37.7023 62.6331L37.4374 63.4277C23.5318 58.7263 11.1492 50.4491 0.488281 40.9138L31.2793 0.190186C38.2132 5.35669 46.0181 9.23673 54.3228 11.6458Z' },
+    { idx: 2, tx: 65, ty: 82, lx: 101, ly: 116,
+      d: 'M74.7334 51.3679C62.8805 55.8045 49.1735 57.3937 35.7314 57.3937C23.7477 57.4086 11.8443 55.4396 0.503721 51.5666H0.4375L17.0581 0.645453C23.2847 2.40487 29.7245 3.29618 36.1949 3.29414C43.3121 3.29822 50.3889 2.22665 57.1858 0.115723L74.7334 51.3679Z' },
+    { idx: 4, tx: 122, ty: 70, lx: 145, ly: 105,
+      d: 'M0.246094 11.8293L15.9465 61.8497L16.2124 62.7219C30.118 58.0205 41.2368 50.9193 51.8977 41.4503L21.1068 0.925293C14.182 6.07599 8.55463 9.49463 0.246094 11.8293Z' },
+    { idx: 9, tx: 2, ty: 114, lx: 30, ly: 155,
+      d: 'M63.2888 21.6135L60.1104 31.4137L59.8456 32.1421L47.7419 68.5814L47.6095 68.9125H2.51622C1.65541 68.3166 0.860811 67.7206 0 67.1247V36.4661L22.1592 6.49746L22.2254 6.43124L26.7281 0.47168C31.7535 4.21383 38.9179 9.74545 42.9095 12.2402C46.9011 14.7349 56.8503 19.8388 63.2888 21.6135Z' },
+    { idx: 11, tx: 50, ty: 133, lx: 101, ly: 165,
+      d: 'M106.178 48.6473L89.7131 0.223145C89.7131 0.223145 75.2436 7.20841 52.7909 7.20841C30.3383 7.20841 16.8667 1.71999 16.8667 1.71999L0.900391 48.6473H106.178Z' },
+    { idx: 10, tx: 138, ty: 113, lx: 170, ly: 155,
+      d: 'M0.711205 21.6155L3.88959 31.4157L4.15445 32.144L16.2581 68.5834L16.3905 68.9145H61.4838C62.3446 68.3185 63.1392 67.7226 64 67.1266V36.468L41.8408 6.49941L41.7746 6.43319L37.2719 0.473633C32.2465 4.21578 25.0821 9.74741 21.0905 12.2421C17.0989 14.7369 7.14973 19.8408 0.711205 21.6155Z' },
+    { idx: 14, tx: 3, ty: 180, lx: 101, ly: 201,
+      d: 'M199.578 0.846191V30.7102L0.0664062 31.0413V0.846191H199.578Z' },
+    { idx: 6, tx: 13, ty: 3, lx: 44.95, ly: 20.5,
+      d: 'M49.713 29.9225V0.19458C39.0746 0.871745 28.7801 4.22718 19.7861 9.94905C14.1774 13.5278 9.16226 17.9608 4.92212 23.0877C4.32491 23.8177 3.79406 24.4812 3.2632 25.2112C2.40709 26.3187 1.6097 27.4705 0.874357 28.6617C0.60893 29.1262 0.277146 29.5244 0.0117188 29.9889H49.713V29.9225Z' },
+    { idx: 8, tx: 141, ty: 3, lx: 159.05, ly: 20.5,
+      d: 'M0.332031 29.9894H49.5314C49.2679 29.5331 48.9806 29.091 48.6705 28.665C47.9367 27.4763 47.1411 26.327 46.2867 25.2217C45.7719 24.4873 45.2194 23.78 44.6313 23.1028C40.4477 17.9899 35.4872 13.5657 29.9311 9.99175C21.0524 4.28415 10.8653 0.934027 0.332031 0.257812V29.9894Z' },
   ];
-  const attenduEquipe = 1 / zonesEquipe.length;
-  const pctEquipe = (i) => Math.max(0, Math.min(1, zonesEquipe[i].pct / (attenduEquipe * 2)));
- 
-  const getTendanceZone = (z) => {
-    const attendu = 1 / zonesEquipe.length;
-    if (z.pct > attendu * 1.15) return 'haut';
-    if (z.pct < attendu * 0.85) return 'bas';
-    return 'neutre';
-  };
- 
+  const BEHIND_NET_D = 'M63.38,2.13 L140.33,2.13 L140.33,33.98 L63.38,33.98 Z';
+  const EDGE_BORDER_PATHS = [
+    'M201.243 181.978H2.32703',
+    'M2.06226 77.0239V212.041L201.574 211.71V147.612L201.243 147.214L174.756 111.788C174.663 111.896 174.551 111.986 174.425 112.053L172.637 113.642C169.399 116.471 165.994 119.102 162.44 121.522C161.712 121.985 160.983 122.515 160.321 122.979L158.136 124.369C157.407 124.833 156.679 125.23 155.951 125.694C155.222 126.091 154.494 126.554 153.766 126.952C152.044 127.879 150.322 128.806 148.534 129.667C148.269 129.799 148.071 129.865 147.806 129.998C147.409 130.196 147.011 130.395 146.548 130.594C145.753 130.991 144.959 131.322 144.164 131.653C142.972 132.183 141.846 132.646 140.655 133.11C138.712 133.722 139.674 133.589 139.21 133.722M139.463 134.368V134.434L144.628 150.393L154.825 181.647L154.891 181.846L154.957 181.978V182.045',
+    'M2.06226 148.141L28.4163 112.781C39.233 122.483 51.8876 129.914 65.6299 134.633',
+    'M50.3319 182.045L65.6282 134.633C89.5741 142.84 115.628 142.465 139.328 133.573',
+    'M201.574 73.5144V147.612L174.69 111.788',
+    'M65.6269 134.699C51.8845 129.98 39.2297 122.549 28.4129 112.848L59.2038 71.7267C71.3582 80.9416 86.1977 85.9192 101.45 85.8972C116.977 85.8948 132.066 80.7487 144.359 71.2632L174.753 111.854C164.445 121.315 151.805 128.293 138.711 133.223M65.6269 134.699L82.1811 83.381M65.6269 134.699C89.5726 142.906 115.012 142.115 138.711 133.223M138.711 133.223L123.103 83.3147',
+    'M63.3829 33.9166H33.7177C33.7839 34.1814 33.8501 34.5125 33.9163 34.7774C37.7986 48.4321 45.7152 60.5955 56.6288 69.6739L58.4166 71.0645C58.6815 71.2631 58.8802 71.3955 59.145 71.5942L87.4198 33.8503H63.3829',
+    'M140.323 33.9165H116.352L144.296 71.1968L145.091 70.6009C145.687 70.1374 146.283 69.6738 146.879 69.1441C157.498 60.1377 165.197 48.1742 168.995 34.7773C169.061 34.5125 169.127 34.1814 169.194 33.9165H140.323Z',
+    'M174.695 111.788L144.302 71.1968L145.096 70.6009C145.692 70.1374 146.288 69.6738 146.884 69.1441C157.504 60.1377 165.203 48.1742 169.001 34.7773C169.067 34.5125 169.133 34.1814 169.199 33.9165H192.177C192.375 34.1814 192.508 34.5125 192.706 34.7773C198.528 44.7915 201.59 56.1703 201.579 67.7535V73.5144',
+    'M11.3983 33.9164H63.3788V2.13208C51.9534 2.90187 40.9278 6.64555 31.3959 12.9917C25.7999 16.7484 20.7999 21.3243 16.5633 26.5663C15.9673 27.2947 15.3713 28.0893 14.8416 28.8176C13.9808 30.0096 13.12 31.2677 12.3254 32.5258L11.3983 33.9164Z',
+    'M140.329 33.9166H192.177C191.912 33.4531 191.581 32.9896 191.316 32.5261C190.522 31.2679 189.661 30.0098 188.8 28.8179C188.204 28.0233 187.674 27.2949 187.012 26.5665C182.618 21.101 177.389 16.3633 171.517 12.5284C162.188 6.43841 151.446 2.85769 140.329 2.13232V33.9166Z',
+    'M140.327 2.13219C139.467 2.06597 138.539 1.99976 137.679 1.99976H65.9642C65.1034 1.99976 64.2426 2.06597 63.3817 2.13219V33.9827H87.4852',
+    'M2.06228 77.024V67.7535C2.05214 56.1703 5.1139 44.7915 10.9354 34.7773L11.4651 33.9165H33.7803C33.8465 34.1814 33.9127 34.5125 33.9789 34.7773C37.8613 48.432 45.7779 60.5955 56.6914 69.6738L58.4793 71.0644C58.7441 71.2631 58.9428 71.3955 59.2077 71.5941L28.4167 112.715',
+    'M63.38 2.13 L63.38 33.98',
+    'M140.33 2.13 L140.33 33.98',
+  ];
+
   const getAnalyseMatchup = () => {
     if (!abbrevAdv || !equipeAdverse) return null;
     const gfEq = gf / gp; const gaEq = ga / gp;
@@ -2112,44 +2073,34 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
               ))}
             </div>
  
-            <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
-              <svg viewBox="0 0 440 415" style={{ width: isMobile ? '85%' : '70%', display: 'block', margin: '0 auto' }}>
+            <div style={{ backgroundColor: '#0a0f1a', borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
+              <svg viewBox="0 0 204 214" style={{ width: '100%', display: 'block' }}>
                 <defs>
                   <radialGradient id="iceGradientEq" cx="50%" cy="8%" r="95%">
                     <stop offset="0%" stopColor="#ffffff" />
                     <stop offset="100%" stopColor="#e9f1f8" />
                   </radialGradient>
-                  <pattern id="iceTextureEq" width="140" height="140" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
-                    <path d="M-10,20 Q30,8 70,22 T150,10" stroke="#cfe0ee" strokeWidth="1" fill="none" opacity="0.5" />
-                    <path d="M-10,60 Q40,45 80,63 T170,50" stroke="#dbe8f2" strokeWidth="1" fill="none" opacity="0.4" />
-                  </pattern>
-                  <clipPath id="boardClipEq"><path d={`${BOARD_D} Z`} /></clipPath>
                 </defs>
-                <rect x="0" y="0" width="440" height="415" fill="#0a0f1a" />
-                <g clipPath="url(#boardClipEq)">
-                  <rect x="0" y="0" width="440" height="415" fill="url(#iceGradientEq)" />
-                  <rect x="0" y="0" width="440" height="415" fill="url(#iceTextureEq)" />
-                  {ZONE_RECTS_EQUIPE.map((r, i) => {
-                    const path = zoneRectPath(r);
-                    const cx = fanX(r.x + r.w / 2, r.y + r.h / 2);
-                    const cy = r.y + r.h / 2;
-                    return (
-                      <g key={i}>
-                        <path d={path} fill={orangeRed(pctEquipe(r.idx))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
-                        <text x={cx} y={cy + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[r.idx].moy}</text>
-                      </g>
-                    );
-                  })}
-                  <path d={FULL_SLOT_PATH} fill={orangeRed(pctEquipe(4))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
-                  <text x={(L_P0[0]+R_P0[0]+R_P2[0]+L_P2[0])/4} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[4].moy}</text>
-                  <path d={L_CIRCLE_PATH} fill={orangeRed(pctEquipe(3))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
-                  <text x={L_CTRL[0] - 20} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[3].moy}</text>
-                  <path d={R_CIRCLE_PATH} fill={orangeRed(pctEquipe(5))} stroke="#7a1f0f" strokeWidth="1.4" strokeOpacity="0.45" strokeLinejoin="round" />
-                  <text x={R_CTRL[0] + 20} y={CIRCLE_Y_MID + 7} textAnchor="middle" fill="#3a1208" fontSize="21" fontWeight="900">{zonesEquipe[5].moy}</text>
-                </g>
-                <line x1="0" y1="74" x2="440" y2="74" stroke="#c81e2c" strokeWidth="2" opacity="0.7" />
-                <path d={BOARD_D} fill="none" stroke="#0f2942" strokeWidth="3" />
-                <rect x="186" y="74" width="66" height="32" rx="3" fill="#0f3d7a" stroke="#062a5c" strokeWidth="2" />
+                <rect x="0" y="0" width="204" height="214" fill="url(#iceGradientEq)" />
+                {EDGE_ZONES.map((z) => {
+                  const val = getValeurZoneEquipe(z.idx);
+                  return (
+                    <g key={z.idx} transform={`translate(${z.tx},${z.ty})`}>
+                      <path d={z.d} fill={orangeParTirs(val)} stroke="none" />
+                    </g>
+                  );
+                })}
+                <path d={BEHIND_NET_D} fill={orangeParTirs(getValeurZoneEquipe(15))} stroke="none" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 4" width="33" height="4" x="85" y="32">
+                  <path d="M0.823242 0.435547L32.7559 0.435547V3.42923H0.823242V0.435547Z" fill="black" />
+                </svg>
+                {EDGE_BORDER_PATHS.map((d, i) => (
+                  <path key={`border-eq-${i}`} d={d} fill="none" stroke="black" strokeWidth="2.99369" strokeMiterlimit="10" />
+                ))}
+                {EDGE_ZONES.map((z) => (
+                  <text key={`label-eq-${z.idx}`} x={z.lx} y={z.ly + 3} textAnchor="middle" fill="#3a1208" fontSize="10" fontWeight="900">{getValeurZoneEquipe(z.idx)}</text>
+                ))}
+                <text x={101.86} y={21} textAnchor="middle" fill="#3a1208" fontSize="10" fontWeight="900">{getValeurZoneEquipe(15)}</text>
               </svg>
             </div>
  
