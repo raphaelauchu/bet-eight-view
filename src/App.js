@@ -1491,6 +1491,14 @@ function App() {
           </div>
         )}
 
+        {/* Selecteur de ligue - toujours visible dans Stats et Analyses */}
+        {(activeTab === 'stats' || activeTab === 'analyses') && (
+          <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid #161616' }}>
+            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
+            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#1a1a1a', border: '1px solid #222', color: '#555', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
+          </div>
+        )}
+
         {/* Ticker NHL */}
         {(activeTab === 'stats' || activeTab === 'analyses') && ligueAnalyses === 'nhl' ? (
           <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />

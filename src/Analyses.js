@@ -2738,7 +2738,7 @@ function BracketPlayoffs({ bracket }) {
 }
 function Analyses({ onLigueChange }) {
   const isMobile = useIsMobile();
-  const [ligue, setLigue] = useState(null);
+  const [ligue] = useState('nhl');
   const [categorie, setCategorie] = useState(null);
   const [classement, setClassement] = useState([]);
   const [chargement, setChargement] = useState(false);
@@ -2748,6 +2748,7 @@ function Analyses({ onLigueChange }) {
   const [playoffBracket, setPlayoffBracket] = useState(null);
   const [estPlayoffs, setEstPlayoffs] = useState(false);
 
+  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
   useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
   useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
 
@@ -2810,35 +2811,11 @@ function Analyses({ onLigueChange }) {
     );
   }
  
-  if (!ligue) {
-    return (
-      <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
-        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Statistiques</h2>
-        <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 300px)', gap: '14px' }}>
-          {LIGUES.map(l => (
-            <div key={l.id} onClick={() => { if (l.disponible) { setLigue(l.id); if (onLigueChange) onLigueChange(l.id); } }} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
-              <div style={{ height: isMobile ? '50px' : '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                <img src={l.logo} alt={l.label} style={{ maxHeight: isMobile ? '50px' : '80px', maxWidth: '100px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-              </div>
-              <div style={{ fontWeight: '900', fontSize: isMobile ? '18px' : '22px', marginBottom: '4px', color: 'white' }}>{l.label}</div>
-              {!isMobile && <div style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>{l.description}</div>}
-              {l.disponible
-                ? <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold' }}>Disponible</span>
-                : <span style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#555', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Bientot</span>}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
- 
   if (!categorie) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
       <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div>
@@ -2868,7 +2845,7 @@ function Analyses({ onLigueChange }) {
       </div>
     );
   }
- 
+
   const ligueInfo = LIGUES.find(l => l.id === ligue);
   return (
     <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
@@ -2897,7 +2874,7 @@ function Analyses({ onLigueChange }) {
 // sans fallback Home/Skaters/Goalies).
 function AnalysesFlux({ onLigueChange }) {
   const isMobile = useIsMobile();
-  const [ligue, setLigue] = useState(null);
+  const [ligue] = useState('nhl');
   const [categorie, setCategorie] = useState(null);
   const [classement, setClassement] = useState([]);
   const [chargement, setChargement] = useState(false);
@@ -2907,6 +2884,7 @@ function AnalysesFlux({ onLigueChange }) {
   const [playoffBracket, setPlayoffBracket] = useState(null);
   const [estPlayoffs, setEstPlayoffs] = useState(false);
 
+  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
   useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
   useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
 
@@ -2969,35 +2947,11 @@ function AnalysesFlux({ onLigueChange }) {
     );
   }
 
-  if (!ligue) {
-    return (
-      <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: padding }}>
-        <h2 style={{ margin: '0 0 10px', fontSize: isMobile ? '28px' : '36px', fontWeight: '900', letterSpacing: '-1px', textAlign: 'center', color: 'white' }}>Analyses</h2>
-        <p style={{ color: '#666', margin: '0 0 40px', fontSize: '15px', textAlign: 'center' }}>Choisis ta ligue pour commencer</p>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(2, 300px)', gap: '14px' }}>
-          {LIGUES.map(l => (
-            <div key={l.id} onClick={() => { if (l.disponible) { setLigue(l.id); if (onLigueChange) onLigueChange(l.id); } }} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: isMobile ? '24px 16px' : '40px 24px', textAlign: 'center', cursor: l.disponible ? 'pointer' : 'not-allowed', opacity: l.disponible ? 1 : 0.35 }}>
-              <div style={{ height: isMobile ? '50px' : '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                <img src={l.logo} alt={l.label} style={{ maxHeight: isMobile ? '50px' : '80px', maxWidth: '100px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-              </div>
-              <div style={{ fontWeight: '900', fontSize: isMobile ? '18px' : '22px', marginBottom: '4px', color: 'white' }}>{l.label}</div>
-              {!isMobile && <div style={{ color: '#666', fontSize: '13px', marginBottom: '10px' }}>{l.description}</div>}
-              {l.disponible
-                ? <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', color: '#f97316', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold' }}>Disponible</span>
-                : <span style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#555', fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>Bientot</span>}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   if (!categorie) {
     const ligueInfo = LIGUES.find(l => l.id === ligue);
     return (
       <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <button onClick={() => { setLigue(null); if (onLigueChange) onLigueChange(null); }} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <div>
