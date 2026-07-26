@@ -2637,6 +2637,9 @@ const getMatchsChart = () => {
                   })}
                   <path d={BEHIND_NET_D} fill={orangeRed(0)} stroke="none" />
                   <path d={BEHIND_NET_D} fill="url(#hatchZoneP)" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 4" width="33" height="4" x="85" y="32">
+                    <path d="M0.823242 0.435547L32.7559 0.435547V3.42923H0.823242V0.435547Z" fill="black" />
+                  </svg>
                   {EDGE_BORDER_PATHS.map((d, i) => (
                     <path key={`border-${i}`} d={d} fill="none" stroke="black" strokeWidth="2.99369" strokeMiterlimit="10" />
                   ))}
