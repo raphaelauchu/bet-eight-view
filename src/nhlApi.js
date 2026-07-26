@@ -95,6 +95,7 @@ export async function getShotChartData(playerId, gameIds, onglet = 'SZN', modeSt
     'rNetSide', 'rCorner',
     'lPoint', 'rPoint', 'centerPoint',
     'outsideL', 'outsideR', 'offNeutralZone',
+    'behindNet',
   ];
 
   const ZONE_LABELS = {
@@ -113,6 +114,7 @@ export async function getShotChartData(playerId, gameIds, onglet = 'SZN', modeSt
     outsideL:       'OUTSIDE L',
     outsideR:       'OUTSIDE R',
     offNeutralZone: 'NEUTRAL ZONE',
+    behindNet:      'BEHIND NET',
   };
  
   const empty = () => ({

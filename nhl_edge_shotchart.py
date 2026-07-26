@@ -78,7 +78,8 @@ AREA_TO_ZONE = {
     "Outside L":              "outsideL",
     "Outside R":              "outsideR",
     "Offensive Neutral Zone": "offNeutralZone",
-    # "Behind the Net" et "Beyond Red Line" ignorés
+    "Behind the Net":         "behindNet",
+    # "Beyond Red Line" ignoré (hors zone jouable pertinente)
 }
 
 ZONES_OUTPUT = [
@@ -88,6 +89,7 @@ ZONES_OUTPUT = [
     "rNetSide", "rCorner",
     "lPoint", "rPoint", "centerPoint",
     "outsideL", "outsideR", "offNeutralZone",
+    "behindNet",
 ]
 
 SESSION = requests.Session()
@@ -374,12 +376,6 @@ def main():
         for i, p in enumerate(players, 1):
             pid = p["playerId"]
             print(f"[{i:4d}/{total}] {p['name']} ({pid})")
-
-            out_path = os.path.join(OUTPUT_DIR, f"shotchart_{pid}.json")
-            if os.path.exists(out_path) and not args.debug_raw:
-                print("    Skip (déjà existant)")
-                succes += 1
-                continue
 
             try:
                 data = calculer_shotchart(
