@@ -1034,7 +1034,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
   const lineupDF = useLineupsDailyFaceoff();
-  const [ongletJoueurs, setOngletJoueurs] = useState('props');
+  const [ongletJoueurs, setOngletJoueurs] = useState('matchups');
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
 
@@ -1149,7 +1149,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={`https://assets.nhle.com/mugs/${j.playerId}.png`} alt={j.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#333' }} onError={e => e.target.style.display = 'none'} />
+                <img src={LOGOS_NHL[j.teamAbbrev]} alt={j.teamAbbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
                   <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
@@ -1161,8 +1161,8 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
       </div>
 
       <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
         <button onClick={() => setOngletJoueurs('matchups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'matchups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'matchups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'matchups' ? '600' : 'normal' }}>Matchups</button>
+        <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
       </div>
 
       {ongletJoueurs === 'props' && (
