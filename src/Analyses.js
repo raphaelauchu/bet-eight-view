@@ -1029,9 +1029,12 @@ function detecterSaisonMatchs(matchsParJour) {
 // pas de fallback Home/Skaters/Goalies (les onglets jours/matchs restent affiches meme vides en morte-saison).
 function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+  const lineupDF = useLineupsDailyFaceoff();
+  const [ongletJoueurs, setOngletJoueurs] = useState('props');
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
 
@@ -1055,6 +1058,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
       } catch (err) { }
     }));
     setMatchsParJour(resultats);
+    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
     setChargement(false);
   }
 
@@ -1156,31 +1160,64 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
         )}
       </div>
 
-      {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-      ) : chargementProps ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
-      ) : props.length === 0 ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
-      ) : props.map((p, i) => (
-        <div key={p.id} onClick={() => onSelectJoueur({ id: p.id, nom: p.nom, position: p.position, equipe: p.equipe, numero: '' })}
-          style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px 16px', border: '1px solid #161616', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}
-        >
-          <div style={{ fontSize: '14px', fontWeight: '600', color: '#555', minWidth: '28px' }}>#{i+1}</div>
-          <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
-            <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
-          </div>
-          <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '8px', padding: '8px 14px' }}>
-            <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
-            <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
-            <div style={{ fontSize: '10px', color: '#444', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
-          </div>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
+        <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
+        <button onClick={() => setOngletJoueurs('matchups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'matchups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'matchups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'matchups' ? '600' : 'normal' }}>Matchups</button>
+      </div>
+
+      {ongletJoueurs === 'props' && (
+        <div>
+          {chargement ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+          ) : chargementProps ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
+          ) : props.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
+          ) : props.map((p, i) => (
+            <div key={p.id} onClick={() => onSelectJoueur({ id: p.id, nom: p.nom, position: p.position, equipe: p.equipe, numero: '' })}
+              style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px 16px', border: '1px solid #161616', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}
+            >
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#555', minWidth: '28px' }}>#{i+1}</div>
+              <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
+                <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+              </div>
+              <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '8px', padding: '8px 14px' }}>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
+                <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
+                <div style={{ fontSize: '10px', color: '#444', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {ongletJoueurs === 'matchups' && (
+        chargement ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {Object.keys(matchsParJour).sort().map(jour => {
+                const d = new Date(jour + 'T12:00:00');
+                const estAujourdhui = jour === getDateStr(new Date());
+                const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
+                const nb = matchsParJour[jour]?.length || 0;
+                return (
+                  <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                    {label}
+                    <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                  </button>
+                );
+              })}
+            </div>
+            {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
+          </>
+        )
+      )}
     </div>
   );
 }
@@ -2843,13 +2880,14 @@ function Analyses({ onLigueChange }) {
   );
 }
 
-// Flux dedie a l'onglet Analyses : pas de choix de ligue/categorie, va directement aux
-// matchs de la semaine (Matchups) avec un onglet Props a cote (pas de Lineups).
+// Flux dedie a l'onglet Analyses : page d'accueil avec 2 cartes (Equipe / Joueur), pas de
+// choix de ligue/categorie. "Analyser une Equipe" va direct aux matchups d'equipes,
+// "Analyser un Joueur" va a une page recherche + Props/Matchups joueurs.
 function AnalysesFlux({ onLigueChange }) {
   const isMobile = useIsMobile();
+  const [vue, setVue] = useState(null); // null = accueil, 'equipes' | 'joueurs'
   const [classement, setClassement] = useState([]);
   const [joueurSelectionne, setJoueurSelectionne] = useState(null);
-  const [ongletAnalyses, setOngletAnalyses] = useState('matchups');
   const lineupDF = useLineupsDailyFaceoff();
 
   useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
@@ -2874,14 +2912,35 @@ function AnalysesFlux({ onLigueChange }) {
     );
   }
 
+  if (!vue) {
+    return (
+      <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: padding, maxWidth: '900px', margin: '0 auto' }}>
+        <h2 style={{ margin: '0 0 24px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'white' }}>Analyses</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+          <div onClick={() => setVue('equipes')} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+          >
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏒</div>
+            <div style={{ fontWeight: '900', fontSize: '18px', color: 'white' }}>Analyser une Équipe</div>
+          </div>
+          <div onClick={() => setVue('joueurs')} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+          >
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏃</div>
+            <div style={{ fontWeight: '900', fontSize: '18px', color: 'white' }}>Analyser un Joueur</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        <button onClick={() => setOngletAnalyses('matchups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletAnalyses === 'matchups' ? '#f97316' : 'transparent', color: ongletAnalyses === 'matchups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletAnalyses === 'matchups' ? '600' : 'normal' }}>Matchups</button>
-        <button onClick={() => setOngletAnalyses('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletAnalyses === 'props' ? '#f97316' : 'transparent', color: ongletAnalyses === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletAnalyses === 'props' ? '600' : 'normal' }}>Props</button>
-      </div>
-      {ongletAnalyses === 'matchups' && <PageStatsEquipesAnalyses classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
-      {ongletAnalyses === 'props' && <PageStatsJoueursAnalyses onSelectJoueur={setJoueurSelectionne} />}
+      <button onClick={() => setVue(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      {vue === 'equipes' && <PageStatsEquipesAnalyses classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
+      {vue === 'joueurs' && <PageStatsJoueursAnalyses onSelectJoueur={setJoueurSelectionne} />}
     </div>
   );
 }
