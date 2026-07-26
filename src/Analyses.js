@@ -2686,6 +2686,314 @@ const getMatchsChart = () => {
     </div>
   );
 }
+
+function formatTaille(pouces) {
+  if (!pouces) return '-';
+  const pieds = Math.floor(pouces / 12);
+  const reste = pouces % 12;
+  return `${pieds}'${reste}"`;
+}
+
+function formatDateNaissance(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+  } catch { return dateStr; }
+}
+
+function calculerAge(dateStr) {
+  if (!dateStr) return null;
+  const naissance = new Date(dateStr + 'T12:00:00');
+  const aujourdhui = new Date();
+  let age = aujourdhui.getFullYear() - naissance.getFullYear();
+  const m = aujourdhui.getMonth() - naissance.getMonth();
+  if (m < 0 || (m === 0 && aujourdhui.getDate() < naissance.getDate())) age--;
+  return age;
+}
+
+function formatSaison(season) {
+  const s = String(season);
+  return `${s.slice(0, 4)}-${s.slice(6, 8)}`;
+}
+
+function formatDraft(draftDetails) {
+  if (!draftDetails) return 'Non repêché';
+  return `${draftDetails.year} · Ronde ${draftDetails.round}, ${draftDetails.overallPick}e au total (${draftDetails.teamAbbrev})`;
+}
+
+// Fiche joueur pour l'onglet Stats : infos bio, stats saison, carriere par saison, derniers matchs.
+// Pas de shot chart ni de graphique L5/L10/L20 (voir FicheJoueur pour l'onglet Analyses).
+function FicheJoueurStats({ joueur, onBack }) {
+  const isMobile = useIsMobile();
+  const [chargement, setChargement] = useState(true);
+  const [infos, setInfos] = useState(null);
+  const [statsAvancees, setStatsAvancees] = useState(null);
+  const [carriere, setCarriere] = useState([]);
+  const [dernierMatchs, setDernierMatchs] = useState([]);
+  const seasonId = '20252026';
+
+  useEffect(() => { chargerStats(); }, [joueur.id]);
+
+  async function chargerJournalMatchs() {
+    try {
+      const res = await fetch(getUrl(`player/${joueur.id}/game-log/${seasonId}/2`));
+      const data = await res.json();
+      return (data.gameLog || []).map(m => ({
+        gameId: m.gameId,
+        gameDate: m.gameDate,
+        opponentAbbrev: m.opponentAbbrev,
+        homeRoadFlag: m.homeRoadFlag,
+        goals: m.goals ?? 0,
+        assists: m.assists ?? 0,
+        points: m.points ?? 0,
+        shots: m.shots ?? 0,
+        toi: m.toi ?? '-',
+        decision: m.decision ?? '',
+        goalsAgainst: m.goalsAgainst ?? 0,
+        savePctg: m.savePctg,
+        shotsAgainst: m.shotsAgainst ?? 0,
+      }));
+    } catch { return []; }
+  }
+
+  async function chargerScoresMatchs(matchs) {
+    const resultat = [...matchs];
+    for (let i = 0; i < matchs.length; i += 5) {
+      const batch = matchs.slice(i, i + 5);
+      const enrichis = await Promise.all(batch.map(async (m) => {
+        try {
+          const r = await fetch(getUrl(`gamecenter/${m.gameId}/boxscore`));
+          const d = await r.json();
+          const domicile = m.homeRoadFlag === 'H';
+          const scoreEquipe = domicile ? d.homeTeam?.score : d.awayTeam?.score;
+          const scoreAdverse = domicile ? d.awayTeam?.score : d.homeTeam?.score;
+          const resultatMatch = scoreEquipe > scoreAdverse ? 'V' : scoreEquipe < scoreAdverse ? 'D' : 'N';
+          return { ...m, scoreEquipe, scoreAdverse, resultatMatch };
+        } catch { return m; }
+      }));
+      enrichis.forEach((e, idx) => { resultat[i + idx] = e; });
+    }
+    return resultat;
+  }
+
+  async function chargerStats() {
+    setChargement(true);
+    try {
+      const res = await fetch(getUrl(`player/${joueur.id}/landing`));
+      const data = await res.json();
+      const isGardien = (data.position || joueur.position) === 'G';
+
+      setInfos({
+        headshot: data.headshot,
+        teamLogo: data.teamLogo,
+        equipe: data.currentTeamAbbrev || joueur.equipe,
+        nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
+        position: data.position || joueur.position,
+        numero: data.sweaterNumber || joueur.numero,
+        taille: data.heightInInches,
+        poids: data.weightInPounds,
+        naissance: data.birthDate,
+        villeNaissance: data.birthCity?.default || '',
+        paysNaissance: data.birthCountry || '',
+        repechage: data.draftDetails,
+      });
+
+      const statsSaison = extraireStatsSaisonJoueur(data, seasonId, 2);
+
+      if (isGardien) {
+        setStatsAvancees({
+          gardien: true,
+          gp: statsSaison?.gamesPlayed ?? 0,
+          wins: statsSaison?.wins ?? 0,
+          losses: statsSaison?.losses ?? 0,
+          gaa: statsSaison?.goalsAgainstAvg?.toFixed(2) ?? '-',
+          svp: statsSaison?.savePctg ? (statsSaison.savePctg * 100).toFixed(1) + '%' : '-',
+          shutouts: statsSaison?.shutouts ?? 0,
+        });
+      } else {
+        const statsBase = {
+          gardien: false,
+          gp: statsSaison?.gamesPlayed ?? 0,
+          goals: statsSaison?.goals ?? 0,
+          assists: statsSaison?.assists ?? 0,
+          points: statsSaison?.points ?? 0,
+          plusMinus: statsSaison?.plusMinus ?? 0,
+          ppp: statsSaison?.powerPlayPoints ?? 0,
+          sog: statsSaison?.shots ?? 0,
+          fowPct: statsSaison?.faceoffWinningPctg != null ? (statsSaison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-',
+          toi: statsSaison?.avgToi ?? '-',
+          hits: 0,
+          blocks: 0,
+        };
+        try {
+          const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+          const realtimePath = `https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=playerId%3D${joueur.id}%20and%20seasonId%3D${seasonId}%20and%20gameTypeId%3D2`;
+          const urlRealtime = estEnProduction ? `/api/nhl?path=${encodeURIComponent(realtimePath)}` : realtimePath;
+          const resRealtime = await fetch(urlRealtime);
+          const dataRealtime = await resRealtime.json();
+          const rt = dataRealtime.data?.[0];
+          statsBase.hits = rt?.hits ?? 0;
+          statsBase.blocks = rt?.blockedShots ?? 0;
+        } catch { }
+        setStatsAvancees(statsBase);
+      }
+
+      const carriereNHL = (data.seasonTotals || [])
+        .filter(s => s.leagueAbbrev === 'NHL' && s.gameTypeId === 2)
+        .sort((a, b) => b.season - a.season);
+      setCarriere(carriereNHL);
+
+      const journal = await chargerJournalMatchs();
+      const recents = journal.slice(0, 10);
+      const avecScore = await chargerScoresMatchs(recents);
+      setDernierMatchs(avecScore);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const pad = isMobile ? '14px' : '20px';
+
+  if (chargement && !infos) {
+    return (
+      <div>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+        <p style={{ color: '#666', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
+      </div>
+    );
+  }
+
+  const age = calculerAge(infos?.naissance);
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
+        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '70px' : '86px', height: isMobile ? '70px' : '86px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display = 'none'} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <span style={{ color: '#666', fontSize: '12px' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Infos biographiques */}
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Bio</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '10px' }}>
+          {[
+            ['Taille', formatTaille(infos?.taille)],
+            ['Poids', infos?.poids ? `${infos.poids} lb` : '-'],
+            ['Âge', age != null ? `${age} ans` : '-'],
+            ['Naissance', formatDateNaissance(infos?.naissance)],
+            ['Lieu', [infos?.villeNaissance, infos?.paysNaissance].filter(Boolean).join(', ') || '-'],
+            ['Repêchage', formatDraft(infos?.repechage)],
+          ].map(([label, valeur]) => (
+            <div key={label} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '3px', textTransform: 'uppercase' }}>{label}</div>
+              <div style={{ fontSize: '13px', color: 'white', fontWeight: '600' }}>{valeur}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats saison complete */}
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Saison régulière 25-26</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px' }}>
+          {(statsAvancees?.gardien
+            ? [['GP', statsAvancees?.gp], ['W', statsAvancees?.wins], ['L', statsAvancees?.losses], ['GAA', statsAvancees?.gaa], ['SV%', statsAvancees?.svp], ['SO', statsAvancees?.shutouts]]
+            : [['G', statsAvancees?.goals], ['A', statsAvancees?.assists], ['PTS', statsAvancees?.points], ['+/-', statsAvancees?.plusMinus], ['PPP', statsAvancees?.ppp], ['SOG', statsAvancees?.sog], ['HITS', statsAvancees?.hits], ['BLK', statsAvancees?.blocks], ['FOW%', statsAvancees?.fowPct], ['TOI', statsAvancees?.toi]]
+          ).map(([label, valeur]) => (
+            <div key={label} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+              <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '4px' }}>{label}</div>
+              <div style={{ fontSize: '18px', color: 'white', fontWeight: '900' }}>{valeur ?? '-'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats de carriere */}
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Statistiques de carrière</h3>
+        {carriere.length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnée disponible.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #222' }}>
+                  {['Saison', 'Équipe', 'PJ', 'B', 'A', 'PTS'].map(h => (
+                    <th key={h} style={{ textAlign: h === 'Équipe' ? 'left' : 'center', padding: '8px 6px', color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {carriere.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #191919' }}>
+                    <td style={{ padding: '8px 6px', color: 'white', fontWeight: '600', whiteSpace: 'nowrap' }}>{formatSaison(s.season)}</td>
+                    <td style={{ padding: '8px 6px', color: '#aaa', whiteSpace: 'nowrap' }}>{s.teamCommonName?.default || s.teamName?.default || '-'}</td>
+                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.gamesPlayed ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.goals ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.assists ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: '#f97316', fontWeight: '900', textAlign: 'center' }}>{s.points ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Derniers matchs */}
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Derniers matchs</h3>
+        {dernierMatchs.length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucun match disponible.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {dernierMatchs.map((m, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+                <img src={LOGOS_NHL[m.opponentAbbrev]} alt={m.opponentAbbrev} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                    {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
+                    {m.scoreEquipe != null && (
+                      <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : '#888', fontWeight: '900', marginLeft: '6px' }}>
+                        {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#555' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : ''}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+                  {statsAvancees?.gardien ? (
+                    <>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>SA</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shotsAgainst}</div></div>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>GA</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goalsAgainst}</div></div>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>SV%</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.savePctg != null ? (m.savePctg * 100).toFixed(1) : '-'}</div></div>
+                    </>
+                  ) : (
+                    <>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.points}</div></div>
+                      <div><div style={{ color: '#666', fontSize: '9px' }}>SOG</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shots}</div></div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function BracketPlayoffs({ bracket }) {
   const [indexConf, setIndexConf] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -2836,7 +3144,7 @@ function Analyses({ onLigueChange }) {
   if (joueurSelectionne) {
     return (
       <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
+        <FicheJoueurStats joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
       </div>
     );
   }
