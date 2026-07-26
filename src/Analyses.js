@@ -1033,12 +1033,29 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
+  const [tousLesJoueurs, setTousLesJoueurs] = useState([]);
   const lineupDF = useLineupsDailyFaceoff();
   const [ongletJoueurs, setOngletJoueurs] = useState('matchups');
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
 
   useEffect(() => { chargerSemaine(); }, []);
+  useEffect(() => { chargerListeJoueurs(); }, []);
+
+  async function chargerListeJoueurs() {
+    try {
+      const res = await fetch(getUrl('skater-stats-leaders/current?categories=points&limit=100'));
+      const data = await res.json();
+      const liste = (data.points || []).map(j => ({
+        playerId: j.playerId || j.id || '',
+        name: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(),
+        positionCode: j.position || '',
+        teamAbbrev: j.teamAbbrevs || j.teamAbbrev || '',
+        sweaterNumber: j.sweaterNumber || '',
+      }));
+      setTousLesJoueurs(liste);
+    } catch (err) { console.error(err); }
+  }
 
   useEffect(() => {
     if (Object.keys(matchsParJour).length > 0) chargerProps();
@@ -1122,13 +1139,10 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
     setChargementProps(false);
   }
 
-  async function rechercherJoueur(query) {
+  function rechercherJoueur(query) {
     if (query.length < 2) { setRechercheJoueurs([]); return; }
-    try {
-      const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=10&q=${encodeURIComponent(query)}&active=true`);
-      const data = await res.json();
-      setRechercheJoueurs(data || []);
-    } catch { setRechercheJoueurs([]); }
+    const q = query.toLowerCase();
+    setRechercheJoueurs(tousLesJoueurs.filter(j => j.name.toLowerCase().includes(q)).slice(0, 10));
   }
 
   return (
@@ -1198,6 +1212,8 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
       {ongletJoueurs === 'matchups' && (
         chargement ? (
           <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        ) : Object.keys(matchsParJour).length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match disponible pour le moment</p>
         ) : (
           <>
             <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
