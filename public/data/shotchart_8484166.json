@@ -1,18 +1,26 @@
 {
   "playerId": 8484166,
   "playerName": "Adam Fantilli",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:15.383582",
+  "team": "CBJ",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:38:27.571004",
   "reg": {
     "totalGames": 82,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 63,
+      "lowSlot": {
+        "shotsOnGoal": 59,
         "goals": 9,
-        "shootingPctg": 0.1429,
-        "sogPercentile": 0.7305,
-        "goalsPercentile": 0.386
+        "shootingPctg": 0.1525,
+        "sogPercentile": 0.9007,
+        "goalsPercentile": 0.772
+      },
+      "crease": {
+        "shotsOnGoal": 4,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5603,
+        "goalsPercentile": 0.0
       },
       "highSlot": {
         "shotsOnGoal": 16,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.798,
         "goalsPercentile": 0.8632
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 32,
         "goals": 3,
         "shootingPctg": 0.0938,
         "sogPercentile": 0.9593,
         "goalsPercentile": 0.8795
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 32,
         "goals": 4,
         "shootingPctg": 0.125,
         "sogPercentile": 0.9674,
         "goalsPercentile": 0.9397
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 8,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4723,
+        "sogPercentile": 0.9446,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 8,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.4723,
+        "sogPercentile": 0.9446,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 6,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8632,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8046,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 4,
         "goals": 1,
         "shootingPctg": 0.25,
         "sogPercentile": 0.6971,
         "goalsPercentile": 0.8893
       },
+      "outsideL": {
+        "shotsOnGoal": 20,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.9805,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 16,
+        "goals": 2,
+        "shootingPctg": 0.125,
+        "sogPercentile": 0.9609,
+        "goalsPercentile": 0.9625
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 1,
+        "goals": 1,
+        "shootingPctg": 1.0,
+        "sogPercentile": 0.3078,
+        "goalsPercentile": 0.9039
+      },
       "total": {
-        "shotsOnGoal": 174,
-        "goals": 21,
-        "shootingPctg": 0.1207
+        "shotsOnGoal": 211,
+        "goals": 24,
+        "shootingPctg": 0.1137
       },
       "totals": {
         "all": {

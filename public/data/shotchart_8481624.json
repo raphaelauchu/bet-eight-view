@@ -1,18 +1,26 @@
 {
   "playerId": 8481624,
   "playerName": "Ilya Mikheyev",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:03.375684",
+  "team": "CHI",
+  "position": "R",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:42:54.189248",
   "reg": {
     "totalGames": 77,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 46,
-        "goals": 11,
-        "shootingPctg": 0.2391,
-        "sogPercentile": 0.6596,
-        "goalsPercentile": 0.7891
+      "lowSlot": {
+        "shotsOnGoal": 41,
+        "goals": 8,
+        "shootingPctg": 0.1951,
+        "sogPercentile": 0.7085,
+        "goalsPercentile": 0.7231
+      },
+      "crease": {
+        "shotsOnGoal": 5,
+        "goals": 3,
+        "shootingPctg": 0.6,
+        "sogPercentile": 0.6107,
+        "goalsPercentile": 0.855
       },
       "highSlot": {
         "shotsOnGoal": 12,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.6808,
         "goalsPercentile": 0.6661
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 21,
         "goals": 2,
         "shootingPctg": 0.0952,
         "sogPercentile": 0.8974,
         "goalsPercentile": 0.7769
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 5,
         "goals": 1,
         "shootingPctg": 0.2,
         "sogPercentile": 0.4088,
         "goalsPercentile": 0.5293
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 2,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.2467,
+        "sogPercentile": 0.4935,
         "goalsPercentile": 0.0
       },
-      "cornerRight": {
-        "shotsOnGoal": 2,
+      "lCorner": {
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.605,
+        "sogPercentile": 0.0,
         "goalsPercentile": 0.0
       },
-      "pointLeft": {
+      "rNetSide": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.316,
+        "goalsPercentile": 0.0
+      },
+      "rCorner": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.8941,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 8,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.9251,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 4,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7345,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 7,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8713,
         "goalsPercentile": 0.0
       },
+      "outsideL": {
+        "shotsOnGoal": 9,
+        "goals": 2,
+        "shootingPctg": 0.2222,
+        "sogPercentile": 0.8192,
+        "goalsPercentile": 0.9691
+      },
+      "outsideR": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.3599,
+        "goalsPercentile": 0.0
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 2,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.5309,
+        "goalsPercentile": 0.0
+      },
       "total": {
-        "shotsOnGoal": 107,
-        "goals": 16,
-        "shootingPctg": 0.1495
+        "shotsOnGoal": 120,
+        "goals": 18,
+        "shootingPctg": 0.15
       },
       "totals": {
         "all": {

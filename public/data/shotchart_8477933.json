@@ -1,18 +1,26 @@
 {
   "playerId": 8477933,
   "playerName": "Sam Reinhart",
-  "team": "HOME",
-  "season": 2025,
-  "lastUpdated": "2026-06-30T12:12:03.144706",
+  "team": "FLA",
+  "position": "C",
+  "season": 2026,
+  "lastUpdated": "2026-07-26T13:38:13.732588",
   "reg": {
     "totalGames": 64,
     "szn": {
-      "slot": {
-        "shotsOnGoal": 69,
-        "goals": 14,
-        "shootingPctg": 0.2029,
-        "sogPercentile": 0.7679,
-        "goalsPercentile": 0.7085
+      "lowSlot": {
+        "shotsOnGoal": 64,
+        "goals": 13,
+        "shootingPctg": 0.2031,
+        "sogPercentile": 0.9251,
+        "goalsPercentile": 0.8974
+      },
+      "crease": {
+        "shotsOnGoal": 5,
+        "goals": 1,
+        "shootingPctg": 0.2,
+        "sogPercentile": 0.6107,
+        "goalsPercentile": 0.5195
       },
       "highSlot": {
         "shotsOnGoal": 26,
@@ -21,59 +29,94 @@
         "sogPercentile": 0.9381,
         "goalsPercentile": 0.9381
       },
-      "leftCircle": {
+      "lCircle": {
         "shotsOnGoal": 12,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.7003,
         "goalsPercentile": 0.0
       },
-      "rightCircle": {
+      "rCircle": {
         "shotsOnGoal": 14,
         "goals": 2,
         "shootingPctg": 0.1429,
         "sogPercentile": 0.7655,
         "goalsPercentile": 0.7687
       },
-      "cornerLeft": {
+      "lNetSide": {
         "shotsOnGoal": 7,
         "goals": 3,
         "shootingPctg": 0.4286,
-        "sogPercentile": 0.4552,
-        "goalsPercentile": 0.4926
+        "sogPercentile": 0.9104,
+        "goalsPercentile": 0.9853
       },
-      "cornerRight": {
+      "lCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "rNetSide": {
         "shotsOnGoal": 6,
         "goals": 1,
         "shootingPctg": 0.1667,
-        "sogPercentile": 0.4438,
-        "goalsPercentile": 0.4096
+        "sogPercentile": 0.8876,
+        "goalsPercentile": 0.8192
       },
-      "pointLeft": {
+      "rCorner": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "lPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.3013,
         "goalsPercentile": 0.0
       },
-      "pointRight": {
+      "rPoint": {
         "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.8046,
         "goalsPercentile": 0.0
       },
-      "pointCenter": {
+      "centerPoint": {
         "shotsOnGoal": 4,
         "goals": 1,
         "shootingPctg": 0.25,
         "sogPercentile": 0.6971,
         "goalsPercentile": 0.8893
       },
+      "outsideL": {
+        "shotsOnGoal": 1,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.2068,
+        "goalsPercentile": 0.0
+      },
+      "outsideR": {
+        "shotsOnGoal": 10,
+        "goals": 1,
+        "shootingPctg": 0.1,
+        "sogPercentile": 0.8664,
+        "goalsPercentile": 0.8485
+      },
+      "offNeutralZone": {
+        "shotsOnGoal": 8,
+        "goals": 1,
+        "shootingPctg": 0.125,
+        "sogPercentile": 0.9707,
+        "goalsPercentile": 0.9039
+      },
       "total": {
-        "shotsOnGoal": 144,
-        "goals": 26,
-        "shootingPctg": 0.1806
+        "shotsOnGoal": 163,
+        "goals": 28,
+        "shootingPctg": 0.1718
       },
       "totals": {
         "all": {
