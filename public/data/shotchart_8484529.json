@@ -4,7 +4,7 @@
   "team": "EDM",
   "position": "C",
   "season": 2026,
-  "lastUpdated": "2026-07-26T14:02:55.248828",
+  "lastUpdated": "2026-07-27T13:21:58.667078",
   "reg": {
     "totalGames": 5,
     "szn": {
@@ -107,6 +107,13 @@
         "goalsPercentile": 0.0
       },
       "offNeutralZone": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.0,
+        "goalsPercentile": 0.0
+      },
+      "behindNet": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
