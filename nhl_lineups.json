@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-08-01 19:16",
+  "last_updated": "2026-08-02 19:18",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -300,22 +300,22 @@
       "name": "Chicago Blackhawks",
       "forwards": {
         "L1": {
-          "LW": "Frank Nazar",
-          "C": "Connor Bedard",
-          "RW": "Patrick Kane"
-        },
-        "L2": {
           "LW": "Tyler Bertuzzi",
           "C": "Anton Frondell",
           "RW": "Roman Kantserov"
         },
+        "L2": {
+          "LW": "Nick Lardis",
+          "C": "Frank Nazar",
+          "RW": "Patrick Kane"
+        },
         "L3": {
-          "LW": "Teuvo Teravainen",
+          "LW": "Ryan Greene",
           "C": "Oliver Moore",
-          "RW": "Nick Lardis"
+          "RW": "Teuvo Teravainen"
         },
         "L4": {
-          "LW": "Ryan Greene",
+          "LW": "Jordan Greenway",
           "C": "Ryan Donato",
           "RW": "Cole Smith"
         }
@@ -339,13 +339,13 @@
           "Roman Kantserov",
           "Anton Frondell",
           "Patrick Kane",
-          "Connor Bedard",
+          "Teuvo Teravainen",
           "Artyom Levshunov"
         ],
         "PP2": [
           "Tyler Bertuzzi",
           "Frank Nazar",
-          "Teuvo Teravainen",
+          "Nick Lardis",
           "Sam Rinzel",
           "Bowen Byram"
         ]
@@ -1731,7 +1731,7 @@
           "RW": "Braeden Bowman"
         },
         "L4": {
-          "LW": "Jonas Rondbjerg",
+          "LW": "Alexander Holtz",
           "C": "Nic Dowd",
           "RW": "Marc Gatcomb"
         }
@@ -1839,19 +1839,19 @@
           "RW": "Gabriel Vilardi"
         },
         "L2": {
-          "LW": "Cole Perfetti",
+          "LW": "Nino Niederreiter",
           "C": "Adam Lowry",
-          "RW": "Nino Niederreiter"
+          "RW": "Alex Iafallo"
         },
         "L3": {
-          "LW": "Isak Rosen",
+          "LW": "Cole Perfetti",
           "C": "Vladislav Namestnikov",
           "RW": "Brad Lambert"
         },
         "L4": {
           "LW": "Cole Koepke",
           "C": "Morgan Barron",
-          "RW": "Alex Iafallo"
+          "RW": "Isak Rosen"
         }
       },
       "defence": {
@@ -1865,7 +1865,7 @@
         },
         "D3": {
           "LD": "Mario Ferraro",
-          "RD": "Elias Salomonsson"
+          "RD": "Jack St. Ivany"
         }
       },
       "pp_units": {
