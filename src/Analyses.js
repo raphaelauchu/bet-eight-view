@@ -66,9 +66,38 @@ const LIGUES = [
   { id: 'nfl', label: 'NFL', disponible: false, logo: 'https://static.www.nfl.com/image/upload/v1554321393/league/nvfr7ogywskqrfaiu38m.svg', description: 'Ligue nationale de football' },
 ];
 
-const SAISON_REG_2526 = { id: 'reg2526', seasonId: '20252026', gameType: 2, label: 'Saison régulière 25-26' };
-const SAISON_PO_2526 = { id: 'po2526', seasonId: '20252026', gameType: 3, label: 'Playoffs 25-26' };
-const SAISONS_2526 = [SAISON_REG_2526, SAISON_PO_2526];
+// Saison de secours utilisee le temps que la saison courante soit detectee (voir useSaisonCourante), ou si la detection echoue.
+const SAISON_REG_2526 = { id: 'reg2526', seasonId: '20252026', gameType: 2, label: 'Saison régulière' };
+
+function construireSaisonReg(seasonId) { return { id: `reg-${seasonId}`, seasonId, gameType: 2, label: 'Saison régulière' }; }
+function construireSaisonPO(seasonId) { return { id: `po-${seasonId}`, seasonId, gameType: 3, label: 'Playoffs' }; }
+
+// standings/now reflete toujours la derniere saison avec des matchs joues : la saison en cours pendant
+// qu'elle est active, et la derniere saison terminee pendant la morte-saison (jusqu'au 1er match de la suivante).
+// Promesse partagee au niveau module pour ne declencher qu'un seul appel reseau par session, peu importe
+// combien de composants appellent useSaisonCourante().
+let _saisonCourantePromise = null;
+function chargerSaisonCourante() {
+  if (!_saisonCourantePromise) {
+    _saisonCourantePromise = fetch(getUrl('standings/now'))
+      .then(r => r.json())
+      .then(data => String(data.standings?.[0]?.seasonId || SAISON_REG_2526.seasonId))
+      .catch(() => SAISON_REG_2526.seasonId);
+  }
+  return _saisonCourantePromise;
+}
+
+// Renvoie le seasonId NHL "courant" detecte automatiquement (voir chargerSaisonCourante), avec la saison
+// de secours 20252026 le temps du chargement initial.
+function useSaisonCourante() {
+  const [seasonId, setSeasonId] = useState(SAISON_REG_2526.seasonId);
+  useEffect(() => {
+    let annule = false;
+    chargerSaisonCourante().then(s => { if (!annule) setSeasonId(s); });
+    return () => { annule = true; };
+  }, []);
+  return seasonId;
+}
 
 // Premier match non termine (gameState != OFF/FINAL) au calendrier d'une equipe pour une saison donnee.
 async function trouverProchainMatchEquipe(abbrev, saisonId) {
@@ -116,13 +145,16 @@ function buildCayenneExp({ gameType, teamAbbrev, positionCode }) {
 }
 
 function SelecteurSaisonDiscret({ saison, onChange }) {
+  // Options derivees du seasonId courant plutot que d'une liste figee : l'annee suit automatiquement
+  // la saison detectee (voir useSaisonCourante), seul le choix reg./playoffs reste manuel.
+  const options = [construireSaisonReg(saison.seasonId), construireSaisonPO(saison.seasonId)];
   return (
     <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
-      {SAISONS_2526.map(s => (
+      {options.map(s => (
         <button
-          key={s.id}
+          key={s.gameType}
           onClick={() => onChange(s)}
-          style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: saison.id === s.id ? '#f97316' : '#1a1a1a', color: saison.id === s.id ? 'white' : '#888', fontSize: '11px', fontWeight: saison.id === s.id ? 'bold' : 'normal' }}
+          style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: saison.gameType === s.gameType ? '#f97316' : '#1a1a1a', color: saison.gameType === s.gameType ? 'white' : '#888', fontSize: '11px', fontWeight: saison.gameType === s.gameType ? 'bold' : 'normal' }}
         >
           {s.label}
         </button>
@@ -1038,10 +1070,11 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   );
 }
 
-// Detecte automatiquement si les matchs disponibles sont en saison reguliere (gameType 2) ou en playoffs (gameType 3).
-function detecterSaisonMatchs(matchsParJour) {
+// Detecte automatiquement si les matchs disponibles sont en saison reguliere (gameType 2) ou en playoffs (gameType 3),
+// pour le seasonId courant (voir useSaisonCourante).
+function detecterSaisonMatchs(matchsParJour, seasonId = SAISON_REG_2526.seasonId) {
   const premierMatch = Object.values(matchsParJour).flat()[0];
-  return premierMatch?.gameType === 3 ? SAISON_PO_2526 : SAISON_REG_2526;
+  return premierMatch?.gameType === 3 ? construireSaisonPO(seasonId) : construireSaisonReg(seasonId);
 }
 
 // Version de PageStatsJoueurs dediee a l'onglet Analyses : onglet Props restaure, detection auto saison/playoffs,
@@ -1057,6 +1090,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   const [ongletJoueurs, setOngletJoueurs] = useState('matchups');
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
+  const saisonCourante = useSaisonCourante();
 
   useEffect(() => { chargerSemaine(); }, []);
   useEffect(() => { chargerListeJoueurs(); }, []);
@@ -1078,7 +1112,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
 
   useEffect(() => {
     if (Object.keys(matchsParJour).length > 0) chargerProps();
-  }, [matchsParJour]);
+  }, [matchsParJour, saisonCourante]);
 
   async function chargerSemaine() {
     setChargement(true);
@@ -1101,7 +1135,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   async function chargerProps() {
     setChargementProps(true);
     try {
-      const saisonDetectee = detecterSaisonMatchs(matchsParJour);
+      const saisonDetectee = detecterSaisonMatchs(matchsParJour, saisonCourante);
       const aujourd = getDateStr(new Date());
       const prochainJour = Object.keys(matchsParJour).sort().find(j => matchsParJour[j]?.length > 0) || aujourd;
       const matchsDuJour = matchsParJour[prochainJour] || [];
@@ -1310,7 +1344,10 @@ async function rechercherJoueur(query) {
   setChargementRecherche(false);
 }
   const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
-  const [saisonEquipes, setSaisonEquipes] = useState(SAISON_REG_2526);
+  const [gameTypeEquipes, setGameTypeEquipes] = useState(2);
+  const saisonCourante = useSaisonCourante();
+  // L'annee (seasonId) suit toujours la saison detectee automatiquement ; seul le choix reg./playoffs est manuel.
+  const saisonEquipes = gameTypeEquipes === 3 ? construireSaisonPO(saisonCourante) : construireSaisonReg(saisonCourante);
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -1371,7 +1408,7 @@ async function rechercherJoueur(query) {
       </div>
       {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : aucunMatch ? (
         <>
-          <SelecteurSaisonDiscret saison={saisonEquipes} onChange={setSaisonEquipes} />
+          <SelecteurSaisonDiscret saison={saisonEquipes} onChange={s => setGameTypeEquipes(s.gameType)} />
           <EquipesParDivision classement={classement} onSelectEquipe={setEquipeSelectionnee} />
         </>
       ) : (
@@ -1411,6 +1448,7 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
   const [chargement, setChargement] = useState(true);
   const [filtre, setFiltre] = useState('');
   const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
+  const saisonCourante = useSaisonCourante();
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -1436,7 +1474,7 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
     setChargement(false);
   }
 
-  const saisonDetectee = detecterSaisonMatchs(matchsParJour);
+  const saisonDetectee = detecterSaisonMatchs(matchsParJour, saisonCourante);
 
   if (equipeSelectionnee) {
     const matchActif = Object.values(matchsParJour).flat().find(m =>
@@ -2171,7 +2209,7 @@ function FicheJoueur({ joueur, onBack }) {
   const [modeStats, setModeStats] = useState('regular');
   const [prochainAdversaire, setProchainAdversaire] = useState(null);
   const [matchupOuvert, setMatchupOuvert] = useState(false);
-  const seasonId = '20252026';
+  const seasonId = useSaisonCourante();
 
   useEffect(() => {
     setShotChartData(null);
@@ -2182,8 +2220,8 @@ function FicheJoueur({ joueur, onBack }) {
     });
   }, [ongletChart, modeStats]);
 
-  useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
-  useEffect(() => { chargerProchainAdversaire(); }, [joueur.equipe]);
+  useEffect(() => { chargerStats(); }, [joueur.id, modeStats, seasonId]);
+  useEffect(() => { chargerProchainAdversaire(); }, [joueur.equipe, seasonId]);
 
   async function chargerProchainAdversaire() {
     setProchainAdversaire(null);
@@ -2455,8 +2493,8 @@ const getMatchsChart = () => {
     <div>
       <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-  <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Saison régulière 25-26</button>
-  <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs 25-26</button>
+  <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Saison régulière</button>
+  <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
 </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
         <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} />
@@ -2700,10 +2738,10 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const isMobile = useIsMobile();
   const [chargement, setChargement] = useState(true);
   const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
-  const seasonId = '20252026';
+  const seasonId = useSaisonCourante();
   const saisons = getSeasonsRecentes(seasonId, 3);
 
-  useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev]);
+  useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev, seasonId]);
 
   async function chargerHistorique() {
     setChargement(true);
@@ -2978,9 +3016,9 @@ function FicheJoueurStats({ joueur, onBack }) {
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [carriere, setCarriere] = useState([]);
   const [dernierMatchs, setDernierMatchs] = useState([]);
-  const seasonId = '20252026';
+  const seasonId = useSaisonCourante();
 
-  useEffect(() => { chargerStats(); }, [joueur.id]);
+  useEffect(() => { chargerStats(); }, [joueur.id, seasonId]);
 
   async function chargerJournalMatchs() {
     try {
@@ -3150,7 +3188,7 @@ function FicheJoueurStats({ joueur, onBack }) {
 
       {/* Stats saison complete */}
       <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Saison régulière 25-26</h3>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Saison régulière</h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px' }}>
           {(statsAvancees?.gardien
             ? [['GP', statsAvancees?.gp], ['W', statsAvancees?.wins], ['L', statsAvancees?.losses], ['GAA', statsAvancees?.gaa], ['SV%', statsAvancees?.svp], ['SO', statsAvancees?.shutouts]]
