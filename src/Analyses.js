@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
  
 const NHL_ABBREV_TO_SLUG = {
@@ -2765,19 +2765,83 @@ const getMatchsChart = () => {
 }
 
 // Vue "Matchup" : historique du joueur face a son prochain adversaire, sur les saisons recentes.
+// --- Helpers pour la section Projection de FicheMatchup (modele de regression ponderee, mock statistique) ---
+
+// Approximation Abramowitz-Stegun de la fonction d'erreur (precision suffisante pour une UI, pas un usage scientifique).
+function erf(x) {
+  const signe = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return signe * y;
+}
+
+// Probabilite qu'une variable ~ Normale(moyenne, ecartType) depasse strictement un seuil donne.
+function probabiliteDepassement(moyenne, ecartType, seuil) {
+  if (ecartType <= 0) return moyenne > seuil ? 100 : 0;
+  const z = (seuil - moyenne) / (ecartType * Math.SQRT2);
+  const p = 1 - 0.5 * (1 + erf(z));
+  return Math.round(Math.max(0, Math.min(1, p)) * 100);
+}
+
+// Detecte le style defensif dominant d'une equipe (un seul badge, ordre de priorite du signal le plus
+// determinant au moins determinant) a partir de ses stats courantes (tirs accordes/match, PK%, rang hits/match).
+function detecterStyleDefensif(stats) {
+  if (!stats) return null;
+  if (stats.shotsAgainstPerGame > 32) return { id: 'poreuse', label: 'Défense poreuse', favorable: true, detail: `${stats.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (plus de 32)`, test: s => s.shotsAgainstPerGame > 32 };
+  if (stats.rangHits <= 10) return { id: 'physique', label: 'Défense physique', favorable: false, detail: `${stats.hitsPerGame.toFixed(1)} mises en échec/match · classée ${stats.rangHits}e de la ligue`, test: s => s.rangHits <= 10 };
+  if (stats.penaltyKillPct > 0.82) return { id: 'zone', label: 'Défense de zone', favorable: false, detail: `${(stats.penaltyKillPct * 100).toFixed(1)}% en désavantage numérique (plus de 82%)`, test: s => s.penaltyKillPct > 0.82 };
+  if (stats.shotsAgainstPerGame < 27) return { id: 'serree', label: 'Défense serrée', favorable: false, detail: `${stats.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (moins de 27)`, test: s => s.shotsAgainstPerGame < 27 };
+  return { id: 'standard', label: 'Défense standard', favorable: null, detail: `${stats.shotsAgainstPerGame.toFixed(1)} tirs accordés/match`, test: () => false };
+}
+
+const CATEGORIES_TIRS_ACCORDES = [
+  { id: 'tres_serree', label: 'Défense très serrée', courte: '< 20 tirs/m', favorable: false, test: s => s.shotsAgainstPerGame < 20 },
+  { id: 'moyenne', label: 'Défense moyenne', courte: '20-25 tirs/m', favorable: null, test: s => s.shotsAgainstPerGame >= 20 && s.shotsAgainstPerGame < 25 },
+  { id: 'poreuse_tirs', label: 'Défense poreuse', courte: '25+ tirs/m', favorable: true, test: s => s.shotsAgainstPerGame >= 25 },
+];
+
+const LABELS_STAT = { shots: 'tirs', goals: 'buts', points: 'points' };
+
 function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
   const isMobile = useIsMobile();
-  const [chargement, setChargement] = useState(true);
-  const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
-  const [historiqueComplet, setHistoriqueComplet] = useState([]);
-  const [statsToutesEquipes, setStatsToutesEquipes] = useState([]);
-  const [chargementDefense, setChargementDefense] = useState(true);
-  const [ongletAnalyse, setOngletAnalyse] = useState('gardien');
   const seasonId = useSaisonCourante();
   const saisons = getSeasonsRecentes(seasonId, 3);
+  const pad = isMobile ? '14px' : '20px';
 
+  const [ongletPrincipal, setOngletPrincipal] = useState('match');
+  const [ongletHistorique, setOngletHistorique] = useState('gardien');
+
+  const [chargement, setChargement] = useState(true);
+  const [historiqueComplet, setHistoriqueComplet] = useState([]);
+  const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
+  const [chargementDetails, setChargementDetails] = useState(true);
+  const detailsChargesRef = useRef(false);
+
+  const [statsToutesEquipes, setStatsToutesEquipes] = useState([]);
+  const [chargementDefense, setChargementDefense] = useState(true);
+
+  const [gardienPartant, setGardienPartant] = useState(null);
+  const [chargementGardien, setChargementGardien] = useState(true);
+
+  const [gardienSelectionne, setGardienSelectionne] = useState(null);
+  const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
+
+  const [lignesEdge, setLignesEdge] = useState({ shots: '', goals: '', points: '' });
+  const [editionLigne, setEditionLigne] = useState(null);
+
+  useEffect(() => { detailsChargesRef.current = false; }, [joueur.id, adversaireAbbrev, seasonId]);
   useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev, seasonId]);
   useEffect(() => { chargerStatsDefense(); }, [seasonId]);
+  useEffect(() => { chargerGardienPartant(); }, [adversaireAbbrev, seasonId]);
+  useEffect(() => {
+    if (matchsVsAdversaire.length > 0 && !detailsChargesRef.current) {
+      detailsChargesRef.current = true;
+      chargerDetailsMatchs();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchsVsAdversaire]);
 
   async function chargerHistorique() {
     setChargement(true);
@@ -2785,18 +2849,51 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
       const logsParSaison = await Promise.all(
         saisons.map(s => getGameLogJoueur(joueur.id, 2, s).then(log => log.map(m => ({ ...m, seasonId: s }))))
       );
-      const tousLesMatchs = logsParSaison.flat();
-      setHistoriqueComplet(tousLesMatchs);
-      const filtres = tousLesMatchs.filter(m => m.opponentAbbrev === adversaireAbbrev);
-      filtres.sort((a, b) => (a.gameDate < b.gameDate ? 1 : -1));
-      const enrichis = await getHitsBlocksParMatch(joueur.id, filtres);
-      setMatchsVsAdversaire(enrichis);
+      const tous = logsParSaison.flat().sort((a, b) => (a.gameDate < b.gameDate ? 1 : -1));
+      setHistoriqueComplet(tous);
+      const vsAdv = tous.filter(m => m.opponentAbbrev === adversaireAbbrev);
+      setMatchsVsAdversaire(vsAdv);
+      if (vsAdv.length === 0) setChargementDetails(false);
     } catch (err) { console.error(err); }
     setChargement(false);
   }
 
+  // Enrichit les matchs vs l'adversaire avec mises en echec/blocages, score final et gardien adverse
+  // ayant debute (starter, via boxscore) - reutilise pour la section "vs Ce Gardien" et le detail de match.
+  async function chargerDetailsMatchs() {
+    setChargementDetails(true);
+    try {
+      const avecHits = await getHitsBlocksParMatch(joueur.id, matchsVsAdversaire);
+      const resultat = [...avecHits];
+      for (let i = 0; i < resultat.length; i += 5) {
+        const batch = resultat.slice(i, i + 5);
+        const enrichis = await Promise.all(batch.map(async (m) => {
+          try {
+            const r = await fetch(getUrl(`gamecenter/${m.gameId}/boxscore`));
+            const d = await r.json();
+            const domicile = m.homeRoadFlag === 'H';
+            const scoreEquipe = domicile ? d.homeTeam?.score : d.awayTeam?.score;
+            const scoreAdverse = domicile ? d.awayTeam?.score : d.homeTeam?.score;
+            const goaliesAdversaire = domicile ? d.playerByGameStats?.awayTeam?.goalies : d.playerByGameStats?.homeTeam?.goalies;
+            const starter = (goaliesAdversaire || []).find(g => g.starter);
+            return {
+              ...m,
+              scoreEquipe, scoreAdverse,
+              resultatMatch: scoreEquipe != null && scoreAdverse != null ? (scoreEquipe > scoreAdverse ? 'V' : scoreEquipe < scoreAdverse ? 'D' : 'N') : null,
+              gardienAdversaireId: starter?.playerId ?? null,
+              gardienAdversaireNom: starter?.name?.default ?? null,
+            };
+          } catch { return m; }
+        }));
+        enrichis.forEach((m, idx) => { resultat[i + idx] = m; });
+      }
+      setMatchsVsAdversaire(resultat);
+    } catch (err) { console.error(err); }
+    setChargementDetails(false);
+  }
+
   // Stats defensives de toutes les equipes (tirs accordes/match, PK%, mises en echec/match + rang) pour
-  // detecter automatiquement le style defensif de l'adversaire (section "vs Style" / "vs Tirs accordes").
+  // detecter automatiquement le style defensif de l'adversaire.
   async function chargerStatsDefense() {
     setChargementDefense(true);
     try {
@@ -2823,117 +2920,137 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargementDefense(false);
   }
 
-  const pad = isMobile ? '14px' : '20px';
-  const nb = matchsVsAdversaire.length;
-  const sum = (cle) => matchsVsAdversaire.reduce((s, m) => s + (m[cle] || 0), 0);
-  const totalGoals = sum('goals');
-  const totalAssists = sum('assists');
-  const totalPoints = sum('points');
-  const totalSog = sum('shots');
-  const totalPpp = sum('powerPlayPoints');
-  const totalHits = sum('hits');
-  const totalBlocks = sum('blockedShots');
-  const moy = (t) => nb > 0 ? parseFloat((t / nb).toFixed(2)) : 0;
+  // Gardien partant probable = celui avec le plus de departs cette saison (club-stats/{abbrev}/now).
+  async function chargerGardienPartant() {
+    setChargementGardien(true);
+    try {
+      const res = await fetch(getUrl(`club-stats/${adversaireAbbrev}/now`));
+      const data = await res.json();
+      const goalies = data.goalies || [];
+      if (goalies.length === 0) { setGardienPartant(null); setChargementGardien(false); return; }
+      const starter = [...goalies].sort((a, b) => (b.gamesStarted || 0) - (a.gamesStarted || 0))[0];
+      setGardienPartant({
+        id: starter.playerId,
+        nom: `${starter.firstName?.default || ''} ${starter.lastName?.default || ''}`.trim(),
+        gaa: starter.goalsAgainstAverage != null ? starter.goalsAgainstAverage.toFixed(2) : '-',
+        svp: starter.savePercentage != null ? (starter.savePercentage * 100).toFixed(1) + '%' : '-',
+        photo: starter.headshot,
+        gamesStarted: starter.gamesStarted || 0,
+      });
+    } catch (err) { console.error(err); setGardienPartant(null); }
+    setChargementGardien(false);
+  }
 
-  const matchsDomicile = matchsVsAdversaire.filter(m => m.homeRoadFlag === 'H');
-  const matchsExterieur = matchsVsAdversaire.filter(m => m.homeRoadFlag !== 'H');
-  const moyennePts = (matchs) => matchs.length > 0 ? parseFloat((matchs.reduce((s, m) => s + (m.points || 0), 0) / matchs.length).toFixed(2)) : 0;
+  // --- Agregation / derives ---
+  const moyenneCle = (matchs, cle) => matchs.length > 0 ? parseFloat((matchs.reduce((s, m) => s + (m[cle] || 0), 0) / matchs.length).toFixed(2)) : 0;
+  const ecartTypeCle = (matchs, cle) => {
+    if (matchs.length < 2) return 0;
+    const m = moyenneCle(matchs, cle);
+    const variance = matchs.reduce((s, x) => s + Math.pow((x[cle] || 0) - m, 2), 0) / matchs.length;
+    return Math.sqrt(variance);
+  };
+  const aggregerMatchs = (matchs) => ({
+    nb: matchs.length,
+    matchs,
+    goals: matchs.reduce((s, m) => s + (m.goals || 0), 0),
+    assists: matchs.reduce((s, m) => s + (m.assists || 0), 0),
+    points: matchs.reduce((s, m) => s + (m.points || 0), 0),
+    shots: matchs.reduce((s, m) => s + (m.shots || 0), 0),
+    moy: { goals: moyenneCle(matchs, 'goals'), assists: moyenneCle(matchs, 'assists'), points: moyenneCle(matchs, 'points'), shots: moyenneCle(matchs, 'shots') },
+    pctAuDessus: matchs.length > 0 && moyennePtsSaison > 0 ? Math.round((matchs.filter(m => (m.points || 0) >= moyennePtsSaison).length / matchs.length) * 100) : 0,
+  });
 
-  const pctAuDessusMoyenne = nb > 0 && moyennePtsSaison > 0
-    ? Math.round((matchsVsAdversaire.filter(m => (m.points || 0) >= moyennePtsSaison).length / nb) * 100)
-    : 0;
-
-  const dataButsPasses = totalPoints > 0 ? [
-    { name: 'Buts', value: totalGoals },
-    { name: 'Passes', value: totalAssists },
-  ] : [];
-  const COULEURS_BP = ['#f97316', '#3b82f6'];
-
-  const dataAuDessus = nb > 0 ? [
-    { name: 'Au-dessus / égal', value: pctAuDessusMoyenne },
-    { name: 'En dessous', value: 100 - pctAuDessusMoyenne },
-  ] : [];
-  const COULEURS_PCT = ['#f97316', '#262626'];
-
-  const parSaison = saisons
-    .map(s => ({ seasonId: s, matchs: matchsVsAdversaire.filter(m => m.seasonId === s) }))
-    .filter(s => s.matchs.length > 0);
-
-  // --- Analyse avancee : vs Gardien / vs Style defensif / vs Tirs accordes ---
   const teamIdAdversaire = ABBREV_TO_TEAM_ID[adversaireAbbrev];
   const statsAdversaire = statsToutesEquipes.find(e => e.teamId === teamIdAdversaire) || null;
+  const styleActif = detecterStyleDefensif(statsAdversaire);
+  const categorieAdversaireTirs = statsAdversaire ? CATEGORIES_TIRS_ACCORDES.find(c => c.test(statsAdversaire)) : null;
 
-  const aggregerMatchs = (matchs) => {
-    const n = matchs.length;
-    const total = (cle) => matchs.reduce((s, m) => s + (m[cle] || 0), 0);
-    const p = total('points');
-    return { nb: n, goals: total('goals'), assists: total('assists'), points: p, shots: total('shots'), moyPts: n > 0 ? parseFloat((p / n).toFixed(2)) : 0 };
-  };
   const matchsVsFiltreEquipe = (test) => historiqueComplet.filter(m => {
     const s = statsToutesEquipes.find(e => e.teamId === ABBREV_TO_TEAM_ID[m.opponentAbbrev]);
     return s && test(s);
   });
 
-  // Styles defensifs detectes chez l'adversaire (peuvent se cumuler) + historique du joueur contre
-  // toutes les equipes actuellement classees dans le meme style (classement courant applique aux
-  // matchs des saisons recentes, en l'absence de stats d'equipe historiques par match).
-  const stylesDetectes = [];
-  if (statsAdversaire) {
-    if (statsAdversaire.rangHits <= 10) {
-      stylesDetectes.push({
-        id: 'physique', label: 'Défense physique', favorable: false,
-        detail: `${statsAdversaire.hitsPerGame.toFixed(1)} mises en échec/match · ${adversaireAbbrev} classée ${statsAdversaire.rangHits}e de la ligue`,
-        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.rangHits <= 10)),
-      });
-    }
-    if (statsAdversaire.shotsAgainstPerGame < 27) {
-      stylesDetectes.push({
-        id: 'serree', label: 'Défense serrée', favorable: false,
-        detail: `${statsAdversaire.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (moins de 27)`,
-        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.shotsAgainstPerGame < 27)),
-      });
-    }
-    if (statsAdversaire.penaltyKillPct > 0.82) {
-      stylesDetectes.push({
-        id: 'disciplinee', label: 'Défense disciplinée', favorable: false,
-        detail: `${(statsAdversaire.penaltyKillPct * 100).toFixed(1)}% en désavantage numérique (plus de 82%)`,
-        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.penaltyKillPct > 0.82)),
-      });
-    }
-    if (statsAdversaire.shotsAgainstPerGame > 32) {
-      stylesDetectes.push({
-        id: 'poreuse', label: 'Défense poreuse', favorable: true,
-        detail: `${statsAdversaire.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (plus de 32)`,
-        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.shotsAgainstPerGame > 32)),
-      });
-    }
+  const matchsVsGardien = gardienPartant ? matchsVsAdversaire.filter(m => m.gardienAdversaireId === gardienPartant.id) : [];
+  const statsVsGardien = aggregerMatchs(matchsVsGardien);
+  const statsVsStyle = styleActif && styleActif.id !== 'standard' ? aggregerMatchs(matchsVsFiltreEquipe(styleActif.test)) : aggregerMatchs([]);
+  const statsParCategorieTirs = CATEGORIES_TIRS_ACCORDES.map(cat => ({ ...cat, stats: aggregerMatchs(matchsVsFiltreEquipe(cat.test)) }));
+
+  const l5 = aggregerMatchs(historiqueComplet.slice(0, 5));
+  const l10 = aggregerMatchs(historiqueComplet.slice(0, 10));
+  const l20 = aggregerMatchs(historiqueComplet.slice(0, 20));
+  const matchsDomicile = historiqueComplet.filter(m => m.homeRoadFlag === 'H');
+  const matchsExterieur = historiqueComplet.filter(m => m.homeRoadFlag !== 'H');
+  const statsDomExt = aggregerMatchs(prochainMatch?.domicile ? matchsDomicile : matchsExterieur);
+
+  const chargementGoalieH2H = chargementDetails || chargementGardien;
+  const chargementComplet = chargement || chargementDefense || chargementGoalieH2H;
+
+  const blendRecent = (cle) => {
+    const composantes = [{ p: 0.45, f: l5 }, { p: 0.33, f: l10 }, { p: 0.22, f: l20 }].filter(c => c.f.nb > 0);
+    if (composantes.length === 0) return { valeur: null, nb: 0 };
+    const poidsTotal = composantes.reduce((s, c) => s + c.p, 0);
+    const valeur = composantes.reduce((s, c) => s + c.p * c.f.moy[cle], 0) / poidsTotal;
+    return { valeur: parseFloat(valeur.toFixed(2)), nb: l20.nb };
+  };
+
+  const projeterStat = (cle) => {
+    const recent = blendRecent(cle);
+    const composantes = [
+      { id: 'recent', poids: 0.40, valeur: recent.valeur, nb: recent.nb, label: 'Forme récente (L5/L10/L20)' },
+      { id: 'style', poids: 0.25, valeur: statsVsStyle.nb > 0 ? statsVsStyle.moy[cle] : null, nb: statsVsStyle.nb, label: styleActif && styleActif.id !== 'standard' ? `Vs ${styleActif.label}` : 'Vs ce style défensif' },
+      { id: 'gardien', poids: 0.15, valeur: statsVsGardien.nb > 0 ? statsVsGardien.moy[cle] : null, nb: statsVsGardien.nb, label: 'Vs ce gardien' },
+      { id: 'domext', poids: 0.10, valeur: statsDomExt.nb > 0 ? statsDomExt.moy[cle] : null, nb: statsDomExt.nb, label: prochainMatch?.domicile ? 'À domicile' : 'À l\'extérieur' },
+      { id: 'streak', poids: 0.10, valeur: l5.nb > 0 ? l5.moy[cle] : null, nb: l5.nb, label: 'Tendance récente (streak L5)' },
+    ];
+    const dispo = composantes.filter(c => c.valeur != null);
+    if (dispo.length === 0) return null;
+    const poidsTotal = dispo.reduce((s, c) => s + c.poids, 0);
+    const valeur = dispo.reduce((s, c) => s + (c.poids / poidsTotal) * c.valeur, 0);
+    const matchsRef = l10.nb >= 3 ? l10.matchs : l20.matchs;
+    const ecartType = ecartTypeCle(matchsRef, cle) || Math.max(valeur * 0.35, 0.5);
+    const ligneDefaut = Math.max(0.5, Math.floor(valeur) + 0.5);
+    const fiabilite = l20.nb >= 15 ? 'Élevée' : l20.nb >= 6 ? 'Moyenne' : 'Faible';
+    return {
+      cle,
+      valeur: parseFloat(valeur.toFixed(2)),
+      ecartType: parseFloat(ecartType.toFixed(2)),
+      intervalleBas: Math.max(0, parseFloat((valeur - ecartType).toFixed(1))),
+      intervalleHaut: parseFloat((valeur + ecartType).toFixed(1)),
+      ligneDefaut,
+      fiabilite,
+      totalDonnees: l20.nb,
+      matchsGraph: [...(l10.nb >= 5 ? l10.matchs : l20.matchs)].reverse(),
+      composantes: composantes.map(c => ({ ...c, poidsEffectif: c.valeur != null ? Math.round((c.poids / poidsTotal) * 100) : 0 })),
+    };
+  };
+
+  const projections = { shots: projeterStat('shots'), goals: projeterStat('goals'), points: projeterStat('points') };
+
+  // Navigation interne (apres tous les hooks, meme pattern que FicheJoueur pour matchupOuvert).
+  if (gardienSelectionne) {
+    return <FicheJoueur joueur={gardienSelectionne} onBack={() => setGardienSelectionne(null)} />;
+  }
+  if (matchDetailSelectionne) {
+    return <DetailMatchHistorique match={matchDetailSelectionne} joueurNom={joueur.nom} onBack={() => setMatchDetailSelectionne(null)} />;
   }
 
-  // Categorisation par tirs accordes/match (3 paliers), appliquee a tout l'historique du joueur.
-  const CATEGORIES_TIRS = [
-    { id: 'tres_serree', label: 'Défense très serrée', courte: '< 20 tirs', test: s => s.shotsAgainstPerGame < 20, favorable: false },
-    { id: 'moyenne', label: 'Défense moyenne', courte: '20-25 tirs', test: s => s.shotsAgainstPerGame >= 20 && s.shotsAgainstPerGame < 25, favorable: null },
-    { id: 'poreuse_tirs', label: 'Défense poreuse', courte: '25+ tirs', test: s => s.shotsAgainstPerGame >= 25, favorable: true },
-  ];
-  const categorieAdversaireTirs = statsAdversaire ? CATEGORIES_TIRS.find(c => c.test(statsAdversaire)) : null;
-  const statsParCategorieTirs = CATEGORIES_TIRS.map(cat => ({ ...cat, stats: aggregerMatchs(matchsVsFiltreEquipe(cat.test)) }));
-
-  const matchsGraphGardien = [...matchsVsAdversaire].reverse();
-  const COULEUR_FAVORABLE = '#f97316';
-  const COULEUR_DEFAVORABLE = '#ef4444';
+  const selectionnerGardien = () => {
+    if (!gardienPartant) return;
+    setGardienSelectionne({ id: gardienPartant.id, nom: gardienPartant.nom, equipe: adversaireAbbrev, position: 'G', numero: '' });
+  };
 
   return (
     <div>
       <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
           <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
           <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
           <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
         <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', cursor: gardienPartant ? 'pointer' : 'default' }} onClick={selectionnerGardien}>
           <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
           <div style={{ color: '#666', fontSize: '10px' }}>
@@ -2942,299 +3059,397 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         </div>
       </div>
 
-      {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-      ) : nb === 0 ? (
-        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
-          <p style={{ color: '#666', margin: 0 }}>Aucun match disputé contre {adversaireAbbrev} lors des {saisons.length} dernières saisons.</p>
-        </div>
-      ) : (
-        <>
-          {/* Totaux + moyennes vs adversaire */}
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>VS {adversaireAbbrev} · {saisons.length} DERNIÈRES SAISONS</div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '3px 8px', color: '#f97316', fontSize: '12px', fontWeight: 'bold' }}>{nb} MJ</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
-              {[['GOALS', totalGoals, moy(totalGoals)], ['AST', totalAssists, moy(totalAssists)], ['PTS', totalPoints, moy(totalPoints)], ['SOG', totalSog, moy(totalSog)]].map(([l, v, m], i) => (
-                <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{v}</div>
-                  <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-                  <div style={{ fontSize: '9px', color: '#666', marginTop: '1px' }}>{m}/G</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-              {[['PPP', totalPpp, moy(totalPpp)], ['HITS', totalHits, moy(totalHits)], ['BLK', totalBlocks, moy(totalBlocks)]].map(([l, v, m], i) => (
-                <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v}</div>
-                  <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-                  <div style={{ fontSize: '9px', color: '#666', marginTop: '1px' }}>{m}/G</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Navigation principale : 3 grands onglets */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '4px', border: '1px solid #1a1a1a' }}>
+        {[['match', 'Ce Match'], ['historique', 'Historique'], ['projection', 'Projection']].map(([id, label]) => (
+          <button key={id} onClick={() => setOngletPrincipal(id)} style={{ flex: 1, padding: '10px 6px', borderRadius: '9px', border: 'none', cursor: 'pointer', backgroundColor: ongletPrincipal === id ? '#f97316' : 'transparent', color: ongletPrincipal === id ? 'white' : '#888', fontSize: '13px', fontWeight: ongletPrincipal === id ? '700' : '500', transition: 'background-color 0.2s ease, color 0.2s ease' }}>{label}</button>
+        ))}
+      </div>
 
-          {/* Graphiques circulaires */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', textAlign: 'center' }}>BUTS / PASSES</div>
-              {totalPoints > 0 ? (
-                <>
-                  <div style={{ width: '100%', height: isMobile ? 120 : 150, position: 'relative' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={dataButsPasses} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="90%" paddingAngle={3} stroke="none">
-                          {dataButsPasses.map((entry, i) => <Cell key={i} fill={COULEURS_BP[i]} />)}
-                        </Pie>
-                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} itemStyle={{ color: 'white' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{totalPoints}</div>
-                      <div style={{ fontSize: '8px', color: '#666' }}>PTS</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
-                    {dataButsPasses.map((d, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: COULEURS_BP[i] }} />
-                        <span style={{ fontSize: '10px', color: '#888' }}>{d.name} ({d.value})</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p style={{ color: '#555', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Aucun point</p>
-              )}
-            </div>
-
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', textAlign: 'center' }}>% AU-DESSUS MOY. SAISON</div>
-              <div style={{ width: '100%', height: isMobile ? 120 : 150, position: 'relative' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={dataAuDessus} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="90%" paddingAngle={3} stroke="none" startAngle={90} endAngle={-270}>
-                      {dataAuDessus.map((entry, i) => <Cell key={i} fill={COULEURS_PCT[i]} />)}
-                    </Pie>
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} itemStyle={{ color: 'white' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{pctAuDessusMoyenne}%</div>
-                  <div style={{ fontSize: '8px', color: '#666' }}>{nb} MJ</div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '10px', color: '#666' }}>Moy. saison : <span style={{ color: 'white', fontWeight: 'bold' }}>{moyennePtsSaison} PTS/G</span></div>
-            </div>
-          </div>
-
-          {/* Split domicile / exterieur */}
-          {(matchsDomicile.length > 0 || matchsExterieur.length > 0) && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DOMICILE / EXTÉRIEUR</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>DOMICILE · {matchsDomicile.length} MJ</div>
-                  <div style={{ color: '#f97316', fontSize: '20px', fontWeight: '900' }}>{moyennePts(matchsDomicile)}</div>
-                  <div style={{ color: '#555', fontSize: '9px', marginTop: '2px' }}>PTS/G</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>EXTÉRIEUR · {matchsExterieur.length} MJ</div>
-                  <div style={{ color: '#f97316', fontSize: '20px', fontWeight: '900' }}>{moyennePts(matchsExterieur)}</div>
-                  <div style={{ color: '#555', fontSize: '9px', marginTop: '2px' }}>PTS/G</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Repartition par saison */}
-          {parSaison.length > 1 && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>PAR SAISON</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {parSaison.map((s, i) => {
-                  const g = s.matchs.reduce((sum, m) => sum + (m.goals || 0), 0);
-                  const a = s.matchs.reduce((sum, m) => sum + (m.assists || 0), 0);
-                  const p = s.matchs.reduce((sum, m) => sum + (m.points || 0), 0);
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
-                      <div style={{ flex: 1, color: 'white', fontSize: '12px', fontWeight: '700' }}>{formatSaison(s.seasonId)}</div>
-                      <div style={{ color: '#888', fontSize: '11px' }}>{s.matchs.length} MJ</div>
-                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
-                        <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{g}</div></div>
-                        <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{a}</div></div>
-                        <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#f97316', fontWeight: 'bold' }}>{p}</div></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Analyse avancee : vs Gardien / vs Style defensif / vs Tirs accordes */}
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>ANALYSE AVANCÉE</div>
-            <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
-              {[['gardien', 'vs Gardien'], ['style', 'vs Style'], ['tirs', 'vs Tirs accordés']].map(([id, label]) => (
-                <button key={id} onClick={() => setOngletAnalyse(id)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletAnalyse === id ? '#f97316' : '#1a1a1a', color: ongletAnalyse === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletAnalyse === id ? 'bold' : 'normal' }}>{label}</button>
-              ))}
-            </div>
-
-            {ongletAnalyse === 'gardien' && (
-              chargement ? (
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement...</p>
-              ) : nb === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🆕</div>
-                  <div style={{ color: 'white', fontWeight: '700', fontSize: '14px' }}>Premier affrontement</div>
-                  <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>Aucun historique face aux gardiens de {adversaireAbbrev} lors des {saisons.length} dernières saisons.</div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ color: '#888', fontSize: '11px', marginBottom: '10px' }}>Face aux gardiens de {adversaireAbbrev} · {saisons.length} dernières saisons</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
-                    {[['MJ', nb, 'white'], ['G', totalGoals, '#f97316'], ['A', totalAssists, 'white'], ['PTS', totalPoints, '#f97316']].map(([l, v, c], i) => (
-                      <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                        <div style={{ fontSize: '17px', fontWeight: '900', color: c }}>{v}</div>
-                        <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ textAlign: 'center', marginBottom: '12px', fontSize: '12px', color: '#888' }}>Moyenne : <span style={{ color: '#f97316', fontWeight: 'bold' }}>{moy(totalPoints)} PTS/match</span></div>
-                  <div style={{ width: '100%', height: 160 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={matchsGraphGardien.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', goals: m.goals || 0, assists: m.assists || 0 }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
-                        <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 9 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-                        <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
-                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} />
-                        <Bar dataKey="goals" name="Buts" stackId="pts" fill="#f97316" />
-                        <Bar dataKey="assists" name="Passes" stackId="pts" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </>
-              )
-            )}
-
-            {ongletAnalyse === 'style' && (
-              chargementDefense ? (
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement des stats défensives...</p>
-              ) : !statsAdversaire ? (
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Statistiques défensives indisponibles.</p>
-              ) : stylesDetectes.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <div style={{ color: 'white', fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>Défense standard</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} ne se distingue sur aucun critère particulier (physique, discipline, tirs accordés).</div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {stylesDetectes.map(style => (
-                    <div key={style.id} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE, flexShrink: 0 }} />
-                          <span style={{ color: 'white', fontWeight: '900', fontSize: '13px' }}>{style.label}</span>
-                        </div>
-                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '20px', backgroundColor: style.favorable ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)', color: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE }}>
-                            {style.favorable ? 'FAVORABLE' : 'DÉFAVORABLE'}
-                          </span>
-                        </div>
-                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '10px' }}>{style.detail}</div>
-                      {style.stats.nb === 0 ? (
-                        <p style={{ color: '#555', fontSize: '11px', margin: 0 }}>Aucun historique contre ce style de défense.</p>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <div style={{ width: '110px', height: 90, flexShrink: 0 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={[{ name: 'Vs style', valeur: style.stats.moyPts }, { name: 'Moy. saison', valeur: moyennePtsSaison }]} margin={{ top: 4, right: 4, left: -30, bottom: 0 }}>
-                                <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 8 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-                                <YAxis hide />
-                                <Bar dataKey="valeur" radius={[3, 3, 0, 0]}>
-                                  <Cell fill={style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE} />
-                                  <Cell fill="#444" />
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
-                            <div><div style={{ color: '#666', fontSize: '9px' }}>MJ</div><div style={{ color: 'white', fontWeight: 'bold' }}>{style.stats.nb}</div></div>
-                            <div><div style={{ color: '#666', fontSize: '9px' }}>PTS/M</div><div style={{ color: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE, fontWeight: 'bold' }}>{style.stats.moyPts}</div></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-
-            {ongletAnalyse === 'tirs' && (
-              chargementDefense ? (
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement des stats défensives...</p>
-              ) : !statsAdversaire ? (
-                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Statistiques défensives indisponibles.</p>
-              ) : (
-                <>
-                  <div style={{ color: '#888', fontSize: '11px', marginBottom: '12px' }}>
-                    {adversaireAbbrev} accorde <span style={{ color: 'white', fontWeight: 'bold' }}>{statsAdversaire.shotsAgainstPerGame.toFixed(1)}</span> tirs/match → classée <span style={{ color: '#f97316', fontWeight: 'bold' }}>{categorieAdversaireTirs?.label}</span>
-                  </div>
-                  <div style={{ width: '100%', height: 160 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={statsParCategorieTirs.map(c => ({ name: c.courte, valeur: c.stats.moyPts, id: c.id }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-                        <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={30} />
-                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} pts/match`, '']} />
-                        <Bar dataKey="valeur" radius={[4, 4, 0, 0]}>
-                          {statsParCategorieTirs.map((c, i) => (
-                            <Cell key={i} fill={categorieAdversaireTirs?.id === c.id ? '#f97316' : '#333'} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px' }}>
-                    {statsParCategorieTirs.map(c => (
-                      <div key={c.id} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: categorieAdversaireTirs?.id === c.id ? 'rgba(249,115,22,0.1)' : '#1a1a1a', border: categorieAdversaireTirs?.id === c.id ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '7px' }}>
-                        <div style={{ fontSize: '9px', color: '#666', marginBottom: '3px' }}>{c.label}</div>
-                        <div style={{ fontSize: '15px', fontWeight: '900', color: categorieAdversaireTirs?.id === c.id ? '#f97316' : 'white' }}>{c.stats.moyPts}</div>
-                        <div style={{ fontSize: '8px', color: '#555' }}>PTS/M · {c.stats.nb} MJ</div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )
-            )}
-          </div>
-
-          {/* Match par match */}
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-            <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Historique face à {adversaireAbbrev}</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {matchsVsAdversaire.map((m, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+      {/* ================= SECTION 1 : CE MATCH (fond #111, accents orange) ================= */}
+      {ongletPrincipal === 'match' && (
+        <div>
+          <div
+            onClick={selectionnerGardien}
+            style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px', cursor: gardienPartant ? 'pointer' : 'default', transition: 'border-color 0.2s ease' }}
+            onMouseEnter={e => gardienPartant && (e.currentTarget.style.borderColor = '#f97316')}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+          >
+            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>GARDIEN PARTANT PROBABLE</div>
+            {chargementGardien ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+            ) : !gardienPartant ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Gardien partant indisponible.</p>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>{m.homeRoadFlag === 'H' ? 'vs' : '@'} {adversaireAbbrev}</div>
-                    <div style={{ fontSize: '10px', color: '#555' }}>
-                      {m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''} · {formatSaison(m.seasonId)}
-                    </div>
+                    <div style={{ color: 'white', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
+                    <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
-                    <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
-                    <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
-                    <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#f97316', fontWeight: 'bold' }}>{m.points}</div></div>
-                    <div><div style={{ color: '#666', fontSize: '9px' }}>SOG</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shots}</div></div>
+                  <span style={{ color: '#f97316', fontSize: '14px' }}>→</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '10px' }}>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.gaa}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>GAA</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.svp}</div>
+                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>SV%</div>
                   </div>
                 </div>
+                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
+                  <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '8px' }}>HISTORIQUE FACE À CE GARDIEN</div>
+                  {chargementGoalieH2H ? (
+                    <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Analyse de l'historique...</p>
+                  ) : statsVsGardien.nb === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                      <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
+                      <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.goals}</div>
+                        <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsGardien.nb} MJ</div>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsGardien.moy.points}</div>
+                        <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
+                      </div>
+                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.shots}</div>
+                        <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
+            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>STYLE DÉFENSIF ADVERSE</div>
+            {chargementDefense ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+            ) : !styleActif ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
+            ) : (
+              <>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', backgroundColor: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.4)', marginBottom: '10px' }}>
+                  <span style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{styleActif.label}</span>
+                </div>
+                <div style={{ color: '#888', fontSize: '12px', lineHeight: '1.5' }}>{styleActif.detail}</div>
+                <div style={{ marginTop: '10px', fontSize: '11px', color: styleActif.favorable === true ? '#f97316' : '#888' }}>
+                  {styleActif.favorable === true ? '↑ Favorable au joueur' : styleActif.favorable === false ? '↓ Plutôt défavorable au joueur' : 'Impact neutre'}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>TIRS ACCORDÉS</div>
+            {chargementDefense ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+            ) : !statsAdversaire ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontSize: '26px', fontWeight: '900', color: '#f97316' }}>{statsAdversaire.shotsAgainstPerGame.toFixed(1)}</div>
+                  <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH ACCORDÉS</div>
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: '700', fontSize: '13px', marginBottom: '2px' }}>{categorieAdversaireTirs?.label}</div>
+                  <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} classée parmi les équipes « {categorieAdversaireTirs?.label.toLowerCase()} »</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= SECTION 2 : HISTORIQUE PAR CATÉGORIE (fond #0d0d0d, accents bleu) ================= */}
+      {ongletPrincipal === 'historique' && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+            {[['gardien', 'vs Ce Gardien'], ['style', 'vs Ce Style Défensif'], ['tirs', 'vs Ces Tirs Accordés']].map(([id, label]) => (
+              <button key={id} onClick={() => setOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+            ))}
+          </div>
+
+          {ongletHistorique === 'gardien' && (
+            <CategorieHistorique
+              chargement={chargementGoalieH2H}
+              stats={statsVsGardien}
+              titre={gardienPartant ? `Face à ${gardienPartant.nom}` : 'Face à ce gardien'}
+              messageVide="Premier affrontement contre ce gardien lors des 3 dernières saisons."
+              onSelectMatch={setMatchDetailSelectionne}
+            />
+          )}
+          {ongletHistorique === 'style' && (
+            <CategorieHistorique
+              chargement={chargementDefense}
+              stats={statsVsStyle}
+              titre={styleActif && styleActif.id !== 'standard' ? `Face aux défenses « ${styleActif.label} »` : 'Aucun style distinctif détecté'}
+              messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
+              onSelectMatch={setMatchDetailSelectionne}
+            />
+          )}
+          {ongletHistorique === 'tirs' && (
+            <CategorieHistorique
+              chargement={chargementDefense}
+              stats={categorieAdversaireTirs ? statsParCategorieTirs.find(c => c.id === categorieAdversaireTirs.id).stats : aggregerMatchs([])}
+              titre={categorieAdversaireTirs ? `Face aux défenses « ${categorieAdversaireTirs.label} »` : 'Catégorie indisponible'}
+              messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
+              onSelectMatch={setMatchDetailSelectionne}
+            />
+          )}
+        </div>
+      )}
+
+      {/* ================= SECTION 3 : PROJECTION & PROBABILITÉ (fond #111, vert/rouge) ================= */}
+      {ongletPrincipal === 'projection' && (
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+          <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>MODÈLE DE PROJECTION</div>
+          <p style={{ color: '#555', fontSize: '11px', margin: '0 0 16px', lineHeight: '1.5' }}>
+            Moyenne pondérée : forme récente L5/L10/L20 (40%) · style défensif (25%) · vs ce gardien (15%) · domicile/extérieur (10%) · tendance L5 (10%).
+          </p>
+          {chargementComplet ? (
+            <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Calcul de la projection...</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {['shots', 'goals', 'points'].map(cle => (
+                <LigneProjectionStat
+                  key={cle}
+                  cle={cle}
+                  projection={projections[cle]}
+                  ligneEdge={lignesEdge[cle]}
+                  enEdition={editionLigne === cle}
+                  onEditer={() => setEditionLigne(cle)}
+                  onValiderLigne={(valeur) => { setLignesEdge(prev => ({ ...prev, [cle]: valeur })); setEditionLigne(null); }}
+                  onAnnulerEdition={() => setEditionLigne(null)}
+                />
               ))}
             </div>
-          </div>
-        </>
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+// Onglet de la section "Historique" : stats agregees + graphique 10 derniers matchs + liste cliquable.
+function CategorieHistorique({ chargement, stats, titre, messageVide, onSelectMatch }) {
+  const isMobile = useIsMobile();
+  if (chargement) {
+    return <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Chargement...</p>;
+  }
+  if (!stats || stats.nb === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '30px 0' }}>
+        <div style={{ fontSize: '26px', marginBottom: '6px' }}>🆕</div>
+        <div style={{ color: '#888', fontSize: '12px' }}>{messageVide}</div>
+      </div>
+    );
+  }
+  const derniers10 = [...stats.matchs].slice(0, 10).reverse();
+  return (
+    <>
+      <div style={{ color: 'white', fontWeight: '700', fontSize: '13px', marginBottom: '10px' }}>{titre}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: '6px', marginBottom: '14px' }}>
+        {[['PJ', stats.nb], ['B/M', stats.moy.goals], ['A/M', stats.moy.assists], ['PTS/M', stats.moy.points], ['TIRS/M', stats.moy.shots], ['%>MOY', stats.pctAuDessus + '%']].map(([l, v], i) => (
+          <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#161616', borderRadius: '8px', border: '1px solid #1f1f1f' }}>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: '#3b82f6' }}>{v}</div>
+            <div style={{ fontSize: '8px', color: '#555', marginTop: '2px' }}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ width: '100%', height: 150, marginBottom: '14px' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={derniers10.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', points: m.points || 0 }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 9 }} axisLine={{ stroke: '#222' }} tickLine={false} />
+            <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={26} allowDecimals={false} />
+            <RechartsTooltip contentStyle={{ backgroundColor: '#161616', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} pts`, '']} />
+            <Bar dataKey="points" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {stats.matchs.slice(0, 10).map((m, i) => (
+          <div key={i} onClick={() => onSelectMatch(m)} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#161616', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1c1c1c'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#161616'}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
+                {m.resultatMatch && (
+                  <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : '#888', fontWeight: '900', marginLeft: '6px' }}>
+                    {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '10px', color: '#555' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+              <div><div style={{ color: '#666', fontSize: '9px' }}>B</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
+              <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
+              <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#3b82f6', fontWeight: 'bold' }}>{m.points}</div></div>
+            </div>
+            <span style={{ color: '#3b82f6', fontSize: '12px' }}>→</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Detail d'un match de l'historique (ouvert au clic depuis la section Historique).
+function DetailMatchHistorique({ match, joueurNom, onBack }) {
+  const dateStr = match.gameDate ? new Date(match.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '';
+  return (
+    <div>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px', marginBottom: '14px', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '10px' }}>
+          <img src={LOGOS_NHL[match.opponentAbbrev]} alt={match.opponentAbbrev} style={{ width: '48px', height: '48px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <div>
+            <div style={{ color: 'white', fontSize: '16px', fontWeight: '900' }}>{match.homeRoadFlag === 'H' ? 'vs' : '@'} {match.opponentAbbrev}</div>
+            <div style={{ color: '#666', fontSize: '11px', textTransform: 'capitalize' }}>{dateStr}</div>
+          </div>
+        </div>
+        {match.resultatMatch && (
+          <div style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '20px', backgroundColor: match.resultatMatch === 'V' ? 'rgba(34,197,94,0.12)' : match.resultatMatch === 'D' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.06)', color: match.resultatMatch === 'V' ? '#22c55e' : match.resultatMatch === 'D' ? '#ef4444' : '#888', fontSize: '13px', fontWeight: '900' }}>
+            {match.resultatMatch === 'V' ? 'Victoire' : match.resultatMatch === 'D' ? 'Défaite' : 'Nul'} {match.scoreEquipe}-{match.scoreAdverse}
+          </div>
+        )}
+      </div>
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px', marginBottom: '14px' }}>
+        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>PERFORMANCE DE {(joueurNom || '').toUpperCase()}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {[['BUTS', match.goals, '#f97316'], ['PASSES', match.assists, 'white'], ['POINTS', match.points, '#f97316'], ['TIRS', match.shots, 'white'], ['MISES EN ÉCHEC', match.hits ?? '-', 'white'], ['BLOQUÉS', match.blockedShots ?? '-', 'white']].map(([l, v, c], i) => (
+            <div key={i} style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
+              <div style={{ fontSize: '9px', color: '#555', marginTop: '3px' }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {match.gardienAdversaireNom && (
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px' }}>
+          <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>GARDIEN ADVERSE</div>
+          <div style={{ color: 'white', fontSize: '14px', fontWeight: '700' }}>{match.gardienAdversaireNom}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Une ligne de la section Projection (tirs, buts ou points) : valeur projetee, probabilite vs ligne
+// Edge (mockee ou saisie), intervalle de confiance, fiabilite et graphique de regression.
+function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, onValiderLigne, onAnnulerEdition }) {
+  const [valeurSaisie, setValeurSaisie] = useState(ligneEdge || '');
+  const label = LABELS_STAT[cle];
+
+  if (!projection) {
+    return (
+      <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+        <div style={{ color: '#666', fontSize: '12px' }}>Données insuffisantes pour projeter les {label}.</div>
+      </div>
+    );
+  }
+
+  const ligneActive = ligneEdge !== '' && ligneEdge != null ? parseFloat(ligneEdge) : projection.ligneDefaut;
+  const probabilite = probabiliteDepassement(projection.valeur, projection.ecartType, ligneActive);
+  const couleurFiabilite = projection.fiabilite === 'Élevée' ? '#22c55e' : projection.fiabilite === 'Moyenne' ? '#f97316' : '#ef4444';
+  const couleurProb = probabilite >= 55 ? '#22c55e' : probabilite <= 45 ? '#ef4444' : '#888';
+
+  return (
+    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '10px' }}>
+        <div>
+          <div style={{ color: 'white', fontSize: '14px', fontWeight: '900', textTransform: 'capitalize' }}>{label}</div>
+          <div style={{ fontSize: '9px', fontWeight: 'bold', color: couleurFiabilite, marginTop: '2px' }}>FIABILITÉ {projection.fiabilite.toUpperCase()} · {projection.totalDonnees} MATCHS</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '22px', fontWeight: '900', color: '#f97316' }}>{projection.valeur}</div>
+          <div style={{ fontSize: '9px', color: '#666' }}>PROJECTION</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#111', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: '11px', color: '#888' }}>
+          Ligne {ligneEdge ? 'Edge' : 'suggérée'} : <span style={{ color: 'white', fontWeight: 'bold' }}>{ligneActive}</span>
+        </div>
+        {enEdition ? (
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <input
+              type="number" step="0.5" autoFocus value={valeurSaisie}
+              onChange={e => setValeurSaisie(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && valeurSaisie !== '') onValiderLigne(valeurSaisie); if (e.key === 'Escape') onAnnulerEdition(); }}
+              style={{ width: '70px', padding: '6px 8px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: 'white', fontSize: '12px' }}
+            />
+            <button onClick={() => valeurSaisie !== '' && onValiderLigne(valeurSaisie)} style={{ padding: '6px 10px', borderRadius: '6px', border: 'none', backgroundColor: '#f97316', color: 'white', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>OK</button>
+          </div>
+        ) : (
+          <button onClick={onEditer} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: 'transparent', color: '#888', fontSize: '11px', cursor: 'pointer' }}>
+            {ligneEdge ? 'Modifier la ligne Edge' : 'Entrer la ligne Edge'}
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+        <div style={{ textAlign: 'center', padding: '10px', backgroundColor: probabilite >= 50 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${couleurProb}55`, borderRadius: '8px' }}>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: couleurProb }}>{probabilite}%</div>
+          <div style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>DE DÉPASSER {ligneActive} {label.toUpperCase()}</div>
+        </div>
+        <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#111', borderRadius: '8px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{projection.intervalleBas} – {projection.intervalleHaut}</div>
+          <div style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>INTERVALLE DE CONFIANCE</div>
+        </div>
+      </div>
+
+      <GraphiqueProjection matchs={projection.matchsGraph} cle={cle} projection={projection} />
+
+      <div style={{ marginTop: '10px' }}>
+        <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '6px' }}>COMPOSANTES DU MODÈLE</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {projection.composantes.map(c => (
+            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', opacity: c.valeur != null ? 1 : 0.35 }}>
+              <span style={{ color: '#888' }}>{c.label}</span>
+              <span style={{ color: 'white' }}>{c.valeur != null ? `${c.valeur} (${c.poidsEffectif}%)` : 'Non disponible'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Graphique de regression : derniers matchs (barres) + ligne de tendance (projection) + intervalle de confiance.
+function GraphiqueProjection({ matchs, cle, projection }) {
+  if (!matchs || matchs.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '16px 0', color: '#555', fontSize: '11px' }}>Pas assez de matchs récents pour un graphique.</div>;
+  }
+  const data = matchs.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', valeur: m[cle] || 0 }));
+  return (
+    <div style={{ width: '100%', height: 130 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+          <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 8 }} axisLine={{ stroke: '#222' }} tickLine={false} />
+          <YAxis tick={{ fill: '#555', fontSize: 9 }} axisLine={false} tickLine={false} width={22} allowDecimals={false} />
+          <RechartsTooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} />
+          <ReferenceLine y={projection.intervalleHaut} stroke="#444" strokeDasharray="4 4" />
+          <ReferenceLine y={projection.intervalleBas} stroke="#444" strokeDasharray="4 4" />
+          <ReferenceLine y={projection.valeur} stroke="#f97316" strokeWidth={2} label={{ value: 'Projection', position: 'insideTopRight', fill: '#f97316', fontSize: 9 }} />
+          <Bar dataKey="valeur" fill="#3a3a3a" radius={[2, 2, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
