@@ -1,26 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getUrl } from './nhlApi';
-import { LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante } from './Analyses';
+import { LOGOS_NHL, useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe } from './Analyses';
 import { getModeles, filtrerMatchsPourModele, genererRecommandation } from './modelesData';
-
-// Cherche le prochain jour (dans les 7 prochains) ayant des matchs au calendrier NHL.
-// Meme pattern que chargerSemaine()/schedule/{jour} utilise ailleurs dans Analyses.js.
-async function chargerMatchsDuJour() {
-  const aujourdhui = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(aujourdhui);
-    d.setDate(d.getDate() + i);
-    const jour = getDateStr(d);
-    try {
-      const res = await fetch(getUrl(`schedule/${jour}`));
-      const data = await res.json();
-      const games = data.gameWeek?.[0]?.games || [];
-      if (games.length > 0) return games;
-    } catch { /* essaie le jour suivant */ }
-  }
-  return [];
-}
 
 function CarteAccueil({ icone, titre, onClick }) {
   return (
@@ -105,6 +87,8 @@ function DetailModele({ modele, onBack }) {
   const padding = isMobile ? '16px' : '32px';
 
   const [chargement, setChargement] = useState(true);
+  const [semaineDate, setSemaineDate] = useState(null);
+  const [matchsSemaine, setMatchsSemaine] = useState([]);
   const [matchsEligibles, setMatchsEligibles] = useState([]);
   const [matchSelectionneId, setMatchSelectionneId] = useState('');
   const [joueurRecommande, setJoueurRecommande] = useState(null);
@@ -113,8 +97,12 @@ function DetailModele({ modele, onBack }) {
   useEffect(() => {
     let annule = false;
     setChargement(true);
-    chargerMatchsDuJour().then(matchs => {
+    chargerProchaineSemaineAvecMatchs().then(matchsParJour => {
       if (annule) return;
+      const jours = Object.keys(matchsParJour).sort();
+      const matchs = jours.flatMap(j => matchsParJour[j]);
+      setSemaineDate(jours[0] || null);
+      setMatchsSemaine(matchs);
       const eligibles = filtrerMatchsPourModele(modele, matchs);
       setMatchsEligibles(eligibles);
       setMatchSelectionneId(eligibles[0]?.id ? String(eligibles[0].id) : '');
@@ -193,26 +181,34 @@ function DetailModele({ modele, onBack }) {
 
       {/* Selecteur de matchs eligibles */}
       <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
-        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>MATCHS ÉLIGIBLES CE SOIR</div>
+        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>MATCHS ÉLIGIBLES</div>
         {chargement ? (
           <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Recherche des matchs éligibles...</p>
-        ) : matchsEligibles.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Aucun match ne correspond aux critères de ce modèle pour l'instant.</p>
+        ) : matchsSemaine.length === 0 ? (
+          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Aucun match à venir pour le moment</p>
         ) : (
-          <select
-            value={matchSelectionneId}
-            onChange={e => setMatchSelectionneId(e.target.value)}
-            style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
-          >
-            {matchsEligibles.map(m => {
-              const heure = m.startTimeUTC ? new Date(m.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' }) : '';
-              return (
-                <option key={m.id} value={m.id}>
-                  {m.awayTeam?.abbrev} @ {m.homeTeam?.abbrev} · {heure}
-                </option>
-              );
-            })}
-          </select>
+          <>
+            <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(semaineDate)}</div>
+            {matchsEligibles.length === 0 ? (
+              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Aucun match ne correspond aux critères de ce modèle pour l'instant.</p>
+            ) : (
+              <select
+                value={matchSelectionneId}
+                onChange={e => setMatchSelectionneId(e.target.value)}
+                style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
+              >
+                {matchsEligibles.map(m => {
+                  const date = m.startTimeUTC ? new Date(m.startTimeUTC) : null;
+                  const label = date ? `${date.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' })} · ${date.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}` : '';
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {m.awayTeam?.abbrev} @ {m.homeTeam?.abbrev} · {label}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+          </>
         )}
       </div>
 

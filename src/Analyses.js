@@ -3589,6 +3589,6 @@ function AnalysesRecherche() {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante };
+export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe };
 export default Analyses;
  
