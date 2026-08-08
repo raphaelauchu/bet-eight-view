@@ -6,7 +6,82 @@ import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
 import { supabase } from './supabase';
 import { getT } from './i18n';
- 
+
+// Icones SVG (style stroke, modernes)
+function IconProfile({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4.2 3.6-7 8-7s8 2.8 8 7" />
+    </svg>
+  );
+}
+
+function IconTicket({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8Z" />
+      <path d="M9 6v12" strokeDasharray="2.5 2.5" />
+    </svg>
+  );
+}
+
+function IconWallet({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+    </svg>
+  );
+}
+
+function IconGear({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+    </svg>
+  );
+}
+
+function IconHome({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.5 12 4l9 6.5" />
+      <path d="M5 9.5V19a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1V9.5" />
+    </svg>
+  );
+}
+
+function IconBarChart({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v18h18" />
+      <path d="M18 17V9" />
+      <path d="M13 17V5" />
+      <path d="M8 17v-3" />
+    </svg>
+  );
+}
+
+function IconSearch({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
+function IconStar({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
+    </svg>
+  );
+}
+
 function MockupJoueur() {
   return (
     <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #1a1a1a', padding: '16px', fontFamily: '-apple-system, sans-serif' }}>
@@ -1424,10 +1499,10 @@ function App() {
   if (utilisateur) {
     const t = getT(lang);
     const tabs = [
-      { id: 'home', label: t('nav_tab_home'), icon: '⌂' },
-      { id: 'stats', label: t('nav_tab_stats'), icon: '◎' },
-      { id: 'analyses', label: t('nav_tab_analyses'), icon: '🔍' },
-      { id: 'props', label: t('nav_tab_models'), icon: '◆' },
+      { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
+      { id: 'stats', label: t('nav_tab_stats'), Icon: IconBarChart },
+      { id: 'analyses', label: t('nav_tab_analyses'), Icon: IconSearch },
+      { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
     const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
 
@@ -1463,12 +1538,12 @@ function App() {
               <div style={{ padding: '12px', flex: 1 }}>
                 <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
                 {[
-                  { icon: '👤', label: t('menu_profile'), page: 'profile' },
-                  { icon: '◐', label: t('menu_bets'), page: 'bets' },
-                  { icon: '💰', label: t('menu_bankroll'), page: 'bankroll' },
+                  { Icon: IconProfile, label: t('menu_profile'), page: 'profile' },
+                  { Icon: IconTicket, label: t('menu_bets'), page: 'bets' },
+                  { Icon: IconWallet, label: t('menu_bankroll'), page: 'bankroll' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '18px', color: page === item.page ? '#f97316' : '#555' }}>{item.icon}</span>
+                    <item.Icon color={page === item.page ? '#f97316' : '#555'} size={18} />
                     <span style={{ fontSize: '15px', fontWeight: page === item.page ? '600' : '400', color: page === item.page ? 'white' : '#888' }}>{item.label}</span>
                   </button>
                 ))}
@@ -1476,7 +1551,7 @@ function App() {
                   <>
                     <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginTop: '12px', marginBottom: '4px' }}>Admin</div>
                     <button onClick={() => { setPage('admin'); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
-                      <span style={{ fontSize: '18px', color: '#555' }}>⚙</span>
+                      <IconGear color="#555" size={18} />
                       <span style={{ fontSize: '15px', color: '#888' }}>Admin Panel</span>
                     </button>
                   </>
@@ -1533,7 +1608,7 @@ function App() {
           <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid #1a1a1a', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setPage(tab.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
-                <span style={{ fontSize: '20px', color: activeTab === tab.id ? '#f97316' : '#444', transition: 'color 0.2s' }}>{tab.icon}</span>
+                <tab.Icon color={activeTab === tab.id ? '#f97316' : '#444'} size={20} />
                 <span style={{ fontSize: '10px', fontWeight: activeTab === tab.id ? '600' : '400', color: activeTab === tab.id ? '#f97316' : '#444', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
                 {activeTab === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
               </button>
