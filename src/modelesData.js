@@ -173,3 +173,12 @@ export function genererRecommandation(modele, match) {
     equipeCibleAbbrev: (graine % 2 === 0 ? match.awayTeam : match.homeTeam)?.abbrev,
   };
 }
+
+// ROI mocke specifique a un matchup donne (pour l'instant simule autour du ROI global du modele, en
+// attendant un vrai calcul par match). Deterministe : meme match + meme modele -> meme ROI affiche.
+export function genererROISpecifique(modele, match) {
+  const graine = hashDeterministe(`${modele.id}-${match.id}-roi`);
+  const amplitude = Math.abs(modele.roi) * 0.6 + 5;
+  const delta = ((graine % 201) - 100) / 100 * amplitude;
+  return parseFloat((modele.roi + delta).toFixed(1));
+}

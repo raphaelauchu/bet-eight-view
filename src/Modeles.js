@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getUrl } from './nhlApi';
-import { LOGOS_NHL, useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe } from './Analyses';
-import { getModeles, filtrerMatchsPourModele, genererRecommandation } from './modelesData';
+import { LOGOS_NHL, useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch } from './Analyses';
+import { getModeles, filtrerMatchsPourModele, genererRecommandation, genererROISpecifique } from './modelesData';
 
 function CarteAccueil({ icone, titre, onClick }) {
   return (
@@ -91,12 +91,19 @@ function DetailModele({ modele, onBack }) {
   const [matchsSemaine, setMatchsSemaine] = useState([]);
   const [matchsEligibles, setMatchsEligibles] = useState([]);
   const [matchSelectionneId, setMatchSelectionneId] = useState('');
+  const [choixUtilisateur, setChoixUtilisateur] = useState(false);
+  const [classement, setClassement] = useState([]);
   const [joueurRecommande, setJoueurRecommande] = useState(null);
   const [chargementJoueur, setChargementJoueur] = useState(false);
 
   useEffect(() => {
+    fetch(getUrl('standings/now')).then(r => r.json()).then(data => setClassement(data.standings || [])).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     let annule = false;
     setChargement(true);
+    setChoixUtilisateur(false);
     chargerProchaineSemaineAvecMatchs().then(matchsParJour => {
       if (annule) return;
       const jours = Object.keys(matchsParJour).sort();
@@ -113,6 +120,19 @@ function DetailModele({ modele, onBack }) {
 
   const matchSelectionne = matchsEligibles.find(m => String(m.id) === matchSelectionneId) || null;
   const recommandation = matchSelectionne ? genererRecommandation(modele, matchSelectionne) : null;
+
+  // Matchup avec la plus grande probabilite de victoire parmi TOUS les matchs de la semaine trouvee
+  // (independamment de l'eligibilite au modele) - meme logique de proba que CarteMatchEquipesDetaille.
+  const topPick = matchsSemaine.length > 0 && classement.length > 0
+    ? matchsSemaine
+        .map(m => ({ match: m, ...calculerFavoriMatch(m, classement) }))
+        .reduce((meilleur, cur) => (!meilleur || cur.probFavori > meilleur.probFavori ? cur : meilleur), null)
+    : null;
+
+  // ROI global (sur tous les matchs disponibles) tant que l'utilisateur n'a pas choisi un matchup
+  // precis dans le filtre ; ROI specifique a ce matchup une fois un choix manuel effectue.
+  const roiAffiche = choixUtilisateur && matchSelectionne ? genererROISpecifique(modele, matchSelectionne) : modele.roi;
+  const labelRoi = choixUtilisateur && matchSelectionne ? 'ROI SPÉCIFIQUE AU MATCHUP' : 'ROI GLOBAL';
 
   // Pour un modele "joueur", on resout un joueur concret a partir du roster reel de l'equipe ciblee
   // (le choix precis du joueur reste mocke, en attendant le vrai modele).
@@ -139,11 +159,28 @@ function DetailModele({ modele, onBack }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchSelectionneId, modele.id, seasonId]);
 
-  const positif = modele.roi >= 0;
+  const positif = roiAffiche >= 0;
 
   return (
     <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
       <BoutonBack onClick={onBack} />
+
+      {/* Top pick de la semaine : matchup avec la plus grande probabilite de victoire, tous matchs confondus */}
+      {topPick && (
+        <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', borderRadius: '14px', border: '1px solid rgba(249,115,22,0.35)', padding: isMobile ? '12px 14px' : '16px 20px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <span style={{ backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '900', letterSpacing: '0.5px', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>TOP PICK</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+            <img src={LOGOS_NHL[topPick.abbrevAway]} alt={topPick.abbrevAway} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <span style={{ color: '#666', fontSize: '13px', fontWeight: 'bold' }}>@</span>
+            <img src={LOGOS_NHL[topPick.abbrevHome]} alt={topPick.abbrevHome} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <span style={{ color: 'white', fontSize: '13px', fontWeight: '700', marginLeft: '4px' }}>{topPick.abbrevAway} @ {topPick.abbrevHome}</span>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{topPick.favoriAbbrev} · {topPick.probFavori}%</div>
+            <div style={{ fontSize: '9px', color: '#666' }}>PROBABILITÉ DE VICTOIRE</div>
+          </div>
+        </div>
+      )}
 
       {/* En-tete : nom, ROI, graphique */}
       <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
@@ -153,8 +190,8 @@ function DetailModele({ modele, onBack }) {
             <div style={{ fontSize: '11px', color: '#555', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{modele.type === 'equipe' ? 'Modèle Équipe' : 'Modèle Joueur'}</div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: '24px', fontWeight: '900', color: positif ? '#f97316' : '#ef4444' }}>{positif ? '+' : ''}{modele.roi.toFixed(1)}%</div>
-            <div style={{ fontSize: '9px', color: '#555' }}>ROI CUMULATIF</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: positif ? '#f97316' : '#ef4444' }}>{positif ? '+' : ''}{roiAffiche.toFixed(1)}%</div>
+            <div style={{ fontSize: '9px', color: '#555' }}>{labelRoi}</div>
           </div>
         </div>
         <div style={{ width: '100%', height: 140 }}>
@@ -194,7 +231,7 @@ function DetailModele({ modele, onBack }) {
             ) : (
               <select
                 value={matchSelectionneId}
-                onChange={e => setMatchSelectionneId(e.target.value)}
+                onChange={e => { setMatchSelectionneId(e.target.value); setChoixUtilisateur(true); }}
                 style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
               >
                 {matchsEligibles.map(m => {

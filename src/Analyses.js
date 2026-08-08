@@ -1551,20 +1551,39 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
   );
 }
 
+// Probabilite de victoire away/home a partir des points au classement (100% si l'adversaire en a 0).
+function calculerProbaVictoire(ptsAway, ptsHome) {
+  const total = ptsAway + ptsHome;
+  const probAway = total > 0 ? Math.round((ptsAway / total) * 100) : 50;
+  return { probAway, probHome: 100 - probAway };
+}
+
+// Favori d'un match et sa probabilite de victoire, a partir du classement (points) - meme logique que
+// CarteMatchEquipesDetaille. Utilise notamment par Modeles.js pour reperer le "top pick" de la semaine.
+function calculerFavoriMatch(match, classement) {
+  const abbrevAway = match.awayTeam?.abbrev;
+  const abbrevHome = match.homeTeam?.abbrev;
+  const eAway = classement.find(e => e.teamAbbrev?.default === abbrevAway);
+  const eHome = classement.find(e => e.teamAbbrev?.default === abbrevHome);
+  const { probAway, probHome } = calculerProbaVictoire(eAway?.points || 0, eHome?.points || 0);
+  const favoriAbbrev = probAway > probHome ? abbrevAway : abbrevHome;
+  return { abbrevAway, abbrevHome, probAway, probHome, favoriAbbrev, probFavori: Math.max(probAway, probHome) };
+}
+
 function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   const isMobile = useIsMobile();
   const [ouvert, setOuvert] = useState(false);
- 
+
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
   const nom1 = match.awayTeam?.commonName?.default || abbrev1;
   const nom2 = match.homeTeam?.commonName?.default || abbrev2;
   const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
   const etat = match.gameState;
- 
+
   const e1 = classement.find(e => e.teamAbbrev?.default === abbrev1);
   const e2 = classement.find(e => e.teamAbbrev?.default === abbrev2);
- 
+
   const pts1 = e1?.points || 0; const pts2 = e2?.points || 0;
   const wins1 = e1?.wins || 0; const wins2 = e2?.wins || 0;
   const losses1 = e1?.losses || 0; const losses2 = e2?.losses || 0;
@@ -1573,9 +1592,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   const ga1 = e1 ? e1.goalAgainst / (e1.gamesPlayed || 1) : 3;
   const gf2 = e2 ? e2.goalFor / (e2.gamesPlayed || 1) : 3;
   const ga2 = e2 ? e2.goalAgainst / (e2.gamesPlayed || 1) : 3;
-  const total_pts = pts1 + pts2;
-  const prob1 = total_pts > 0 ? Math.round((pts1 / total_pts) * 100) : 50;
-  const prob2 = 100 - prob1;
+  const { probAway: prob1, probHome: prob2 } = calculerProbaVictoire(pts1, pts2);
   const favori = prob1 > prob2 ? abbrev1 : abbrev2;
   const total_buts = ((gf1 + ga2 + gf2 + ga1) / 2).toFixed(1);
   const overUnder = parseFloat(total_buts) > 5.5 ? 'OVER' : 'UNDER';
@@ -3589,6 +3606,6 @@ function AnalysesRecherche() {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe };
+export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
 export default Analyses;
  
