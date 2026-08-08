@@ -4,6 +4,7 @@ import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
+import ModelesFlux from './Modeles';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
@@ -1596,10 +1597,7 @@ function App() {
           ) : activeTab === 'analyses' ? (
             <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
           ) : activeTab === 'props' ? (
-            <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '48px' }}>🚧</div>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>Bientôt disponible</div>
-            </div>
+            <ModelesFlux />
           ) : null}
         </div>
 

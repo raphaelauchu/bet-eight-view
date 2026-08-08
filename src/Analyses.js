@@ -3575,6 +3575,6 @@ function AnalysesRecherche() {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux };
+export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante };
 export default Analyses;
  
