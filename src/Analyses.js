@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
  
 const NHL_ABBREV_TO_SLUG = {
@@ -68,6 +69,24 @@ const LIGUES = [
 const SAISON_REG_2526 = { id: 'reg2526', seasonId: '20252026', gameType: 2, label: 'Saison régulière 25-26' };
 const SAISON_PO_2526 = { id: 'po2526', seasonId: '20252026', gameType: 3, label: 'Playoffs 25-26' };
 const SAISONS_2526 = [SAISON_REG_2526, SAISON_PO_2526];
+
+// Premier match non termine (gameState != OFF/FINAL) au calendrier d'une equipe pour une saison donnee.
+async function trouverProchainMatchEquipe(abbrev, saisonId) {
+  try {
+    const res = await fetch(getUrl(`club-schedule-season/${abbrev}/${saisonId}`));
+    const data = await res.json();
+    return (data.games || []).find(g => g.gameState !== 'OFF' && g.gameState !== 'FINAL') || null;
+  } catch { return null; }
+}
+
+// Genere les N derniers seasonId NHL (format AAAAAAAA) a partir d'une saison de depart, la plus recente en premier.
+function getSeasonsRecentes(seasonId, count = 3) {
+  const anneeDebut = parseInt(seasonId.slice(0, 4), 10);
+  return Array.from({ length: count }, (_, i) => {
+    const annee = anneeDebut - i;
+    return `${annee}${annee + 1}`;
+  });
+}
 
 // Les stats "featuredStats" de player/landing ne reflètent pas forcement la saison choisie.
 // On va plutot chercher dans seasonTotals l'entree qui correspond au seasonId + gameType choisis.
@@ -2150,6 +2169,8 @@ function FicheJoueur({ joueur, onBack }) {
   const [chargement, setChargement] = useState(true);
   const [edgeValue, setEdgeValue] = useState('');
   const [modeStats, setModeStats] = useState('regular');
+  const [prochainAdversaire, setProchainAdversaire] = useState(null);
+  const [matchupOuvert, setMatchupOuvert] = useState(false);
   const seasonId = '20252026';
 
   useEffect(() => {
@@ -2162,6 +2183,25 @@ function FicheJoueur({ joueur, onBack }) {
   }, [ongletChart, modeStats]);
 
   useEffect(() => { chargerStats(); }, [joueur.id, modeStats]);
+  useEffect(() => { chargerProchainAdversaire(); }, [joueur.equipe]);
+
+  async function chargerProchainAdversaire() {
+    setProchainAdversaire(null);
+    try {
+      let prochain = await trouverProchainMatchEquipe(joueur.equipe, seasonId);
+      if (!prochain) {
+        // Hors-saison (calendrier courant termine) : on regarde le premier match de la saison suivante.
+        const anneeDebut = parseInt(seasonId.slice(0, 4), 10);
+        const seasonSuivante = `${anneeDebut + 1}${anneeDebut + 2}`;
+        prochain = await trouverProchainMatchEquipe(joueur.equipe, seasonSuivante);
+      }
+      if (prochain) {
+        const domicile = prochain.homeTeam?.abbrev === joueur.equipe;
+        const abbrevAdv = domicile ? prochain.awayTeam?.abbrev : prochain.homeTeam?.abbrev;
+        setProchainAdversaire({ abbrev: abbrevAdv, gameDate: prochain.gameDate, gameId: prochain.id, domicile });
+      }
+    } catch (err) { console.error(err); }
+  }
 
   async function chargerStats() {
     setChargement(true);
@@ -2398,7 +2438,19 @@ const getMatchsChart = () => {
   ];
 
   const pad = isMobile ? '14px' : '20px';
- 
+
+  if (matchupOuvert && prochainAdversaire) {
+    return (
+      <FicheMatchup
+        joueur={joueur}
+        adversaireAbbrev={prochainAdversaire.abbrev}
+        prochainMatch={prochainAdversaire}
+        moyennePtsSaison={getMoyenneSaison('PTS')}
+        onBack={() => setMatchupOuvert(false)}
+      />
+    );
+  }
+
   return (
     <div>
       <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
@@ -2415,13 +2467,23 @@ const getMatchsChart = () => {
             <span style={{ color: '#666', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
           </div>
         </div>
-        {!isGardien && statsAvancees && (
-          <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', border: '1px solid #222', flexShrink: 0 }}>
-            <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>AVG</div>
-            <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '900' }}>
-  {ongletStat === 'TOI' ? statsAvancees?.toi ?? '-' : getMoyenneSaison(ongletStat)}
-</div>
-           <div style={{ color: '#555', fontSize: '9px' }}>{ongletStat}/G</div>
+        {!isGardien && (
+          <div
+            onClick={() => prochainAdversaire && setMatchupOuvert(true)}
+            style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', border: '1px solid #222', flexShrink: 0, cursor: prochainAdversaire ? 'pointer' : 'default', minWidth: '64px', transition: 'border-color 0.15s' }}
+            onMouseEnter={e => { if (prochainAdversaire) e.currentTarget.style.borderColor = '#f97316'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#222'; }}
+          >
+            <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>MATCHUP</div>
+            {prochainAdversaire ? (
+              <>
+                <img src={LOGOS_NHL[prochainAdversaire.abbrev]} alt={prochainAdversaire.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain', margin: '2px 0' }} onError={e => e.target.style.display = 'none'} />
+                <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{prochainAdversaire.domicile ? 'vs' : '@'} {prochainAdversaire.abbrev}</div>
+                <div style={{ color: '#555', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainAdversaire.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
+              </>
+            ) : (
+              <div style={{ color: '#555', fontSize: '11px', padding: '10px 0' }}>-</div>
+            )}
           </div>
         )}
       </div>
@@ -2632,6 +2694,246 @@ const getMatchsChart = () => {
               </div>
             </div>
           )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Vue "Matchup" : historique du joueur face a son prochain adversaire, sur les saisons recentes.
+function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
+  const isMobile = useIsMobile();
+  const [chargement, setChargement] = useState(true);
+  const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
+  const seasonId = '20252026';
+  const saisons = getSeasonsRecentes(seasonId, 3);
+
+  useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev]);
+
+  async function chargerHistorique() {
+    setChargement(true);
+    try {
+      const logsParSaison = await Promise.all(
+        saisons.map(s => getGameLogJoueur(joueur.id, 2, s).then(log => log.map(m => ({ ...m, seasonId: s }))))
+      );
+      const filtres = logsParSaison.flat().filter(m => m.opponentAbbrev === adversaireAbbrev);
+      filtres.sort((a, b) => (a.gameDate < b.gameDate ? 1 : -1));
+      const enrichis = await getHitsBlocksParMatch(joueur.id, filtres);
+      setMatchsVsAdversaire(enrichis);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const pad = isMobile ? '14px' : '20px';
+  const nb = matchsVsAdversaire.length;
+  const sum = (cle) => matchsVsAdversaire.reduce((s, m) => s + (m[cle] || 0), 0);
+  const totalGoals = sum('goals');
+  const totalAssists = sum('assists');
+  const totalPoints = sum('points');
+  const totalSog = sum('shots');
+  const totalPpp = sum('powerPlayPoints');
+  const totalHits = sum('hits');
+  const totalBlocks = sum('blockedShots');
+  const moy = (t) => nb > 0 ? parseFloat((t / nb).toFixed(2)) : 0;
+
+  const matchsDomicile = matchsVsAdversaire.filter(m => m.homeRoadFlag === 'H');
+  const matchsExterieur = matchsVsAdversaire.filter(m => m.homeRoadFlag !== 'H');
+  const moyennePts = (matchs) => matchs.length > 0 ? parseFloat((matchs.reduce((s, m) => s + (m.points || 0), 0) / matchs.length).toFixed(2)) : 0;
+
+  const pctAuDessusMoyenne = nb > 0 && moyennePtsSaison > 0
+    ? Math.round((matchsVsAdversaire.filter(m => (m.points || 0) >= moyennePtsSaison).length / nb) * 100)
+    : 0;
+
+  const dataButsPasses = totalPoints > 0 ? [
+    { name: 'Buts', value: totalGoals },
+    { name: 'Passes', value: totalAssists },
+  ] : [];
+  const COULEURS_BP = ['#f97316', '#3b82f6'];
+
+  const dataAuDessus = nb > 0 ? [
+    { name: 'Au-dessus / égal', value: pctAuDessusMoyenne },
+    { name: 'En dessous', value: 100 - pctAuDessusMoyenne },
+  ] : [];
+  const COULEURS_PCT = ['#f97316', '#262626'];
+
+  const parSaison = saisons
+    .map(s => ({ seasonId: s, matchs: matchsVsAdversaire.filter(m => m.seasonId === s) }))
+    .filter(s => s.matchs.length > 0);
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+          <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
+        </div>
+        <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ textAlign: 'center' }}>
+          <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
+          <div style={{ color: '#666', fontSize: '10px' }}>
+            {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
+          </div>
+        </div>
+      </div>
+
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+      ) : nb === 0 ? (
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
+          <p style={{ color: '#666', margin: 0 }}>Aucun match disputé contre {adversaireAbbrev} lors des {saisons.length} dernières saisons.</p>
+        </div>
+      ) : (
+        <>
+          {/* Totaux + moyennes vs adversaire */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>VS {adversaireAbbrev} · {saisons.length} DERNIÈRES SAISONS</div>
+              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '3px 8px', color: '#f97316', fontSize: '12px', fontWeight: 'bold' }}>{nb} MJ</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
+              {[['GOALS', totalGoals, moy(totalGoals)], ['AST', totalAssists, moy(totalAssists)], ['PTS', totalPoints, moy(totalPoints)], ['SOG', totalSog, moy(totalSog)]].map(([l, v, m], i) => (
+                <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{v}</div>
+                  <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div style={{ fontSize: '9px', color: '#666', marginTop: '1px' }}>{m}/G</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              {[['PPP', totalPpp, moy(totalPpp)], ['HITS', totalHits, moy(totalHits)], ['BLK', totalBlocks, moy(totalBlocks)]].map(([l, v, m], i) => (
+                <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v}</div>
+                  <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div style={{ fontSize: '9px', color: '#666', marginTop: '1px' }}>{m}/G</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Graphiques circulaires */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', textAlign: 'center' }}>BUTS / PASSES</div>
+              {totalPoints > 0 ? (
+                <>
+                  <div style={{ width: '100%', height: isMobile ? 120 : 150, position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={dataButsPasses} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="90%" paddingAngle={3} stroke="none">
+                          {dataButsPasses.map((entry, i) => <Cell key={i} fill={COULEURS_BP[i]} />)}
+                        </Pie>
+                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} itemStyle={{ color: 'white' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{totalPoints}</div>
+                      <div style={{ fontSize: '8px', color: '#666' }}>PTS</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                    {dataButsPasses.map((d, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: COULEURS_BP[i] }} />
+                        <span style={{ fontSize: '10px', color: '#888' }}>{d.name} ({d.value})</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p style={{ color: '#555', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Aucun point</p>
+              )}
+            </div>
+
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px', textAlign: 'center' }}>% AU-DESSUS MOY. SAISON</div>
+              <div style={{ width: '100%', height: isMobile ? 120 : 150, position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={dataAuDessus} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="90%" paddingAngle={3} stroke="none" startAngle={90} endAngle={-270}>
+                      {dataAuDessus.map((entry, i) => <Cell key={i} fill={COULEURS_PCT[i]} />)}
+                    </Pie>
+                    <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} itemStyle={{ color: 'white' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{pctAuDessusMoyenne}%</div>
+                  <div style={{ fontSize: '8px', color: '#666' }}>{nb} MJ</div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '10px', color: '#666' }}>Moy. saison : <span style={{ color: 'white', fontWeight: 'bold' }}>{moyennePtsSaison} PTS/G</span></div>
+            </div>
+          </div>
+
+          {/* Split domicile / exterieur */}
+          {(matchsDomicile.length > 0 || matchsExterieur.length > 0) && (
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>DOMICILE / EXTÉRIEUR</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
+                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>DOMICILE · {matchsDomicile.length} MJ</div>
+                  <div style={{ color: '#f97316', fontSize: '20px', fontWeight: '900' }}>{moyennePts(matchsDomicile)}</div>
+                  <div style={{ color: '#555', fontSize: '9px', marginTop: '2px' }}>PTS/G</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
+                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '4px' }}>EXTÉRIEUR · {matchsExterieur.length} MJ</div>
+                  <div style={{ color: '#f97316', fontSize: '20px', fontWeight: '900' }}>{moyennePts(matchsExterieur)}</div>
+                  <div style={{ color: '#555', fontSize: '9px', marginTop: '2px' }}>PTS/G</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Repartition par saison */}
+          {parSaison.length > 1 && (
+            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>PAR SAISON</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {parSaison.map((s, i) => {
+                  const g = s.matchs.reduce((sum, m) => sum + (m.goals || 0), 0);
+                  const a = s.matchs.reduce((sum, m) => sum + (m.assists || 0), 0);
+                  const p = s.matchs.reduce((sum, m) => sum + (m.points || 0), 0);
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+                      <div style={{ flex: 1, color: 'white', fontSize: '12px', fontWeight: '700' }}>{formatSaison(s.seasonId)}</div>
+                      <div style={{ color: '#888', fontSize: '11px' }}>{s.matchs.length} MJ</div>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+                        <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{g}</div></div>
+                        <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{a}</div></div>
+                        <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#f97316', fontWeight: 'bold' }}>{p}</div></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Match par match */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Historique face à {adversaireAbbrev}</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {matchsVsAdversaire.map((m, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>{m.homeRoadFlag === 'H' ? 'vs' : '@'} {adversaireAbbrev}</div>
+                    <div style={{ fontSize: '10px', color: '#555' }}>
+                      {m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''} · {formatSaison(m.seasonId)}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+                    <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
+                    <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
+                    <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#f97316', fontWeight: 'bold' }}>{m.points}</div></div>
+                    <div><div style={{ color: '#666', fontSize: '9px' }}>SOG</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shots}</div></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </div>

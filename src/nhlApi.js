@@ -41,6 +41,7 @@ export async function getGameLogJoueur(playerId, gameType = 2, seasonId = '20252
       gameId: m.gameId,
       gameDate: m.gameDate,
       opponentAbbrev: m.opponentAbbrev,
+      homeRoadFlag: m.homeRoadFlag,
       goals: m.goals ?? 0,
       assists: m.assists ?? 0,
       points: m.points ?? 0,
