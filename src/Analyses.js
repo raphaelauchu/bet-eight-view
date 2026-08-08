@@ -2162,7 +2162,7 @@ function FicheJoueur({ joueur, onBack }) {
   const [dernierMatchs, setDernierMatchs] = useState([]);
   const [ongletStat, setOngletStat] = useState('PTS');
   const [ongletPeriode, setOngletPeriode] = useState('L10');
-  const [ongletChart, setOngletChart] = useState('SZN');
+  const ongletChart = 'SZN';
   const [shotChartData, setShotChartData] = useState(null);
   const [chargementShotChart, setChargementShotChart] = useState(false);
   const [typeChart, setTypeChart] = useState('SOG');
@@ -2647,11 +2647,6 @@ const getMatchsChart = () => {
           {!isGardien && (
             <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
               <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Shot Chart</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '6px' }}>
-                {['SZN', 'L5', 'L10', 'L20'].map(n => (
-                  <button key={n} onClick={() => setOngletChart(n)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletChart === n ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: ongletChart === n ? 'bold' : 'normal' }}>{n}</button>
-                ))}
-              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '10px' }}>
                 {[['SOG', 'Shots on Goal'], ['Goals', 'Goals']].map(([t, label]) => (
                   <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
