@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
  
 const NHL_ABBREV_TO_SLUG = {
@@ -2769,10 +2769,15 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const isMobile = useIsMobile();
   const [chargement, setChargement] = useState(true);
   const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
+  const [historiqueComplet, setHistoriqueComplet] = useState([]);
+  const [statsToutesEquipes, setStatsToutesEquipes] = useState([]);
+  const [chargementDefense, setChargementDefense] = useState(true);
+  const [ongletAnalyse, setOngletAnalyse] = useState('gardien');
   const seasonId = useSaisonCourante();
   const saisons = getSeasonsRecentes(seasonId, 3);
 
   useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev, seasonId]);
+  useEffect(() => { chargerStatsDefense(); }, [seasonId]);
 
   async function chargerHistorique() {
     setChargement(true);
@@ -2780,12 +2785,42 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
       const logsParSaison = await Promise.all(
         saisons.map(s => getGameLogJoueur(joueur.id, 2, s).then(log => log.map(m => ({ ...m, seasonId: s }))))
       );
-      const filtres = logsParSaison.flat().filter(m => m.opponentAbbrev === adversaireAbbrev);
+      const tousLesMatchs = logsParSaison.flat();
+      setHistoriqueComplet(tousLesMatchs);
+      const filtres = tousLesMatchs.filter(m => m.opponentAbbrev === adversaireAbbrev);
       filtres.sort((a, b) => (a.gameDate < b.gameDate ? 1 : -1));
       const enrichis = await getHitsBlocksParMatch(joueur.id, filtres);
       setMatchsVsAdversaire(enrichis);
     } catch (err) { console.error(err); }
     setChargement(false);
+  }
+
+  // Stats defensives de toutes les equipes (tirs accordes/match, PK%, mises en echec/match + rang) pour
+  // detecter automatiquement le style defensif de l'adversaire (section "vs Style" / "vs Tirs accordes").
+  async function chargerStatsDefense() {
+    setChargementDefense(true);
+    try {
+      const cayenneExp = `seasonId=${seasonId} and gameTypeId=2`;
+      const [resSummary, resRealtime] = await Promise.all([
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=${encodeURIComponent(cayenneExp)}`)),
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/team/realtime?cayenneExp=${encodeURIComponent(cayenneExp)}`)),
+      ]);
+      const [dataSummary, dataRealtime] = await Promise.all([resSummary.json(), resRealtime.json()]);
+      const parEquipe = {};
+      (dataSummary.data || []).forEach(t => { parEquipe[t.teamId] = { ...parEquipe[t.teamId], ...t }; });
+      (dataRealtime.data || []).forEach(t => { parEquipe[t.teamId] = { ...parEquipe[t.teamId], ...t }; });
+      const equipes = Object.values(parEquipe).map(t => ({
+        teamId: t.teamId,
+        nom: t.teamFullName,
+        shotsAgainstPerGame: t.shotsAgainstPerGame || 0,
+        penaltyKillPct: t.penaltyKillPct || 0,
+        hitsPerGame: t.gamesPlayed ? (t.hits || 0) / t.gamesPlayed : 0,
+      }));
+      equipes.sort((a, b) => b.hitsPerGame - a.hitsPerGame);
+      equipes.forEach((e, i) => { e.rangHits = i + 1; });
+      setStatsToutesEquipes(equipes);
+    } catch (err) { console.error(err); }
+    setChargementDefense(false);
   }
 
   const pad = isMobile ? '14px' : '20px';
@@ -2823,6 +2858,69 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const parSaison = saisons
     .map(s => ({ seasonId: s, matchs: matchsVsAdversaire.filter(m => m.seasonId === s) }))
     .filter(s => s.matchs.length > 0);
+
+  // --- Analyse avancee : vs Gardien / vs Style defensif / vs Tirs accordes ---
+  const teamIdAdversaire = ABBREV_TO_TEAM_ID[adversaireAbbrev];
+  const statsAdversaire = statsToutesEquipes.find(e => e.teamId === teamIdAdversaire) || null;
+
+  const aggregerMatchs = (matchs) => {
+    const n = matchs.length;
+    const total = (cle) => matchs.reduce((s, m) => s + (m[cle] || 0), 0);
+    const p = total('points');
+    return { nb: n, goals: total('goals'), assists: total('assists'), points: p, shots: total('shots'), moyPts: n > 0 ? parseFloat((p / n).toFixed(2)) : 0 };
+  };
+  const matchsVsFiltreEquipe = (test) => historiqueComplet.filter(m => {
+    const s = statsToutesEquipes.find(e => e.teamId === ABBREV_TO_TEAM_ID[m.opponentAbbrev]);
+    return s && test(s);
+  });
+
+  // Styles defensifs detectes chez l'adversaire (peuvent se cumuler) + historique du joueur contre
+  // toutes les equipes actuellement classees dans le meme style (classement courant applique aux
+  // matchs des saisons recentes, en l'absence de stats d'equipe historiques par match).
+  const stylesDetectes = [];
+  if (statsAdversaire) {
+    if (statsAdversaire.rangHits <= 10) {
+      stylesDetectes.push({
+        id: 'physique', label: 'Défense physique', favorable: false,
+        detail: `${statsAdversaire.hitsPerGame.toFixed(1)} mises en échec/match · ${adversaireAbbrev} classée ${statsAdversaire.rangHits}e de la ligue`,
+        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.rangHits <= 10)),
+      });
+    }
+    if (statsAdversaire.shotsAgainstPerGame < 27) {
+      stylesDetectes.push({
+        id: 'serree', label: 'Défense serrée', favorable: false,
+        detail: `${statsAdversaire.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (moins de 27)`,
+        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.shotsAgainstPerGame < 27)),
+      });
+    }
+    if (statsAdversaire.penaltyKillPct > 0.82) {
+      stylesDetectes.push({
+        id: 'disciplinee', label: 'Défense disciplinée', favorable: false,
+        detail: `${(statsAdversaire.penaltyKillPct * 100).toFixed(1)}% en désavantage numérique (plus de 82%)`,
+        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.penaltyKillPct > 0.82)),
+      });
+    }
+    if (statsAdversaire.shotsAgainstPerGame > 32) {
+      stylesDetectes.push({
+        id: 'poreuse', label: 'Défense poreuse', favorable: true,
+        detail: `${statsAdversaire.shotsAgainstPerGame.toFixed(1)} tirs accordés/match (plus de 32)`,
+        stats: aggregerMatchs(matchsVsFiltreEquipe(s => s.shotsAgainstPerGame > 32)),
+      });
+    }
+  }
+
+  // Categorisation par tirs accordes/match (3 paliers), appliquee a tout l'historique du joueur.
+  const CATEGORIES_TIRS = [
+    { id: 'tres_serree', label: 'Défense très serrée', courte: '< 20 tirs', test: s => s.shotsAgainstPerGame < 20, favorable: false },
+    { id: 'moyenne', label: 'Défense moyenne', courte: '20-25 tirs', test: s => s.shotsAgainstPerGame >= 20 && s.shotsAgainstPerGame < 25, favorable: null },
+    { id: 'poreuse_tirs', label: 'Défense poreuse', courte: '25+ tirs', test: s => s.shotsAgainstPerGame >= 25, favorable: true },
+  ];
+  const categorieAdversaireTirs = statsAdversaire ? CATEGORIES_TIRS.find(c => c.test(statsAdversaire)) : null;
+  const statsParCategorieTirs = CATEGORIES_TIRS.map(cat => ({ ...cat, stats: aggregerMatchs(matchsVsFiltreEquipe(cat.test)) }));
+
+  const matchsGraphGardien = [...matchsVsAdversaire].reverse();
+  const COULEUR_FAVORABLE = '#f97316';
+  const COULEUR_DEFAVORABLE = '#ef4444';
 
   return (
     <div>
@@ -2975,6 +3073,143 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
               </div>
             </div>
           )}
+
+          {/* Analyse avancee : vs Gardien / vs Style defensif / vs Tirs accordes */}
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>ANALYSE AVANCÉE</div>
+            <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+              {[['gardien', 'vs Gardien'], ['style', 'vs Style'], ['tirs', 'vs Tirs accordés']].map(([id, label]) => (
+                <button key={id} onClick={() => setOngletAnalyse(id)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletAnalyse === id ? '#f97316' : '#1a1a1a', color: ongletAnalyse === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletAnalyse === id ? 'bold' : 'normal' }}>{label}</button>
+              ))}
+            </div>
+
+            {ongletAnalyse === 'gardien' && (
+              chargement ? (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement...</p>
+              ) : nb === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                  <div style={{ fontSize: '28px', marginBottom: '6px' }}>🆕</div>
+                  <div style={{ color: 'white', fontWeight: '700', fontSize: '14px' }}>Premier affrontement</div>
+                  <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>Aucun historique face aux gardiens de {adversaireAbbrev} lors des {saisons.length} dernières saisons.</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ color: '#888', fontSize: '11px', marginBottom: '10px' }}>Face aux gardiens de {adversaireAbbrev} · {saisons.length} dernières saisons</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '12px' }}>
+                    {[['MJ', nb, 'white'], ['G', totalGoals, '#f97316'], ['A', totalAssists, 'white'], ['PTS', totalPoints, '#f97316']].map(([l, v, c], i) => (
+                      <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                        <div style={{ fontSize: '17px', fontWeight: '900', color: c }}>{v}</div>
+                        <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ textAlign: 'center', marginBottom: '12px', fontSize: '12px', color: '#888' }}>Moyenne : <span style={{ color: '#f97316', fontWeight: 'bold' }}>{moy(totalPoints)} PTS/match</span></div>
+                  <div style={{ width: '100%', height: 160 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={matchsGraphGardien.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', goals: m.goals || 0, assists: m.assists || 0 }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 9 }} axisLine={{ stroke: '#222' }} tickLine={false} />
+                        <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={30} allowDecimals={false} />
+                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} />
+                        <Bar dataKey="goals" name="Buts" stackId="pts" fill="#f97316" />
+                        <Bar dataKey="assists" name="Passes" stackId="pts" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )
+            )}
+
+            {ongletAnalyse === 'style' && (
+              chargementDefense ? (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement des stats défensives...</p>
+              ) : !statsAdversaire ? (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Statistiques défensives indisponibles.</p>
+              ) : stylesDetectes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ color: 'white', fontWeight: '700', fontSize: '14px', marginBottom: '4px' }}>Défense standard</div>
+                  <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} ne se distingue sur aucun critère particulier (physique, discipline, tirs accordés).</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {stylesDetectes.map(style => (
+                    <div key={style.id} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE, flexShrink: 0 }} />
+                          <span style={{ color: 'white', fontWeight: '900', fontSize: '13px' }}>{style.label}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '20px', backgroundColor: style.favorable ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)', color: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE }}>
+                            {style.favorable ? 'FAVORABLE' : 'DÉFAVORABLE'}
+                          </span>
+                        </div>
+                      <div style={{ color: '#888', fontSize: '11px', marginBottom: '10px' }}>{style.detail}</div>
+                      {style.stats.nb === 0 ? (
+                        <p style={{ color: '#555', fontSize: '11px', margin: 0 }}>Aucun historique contre ce style de défense.</p>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{ width: '110px', height: 90, flexShrink: 0 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={[{ name: 'Vs style', valeur: style.stats.moyPts }, { name: 'Moy. saison', valeur: moyennePtsSaison }]} margin={{ top: 4, right: 4, left: -30, bottom: 0 }}>
+                                <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 8 }} axisLine={{ stroke: '#222' }} tickLine={false} />
+                                <YAxis hide />
+                                <Bar dataKey="valeur" radius={[3, 3, 0, 0]}>
+                                  <Cell fill={style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE} />
+                                  <Cell fill="#444" />
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div style={{ display: 'flex', gap: '14px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+                            <div><div style={{ color: '#666', fontSize: '9px' }}>MJ</div><div style={{ color: 'white', fontWeight: 'bold' }}>{style.stats.nb}</div></div>
+                            <div><div style={{ color: '#666', fontSize: '9px' }}>PTS/M</div><div style={{ color: style.favorable ? COULEUR_FAVORABLE : COULEUR_DEFAVORABLE, fontWeight: 'bold' }}>{style.stats.moyPts}</div></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {ongletAnalyse === 'tirs' && (
+              chargementDefense ? (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Chargement des stats défensives...</p>
+              ) : !statsAdversaire ? (
+                <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Statistiques défensives indisponibles.</p>
+              ) : (
+                <>
+                  <div style={{ color: '#888', fontSize: '11px', marginBottom: '12px' }}>
+                    {adversaireAbbrev} accorde <span style={{ color: 'white', fontWeight: 'bold' }}>{statsAdversaire.shotsAgainstPerGame.toFixed(1)}</span> tirs/match → classée <span style={{ color: '#f97316', fontWeight: 'bold' }}>{categorieAdversaireTirs?.label}</span>
+                  </div>
+                  <div style={{ width: '100%', height: 160 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={statsParCategorieTirs.map(c => ({ name: c.courte, valeur: c.stats.moyPts, id: c.id }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#222' }} tickLine={false} />
+                        <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={30} />
+                        <RechartsTooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} pts/match`, '']} />
+                        <Bar dataKey="valeur" radius={[4, 4, 0, 0]}>
+                          {statsParCategorieTirs.map((c, i) => (
+                            <Cell key={i} fill={categorieAdversaireTirs?.id === c.id ? '#f97316' : '#333'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px' }}>
+                    {statsParCategorieTirs.map(c => (
+                      <div key={c.id} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: categorieAdversaireTirs?.id === c.id ? 'rgba(249,115,22,0.1)' : '#1a1a1a', border: categorieAdversaireTirs?.id === c.id ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '7px' }}>
+                        <div style={{ fontSize: '9px', color: '#666', marginBottom: '3px' }}>{c.label}</div>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: categorieAdversaireTirs?.id === c.id ? '#f97316' : 'white' }}>{c.stats.moyPts}</div>
+                        <div style={{ fontSize: '8px', color: '#555' }}>PTS/M · {c.stats.nb} MJ</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )
+            )}
+          </div>
 
           {/* Match par match */}
           <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
