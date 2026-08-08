@@ -1077,6 +1077,38 @@ function detecterSaisonMatchs(matchsParJour, seasonId = SAISON_REG_2526.seasonId
   return premierMatch?.gameType === 3 ? construireSaisonPO(seasonId) : construireSaisonReg(seasonId);
 }
 
+// Cherche, semaine par semaine (blocs de 7 jours) a partir d'aujourd'hui et jusqu'a maxJours en avant,
+// la premiere semaine du calendrier NHL contenant au moins un match. Renvoie les matchs de cette semaine
+// (indexes par date) une fois trouves, ou un objet vide si rien n'est trouve dans la fenetre de recherche.
+async function chargerProchaineSemaineAvecMatchs(maxJours = 60) {
+  const aujourdhui = new Date();
+  for (let debut = 0; debut < maxJours; debut += 7) {
+    const jours = Array(7).fill(null).map((_, i) => {
+      const d = new Date(aujourdhui);
+      d.setDate(d.getDate() + debut + i);
+      return getDateStr(d);
+    });
+    const resultats = {};
+    await Promise.all(jours.map(async (jour) => {
+      try {
+        const res = await fetch(getUrl(`schedule/${jour}`));
+        const data = await res.json();
+        const games = data.gameWeek?.[0]?.games || [];
+        if (games.length > 0) resultats[jour] = games;
+      } catch (err) { }
+    }));
+    if (Object.keys(resultats).length > 0) return resultats;
+  }
+  return {};
+}
+
+// Formate "Semaine du 7 septembre 2026" a partir de la premiere date (YYYY-MM-DD) trouvee avec des matchs.
+function formatSemaineDe(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return `Semaine du ${d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+}
+
 // Version de PageStatsJoueurs dediee a l'onglet Analyses : onglet Props restaure, detection auto saison/playoffs,
 // pas de fallback Home/Skaters/Goalies (les onglets jours/matchs restent affiches meme vides en morte-saison).
 function PageStatsJoueursAnalyses({ onSelectJoueur }) {
@@ -1116,19 +1148,9 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
 
   async function chargerSemaine() {
     setChargement(true);
-    const aujourdhui = new Date();
-    const jours = Array(7).fill(null).map((_, i) => { const d = new Date(aujourdhui); d.setDate(d.getDate() + i); return getDateStr(d); });
-    const resultats = {};
-    await Promise.all(jours.map(async (jour) => {
-      try {
-        const res = await fetch(getUrl(`schedule/${jour}`));
-        const data = await res.json();
-        const games = data.gameWeek?.[0]?.games || [];
-        if (games.length > 0) resultats[jour] = games;
-      } catch (err) { }
-    }));
+    const resultats = await chargerProchaineSemaineAvecMatchs();
     setMatchsParJour(resultats);
-    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
+    setJourActif(Object.keys(resultats).sort()[0] || '');
     setChargement(false);
   }
 
@@ -1266,9 +1288,10 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
         chargement ? (
           <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
         ) : Object.keys(matchsParJour).length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match disponible pour le moment</p>
+          <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
         ) : (
           <>
+            <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(Object.keys(matchsParJour).sort()[0])}</div>
             <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
               {Object.keys(matchsParJour).sort().map(jour => {
                 const d = new Date(jour + 'T12:00:00');
@@ -1454,23 +1477,9 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
 
   async function chargerSemaine() {
     setChargement(true);
-    const aujourdhui = new Date();
-    const jours = Array(7).fill(null).map((_, i) => {
-      const d = new Date(aujourdhui);
-      d.setDate(d.getDate() + i);
-      return getDateStr(d);
-    });
-    const resultats = {};
-    await Promise.all(jours.map(async (jour) => {
-      try {
-        const res = await fetch(getUrl(`schedule/${jour}`));
-        const data = await res.json();
-        const games = data.gameWeek?.[0]?.games || [];
-        if (games.length > 0) resultats[jour] = games;
-      } catch (err) { }
-    }));
+    const resultats = await chargerProchaineSemaineAvecMatchs();
     setMatchsParJour(resultats);
-    setJourActif(Object.keys(resultats).sort()[0] || jours[0]);
+    setJourActif(Object.keys(resultats).sort()[0] || '');
     setChargement(false);
   }
 
@@ -1508,8 +1517,13 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
           onChange={e => setFiltre(e.target.value)}
         />
       </div>
-      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : (
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+      ) : jours.length === 0 ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
+      ) : (
         <>
+          <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(jours[0])}</div>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
