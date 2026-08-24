@@ -6,7 +6,34 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { getAuthenticatedUser } from '../_shared/auth.ts';
 
-const PROMPT = "Analyse ce screenshot d'un bookmaker et extrait ces informations en JSON : bookmaker, joueur_ou_equipe, type_bet, stat_pariee, ligne, mise, cote, gain_potentiel. Si une information n'est pas visible, mets null. Réponds uniquement avec le JSON, sans texte autour.";
+const PROMPT = `Analyse ce screenshot d'un pari sportif (bookmaker) et extrait les informations suivantes en JSON strict, sans texte autour :
+
+{
+  "bookmaker": string ou null,
+  "type_bet": "moneyline" | "total" | "prop" | "spread" | "parlay" ou null,
+  "joueur_ou_equipe": string ou null,
+  "equipe": string ou null,
+  "adversaire": string ou null,
+  "stat_pariee": string ou null,
+  "ligne": number ou null,
+  "over_under": "over" | "under" ou null,
+  "mise": number ou null,
+  "cote": number ou null,
+  "gain_potentiel": number ou null,
+  "date_match": "YYYY-MM-DD" ou null,
+  "game_id": string ou null
+}
+
+Règles de détection par type de pari :
+- Moneyline : le pari est sur une équipe qui gagne le match (ex: "Canadiens gagnent"). Mets type_bet="moneyline", remplis equipe (l'équipe pariée, celle qui est favorisée à gagner selon le pari) et adversaire (l'autre équipe).
+- Prop joueur : le pari porte sur un joueur individuel (ex: "Lane Hutson +1.5 tirs", "Mark Stone à marquer un but"). Mets type_bet="prop", remplis joueur_ou_equipe avec le nom du joueur, stat_pariee (ex: tirs, buts, points, passes), ligne, et over_under si applicable.
+- Total : le pari porte sur le nombre total de buts du match (over/under). Mets type_bet="total", remplis ligne et over_under.
+- Si les deux équipes du match sont visibles (même si le pari n'est pas un moneyline), remplis toujours equipe et adversaire avec leurs noms.
+- Si une date de match est visible, convertis-la en format YYYY-MM-DD dans date_match.
+- Si un identifiant de match (game ID) est visible dans le screenshot, mets-le dans game_id.
+- Si une information n'est pas visible ou ne s'applique pas, mets null.
+
+Réponds uniquement avec l'objet JSON rempli, rien d'autre.`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

@@ -2,37 +2,18 @@ import React from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
+import { trouverGameId } from './nhlGameLookup';
 
 const TYPES_BET = ['Moneyline', 'Over/Under', 'Prop joueur', 'Total', 'Parlay'];
-
-function fichierVersJpegBase64(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const maxDim = 1600;
-      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.9));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('unsupported_image')); };
-    img.src = url;
-  });
-}
 
 const champStyle = { width: '100%', padding: '10px 12px', backgroundColor: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
 const labelStyle = { color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' };
 
-function BetImportFlow({ lang = 'en', onClose, onImported }) {
+// apercu / imageBase64 : image deja choisie et normalisee par Dashboard.js
+// (le flow n'affiche plus de choix camera/galerie, il part directement de l'apercu)
+function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }) {
   const t = getT(lang);
   const [step, setStep] = React.useState(1);
-  const [apercu, setApercu] = React.useState(null);
-  const [imageBase64, setImageBase64] = React.useState(null);
   const [analysing, setAnalysing] = React.useState(false);
   const [erreur, setErreur] = React.useState('');
   const [saving, setSaving] = React.useState(false);
@@ -44,25 +25,15 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
     ligne: '',
     mise: '',
     cote: '',
+    equipe: '',
+    adversaire: '',
+    date_match: '',
+    game_id: '',
   });
-  const cameraInputRef = React.useRef(null);
-  const galerieInputRef = React.useRef(null);
 
   const gainPotentiel = form.mise && form.cote ? (parseFloat(form.mise) * parseFloat(form.cote) - parseFloat(form.mise)) : null;
 
-  async function onFichierChoisi(e) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setErreur('');
-    try {
-      const dataUrl = await fichierVersJpegBase64(file);
-      setApercu(dataUrl);
-      setImageBase64(dataUrl.split(',')[1]);
-    } catch {
-      setErreur(t('import_error_unsupported_image'));
-    }
-  }
+  React.useEffect(() => { analyser(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function analyser() {
     if (!imageBase64) return;
@@ -82,6 +53,10 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
         ligne: extrait.ligne ?? '',
         mise: extrait.mise ?? '',
         cote: extrait.cote ?? '',
+        equipe: extrait.equipe || '',
+        adversaire: extrait.adversaire || '',
+        date_match: extrait.date_match || '',
+        game_id: extrait.game_id || '',
       });
       setStep(2);
     } catch (e) {
@@ -96,20 +71,34 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
     setErreur('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('bets_auto').insert({
+      const { data: inseree, error } = await supabase.from('bets_auto').insert({
         user_id: user.id,
         bookmaker: form.bookmaker,
         type_bet: form.type_bet,
         joueur_nom: form.joueur_ou_equipe || null,
+        equipe: form.equipe || null,
+        adversaire: form.adversaire || null,
         stat_type: form.stat_pariee || null,
         ligne: form.ligne !== '' ? parseFloat(form.ligne) : null,
         mise: parseFloat(form.mise),
         cote: parseFloat(form.cote),
         gain_potentiel: gainPotentiel !== null ? parseFloat(gainPotentiel.toFixed(2)) : null,
+        game_date: form.date_match || null,
+        game_id: form.game_id || null,
         statut: 'pending',
-      });
+      }).select().single();
       if (error) throw error;
       setStep(3);
+
+      // Verification API NHL en arriere-plan : cherche le match correspondant
+      // (equipes + date) pour confirmer/completer le game_id, sans bloquer l'UI.
+      if (inseree && (form.equipe || form.adversaire) && form.date_match) {
+        trouverGameId({ equipe: form.equipe, adversaire: form.adversaire, dateMatch: form.date_match })
+          .then(gameId => {
+            if (gameId) supabase.from('bets_auto').update({ game_id: gameId }).eq('id', inseree.id);
+          })
+          .catch(() => {});
+      }
     } catch (e) {
       setErreur(String(e.message || e));
     }
@@ -140,31 +129,15 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
 
       {step === 1 && (
         <div>
-          <input ref={cameraInputRef} type="file" accept="image/*,.heic,.heif" capture="environment" onChange={onFichierChoisi} style={{ display: 'none' }} />
-          <input ref={galerieInputRef} type="file" accept="image/*,.heic,.heif" onChange={onFichierChoisi} style={{ display: 'none' }} />
-
-          {!apercu ? (
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button onClick={() => cameraInputRef.current?.click()} style={{ flex: 1, minWidth: '150px', padding: '20px 14px', backgroundColor: '#111', border: '1px dashed #333', borderRadius: '12px', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-                📷 {t('import_take_photo')}
-              </button>
-              <button onClick={() => galerieInputRef.current?.click()} style={{ flex: 1, minWidth: '150px', padding: '20px 14px', backgroundColor: '#111', border: '1px dashed #333', borderRadius: '12px', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-                🖼️ {t('import_choose_gallery')}
-              </button>
-            </div>
-          ) : (
-            <div>
-              <img src={apercu} alt="screenshot" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', borderRadius: '12px', marginBottom: '16px', border: '1px solid #222' }} />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => { setApercu(null); setImageBase64(null); }} style={{ padding: '11px 20px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
-                  {t('cancel_btn')}
-                </button>
-                <button onClick={analyser} disabled={analysing} style={{ flex: 1, padding: '11px 20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-                  {analysing ? t('import_analyzing') : t('import_analyze_btn')}
-                </button>
-              </div>
-            </div>
-          )}
+          <img src={apercu} alt="screenshot" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', borderRadius: '12px', marginBottom: '16px', border: '1px solid #222' }} />
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={onClose} style={{ padding: '11px 20px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+              {t('cancel_btn')}
+            </button>
+            <button onClick={analyser} disabled={analysing} style={{ flex: 1, padding: '11px 20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
+              {analysing ? t('import_analyzing') : t('import_analyze_btn')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -190,6 +163,11 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
               {champ('mise', t('import_field_stake'), { type: 'number' })}
               {champ('cote', t('import_field_odds'), { type: 'number', step: '0.01' })}
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {champ('equipe', t('import_field_team'))}
+              {champ('adversaire', t('import_field_opponent'))}
+            </div>
+            {champ('date_match', t('import_field_match_date'), { type: 'date' })}
             <div>
               <div style={labelStyle}>{t('import_field_potential')}</div>
               <div style={{ ...champStyle, backgroundColor: '#080808', color: '#22c55e', fontWeight: '700' }}>
@@ -198,8 +176,8 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => setStep(1)} style={{ padding: '11px 20px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
-              {t('back_btn')}
+            <button onClick={onClose} style={{ padding: '11px 20px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>
+              {t('cancel_btn')}
             </button>
             <button onClick={confirmerEtEnregistrer} disabled={saving || !form.mise || !form.cote} style={{ flex: 1, padding: '11px 20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
               {saving ? t('saving_text') : t('import_confirm_btn')}
@@ -215,6 +193,7 @@ function BetImportFlow({ lang = 'en', onClose, onImported }) {
           <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '16px', textAlign: 'left', marginBottom: '20px' }}>
             <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px' }}>{form.joueur_ou_equipe || form.type_bet}</div>
             <div style={{ color: '#f97316', fontSize: '12px', marginBottom: '2px' }}>{form.type_bet} {form.stat_pariee && `· ${form.stat_pariee}`} {form.ligne !== '' && `· ${form.ligne}`}</div>
+            {form.equipe && form.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{form.equipe} vs {form.adversaire}</div>}
             <div style={{ color: '#444', fontSize: '12px' }}>{form.bookmaker} · {t('bets_odds')} {form.cote} · ${form.mise}</div>
             {gainPotentiel !== null && <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '4px' }}>{t('bets_potential_short')}: +${gainPotentiel.toFixed(2)}</div>}
           </div>

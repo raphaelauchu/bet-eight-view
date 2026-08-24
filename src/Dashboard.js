@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getT } from './i18n';
 import BetImportFlow from './BetImportFlow';
+import BetDetailSheet from './BetDetailSheet';
+import { fichierVersJpegBase64 } from './imageUtils';
 
 const BET_TYPES = [
   { value: 'moneyline', label: 'Money Line' },
@@ -17,9 +19,13 @@ function Dashboard({ lang = 'en' }) {
   const [paris, setParis] = useState([]);
   const [bankroll, setBankrollState] = useState(1000);
   const [afficherImport, setAfficherImport] = useState(false);
+  const [imageImport, setImageImport] = useState(null); // { apercu, base64 }
+  const [erreurImport, setErreurImport] = useState('');
+  const galerieInputRef = useRef(null);
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState('actifs');
   const [betsAuto, setBetsAuto] = useState([]);
+  const [betSelectionne, setBetSelectionne] = useState(null);
   const [montantBankroll, setMontantBankroll] = useState('');
   const [filtreGraphique, setFiltreGraphique] = useState('30d');
   const [filtrePeriode, setFiltrePeriode] = useState('1m');
@@ -86,6 +92,41 @@ function Dashboard({ lang = 'en' }) {
     } catch (err) { console.error(err); }
   }
 
+  // Bets importes par screenshot (bets_auto) : pas lies a la bankroll, contrairement
+  // aux paris manuels — seul le statut est mis a jour ici.
+  async function mettreAJourStatutAuto(id, statut, mise, cote) {
+    try {
+      const resultat = statut === 'gagne' ? parseFloat((mise * cote - mise).toFixed(2)) : -parseFloat(mise);
+      await supabase.from('bets_auto').update({ statut, resultat, verified_at: new Date().toISOString() }).eq('id', id);
+      chargerDonnees();
+    } catch (err) { console.error(err); }
+  }
+
+  async function supprimerBetAuto(id) {
+    try {
+      await supabase.from('bets_auto').delete().eq('id', id);
+      chargerDonnees();
+    } catch (err) { console.error(err); }
+  }
+
+  function ouvrirGalerieImport() {
+    setErreurImport('');
+    galerieInputRef.current?.click();
+  }
+
+  async function onFichierImportChoisi(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const dataUrl = await fichierVersJpegBase64(file);
+      setImageImport({ apercu: dataUrl, base64: dataUrl.split(',')[1] });
+      setAfficherImport(true);
+    } catch {
+      setErreurImport(t('import_error_unsupported_image'));
+    }
+  }
+
   function getDonneesGraphique() {
     const parisTraites = paris.filter(p => p.statut !== 'actif');
     const jours = filtreGraphique === '7d' ? 7 : filtreGraphique === '30d' ? 30 : 90;
@@ -136,6 +177,19 @@ function Dashboard({ lang = 'en' }) {
   const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
   const donneesGraphique = getDonneesGraphique();
 
+  // Un bet importe par screenshot = un bet actif en attente de resultat : fusionne
+  // avec les paris manuels dans les onglets Actifs / Historique (pas d'onglet a part).
+  const betsAutoActifs = betsAuto.filter(b => b.statut === 'pending');
+  const betsAutoTraites = betsAuto.filter(b => b.statut !== 'pending');
+  const actifsCombines = [
+    ...parisActifs.map(p => ({ type: 'manuel', date: p.date_pari, data: p })),
+    ...betsAutoActifs.map(b => ({ type: 'auto', date: b.created_at, data: b })),
+  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  const traitesCombines = [
+    ...parisHistorique.map(p => ({ type: 'manuel', date: p.date_pari, data: p })),
+    ...betsAutoTraites.map(b => ({ type: 'auto', date: b.verified_at || b.created_at, data: b })),
+  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
   const inp = { width: '100%', padding: '10px 12px', backgroundColor: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
 
   if (chargement) return <div style={{ padding: '80px', textAlign: 'center', color: '#555' }}>Loading...</div>;
@@ -150,46 +204,81 @@ function Dashboard({ lang = 'en' }) {
 
 
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        {[{ id: 'actifs', label: `${t('bets_tab_active')} (${parisActifs.length})` }, { id: 'traites', label: `${t('bets_tab_history')} (${parisTraites.length})` }, { id: 'auto', label: `${t('bets_tab_auto')} (${betsAuto.length})` }].map(tab => (
+        {[{ id: 'actifs', label: `${t('bets_tab_active')} (${actifsCombines.length})` }, { id: 'traites', label: `${t('bets_tab_history')} (${traitesCombines.length})` }].map(tab => (
           <button key={tab.id} onClick={() => setOnglet(tab.id)} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: onglet === tab.id ? '#f97316' : 'transparent', color: onglet === tab.id ? 'white' : '#555', fontSize: '13px', fontWeight: onglet === tab.id ? '600' : 'normal' }}>{tab.label}</button>
         ))}
       </div>
 
-      {onglet === 'actifs' && (
-        <button onClick={() => setAfficherImport(!afficherImport)} style={{ marginBottom: '16px', padding: '10px 20px', background: afficherImport ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: afficherImport ? '#555' : 'white', border: afficherImport ? '1px solid #333' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-          {afficherImport ? t('cancel_btn') : `📷 ${t('bets_import_btn')}`}
+      <input ref={galerieInputRef} type="file" accept="image/*,.heic,.heif" onChange={onFichierImportChoisi} style={{ display: 'none' }} />
+
+      {onglet === 'actifs' && !afficherImport && (
+        <button onClick={ouvrirGalerieImport} style={{ marginBottom: '16px', padding: '10px 20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
+          📷 {t('bets_import_btn')}
         </button>
       )}
 
-      {afficherImport && (
+      {erreurImport && !afficherImport && (
+        <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#ef4444' }}>
+          {erreurImport}
+        </div>
+      )}
+
+      {afficherImport && imageImport && (
         <BetImportFlow
           lang={lang}
-          onClose={() => setAfficherImport(false)}
-          onImported={() => { setAfficherImport(false); setOnglet('auto'); chargerDonnees(); }}
+          apercu={imageImport.apercu}
+          imageBase64={imageImport.base64}
+          onClose={() => { setAfficherImport(false); setImageImport(null); }}
+          onImported={() => { setAfficherImport(false); setImageImport(null); chargerDonnees(); }}
         />
       )}
 
       {onglet === 'actifs' && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', border: '1px solid #161616' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>{t('bets_tab_active')}</div>
-          {parisActifs.length === 0 ? (
+          {actifsCombines.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>{t('bets_no_active')}</div>
-          ) : parisActifs.map((pari, i) => (
-            <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>{pari.match}</div>
-                <div style={{ color: '#f97316', fontSize: '12px', fontWeight: '500', marginBottom: '2px' }}>{BET_TYPES.find(bt => bt.value === pari.type_pari)?.label || pari.type_pari}</div>
-                {pari.selection && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>→ {pari.selection}</div>}
-                <div style={{ color: '#444', fontSize: '12px' }}>{pari.bookmaker} · {t('bets_odds')} {pari.cote} · {t('bets_stake').replace(' ($)', '')} ${pari.mise}</div>
-                <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '3px' }}>{t('bets_potential_short')}: +${(pari.mise * pari.cote - pari.mise).toFixed(2)}</div>
+          ) : actifsCombines.map((entree, i) => {
+            const bordure = { borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', cursor: 'pointer' };
+            if (entree.type === 'manuel') {
+              const pari = entree.data;
+              return (
+                <div key={`m-${pari.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'manuel', data: pari })}>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>{pari.match}</div>
+                    <div style={{ color: '#f97316', fontSize: '12px', fontWeight: '500', marginBottom: '2px' }}>{BET_TYPES.find(bt => bt.value === pari.type_pari)?.label || pari.type_pari}</div>
+                    {pari.selection && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>→ {pari.selection}</div>}
+                    <div style={{ color: '#444', fontSize: '12px' }}>{pari.bookmaker} · {t('bets_odds')} {pari.cote} · {t('bets_stake').replace(' ($)', '')} ${pari.mise}</div>
+                    <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '3px' }}>{t('bets_potential_short')}: +${(pari.mise * pari.cote - pari.mise).toFixed(2)}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => mettreAJourStatut(pari.id, 'gagne', pari.mise, pari.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_won')}</button>
+                    <button onClick={() => mettreAJourStatut(pari.id, 'perdu', pari.mise, pari.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_lost')}</button>
+                    <button onClick={() => supprimerPari(pari.id, pari.statut, pari.mise)} style={{ padding: '7px 14px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                  </div>
+                </div>
+              );
+            }
+            const bet = entree.data;
+            return (
+              <div key={`a-${bet.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'auto', data: bet })}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>
+                    {bet.joueur_nom ? `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}` : (bet.type_bet || '—')}
+                  </div>
+                  <div style={{ color: '#f97316', fontSize: '12px', fontWeight: '500', marginBottom: '2px' }}>📷 {bet.type_bet || t('bets_import_btn')}</div>
+                  {bet.equipe && bet.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{bet.equipe} vs {bet.adversaire}</div>}
+                  <div style={{ color: '#444', fontSize: '12px' }}>{bet.bookmaker || '—'} · {t('bets_odds')} {bet.cote ?? '—'} · ${bet.mise ?? '—'}</div>
+                  {bet.gain_potentiel != null && <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '3px' }}>{t('bets_potential_short')}: +${parseFloat(bet.gain_potentiel).toFixed(2)}</div>}
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                  <button onClick={() => mettreAJourStatutAuto(bet.id, 'gagne', bet.mise, bet.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_won')}</button>
+                  <button onClick={() => mettreAJourStatutAuto(bet.id, 'perdu', bet.mise, bet.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_lost')}</button>
+                  <button onClick={() => supprimerBetAuto(bet.id)} style={{ padding: '7px 14px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={() => mettreAJourStatut(pari.id, 'gagne', pari.mise, pari.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_won')}</button>
-                <button onClick={() => mettreAJourStatut(pari.id, 'perdu', pari.mise, pari.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_lost')}</button>
-                <button onClick={() => supprimerPari(pari.id, pari.statut, pari.mise)} style={{ padding: '7px 14px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -244,58 +333,57 @@ function Dashboard({ lang = 'en' }) {
       {onglet === 'traites' && (
         <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', border: '1px solid #161616' }}>
           <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>{t('bets_history_title')}</div>
-          {parisHistorique.length === 0 ? (
+          {traitesCombines.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>{t('bets_no_history')}</div>
-          ) : parisHistorique.map((pari, i) => (
-            <div key={pari.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>{pari.match}</div>
-                {pari.selection && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>→ {pari.selection}</div>}
-                <div style={{ color: '#444', fontSize: '12px' }}>{pari.bookmaker} · {t('bets_odds')} {pari.cote} · ${pari.mise}</div>
-                <div style={{ color: '#333', fontSize: '11px', marginTop: '3px' }}>{new Date(pari.date_pari).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ fontSize: '18px', fontWeight: '800', color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444', letterSpacing: '-0.5px' }}>
-                  {pari.statut === 'gagne' ? `+$${parseFloat(pari.profit).toFixed(2)}` : `-$${parseFloat(pari.mise).toFixed(2)}`}
+          ) : traitesCombines.map((entree, i) => {
+            const bordure = { borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', cursor: 'pointer' };
+            if (entree.type === 'manuel') {
+              const pari = entree.data;
+              return (
+                <div key={`m-${pari.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'manuel', data: pari })}>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>{pari.match}</div>
+                    {pari.selection && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>→ {pari.selection}</div>}
+                    <div style={{ color: '#444', fontSize: '12px' }}>{pari.bookmaker} · {t('bets_odds')} {pari.cote} · ${pari.mise}</div>
+                    <div style={{ color: '#333', fontSize: '11px', marginTop: '3px' }}>{new Date(pari.date_pari).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444', letterSpacing: '-0.5px' }}>
+                      {pari.statut === 'gagne' ? `+$${parseFloat(pari.profit).toFixed(2)}` : `-$${parseFloat(pari.mise).toFixed(2)}`}
+                    </div>
+                    <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pari.statut === 'gagne' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444', border: `1px solid ${pari.statut === 'gagne' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                      {pari.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
+                    </div>
+                    <button onClick={() => remettreEnActif(pari.id, pari.mise, pari.statut, pari.profit)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
+                  </div>
                 </div>
-                <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: pari.statut === 'gagne' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: pari.statut === 'gagne' ? '#22c55e' : '#ef4444', border: `1px solid ${pari.statut === 'gagne' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
-                  {pari.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
-                </div>
-                <button onClick={() => remettreEnActif(pari.id, pari.mise, pari.statut, pari.profit)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {onglet === 'auto' && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', border: '1px solid #161616' }}>
-          <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>{t('bets_tab_auto')}</div>
-          {betsAuto.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>{t('bets_auto_empty')}</div>
-          ) : betsAuto.map((bet, i) => {
-            const estGagne = bet.statut === 'gagne' || bet.statut === 'won';
-            const estPerdu = bet.statut === 'perdu' || bet.statut === 'lost';
-            const couleurStatut = estGagne ? '#22c55e' : estPerdu ? '#ef4444' : '#f97316';
-            const labelStatut = estGagne ? t('bets_won') : estPerdu ? t('bets_lost') : t('bets_auto_status_pending');
+              );
+            }
+            const bet = entree.data;
             return (
-              <div key={bet.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div key={`a-${bet.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'auto', data: bet })}>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>
                     {bet.joueur_nom ? `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}` : (bet.type_bet || '—')}
                   </div>
                   {bet.equipe && bet.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{bet.equipe} vs {bet.adversaire}</div>}
-                  <div style={{ color: '#444', fontSize: '12px' }}>{t('bets_auto_source')}: {bet.bookmaker || '—'} · {t('bets_odds')} {bet.cote ?? '—'} · ${bet.mise ?? '—'}</div>
-                  {bet.game_date && <div style={{ color: '#333', fontSize: '11px', marginTop: '3px' }}>{new Date(bet.game_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</div>}
+                  <div style={{ color: '#444', fontSize: '12px' }}>📷 {bet.bookmaker || '—'} · {t('bets_odds')} {bet.cote ?? '—'} · ${bet.mise ?? '—'}</div>
                 </div>
-                <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: `${couleurStatut}1a`, color: couleurStatut, border: `1px solid ${couleurStatut}4d` }}>
-                  {labelStatut}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: bet.statut === 'gagne' ? '#22c55e' : '#ef4444', letterSpacing: '-0.5px' }}>
+                    {bet.statut === 'gagne' ? `+$${parseFloat(bet.resultat ?? 0).toFixed(2)}` : `-$${parseFloat(bet.mise ?? 0).toFixed(2)}`}
+                  </div>
+                  <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: bet.statut === 'gagne' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: bet.statut === 'gagne' ? '#22c55e' : '#ef4444', border: `1px solid ${bet.statut === 'gagne' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                    {bet.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <BetDetailSheet item={betSelectionne} onClose={() => setBetSelectionne(null)} lang={lang} />
 
       {onglet === 'bankroll' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

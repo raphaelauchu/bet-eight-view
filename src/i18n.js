@@ -115,9 +115,16 @@ const translations = {
     import_field_stake: 'Mise ($)',
     import_field_odds: 'Cote',
     import_field_potential: 'Gain potentiel',
+    import_field_team: 'Équipe',
+    import_field_opponent: 'Adversaire',
+    import_field_match_date: 'Date du match',
     import_confirm_btn: 'Confirmer et enregistrer',
     import_saved_title: 'Bet enregistré ✅',
     import_back_to_list: 'Retour à mes paris',
+    bet_detail_title: 'Détails du pari',
+    bet_detail_status: 'Statut',
+    bet_detail_game_id: 'Game ID',
+    bet_detail_match_date: 'Date du match',
 
     // BankrollPage
     bank_current: 'Bankroll actuelle',
@@ -304,9 +311,16 @@ const translations = {
     import_field_stake: 'Stake ($)',
     import_field_odds: 'Odds',
     import_field_potential: 'Potential payout',
+    import_field_team: 'Team',
+    import_field_opponent: 'Opponent',
+    import_field_match_date: 'Match date',
     import_confirm_btn: 'Confirm and save',
     import_saved_title: 'Bet saved ✅',
     import_back_to_list: 'Back to my bets',
+    bet_detail_title: 'Bet details',
+    bet_detail_status: 'Status',
+    bet_detail_game_id: 'Game ID',
+    bet_detail_match_date: 'Match date',
 
     // BankrollPage
     bank_current: 'Current Bankroll',
