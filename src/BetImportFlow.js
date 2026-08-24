@@ -7,7 +7,7 @@ import { TYPES_BET, TYPE_BET_DEPUIS_IA, STAT_VALEURS, mapperStatDepuisIA, champs
 
 // apercu / imageBase64 : image deja choisie et normalisee par Dashboard.js
 // (le flow n'affiche plus de choix camera/galerie, il part directement de l'apercu)
-function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }) {
+function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, onEnregistrer }) {
   const t = getT(lang);
   const [step, setStep] = React.useState(1);
   const [analysing, setAnalysing] = React.useState(false);
@@ -69,13 +69,8 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     setSaving(true);
     setErreur('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: inseree, error } = await supabase.from('bets_auto').insert({
-        user_id: user.id,
-        statut: 'pending',
-        ...champsDBDepuisForm(form, t),
-      }).select().single();
-      if (error) throw error;
+      const inseree = await onEnregistrer(champsDBDepuisForm(form, t));
+      if (!inseree) { setSaving(false); return; }
       setStep(3);
 
       // Verification API NHL en arriere-plan : cherche le match correspondant

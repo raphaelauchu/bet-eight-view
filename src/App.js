@@ -703,7 +703,12 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
       statut: b.statut === 'pending' ? 'actif' : b.statut, profit: b.resultat, mise: b.mise,
       date: b.verified_at || b.created_at,
     })),
-  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 3);
+  ].sort((a, b) => {
+    const actifA = a.statut === 'actif' ? 0 : 1;
+    const actifB = b.statut === 'actif' ? 0 : 1;
+    if (actifA !== actifB) return actifA - actifB;
+    return new Date(b.date || 0) - new Date(a.date || 0);
+  }).slice(0, 3);
 
   // Profit curve data
   const now = new Date();

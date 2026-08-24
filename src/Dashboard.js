@@ -117,9 +117,11 @@ function Dashboard({ lang = 'en' }) {
     } catch (err) { signalerErreur('supprimerPari', err); }
   }
 
-  // Bets importes par screenshot (bets_auto) : la mise n'est jamais debitee a
-  // l'import (contrairement aux paris manuels), donc a la resolution on applique
-  // directement le resultat signe (+gain net si gagne, -mise si perdu) a la bankroll.
+  // Logique bankroll (bets_auto) :
+  // - import/creation : la mise est immediatement soustraite (voir importerBetAuto)
+  // - gagne : on credite mise + profit (= le payout complet, mise*cote)
+  // - perdu : rien a faire, la mise a deja ete soustraite a l'import
+  // - suppression avant resultat (statut 'pending') : la mise est remboursee
   async function mettreAJourStatutAuto(id, statut, mise, cote) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -128,33 +130,46 @@ function Dashboard({ lang = 'en' }) {
         .update({ statut, resultat, verified_at: new Date().toISOString() })
         .eq('id', id).eq('user_id', user.id);
       if (error) { signalerErreur('mettreAJourStatutAuto', error); return; }
-      await mettreAJourBankroll(bankroll + resultat);
+      if (statut === 'gagne') await mettreAJourBankroll(bankroll + parseFloat(mise) + resultat);
       setErreurAction('');
       chargerDonnees();
     } catch (err) { signalerErreur('mettreAJourStatutAuto', err); }
   }
 
-  async function remettreEnActifAuto(id, resultat) {
+  async function remettreEnActifAuto(id, statut, mise, resultat) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from('bets_auto')
         .update({ statut: 'pending', resultat: null, verified_at: null })
         .eq('id', id).eq('user_id', user.id);
       if (error) { signalerErreur('remettreEnActifAuto', error); return; }
-      await mettreAJourBankroll(bankroll - parseFloat(resultat || 0));
+      if (statut === 'gagne') await mettreAJourBankroll(bankroll - parseFloat(mise) - parseFloat(resultat || 0));
       setErreurAction('');
       chargerDonnees();
     } catch (err) { signalerErreur('remettreEnActifAuto', err); }
   }
 
-  async function supprimerBetAuto(id) {
+  async function supprimerBetAuto(id, statut, mise) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from('bets_auto').delete().eq('id', id).eq('user_id', user.id);
       if (error) { signalerErreur('supprimerBetAuto', error); return; }
+      if (statut === 'pending') await mettreAJourBankroll(bankroll + parseFloat(mise || 0));
       setErreurAction('');
       chargerDonnees();
     } catch (err) { signalerErreur('supprimerBetAuto', err); }
+  }
+
+  async function importerBetAuto(champs) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: inseree, error } = await supabase.from('bets_auto')
+      .insert({ user_id: user.id, statut: 'pending', ...champs })
+      .select().single();
+    if (error) { signalerErreur('importerBetAuto', error); return null; }
+    await mettreAJourBankroll(bankroll - parseFloat(champs.mise || 0));
+    setErreurAction('');
+    chargerDonnees();
+    return inseree;
   }
 
   async function modifierPari(id, champs) {
@@ -181,7 +196,7 @@ function Dashboard({ lang = 'en' }) {
   // identiquement peu importe l'onglet (Actifs/Historique) et le type de bet.
   function supprimerDepuisFiche(item) {
     if (item.type === 'manuel') supprimerPari(item.data.id, item.data.statut, item.data.mise);
-    else supprimerBetAuto(item.data.id);
+    else supprimerBetAuto(item.data.id, item.data.statut, item.data.mise);
     setBetSelectionne(null);
   }
 
@@ -324,7 +339,8 @@ function Dashboard({ lang = 'en' }) {
           apercu={imageImport.apercu}
           imageBase64={imageImport.base64}
           onClose={() => { setAfficherImport(false); setImageImport(null); }}
-          onImported={() => { setAfficherImport(false); setImageImport(null); chargerDonnees(); }}
+          onEnregistrer={importerBetAuto}
+          onImported={() => { setAfficherImport(false); setImageImport(null); }}
         />
       )}
 
@@ -369,7 +385,7 @@ function Dashboard({ lang = 'en' }) {
                 <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
                   <button onClick={() => mettreAJourStatutAuto(bet.id, 'gagne', bet.mise, bet.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_won')}</button>
                   <button onClick={() => mettreAJourStatutAuto(bet.id, 'perdu', bet.mise, bet.cote)} style={{ padding: '7px 14px', backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>{t('bets_lost')}</button>
-                  <button onClick={() => supprimerBetAuto(bet.id)} style={{ padding: '7px 14px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                  <button onClick={() => supprimerBetAuto(bet.id, bet.statut, bet.mise)} style={{ padding: '7px 14px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                 </div>
               </div>
             );
@@ -472,8 +488,8 @@ function Dashboard({ lang = 'en' }) {
                   <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: bet.statut === 'gagne' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: bet.statut === 'gagne' ? '#22c55e' : '#ef4444', border: `1px solid ${bet.statut === 'gagne' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
                     {bet.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
                   </div>
-                  <button onClick={() => remettreEnActifAuto(bet.id, bet.resultat)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
-                  <button onClick={() => { if (window.confirm(t('bet_detail_confirm_delete'))) supprimerBetAuto(bet.id); }} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                  <button onClick={() => remettreEnActifAuto(bet.id, bet.statut, bet.mise, bet.resultat)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
+                  <button onClick={() => { if (window.confirm(t('bet_detail_confirm_delete'))) supprimerBetAuto(bet.id, bet.statut, bet.mise); }} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
                 </div>
               </div>
             );
