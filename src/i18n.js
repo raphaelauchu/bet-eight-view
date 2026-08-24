@@ -133,9 +133,14 @@ const translations = {
     import_saved_title: 'Bet enregistré ✅',
     import_back_to_list: 'Retour à mes paris',
     bet_detail_title: 'Détails du pari',
+    bet_detail_edit_title: 'Modifier le pari',
     bet_detail_status: 'Statut',
     bet_detail_game_id: 'Game ID',
     bet_detail_match_date: 'Date du match',
+    bet_detail_edit_btn: '✎ Modifier',
+    bet_detail_delete_btn: '🗑 Supprimer',
+    bet_detail_save_btn: 'Sauvegarder les modifications',
+    bet_detail_confirm_delete: 'Es-tu sûr de vouloir supprimer ce bet?',
 
     // BankrollPage
     bank_current: 'Bankroll actuelle',
@@ -340,9 +345,14 @@ const translations = {
     import_saved_title: 'Bet saved ✅',
     import_back_to_list: 'Back to my bets',
     bet_detail_title: 'Bet details',
+    bet_detail_edit_title: 'Edit bet',
     bet_detail_status: 'Status',
     bet_detail_game_id: 'Game ID',
     bet_detail_match_date: 'Match date',
+    bet_detail_edit_btn: '✎ Edit',
+    bet_detail_delete_btn: '🗑 Delete',
+    bet_detail_save_btn: 'Save changes',
+    bet_detail_confirm_delete: 'Are you sure you want to delete this bet?',
 
     // BankrollPage
     bank_current: 'Current Bankroll',

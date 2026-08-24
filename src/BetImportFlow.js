@@ -1,35 +1,9 @@
 import React from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
-import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { trouverGameId } from './nhlGameLookup';
-
-const TYPES_BET = ['Moneyline', 'Prop joueur', 'Total', 'Parlay'];
-
-const TYPE_BET_DEPUIS_IA = {
-  moneyline: 'Moneyline',
-  spread: 'Moneyline',
-  prop: 'Prop joueur',
-  total: 'Total',
-  parlay: 'Parlay',
-};
-
-const STAT_VALEURS = ['buts', 'passes', 'points', 'tirs', 'hits', 'blocs'];
-
-function mapperStatDepuisIA(valeur) {
-  if (!valeur) return '';
-  const v = String(valeur).toLowerCase();
-  if (v.includes('but') || v.includes('goal')) return 'buts';
-  if (v.includes('passe') || v.includes('assist')) return 'passes';
-  if (v.includes('point')) return 'points';
-  if (v.includes('tir') || v.includes('shot')) return 'tirs';
-  if (v.includes('hit') || v.includes('échec') || v.includes('echec')) return 'hits';
-  if (v.includes('bloc')) return 'blocs';
-  return '';
-}
-
-const champStyle = { width: '100%', padding: '10px 12px', backgroundColor: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
-const labelStyle = { color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' };
+import { BOOKMAKERS_SUPPORTES } from './bookmakers';
+import { TYPES_BET, TYPE_BET_DEPUIS_IA, STAT_VALEURS, mapperStatDepuisIA, champsDBDepuisForm, champStyle, labelStyle, BetAutoForm } from './BetAutoForm';
 
 // apercu / imageBase64 : image deja choisie et normalisee par Dashboard.js
 // (le flow n'affiche plus de choix camera/galerie, il part directement de l'apercu)
@@ -54,8 +28,6 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     game_id: '',
   });
 
-  const STAT_OPTIONS = STAT_VALEURS.map(v => ({ value: v, label: t(`stat_${v}`) }));
-
   const gainPotentiel = form.mise && form.cote ? (parseFloat(form.mise) * parseFloat(form.cote) - parseFloat(form.mise)) : null;
 
   React.useEffect(() => { analyser(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -70,7 +42,8 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
       });
       if (error || data?.error) throw new Error(data?.error || error.message);
       const extrait = data.data || {};
-      setForm({
+      setForm(f => ({
+        ...f,
         bookmaker: BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : BOOKMAKERS_SUPPORTES[0],
         joueur_ou_equipe: extrait.joueur_ou_equipe || '',
         type_bet: TYPE_BET_DEPUIS_IA[extrait.type_bet] || TYPES_BET[0],
@@ -83,7 +56,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
         adversaire: extrait.adversaire || '',
         date_match: extrait.date_match || '',
         game_id: extrait.game_id || '',
-      });
+      }));
       setStep(2);
     } catch (e) {
       setErreur(t('import_error_analyze').replace('{erreur}', e.message || String(e)));
@@ -97,26 +70,10 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     setErreur('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      // Le champ stat_type sert de "Stat" pour les props (buts, tirs, ...) et
-      // d'indicateur over/under pour les paris Total — pas de colonne dediee.
-      const statType = form.type_bet === 'Prop joueur' ? (STAT_OPTIONS.find(s => s.value === form.stat_pariee)?.label || null)
-        : form.type_bet === 'Total' ? (form.over_under === 'under' ? 'Under' : 'Over')
-        : null;
       const { data: inseree, error } = await supabase.from('bets_auto').insert({
         user_id: user.id,
-        bookmaker: form.bookmaker,
-        type_bet: form.type_bet,
-        joueur_nom: form.type_bet === 'Prop joueur' || form.type_bet === 'Parlay' ? (form.joueur_ou_equipe || null) : null,
-        equipe: form.equipe || null,
-        adversaire: form.adversaire || null,
-        stat_type: statType,
-        ligne: form.ligne !== '' ? parseFloat(form.ligne) : null,
-        mise: parseFloat(form.mise),
-        cote: parseFloat(form.cote),
-        gain_potentiel: gainPotentiel !== null ? parseFloat(gainPotentiel.toFixed(2)) : null,
-        game_date: form.date_match || null,
-        game_id: form.game_id || null,
         statut: 'pending',
+        ...champsDBDepuisForm(form, t),
       }).select().single();
       if (error) throw error;
       setStep(3);
@@ -136,19 +93,10 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     setSaving(false);
   }
 
-  function champ(nom, label, props = {}) {
-    return (
-      <div>
-        <div style={labelStyle}>{label}</div>
-        <input style={champStyle} value={form[nom]} onChange={e => setForm({ ...form, [nom]: e.target.value })} {...props} />
-      </div>
-    );
-  }
-
   const estMoneyline = form.type_bet === 'Moneyline';
-  const estProp = form.type_bet === 'Prop joueur';
   const estTotal = form.type_bet === 'Total';
-  const estParlay = form.type_bet === 'Parlay';
+  const estProp = form.type_bet === 'Prop joueur';
+  const STAT_OPTIONS = STAT_VALEURS.map(v => ({ value: v, label: t(`stat_${v}`) }));
 
   const resumeType = estMoneyline
     ? `${form.equipe || '?'} vs ${form.adversaire || '?'}`
@@ -188,70 +136,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
       {step === 2 && (
         <div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <div style={labelStyle}>{t('import_field_bookmaker')}</div>
-              <select style={champStyle} value={form.bookmaker} onChange={e => setForm({ ...form, bookmaker: e.target.value })}>
-                {BOOKMAKERS_SUPPORTES.map(b => <option key={b}>{b}</option>)}
-              </select>
-            </div>
-            <div>
-              <div style={labelStyle}>{t('import_field_bet_type')}</div>
-              <select style={champStyle} value={form.type_bet} onChange={e => setForm({ ...form, type_bet: e.target.value })}>
-                {TYPES_BET.map(bt => <option key={bt}>{bt}</option>)}
-              </select>
-            </div>
-
-            {/* Moneyline : equipe misee + adversaire, pas de joueur/stat/ligne */}
-            {estMoneyline && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {champ('equipe', t('import_field_team_backed'))}
-                {champ('adversaire', t('import_field_opponent'))}
-              </div>
-            )}
-
-            {/* Prop joueur : joueur + stat (dropdown) + ligne */}
-            {estProp && (
-              <>
-                {champ('joueur_ou_equipe', t('import_field_player'))}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <div style={labelStyle}>{t('import_field_stat_dropdown')}</div>
-                    <select style={champStyle} value={form.stat_pariee} onChange={e => setForm({ ...form, stat_pariee: e.target.value })}>
-                      {STAT_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </div>
-                  {champ('ligne', t('import_field_line'), { type: 'number', step: '0.5' })}
-                </div>
-              </>
-            )}
-
-            {/* Total : over/under + ligne, contexte des deux equipes */}
-            {estTotal && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <div style={labelStyle}>{t('import_field_over_under')}</div>
-                    <select style={champStyle} value={form.over_under} onChange={e => setForm({ ...form, over_under: e.target.value })}>
-                      <option value="over">Over</option>
-                      <option value="under">Under</option>
-                    </select>
-                  </div>
-                  {champ('ligne', t('import_field_line'), { type: 'number', step: '0.5' })}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {champ('equipe', t('import_field_team'))}
-                  {champ('adversaire', t('import_field_opponent'))}
-                </div>
-              </>
-            )}
-
-            {estParlay && champ('joueur_ou_equipe', t('import_field_description'))}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {champ('mise', t('import_field_stake'), { type: 'number' })}
-              {champ('cote', t('import_field_odds'), { type: 'number', step: '0.01' })}
-            </div>
-            {champ('date_match', t('import_field_match_date'), { type: 'date' })}
+            <BetAutoForm form={form} setForm={setForm} t={t} />
             <div>
               <div style={labelStyle}>{t('import_field_potential')}</div>
               <div style={{ ...champStyle, backgroundColor: '#080808', color: '#22c55e', fontWeight: '700' }}>

@@ -5,14 +5,7 @@ import { getT } from './i18n';
 import BetImportFlow from './BetImportFlow';
 import BetDetailSheet from './BetDetailSheet';
 import { fichierVersJpegBase64 } from './imageUtils';
-
-const BET_TYPES = [
-  { value: 'moneyline', label: 'Money Line' },
-  { value: 'spread', label: 'Puck Line' },
-  { value: 'total', label: 'Total Goals' },
-  { value: 'prop', label: 'Player Prop' },
-  { value: 'parlay', label: 'Parlay' },
-];
+import { BET_TYPES } from './betTypes';
 
 // Titre d'affichage d'un bet importe : joueur (prop) > equipe misee (moneyline) > type
 function titreBetAuto(bet) {
@@ -124,6 +117,40 @@ function Dashboard({ lang = 'en' }) {
       await supabase.from('bets_auto').delete().eq('id', id);
       chargerDonnees();
     } catch (err) { console.error(err); }
+  }
+
+  async function modifierPari(id, champs) {
+    try {
+      await supabase.from('paris').update(champs).eq('id', id);
+      chargerDonnees();
+    } catch (err) { console.error(err); }
+  }
+
+  async function modifierBetAuto(id, champs) {
+    try {
+      await supabase.from('bets_auto').update(champs).eq('id', id);
+      chargerDonnees();
+    } catch (err) { console.error(err); }
+  }
+
+  // Dispatchers utilises par la fiche detaillee (BetDetailSheet) : fonctionnent
+  // identiquement peu importe l'onglet (Actifs/Historique) et le type de bet.
+  function supprimerDepuisFiche(item) {
+    if (item.type === 'manuel') supprimerPari(item.data.id, item.data.statut, item.data.mise);
+    else supprimerBetAuto(item.data.id);
+    setBetSelectionne(null);
+  }
+
+  function marquerStatutDepuisFiche(item, statut) {
+    if (item.type === 'manuel') mettreAJourStatut(item.data.id, statut, item.data.mise, item.data.cote);
+    else mettreAJourStatutAuto(item.data.id, statut, item.data.mise, item.data.cote);
+    setBetSelectionne(null);
+  }
+
+  async function sauvegarderDepuisFiche(item, champs) {
+    if (item.type === 'manuel') await modifierPari(item.data.id, champs);
+    else await modifierBetAuto(item.data.id, champs);
+    setBetSelectionne(null);
   }
 
   function ouvrirGalerieImport() {
@@ -401,7 +428,14 @@ function Dashboard({ lang = 'en' }) {
         </div>
       )}
 
-      <BetDetailSheet item={betSelectionne} onClose={() => setBetSelectionne(null)} lang={lang} />
+      <BetDetailSheet
+        item={betSelectionne}
+        onClose={() => setBetSelectionne(null)}
+        lang={lang}
+        onDelete={supprimerDepuisFiche}
+        onMarkStatut={marquerStatutDepuisFiche}
+        onSave={sauvegarderDepuisFiche}
+      />
 
       {onglet === 'bankroll' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
