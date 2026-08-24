@@ -14,6 +14,13 @@ const BET_TYPES = [
   { value: 'parlay', label: 'Parlay' },
 ];
 
+// Titre d'affichage d'un bet importe : joueur (prop) > equipe misee (moneyline) > type
+function titreBetAuto(bet) {
+  if (bet.joueur_nom) return `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}`.trim();
+  if (bet.equipe) return `${bet.equipe} vs ${bet.adversaire || '?'}`;
+  return bet.type_bet || '—';
+}
+
 function Dashboard({ lang = 'en' }) {
   const t = getT(lang);
   const [paris, setParis] = useState([]);
@@ -92,12 +99,22 @@ function Dashboard({ lang = 'en' }) {
     } catch (err) { console.error(err); }
   }
 
-  // Bets importes par screenshot (bets_auto) : pas lies a la bankroll, contrairement
-  // aux paris manuels — seul le statut est mis a jour ici.
+  // Bets importes par screenshot (bets_auto) : la mise n'est jamais debitee a
+  // l'import (contrairement aux paris manuels), donc a la resolution on applique
+  // directement le resultat signe (+gain net si gagne, -mise si perdu) a la bankroll.
   async function mettreAJourStatutAuto(id, statut, mise, cote) {
     try {
       const resultat = statut === 'gagne' ? parseFloat((mise * cote - mise).toFixed(2)) : -parseFloat(mise);
       await supabase.from('bets_auto').update({ statut, resultat, verified_at: new Date().toISOString() }).eq('id', id);
+      await mettreAJourBankroll(bankroll + resultat);
+      chargerDonnees();
+    } catch (err) { console.error(err); }
+  }
+
+  async function remettreEnActifAuto(id, resultat) {
+    try {
+      await supabase.from('bets_auto').update({ statut: 'pending', resultat: null, verified_at: null }).eq('id', id);
+      await mettreAJourBankroll(bankroll - parseFloat(resultat || 0));
       chargerDonnees();
     } catch (err) { console.error(err); }
   }
@@ -264,7 +281,7 @@ function Dashboard({ lang = 'en' }) {
               <div key={`a-${bet.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'auto', data: bet })}>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>
-                    {bet.joueur_nom ? `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}` : (bet.type_bet || '—')}
+                    {titreBetAuto(bet)}
                   </div>
                   <div style={{ color: '#f97316', fontSize: '12px', fontWeight: '500', marginBottom: '2px' }}>📷 {bet.type_bet || t('bets_import_btn')}</div>
                   {bet.equipe && bet.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{bet.equipe} vs {bet.adversaire}</div>}
@@ -364,7 +381,7 @@ function Dashboard({ lang = 'en' }) {
               <div key={`a-${bet.id}`} style={bordure} onClick={() => setBetSelectionne({ type: 'auto', data: bet })}>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>
-                    {bet.joueur_nom ? `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}` : (bet.type_bet || '—')}
+                    {titreBetAuto(bet)}
                   </div>
                   {bet.equipe && bet.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{bet.equipe} vs {bet.adversaire}</div>}
                   <div style={{ color: '#444', fontSize: '12px' }}>📷 {bet.bookmaker || '—'} · {t('bets_odds')} {bet.cote ?? '—'} · ${bet.mise ?? '—'}</div>
@@ -376,6 +393,7 @@ function Dashboard({ lang = 'en' }) {
                   <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: bet.statut === 'gagne' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: bet.statut === 'gagne' ? '#22c55e' : '#ef4444', border: `1px solid ${bet.statut === 'gagne' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
                     {bet.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
                   </div>
+                  <button onClick={() => remettreEnActifAuto(bet.id, bet.resultat)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
                 </div>
               </div>
             );

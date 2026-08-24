@@ -4,7 +4,29 @@ import { getT } from './i18n';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { trouverGameId } from './nhlGameLookup';
 
-const TYPES_BET = ['Moneyline', 'Over/Under', 'Prop joueur', 'Total', 'Parlay'];
+const TYPES_BET = ['Moneyline', 'Prop joueur', 'Total', 'Parlay'];
+
+const TYPE_BET_DEPUIS_IA = {
+  moneyline: 'Moneyline',
+  spread: 'Moneyline',
+  prop: 'Prop joueur',
+  total: 'Total',
+  parlay: 'Parlay',
+};
+
+const STAT_VALEURS = ['buts', 'passes', 'points', 'tirs', 'hits', 'blocs'];
+
+function mapperStatDepuisIA(valeur) {
+  if (!valeur) return '';
+  const v = String(valeur).toLowerCase();
+  if (v.includes('but') || v.includes('goal')) return 'buts';
+  if (v.includes('passe') || v.includes('assist')) return 'passes';
+  if (v.includes('point')) return 'points';
+  if (v.includes('tir') || v.includes('shot')) return 'tirs';
+  if (v.includes('hit') || v.includes('échec') || v.includes('echec')) return 'hits';
+  if (v.includes('bloc')) return 'blocs';
+  return '';
+}
 
 const champStyle = { width: '100%', padding: '10px 12px', backgroundColor: '#0d0d0d', border: '1px solid #1f1f1f', borderRadius: '8px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
 const labelStyle = { color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' };
@@ -21,7 +43,8 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     bookmaker: BOOKMAKERS_SUPPORTES[0],
     joueur_ou_equipe: '',
     type_bet: TYPES_BET[0],
-    stat_pariee: '',
+    stat_pariee: STAT_VALEURS[0],
+    over_under: 'over',
     ligne: '',
     mise: '',
     cote: '',
@@ -30,6 +53,8 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     date_match: '',
     game_id: '',
   });
+
+  const STAT_OPTIONS = STAT_VALEURS.map(v => ({ value: v, label: t(`stat_${v}`) }));
 
   const gainPotentiel = form.mise && form.cote ? (parseFloat(form.mise) * parseFloat(form.cote) - parseFloat(form.mise)) : null;
 
@@ -48,8 +73,9 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
       setForm({
         bookmaker: BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : BOOKMAKERS_SUPPORTES[0],
         joueur_ou_equipe: extrait.joueur_ou_equipe || '',
-        type_bet: extrait.type_bet || TYPES_BET[0],
-        stat_pariee: extrait.stat_pariee || '',
+        type_bet: TYPE_BET_DEPUIS_IA[extrait.type_bet] || TYPES_BET[0],
+        stat_pariee: mapperStatDepuisIA(extrait.stat_pariee) || STAT_VALEURS[0],
+        over_under: extrait.over_under === 'under' ? 'under' : 'over',
         ligne: extrait.ligne ?? '',
         mise: extrait.mise ?? '',
         cote: extrait.cote ?? '',
@@ -71,14 +97,19 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
     setErreur('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      // Le champ stat_type sert de "Stat" pour les props (buts, tirs, ...) et
+      // d'indicateur over/under pour les paris Total — pas de colonne dediee.
+      const statType = form.type_bet === 'Prop joueur' ? (STAT_OPTIONS.find(s => s.value === form.stat_pariee)?.label || null)
+        : form.type_bet === 'Total' ? (form.over_under === 'under' ? 'Under' : 'Over')
+        : null;
       const { data: inseree, error } = await supabase.from('bets_auto').insert({
         user_id: user.id,
         bookmaker: form.bookmaker,
         type_bet: form.type_bet,
-        joueur_nom: form.joueur_ou_equipe || null,
+        joueur_nom: form.type_bet === 'Prop joueur' || form.type_bet === 'Parlay' ? (form.joueur_ou_equipe || null) : null,
         equipe: form.equipe || null,
         adversaire: form.adversaire || null,
-        stat_type: form.stat_pariee || null,
+        stat_type: statType,
         ligne: form.ligne !== '' ? parseFloat(form.ligne) : null,
         mise: parseFloat(form.mise),
         cote: parseFloat(form.cote),
@@ -113,6 +144,19 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
       </div>
     );
   }
+
+  const estMoneyline = form.type_bet === 'Moneyline';
+  const estProp = form.type_bet === 'Prop joueur';
+  const estTotal = form.type_bet === 'Total';
+  const estParlay = form.type_bet === 'Parlay';
+
+  const resumeType = estMoneyline
+    ? `${form.equipe || '?'} vs ${form.adversaire || '?'}`
+    : estTotal
+    ? `${form.over_under === 'under' ? 'Under' : 'Over'} ${form.ligne || '?'}`
+    : estProp
+    ? `${form.joueur_ou_equipe || '?'} — ${STAT_OPTIONS.find(s => s.value === form.stat_pariee)?.label || ''} ${form.ligne || ''}`
+    : form.joueur_ou_equipe || form.type_bet;
 
   return (
     <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '24px', marginBottom: '20px', border: '1px solid #1a1a1a' }}>
@@ -150,22 +194,62 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
                 {BOOKMAKERS_SUPPORTES.map(b => <option key={b}>{b}</option>)}
               </select>
             </div>
-            {champ('joueur_ou_equipe', t('import_field_player_team'))}
             <div>
               <div style={labelStyle}>{t('import_field_bet_type')}</div>
               <select style={champStyle} value={form.type_bet} onChange={e => setForm({ ...form, type_bet: e.target.value })}>
                 {TYPES_BET.map(bt => <option key={bt}>{bt}</option>)}
               </select>
             </div>
-            {champ('stat_pariee', t('import_field_stat'))}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-              {champ('ligne', t('import_field_line'), { type: 'number', step: '0.5' })}
+
+            {/* Moneyline : equipe misee + adversaire, pas de joueur/stat/ligne */}
+            {estMoneyline && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {champ('equipe', t('import_field_team_backed'))}
+                {champ('adversaire', t('import_field_opponent'))}
+              </div>
+            )}
+
+            {/* Prop joueur : joueur + stat (dropdown) + ligne */}
+            {estProp && (
+              <>
+                {champ('joueur_ou_equipe', t('import_field_player'))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <div style={labelStyle}>{t('import_field_stat_dropdown')}</div>
+                    <select style={champStyle} value={form.stat_pariee} onChange={e => setForm({ ...form, stat_pariee: e.target.value })}>
+                      {STAT_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                  {champ('ligne', t('import_field_line'), { type: 'number', step: '0.5' })}
+                </div>
+              </>
+            )}
+
+            {/* Total : over/under + ligne, contexte des deux equipes */}
+            {estTotal && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <div style={labelStyle}>{t('import_field_over_under')}</div>
+                    <select style={champStyle} value={form.over_under} onChange={e => setForm({ ...form, over_under: e.target.value })}>
+                      <option value="over">Over</option>
+                      <option value="under">Under</option>
+                    </select>
+                  </div>
+                  {champ('ligne', t('import_field_line'), { type: 'number', step: '0.5' })}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {champ('equipe', t('import_field_team'))}
+                  {champ('adversaire', t('import_field_opponent'))}
+                </div>
+              </>
+            )}
+
+            {estParlay && champ('joueur_ou_equipe', t('import_field_description'))}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {champ('mise', t('import_field_stake'), { type: 'number' })}
               {champ('cote', t('import_field_odds'), { type: 'number', step: '0.01' })}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {champ('equipe', t('import_field_team'))}
-              {champ('adversaire', t('import_field_opponent'))}
             </div>
             {champ('date_match', t('import_field_match_date'), { type: 'date' })}
             <div>
@@ -191,9 +275,9 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported }
           <div style={{ fontSize: '28px', marginBottom: '10px' }}>✅</div>
           <div style={{ fontSize: '16px', fontWeight: '700', color: '#22c55e', marginBottom: '20px' }}>{t('import_saved_title')}</div>
           <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '16px', textAlign: 'left', marginBottom: '20px' }}>
-            <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px' }}>{form.joueur_ou_equipe || form.type_bet}</div>
-            <div style={{ color: '#f97316', fontSize: '12px', marginBottom: '2px' }}>{form.type_bet} {form.stat_pariee && `· ${form.stat_pariee}`} {form.ligne !== '' && `· ${form.ligne}`}</div>
-            {form.equipe && form.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{form.equipe} vs {form.adversaire}</div>}
+            <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px' }}>{resumeType}</div>
+            <div style={{ color: '#f97316', fontSize: '12px', marginBottom: '2px' }}>{form.type_bet}</div>
+            {!estMoneyline && form.equipe && form.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{form.equipe} vs {form.adversaire}</div>}
             <div style={{ color: '#444', fontSize: '12px' }}>{form.bookmaker} · {t('bets_odds')} {form.cote} · ${form.mise}</div>
             {gainPotentiel !== null && <div style={{ color: '#22c55e', fontSize: '12px', marginTop: '4px' }}>{t('bets_potential_short')}: +${gainPotentiel.toFixed(2)}</div>}
           </div>
