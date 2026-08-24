@@ -913,6 +913,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
   );
 }
 
+const BOOKMAKERS_SUPPORTES = ['Bet99', 'Mise au jeu', 'DraftKings', 'Betway', 'Bet365', 'Sports Interaction'];
+
 function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const t = getT(lang);
   const [username, setUsername] = React.useState('');
@@ -930,14 +932,75 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const [completedCrop, setCompletedCrop] = React.useState(null);
   const imgRef = React.useRef(null);
   const fileInputRef = React.useRef(null);
+  const [emailConnection, setEmailConnection] = React.useState(null);
+  const [savingBookmakers, setSavingBookmakers] = React.useState(false);
 
-  React.useEffect(() => { chargerProfil(); }, []);
+  React.useEffect(() => { chargerProfil(); chargerConnexionEmail(); }, []);
 
   async function chargerProfil() {
     try {
       const { data } = await supabase.from('profiles').select('username, avatar_url, first_name, last_name').eq('id', utilisateur.id).single();
       if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); setFirstName(data.first_name || ''); setLastName(data.last_name || ''); }
     } catch {}
+  }
+
+  async function chargerConnexionEmail() {
+    try {
+      const { data } = await supabase.from('user_email_connections').select('*').eq('user_id', utilisateur.id).single();
+      setEmailConnection(data || null);
+    } catch { setEmailConnection(null); }
+  }
+
+  async function connecterGmail() {
+    // TODO: rediriger vers le flow OAuth Google (scope gmail.readonly),
+    // puis stocker gmail_token / gmail_refresh_token via upsert ci-dessous
+    // une fois le callback OAuth reçu.
+    // await supabase.from('user_email_connections').upsert({
+    //   user_id: utilisateur.id,
+    //   gmail_token: <token>,
+    //   gmail_refresh_token: <refresh_token>,
+    //   actif: true,
+    // });
+    // chargerConnexionEmail();
+    alert(t('bookmakers_coming_soon'));
+  }
+
+  async function deconnecterGmail() {
+    try {
+      await supabase.from('user_email_connections').update({ gmail_token: null, gmail_refresh_token: null, actif: false }).eq('user_id', utilisateur.id);
+      chargerConnexionEmail();
+    } catch {}
+  }
+
+  async function toggleParsingActif() {
+    const nouveauStatut = !(emailConnection?.actif);
+    setSavingBookmakers(true);
+    try {
+      if (emailConnection?.id) {
+        await supabase.from('user_email_connections').update({ actif: nouveauStatut }).eq('id', emailConnection.id);
+        setEmailConnection({ ...emailConnection, actif: nouveauStatut });
+      } else {
+        const { data } = await supabase.from('user_email_connections').insert({ user_id: utilisateur.id, actif: nouveauStatut }).select().single();
+        setEmailConnection(data);
+      }
+    } catch {}
+    setSavingBookmakers(false);
+  }
+
+  async function toggleBookmaker(nom) {
+    const actuels = emailConnection?.bookmakers || [];
+    const maj = actuels.includes(nom) ? actuels.filter(b => b !== nom) : [...actuels, nom];
+    setSavingBookmakers(true);
+    try {
+      if (emailConnection?.id) {
+        await supabase.from('user_email_connections').update({ bookmakers: maj }).eq('id', emailConnection.id);
+        setEmailConnection({ ...emailConnection, bookmakers: maj });
+      } else {
+        const { data } = await supabase.from('user_email_connections').insert({ user_id: utilisateur.id, bookmakers: maj }).select().single();
+        setEmailConnection(data);
+      }
+    } catch {}
+    setSavingBookmakers(false);
   }
 
   async function sauvegarderProfil() {
@@ -1135,6 +1198,58 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#666', fontSize: '13px' }}>{t('profile_member_since')}</span>
           <span style={{ color: 'white', fontSize: '13px', fontWeight: '600' }}>{new Date(utilisateur?.created_at || Date.now()).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}</span>
+        </div>
+      </div>
+
+      {/* Mes Bookmakers — connexion Gmail + parsing automatique des paris */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
+        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bookmakers_title')}</p>
+        <p style={{ margin: '0 0 16px', color: '#444', fontSize: '12px', lineHeight: '1.5' }}>{t('bookmakers_sub')}</p>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div>
+            <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>{t('bookmakers_gmail_status')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
+              <span style={{ color: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '600' }}>
+                {emailConnection?.gmail_token ? t('bookmakers_connected') : t('bookmakers_disconnected')}
+              </span>
+            </div>
+          </div>
+          {emailConnection?.gmail_token ? (
+            <button onClick={deconnecterGmail} style={{ padding: '9px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+              {t('bookmakers_disconnect_btn')}
+            </button>
+          ) : (
+            <button onClick={connecterGmail} style={{ padding: '9px 16px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+              {t('bookmakers_connect_btn')}
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #161616', marginBottom: '14px' }}>
+          <div>
+            <div style={{ color: 'white', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>{t('bookmakers_auto_parsing')}</div>
+            <div style={{ color: '#444', fontSize: '11px' }}>{t('bookmakers_auto_parsing_sub')}</div>
+          </div>
+          <div onClick={toggleParsingActif} style={{ width: '42px', height: '24px', borderRadius: '12px', backgroundColor: emailConnection?.actif ? '#f97316' : '#222', cursor: 'pointer', position: 'relative', transition: 'background-color 0.2s', flexShrink: 0 }}>
+            <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', top: '3px', left: emailConnection?.actif ? '21px' : '3px', transition: 'left 0.2s' }} />
+          </div>
+        </div>
+
+        <div>
+          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>{t('bookmakers_select_title')}</div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {BOOKMAKERS_SUPPORTES.map(bm => {
+              const actif = (emailConnection?.bookmakers || []).includes(bm);
+              return (
+                <button key={bm} onClick={() => toggleBookmaker(bm)} disabled={savingBookmakers}
+                  style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: actif ? '#f97316' : '#1a1a1a', color: actif ? 'white' : '#666', fontSize: '12px', fontWeight: '600' }}>
+                  {bm}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

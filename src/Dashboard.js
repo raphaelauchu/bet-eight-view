@@ -19,6 +19,7 @@ function Dashboard({ lang = 'en' }) {
   const [afficherFormulaire, setAfficherFormulaire] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState('actifs');
+  const [betsAuto, setBetsAuto] = useState([]);
   const [montantBankroll, setMontantBankroll] = useState('');
   const [filtreGraphique, setFiltreGraphique] = useState('30d');
   const [filtrePeriode, setFiltrePeriode] = useState('1m');
@@ -38,6 +39,15 @@ function Dashboard({ lang = 'en' }) {
       const { data: dataBankroll } = await supabase.from('bankroll').select('*').eq('user_id', user.id).single();
       if (dataBankroll) { setBankrollState(dataBankroll.montant); }
       else { await supabase.from('bankroll').insert({ user_id: user.id, montant: 1000 }); setBankrollState(1000); }
+      const { data: dataBetsAuto, error: errorBetsAuto } = await supabase.from('bets_auto').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      if (!errorBetsAuto) setBetsAuto(dataBetsAuto || []);
+
+      // TODO (parsers): une fois les parsers email branchés, cette liste sera peuplée
+      // automatiquement par une Edge Function / job qui lit les courriels de confirmation
+      // (via user_email_connections), extrait les infos de pari (parser par bookmaker),
+      // et insère les lignes dans `bets_auto`. La vérification du résultat (gagné/perdu)
+      // se fera ensuite via l'API NHL en comparant `game_id` / `stat_type` / `ligne`.
+      // Voir aussi `email_parsing_logs` pour le suivi des échecs de parsing.
     } catch (err) { console.error(err); }
     setChargement(false);
   }
@@ -153,7 +163,7 @@ function Dashboard({ lang = 'en' }) {
 
 
       <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        {[{ id: 'actifs', label: `${t('bets_tab_active')} (${parisActifs.length})` }, { id: 'traites', label: `${t('bets_tab_history')} (${parisTraites.length})` }].map(tab => (
+        {[{ id: 'actifs', label: `${t('bets_tab_active')} (${parisActifs.length})` }, { id: 'traites', label: `${t('bets_tab_history')} (${parisTraites.length})` }, { id: 'auto', label: `${t('bets_tab_auto')} (${betsAuto.length})` }].map(tab => (
           <button key={tab.id} onClick={() => setOnglet(tab.id)} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: onglet === tab.id ? '#f97316' : 'transparent', color: onglet === tab.id ? 'white' : '#555', fontSize: '13px', fontWeight: onglet === tab.id ? '600' : 'normal' }}>{tab.label}</button>
         ))}
       </div>
@@ -409,6 +419,35 @@ function Dashboard({ lang = 'en' }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {onglet === 'auto' && (
+        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '24px', border: '1px solid #161616' }}>
+          <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>{t('bets_tab_auto')}</div>
+          {betsAuto.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '14px' }}>{t('bets_auto_empty')}</div>
+          ) : betsAuto.map((bet, i) => {
+            const estGagne = bet.statut === 'gagne' || bet.statut === 'won';
+            const estPerdu = bet.statut === 'perdu' || bet.statut === 'lost';
+            const couleurStatut = estGagne ? '#22c55e' : estPerdu ? '#ef4444' : '#f97316';
+            const labelStatut = estGagne ? t('bets_won') : estPerdu ? t('bets_lost') : t('bets_auto_status_pending');
+            return (
+              <div key={bet.id} style={{ borderTop: i === 0 ? 'none' : '1px solid #111', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', letterSpacing: '-0.3px' }}>
+                    {bet.joueur_nom ? `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}` : (bet.type_bet || '—')}
+                  </div>
+                  {bet.equipe && bet.adversaire && <div style={{ color: '#888', fontSize: '12px', marginBottom: '2px' }}>{bet.equipe} vs {bet.adversaire}</div>}
+                  <div style={{ color: '#444', fontSize: '12px' }}>{t('bets_auto_source')}: {bet.bookmaker || '—'} · {t('bets_odds')} {bet.cote ?? '—'} · ${bet.mise ?? '—'}</div>
+                  {bet.game_date && <div style={{ color: '#333', fontSize: '11px', marginTop: '3px' }}>{new Date(bet.game_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</div>}
+                </div>
+                <div style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: `${couleurStatut}1a`, color: couleurStatut, border: `1px solid ${couleurStatut}4d` }}>
+                  {labelStatut}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

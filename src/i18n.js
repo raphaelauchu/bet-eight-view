@@ -95,6 +95,10 @@ const translations = {
     bets_net_profit: 'Profit net',
     bets_win_rate: 'Victoires',
     bets_search_placeholder: 'Match, joueur, bookmaker...',
+    bets_tab_auto: 'Auto-importés',
+    bets_auto_empty: 'Aucun pari importé automatiquement pour l\'instant',
+    bets_auto_status_pending: 'En attente',
+    bets_auto_source: 'Source',
 
     // BankrollPage
     bank_current: 'Bankroll actuelle',
@@ -137,6 +141,17 @@ const translations = {
     profile_crop_title: 'Recadrer ta photo',
     profile_crop_sub: 'Glisse pour repositionner · Pinch pour zoomer',
     profile_crop_cancel: 'Annuler',
+    bookmakers_title: 'Mes Bookmakers',
+    bookmakers_sub: 'Connecte ton Gmail pour importer automatiquement tes paris reçus par courriel.',
+    bookmakers_gmail_status: 'Statut Gmail',
+    bookmakers_connected: 'Connecté',
+    bookmakers_disconnected: 'Déconnecté',
+    bookmakers_connect_btn: 'Connecter Gmail',
+    bookmakers_disconnect_btn: 'Déconnecter',
+    bookmakers_auto_parsing: 'Parsing automatique',
+    bookmakers_auto_parsing_sub: 'Analyse automatiquement les courriels de confirmation de paris',
+    bookmakers_select_title: 'Bookmakers à suivre',
+    bookmakers_coming_soon: 'Bientôt disponible — la connexion Gmail sera activée prochainement.',
     profile_crop_use: 'Utiliser cette photo',
 
     // PropsPage
@@ -243,6 +258,10 @@ const translations = {
     bets_net_profit: 'Net Profit',
     bets_win_rate: 'Win Rate',
     bets_search_placeholder: 'Match, player, bookmaker...',
+    bets_tab_auto: 'Auto-imported',
+    bets_auto_empty: 'No auto-imported bets yet',
+    bets_auto_status_pending: 'Pending',
+    bets_auto_source: 'Source',
 
     // BankrollPage
     bank_current: 'Current Bankroll',
@@ -286,6 +305,17 @@ const translations = {
     profile_crop_sub: 'Drag to reposition · Pinch to zoom',
     profile_crop_cancel: 'Cancel',
     profile_crop_use: 'Use this photo',
+    bookmakers_title: 'My Bookmakers',
+    bookmakers_sub: 'Connect your Gmail to automatically import bets received by email.',
+    bookmakers_gmail_status: 'Gmail Status',
+    bookmakers_connected: 'Connected',
+    bookmakers_disconnected: 'Disconnected',
+    bookmakers_connect_btn: 'Connect Gmail',
+    bookmakers_disconnect_btn: 'Disconnect',
+    bookmakers_auto_parsing: 'Automatic Parsing',
+    bookmakers_auto_parsing_sub: 'Automatically scans bet confirmation emails',
+    bookmakers_select_title: 'Bookmakers to Track',
+    bookmakers_coming_soon: 'Coming soon — Gmail connection will be enabled soon.',
 
     // PropsPage
     props_subtitle: 'Ranked by L5·L10·L20 model',
