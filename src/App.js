@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Dashboard from './Dashboard';
+import Dashboard, { titreBetAuto } from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
@@ -647,6 +647,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
   const [firstName, setFirstName] = React.useState('');
   const [bankroll, setBankroll] = React.useState(null);
   const [paris, setParis] = React.useState([]);
+  const [betsAuto, setBetsAuto] = React.useState([]);
   const [matchsSoir, setMatchsSoir] = React.useState([]);
   const [filtreGraph, setFiltreGraph] = React.useState('1m');
   const [filtreCustomDebut, setFiltreCustomDebut] = React.useState('');
@@ -665,10 +666,12 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
     if (utilisateur?.id) {
       supabase.from('profiles').select('first_name').eq('id', utilisateur.id).single()
         .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
-      supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).single()
+      supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).maybeSingle()
         .then(({ data }) => { if (data) setBankroll(data.montant); });
       supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false })
         .then(({ data }) => { if (data) setParis(data); });
+      supabase.from('bets_auto').select('*').eq('user_id', utilisateur.id).order('created_at', { ascending: false })
+        .then(({ data }) => { if (data) setBetsAuto(data); });
     }
     // Charger matchs du soir
     const today = getDateStr(new Date());
@@ -690,7 +693,17 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
   const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
   const bankrollDisplay = bankroll !== null ? bankroll.toFixed(2) : '...';
   const kellyStake = bankroll !== null ? (bankroll * 0.05).toFixed(2) : '...';
-  const recentParis = paris.slice(0, 3);
+  const recentCombines = [
+    ...paris.map(p => ({
+      key: `m-${p.id}`, titre: p.match, bookmaker: p.bookmaker, cote: p.cote,
+      statut: p.statut, profit: p.profit, mise: p.mise, date: p.date_pari,
+    })),
+    ...betsAuto.map(b => ({
+      key: `a-${b.id}`, titre: titreBetAuto(b), bookmaker: b.bookmaker, cote: b.cote,
+      statut: b.statut === 'pending' ? 'actif' : b.statut, profit: b.resultat, mise: b.mise,
+      date: b.verified_at || b.created_at,
+    })),
+  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 3);
 
   // Profit curve data
   const now = new Date();
@@ -873,16 +886,16 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_recent_bets')}</h3>
           <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>{t('home_see_all')}</span>
         </div>
-        {recentParis.length === 0 ? (
+        {recentCombines.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
             <span style={{ fontSize: '28px' }}>🏒</span>
             <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
             <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
           </div>
-        ) : recentParis.map((p, i) => (
-          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+        ) : recentCombines.map((p, i) => (
+          <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
             <div>
-              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.match}</p>
+              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.titre}</p>
               <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -1304,7 +1317,7 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   }, []);
 
   async function charger() {
-    const { data: bk } = await supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).single();
+    const { data: bk } = await supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).maybeSingle();
     if (bk) setBankroll(bk.montant);
     const { data: tx } = await supabase.from('transactions').select('*').eq('user_id', utilisateur.id).order('date_transaction', { ascending: false });
     if (tx) setTransactions(tx);
@@ -1316,7 +1329,7 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
     const { error } = await supabase.from('transactions').delete().eq('id', tx.id);
     if (!error) {
       const nouvelleBankroll = tx.type === 'deposit' ? (bankroll || 0) - tx.montant : (bankroll || 0) + tx.montant;
-      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll });
+      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll }, { onConflict: 'user_id' });
       setBankroll(nouvelleBankroll);
       charger();
     }
@@ -1331,7 +1344,7 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
     });
     if (!error) {
       const nouvelleBankroll = type === 'deposit' ? (bankroll || 0) + m : (bankroll || 0) - m;
-      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll });
+      await supabase.from('bankroll').upsert({ user_id: utilisateur.id, montant: nouvelleBankroll }, { onConflict: 'user_id' });
       setBankroll(nouvelleBankroll);
       setMontant(''); setNote(''); setShowForm(false);
       charger();

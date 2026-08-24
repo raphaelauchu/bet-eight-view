@@ -8,7 +8,7 @@ import { fichierVersJpegBase64 } from './imageUtils';
 import { BET_TYPES } from './betTypes';
 
 // Titre d'affichage d'un bet importe : joueur (prop) > equipe misee (moneyline) > type
-function titreBetAuto(bet) {
+export function titreBetAuto(bet) {
   if (bet.joueur_nom) return `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}`.trim();
   if (bet.equipe) return `${bet.equipe} vs ${bet.adversaire || '?'}`;
   return bet.type_bet || '—';
@@ -48,9 +48,14 @@ function Dashboard({ lang = 'en' }) {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: dataParis, error: errorParis } = await supabase.from('paris').select('*').eq('user_id', user.id).order('date_pari', { ascending: false });
       if (!errorParis) setParis(dataParis || []);
-      const { data: dataBankroll } = await supabase.from('bankroll').select('*').eq('user_id', user.id).single();
-      if (dataBankroll) { setBankrollState(dataBankroll.montant); }
-      else { await supabase.from('bankroll').insert({ user_id: user.id, montant: 1000 }); setBankrollState(1000); }
+      const { data: dataBankroll, error: errorBankroll } = await supabase.from('bankroll').select('*').eq('user_id', user.id).maybeSingle();
+      if (errorBankroll) { signalerErreur('chargerDonnees:bankroll', errorBankroll); }
+      else if (dataBankroll) { setBankrollState(dataBankroll.montant); }
+      else {
+        const { error: errInit } = await supabase.from('bankroll').upsert({ user_id: user.id, montant: 1000 }, { onConflict: 'user_id' });
+        if (errInit) signalerErreur('chargerDonnees:bankroll_init', errInit);
+        setBankrollState(1000);
+      }
       const { data: dataBetsAuto, error: errorBetsAuto } = await supabase.from('bets_auto').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (!errorBetsAuto) setBetsAuto(dataBetsAuto || []);
 
