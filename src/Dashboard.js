@@ -34,6 +34,12 @@ function Dashboard({ lang = 'en' }) {
   const [filtreCustomFin, setFiltreCustomFin] = useState('');
   const [filtreRecherche, setFiltreRecherche] = useState('');
   const [showFiltresAvances, setShowFiltresAvances] = useState(false);
+  const [erreurAction, setErreurAction] = useState('');
+
+  function signalerErreur(contexte, error) {
+    console.error(contexte, error);
+    setErreurAction(t('bets_action_error').replace('{erreur}', error?.message || String(error)));
+  }
 
   useEffect(() => { chargerDonnees(); }, []);
 
@@ -61,35 +67,49 @@ function Dashboard({ lang = 'en' }) {
   async function mettreAJourBankroll(nouveauMontant) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('bankroll')
+        .update({ montant: nouveauMontant, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      if (error) { signalerErreur('mettreAJourBankroll', error); return false; }
       setBankrollState(nouveauMontant);
-      await supabase.from('bankroll').update({ montant: nouveauMontant, updated_at: new Date().toISOString() }).eq('user_id', user.id);
-    } catch (err) { console.error(err); }
+      setErreurAction('');
+      return true;
+    } catch (err) { signalerErreur('mettreAJourBankroll', err); return false; }
   }
 
 
   async function mettreAJourStatut(id, statut, mise, cote) {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const profit = statut === 'gagne' ? parseFloat((mise * cote - mise).toFixed(2)) : -parseFloat(mise);
-      await supabase.from('paris').update({ statut, profit }).eq('id', id);
+      const { error } = await supabase.from('paris').update({ statut, profit }).eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('mettreAJourStatut', error); return; }
       if (statut === 'gagne') await mettreAJourBankroll(bankroll + parseFloat(mise) + parseFloat((mise * cote - mise).toFixed(2)));
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('mettreAJourStatut', err); }
   }
 
   async function remettreEnActif(id, mise, statut, profit) {
     try {
-      await supabase.from('paris').update({ statut: 'actif', profit: 0 }).eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('paris').update({ statut: 'actif', profit: 0 }).eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('remettreEnActif', error); return; }
       if (statut === 'gagne') await mettreAJourBankroll(bankroll - parseFloat(mise) - parseFloat(profit));
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('remettreEnActif', err); }
   }
 
   async function supprimerPari(id, statut, mise) {
     try {
-      await supabase.from('paris').delete().eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('paris').delete().eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('supprimerPari', error); return; }
       if (statut === 'actif') await mettreAJourBankroll(bankroll + parseFloat(mise));
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('supprimerPari', err); }
   }
 
   // Bets importes par screenshot (bets_auto) : la mise n'est jamais debitee a
@@ -97,40 +117,59 @@ function Dashboard({ lang = 'en' }) {
   // directement le resultat signe (+gain net si gagne, -mise si perdu) a la bankroll.
   async function mettreAJourStatutAuto(id, statut, mise, cote) {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const resultat = statut === 'gagne' ? parseFloat((mise * cote - mise).toFixed(2)) : -parseFloat(mise);
-      await supabase.from('bets_auto').update({ statut, resultat, verified_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.from('bets_auto')
+        .update({ statut, resultat, verified_at: new Date().toISOString() })
+        .eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('mettreAJourStatutAuto', error); return; }
       await mettreAJourBankroll(bankroll + resultat);
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('mettreAJourStatutAuto', err); }
   }
 
   async function remettreEnActifAuto(id, resultat) {
     try {
-      await supabase.from('bets_auto').update({ statut: 'pending', resultat: null, verified_at: null }).eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('bets_auto')
+        .update({ statut: 'pending', resultat: null, verified_at: null })
+        .eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('remettreEnActifAuto', error); return; }
       await mettreAJourBankroll(bankroll - parseFloat(resultat || 0));
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('remettreEnActifAuto', err); }
   }
 
   async function supprimerBetAuto(id) {
     try {
-      await supabase.from('bets_auto').delete().eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('bets_auto').delete().eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('supprimerBetAuto', error); return; }
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('supprimerBetAuto', err); }
   }
 
   async function modifierPari(id, champs) {
     try {
-      await supabase.from('paris').update(champs).eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('paris').update(champs).eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('modifierPari', error); return; }
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('modifierPari', err); }
   }
 
   async function modifierBetAuto(id, champs) {
     try {
-      await supabase.from('bets_auto').update(champs).eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('bets_auto').update(champs).eq('id', id).eq('user_id', user.id);
+      if (error) { signalerErreur('modifierBetAuto', error); return; }
+      setErreurAction('');
       chargerDonnees();
-    } catch (err) { console.error(err); }
+    } catch (err) { signalerErreur('modifierBetAuto', err); }
   }
 
   // Dispatchers utilises par la fiche detaillee (BetDetailSheet) : fonctionnent
@@ -244,6 +283,13 @@ function Dashboard({ lang = 'en' }) {
         <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('bets_title')}</h2>
         <p style={{ margin: 0, color: '#555', fontSize: '14px' }}>Track and manage your wagers</p>
       </div>
+
+      {erreurAction && (
+        <div style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <span>{erreurAction}</span>
+          <button onClick={() => setErreurAction('')} style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+        </div>
+      )}
 
 
 
@@ -399,6 +445,7 @@ function Dashboard({ lang = 'en' }) {
                       {pari.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
                     </div>
                     <button onClick={() => remettreEnActif(pari.id, pari.mise, pari.statut, pari.profit)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
+                    <button onClick={() => { if (window.confirm(t('bet_detail_confirm_delete'))) supprimerPari(pari.id, pari.statut, pari.mise); }} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
                   </div>
                 </div>
               );
@@ -421,6 +468,7 @@ function Dashboard({ lang = 'en' }) {
                     {bet.statut === 'gagne' ? t('bets_won') : t('bets_lost')}
                   </div>
                   <button onClick={() => remettreEnActifAuto(bet.id, bet.resultat)} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>{t('bets_undo')}</button>
+                  <button onClick={() => { if (window.confirm(t('bet_detail_confirm_delete'))) supprimerBetAuto(bet.id); }} style={{ padding: '5px 10px', backgroundColor: 'transparent', color: '#444', border: '1px solid #1a1a1a', borderRadius: '7px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
                 </div>
               </div>
             );
