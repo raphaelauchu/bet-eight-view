@@ -6,6 +6,7 @@ import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
 import ModelesFlux from './Modeles';
 import EmailOAuthCallback from './EmailOAuthCallback';
+import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
@@ -913,8 +914,6 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
     </div>
   );
 }
-
-const BOOKMAKERS_SUPPORTES = ['Bet99', 'Mise au jeu', 'DraftKings', 'Betway', 'Bet365', 'Sports Interaction'];
 
 function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const t = getT(lang);

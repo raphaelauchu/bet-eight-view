@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getT } from './i18n';
+import BetImportFlow from './BetImportFlow';
 
 const BET_TYPES = [
   { value: 'moneyline', label: 'Money Line' },
@@ -15,8 +16,7 @@ function Dashboard({ lang = 'en' }) {
   const t = getT(lang);
   const [paris, setParis] = useState([]);
   const [bankroll, setBankrollState] = useState(1000);
-  const [nouveauPari, setNouveauPari] = useState({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '', joueur: '', stat: 'SOG', ligne: '', overunder: 'over', handicap: '-1.5', total: '' });
-  const [afficherFormulaire, setAfficherFormulaire] = useState(false);
+  const [afficherImport, setAfficherImport] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState('actifs');
   const [betsAuto, setBetsAuto] = useState([]);
@@ -60,19 +60,6 @@ function Dashboard({ lang = 'en' }) {
     } catch (err) { console.error(err); }
   }
 
-  async function ajouterPari() {
-    if (!nouveauPari.match || !nouveauPari.mise || !nouveauPari.cote) return;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('paris').insert({ user_id: user.id, match: nouveauPari.match, mise: parseFloat(nouveauPari.mise), cote: parseFloat(nouveauPari.cote), bookmaker: nouveauPari.bookmaker, sport: nouveauPari.sport, statut: 'actif', profit: 0, date_pari: new Date().toISOString(), type_pari: nouveauPari.type_pari, selection: nouveauPari.selection });
-      if (!error) {
-        await mettreAJourBankroll(bankroll - parseFloat(nouveauPari.mise));
-        setNouveauPari({ match: '', mise: '', cote: '', bookmaker: 'Bet365', sport: 'hockey', type_pari: 'moneyline', selection: '', joueur: '', stat: 'SOG', ligne: '', overunder: 'over', handicap: '-1.5', total: '' });
-        setAfficherFormulaire(false);
-        chargerDonnees();
-      }
-    } catch (err) { console.error(err); }
-  }
 
   async function mettreAJourStatut(id, statut, mise, cote) {
     try {
@@ -169,158 +156,17 @@ function Dashboard({ lang = 'en' }) {
       </div>
 
       {onglet === 'actifs' && (
-        <button onClick={() => setAfficherFormulaire(!afficherFormulaire)} style={{ marginBottom: '16px', padding: '10px 20px', background: afficherFormulaire ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: afficherFormulaire ? '#555' : 'white', border: afficherFormulaire ? '1px solid #333' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-          {afficherFormulaire ? t('cancel_btn') : t('bets_new_btn')}
+        <button onClick={() => setAfficherImport(!afficherImport)} style={{ marginBottom: '16px', padding: '10px 20px', background: afficherImport ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: afficherImport ? '#555' : 'white', border: afficherImport ? '1px solid #333' : 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
+          {afficherImport ? t('cancel_btn') : `📷 ${t('bets_import_btn')}`}
         </button>
       )}
 
-      {afficherFormulaire && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '24px', marginBottom: '20px', border: '1px solid #1a1a1a' }}>
-          <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '20px', letterSpacing: '-0.3px' }}>{t('bets_form_title')}</div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ color: '#555', fontSize: '12px', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bets_type')}</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {BET_TYPES.map(bt => (
-                <button key={bt.value} onClick={() => setNouveauPari({ ...nouveauPari, type_pari: bt.value, selection: '', match: '' })}
-                  style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: nouveauPari.type_pari === bt.value ? '#f97316' : '#1a1a1a', color: nouveauPari.type_pari === bt.value ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
-                  {bt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {nouveauPari.type_pari === 'moneyline' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_match')}</div>
-                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-              </div>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Team to win</div>
-                <input style={inp} placeholder="e.g. Canadiens" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
-              </div>
-            </div>
-          )}
-
-          {nouveauPari.type_pari === 'spread' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_match')}</div>
-                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Team</div>
-                  <input style={inp} placeholder="e.g. Canadiens" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
-                </div>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Puck Line</div>
-                  <select style={inp} value={nouveauPari.handicap || '-1.5'} onChange={e => setNouveauPari({ ...nouveauPari, handicap: e.target.value })}>
-                    <option value="-1.5">-1.5</option>
-                    <option value="+1.5">+1.5</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {nouveauPari.type_pari === 'total' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_match')}</div>
-                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Over / Under</div>
-                  <select style={inp} value={nouveauPari.overunder || 'over'} onChange={e => setNouveauPari({ ...nouveauPari, overunder: e.target.value })}>
-                    <option value="over">Over</option>
-                    <option value="under">Under</option>
-                  </select>
-                </div>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Total Goals</div>
-                  <input style={inp} type="number" step="0.5" placeholder="5.5" value={nouveauPari.total || ''} onChange={e => setNouveauPari({ ...nouveauPari, total: e.target.value, selection: (nouveauPari.overunder || 'Over') + ' ' + e.target.value })} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {nouveauPari.type_pari === 'prop' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_match')}</div>
-                <input style={inp} placeholder="e.g. MTL vs TOR" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-              </div>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Player</div>
-                <input style={inp} placeholder="e.g. Cole Caufield" value={nouveauPari.joueur || ''} onChange={e => setNouveauPari({ ...nouveauPari, joueur: e.target.value })} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Stat</div>
-                  <select style={inp} value={nouveauPari.stat || 'SOG'} onChange={e => setNouveauPari({ ...nouveauPari, stat: e.target.value })}>
-                    {['SOG', 'Goals', 'Assists', 'Points'].map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Line</div>
-                  <input style={inp} type="number" step="0.5" placeholder="2.5" value={nouveauPari.ligne || ''} onChange={e => setNouveauPari({ ...nouveauPari, ligne: e.target.value })} />
-                </div>
-                <div>
-                  <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Over/Under</div>
-                  <select style={inp} value={nouveauPari.overunder || 'over'} onChange={e => setNouveauPari({ ...nouveauPari, overunder: e.target.value })}>
-                    <option value="over">Over</option>
-                    <option value="under">Under</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: '8px', padding: '8px 12px' }}>
-                <span style={{ color: '#f97316', fontSize: '12px', fontWeight: '600' }}>
-                  {nouveauPari.joueur || 'Player'} — {nouveauPari.overunder === 'under' ? 'Under' : 'Over'} {nouveauPari.ligne || '?'} {nouveauPari.stat || 'SOG'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {nouveauPari.type_pari === 'parlay' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '12px' }}>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Parlay Description</div>
-                <input style={inp} placeholder="e.g. MTL ML + EDM -1.5 + Over 6.5" value={nouveauPari.match} onChange={e => setNouveauPari({ ...nouveauPari, match: e.target.value })} />
-              </div>
-              <div>
-                <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_selections')}</div>
-                <input style={inp} placeholder="e.g. 3-leg parlay" value={nouveauPari.selection} onChange={e => setNouveauPari({ ...nouveauPari, selection: e.target.value })} />
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-            <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_stake')}</div>
-              <input style={inp} type="number" placeholder="50" value={nouveauPari.mise} onChange={e => setNouveauPari({ ...nouveauPari, mise: e.target.value })} />
-            </div>
-            <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bets_odds')}</div>
-              <input style={inp} type="number" step="0.01" placeholder="1.85" value={nouveauPari.cote} onChange={e => setNouveauPari({ ...nouveauPari, cote: e.target.value })} />
-            </div>
-            <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>Bookmaker</div>
-              <select style={inp} value={nouveauPari.bookmaker} onChange={e => setNouveauPari({ ...nouveauPari, bookmaker: e.target.value })}>
-                {['Bet365', 'Bet99', 'Betway', 'Mise-o-jeu', 'DraftKings'].map(b => <option key={b}>{b}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {nouveauPari.mise && nouveauPari.cote && (
-            <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#22c55e' }}>
-              {t('bets_potential')}: +${(parseFloat(nouveauPari.mise) * parseFloat(nouveauPari.cote) - parseFloat(nouveauPari.mise)).toFixed(2)}
-            </div>
-          )}
-          <button onClick={ajouterPari} style={{ padding: '11px 24px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>{t('bets_confirm')}</button>
-        </div>
+      {afficherImport && (
+        <BetImportFlow
+          lang={lang}
+          onClose={() => setAfficherImport(false)}
+          onImported={() => { setAfficherImport(false); setOnglet('auto'); chargerDonnees(); }}
+        />
       )}
 
       {onglet === 'actifs' && (
