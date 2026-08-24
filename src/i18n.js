@@ -152,6 +152,11 @@ const translations = {
     bookmakers_auto_parsing_sub: 'Analyse automatiquement les courriels de confirmation de paris',
     bookmakers_select_title: 'Bookmakers à suivre',
     bookmakers_coming_soon: 'Bientôt disponible — la connexion Gmail sera activée prochainement.',
+    gmail_callback_loading: 'Connexion à Gmail en cours...',
+    gmail_callback_success: '✅ Gmail connecté avec succès! Redirection...',
+    gmail_callback_denied: 'Connexion annulée ou refusée.',
+    gmail_callback_invalid: 'Requête invalide ou expirée. Réessaie depuis ton profil.',
+    gmail_callback_no_session: 'Session expirée. Reconnecte-toi puis réessaie.',
     profile_crop_use: 'Utiliser cette photo',
 
     // PropsPage
@@ -316,6 +321,11 @@ const translations = {
     bookmakers_auto_parsing_sub: 'Automatically scans bet confirmation emails',
     bookmakers_select_title: 'Bookmakers to Track',
     bookmakers_coming_soon: 'Coming soon — Gmail connection will be enabled soon.',
+    gmail_callback_loading: 'Connecting to Gmail...',
+    gmail_callback_success: '✅ Gmail connected successfully! Redirecting...',
+    gmail_callback_denied: 'Connection cancelled or denied.',
+    gmail_callback_invalid: 'Invalid or expired request. Try again from your profile.',
+    gmail_callback_no_session: 'Session expired. Sign in again and retry.',
 
     // PropsPage
     props_subtitle: 'Ranked by L5·L10·L20 model',

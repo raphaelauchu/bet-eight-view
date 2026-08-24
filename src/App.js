@@ -5,6 +5,7 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
 import ModelesFlux from './Modeles';
+import GmailCallback from './GmailCallback';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
@@ -951,18 +952,22 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
     } catch { setEmailConnection(null); }
   }
 
-  async function connecterGmail() {
-    // TODO: rediriger vers le flow OAuth Google (scope gmail.readonly),
-    // puis stocker gmail_token / gmail_refresh_token via upsert ci-dessous
-    // une fois le callback OAuth reçu.
-    // await supabase.from('user_email_connections').upsert({
-    //   user_id: utilisateur.id,
-    //   gmail_token: <token>,
-    //   gmail_refresh_token: <refresh_token>,
-    //   actif: true,
-    // });
-    // chargerConnexionEmail();
-    alert(t('bookmakers_coming_soon'));
+  function connecterGmail() {
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    if (!clientId) { alert(t('bookmakers_coming_soon')); return; }
+    const redirectUri = `${window.location.origin}/auth/gmail/callback`;
+    const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('gmail_oauth_state', state);
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      access_type: 'offline',
+      prompt: 'consent',
+      state,
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
   async function deconnecterGmail() {
@@ -1212,7 +1217,7 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
               <span style={{ color: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '600' }}>
-                {emailConnection?.gmail_token ? t('bookmakers_connected') : t('bookmakers_disconnected')}
+                {emailConnection?.gmail_token ? `✅ ${t('bookmakers_connected')}` : t('bookmakers_disconnected')}
               </span>
             </div>
           </div>
@@ -1578,7 +1583,11 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
 }
 
 function App() {
-  const [page, setPage] = useState(window.location.search.includes('admin=betrics2026') ? 'admin' : 'home');
+  const [page, setPage] = useState(() => {
+    if (window.location.search.includes('admin=betrics2026')) return 'admin';
+    if (new URLSearchParams(window.location.search).get('page') === 'profile') return 'profile';
+    return 'home';
+  });
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [utilisateur, setUtilisateur] = useState(null);
   const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
@@ -1603,6 +1612,10 @@ function App() {
     setPage('home');
   }
  
+  if (window.location.pathname === '/auth/gmail/callback') {
+    return <GmailCallback lang={lang} />;
+  }
+
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
