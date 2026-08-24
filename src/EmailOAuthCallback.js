@@ -2,8 +2,14 @@ import React from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
-function GmailCallback({ lang = 'en' }) {
+const PROVIDER_CONFIG = {
+  gmail: { functionName: 'gmail-oauth', path: '/auth/gmail/callback', stateKey: 'gmail_oauth_state', label: 'Gmail' },
+  outlook: { functionName: 'outlook-oauth', path: '/auth/outlook/callback', stateKey: 'outlook_oauth_state', label: 'Outlook' },
+};
+
+function EmailOAuthCallback({ provider, lang = 'en' }) {
   const t = getT(lang);
+  const config = PROVIDER_CONFIG[provider];
   const [statut, setStatut] = React.useState('loading'); // loading, success, error
   const [erreur, setErreur] = React.useState('');
 
@@ -13,19 +19,19 @@ function GmailCallback({ lang = 'en' }) {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
-    const erreurGoogle = params.get('error');
-    const stateAttendu = sessionStorage.getItem('gmail_oauth_state');
-    sessionStorage.removeItem('gmail_oauth_state');
+    const erreurProvider = params.get('error');
+    const stateAttendu = sessionStorage.getItem(config.stateKey);
+    sessionStorage.removeItem(config.stateKey);
 
-    if (erreurGoogle) { setStatut('error'); setErreur(t('gmail_callback_denied')); return; }
-    if (!code || !state || state !== stateAttendu) { setStatut('error'); setErreur(t('gmail_callback_invalid')); return; }
+    if (erreurProvider) { setStatut('error'); setErreur(t('email_callback_denied')); return; }
+    if (!code || !state || state !== stateAttendu) { setStatut('error'); setErreur(t('email_callback_invalid')); return; }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setStatut('error'); setErreur(t('gmail_callback_no_session')); return; }
+      if (!session) { setStatut('error'); setErreur(t('email_callback_no_session')); return; }
 
-      const { data, error } = await supabase.functions.invoke('gmail-oauth', {
-        body: { code, redirect_uri: `${window.location.origin}/auth/gmail/callback` },
+      const { data, error } = await supabase.functions.invoke(config.functionName, {
+        body: { code, redirect_uri: `${window.location.origin}${config.path}` },
       });
 
       if (error || data?.error) { setStatut('error'); setErreur(data?.error || error.message); return; }
@@ -43,13 +49,13 @@ function GmailCallback({ lang = 'en' }) {
       {statut === 'loading' && (
         <>
           <div style={{ fontSize: '32px', marginBottom: '16px' }}>⟳</div>
-          <p style={{ color: '#888' }}>{t('gmail_callback_loading')}</p>
+          <p style={{ color: '#888' }}>{t('email_callback_loading').replace('{provider}', config.label)}</p>
         </>
       )}
       {statut === 'success' && (
         <>
           <div style={{ fontSize: '32px', marginBottom: '16px', color: '#22c55e' }}>✅</div>
-          <p style={{ color: '#22c55e', fontWeight: '600' }}>{t('gmail_callback_success')}</p>
+          <p style={{ color: '#22c55e', fontWeight: '600' }}>{t('email_callback_success').replace('{provider}', config.label)}</p>
         </>
       )}
       {statut === 'error' && (
@@ -66,4 +72,4 @@ function GmailCallback({ lang = 'en' }) {
   );
 }
 
-export default GmailCallback;
+export default EmailOAuthCallback;

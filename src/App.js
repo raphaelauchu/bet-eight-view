@@ -5,7 +5,7 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
 import ModelesFlux from './Modeles';
-import GmailCallback from './GmailCallback';
+import EmailOAuthCallback from './EmailOAuthCallback';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
@@ -933,8 +933,11 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const [completedCrop, setCompletedCrop] = React.useState(null);
   const imgRef = React.useRef(null);
   const fileInputRef = React.useRef(null);
-  const [emailConnection, setEmailConnection] = React.useState(null);
+  const [emailConnections, setEmailConnections] = React.useState([]);
   const [savingBookmakers, setSavingBookmakers] = React.useState(false);
+  const connexionGmail = emailConnections.find(c => c.provider === 'gmail') || null;
+  const connexionOutlook = emailConnections.find(c => c.provider === 'outlook') || null;
+  const connexionPrincipale = connexionGmail || connexionOutlook || null;
 
   React.useEffect(() => { chargerProfil(); chargerConnexionEmail(); }, []);
 
@@ -947,63 +950,73 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
 
   async function chargerConnexionEmail() {
     try {
-      const { data } = await supabase.from('user_email_connections').select('*').eq('user_id', utilisateur.id).single();
-      setEmailConnection(data || null);
-    } catch { setEmailConnection(null); }
+      const { data } = await supabase.from('user_email_connections').select('*').eq('user_id', utilisateur.id);
+      setEmailConnections(data || []);
+    } catch { setEmailConnections([]); }
   }
 
-  function connecterGmail() {
-    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  function demarrerConnexionOAuth({ provider, clientId, authUrl, scope, extraParams = {} }) {
     if (!clientId) { alert(t('bookmakers_coming_soon')); return; }
-    const redirectUri = `${window.location.origin}/auth/gmail/callback`;
+    const redirectUri = `${window.location.origin}/auth/${provider}/callback`;
     const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    sessionStorage.setItem('gmail_oauth_state', state);
+    sessionStorage.setItem(`${provider}_oauth_state`, state);
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: 'code',
-      scope: 'https://www.googleapis.com/auth/gmail.readonly',
-      access_type: 'offline',
-      prompt: 'consent',
+      scope,
       state,
+      ...extraParams,
     });
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    window.location.href = `${authUrl}?${params.toString()}`;
   }
 
-  async function deconnecterGmail() {
+  function connecterGmail() {
+    demarrerConnexionOAuth({
+      provider: 'gmail',
+      clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      extraParams: { access_type: 'offline', prompt: 'consent' },
+    });
+  }
+
+  function connecterOutlook() {
+    demarrerConnexionOAuth({
+      provider: 'outlook',
+      clientId: process.env.REACT_APP_OUTLOOK_CLIENT_ID,
+      authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+      scope: 'Mail.Read offline_access',
+      extraParams: { response_mode: 'query' },
+    });
+  }
+
+  async function deconnecterProvider(provider) {
     try {
-      await supabase.from('user_email_connections').update({ gmail_token: null, gmail_refresh_token: null, actif: false }).eq('user_id', utilisateur.id);
+      await supabase.from('user_email_connections').update({ access_token: null, refresh_token: null, actif: false }).eq('user_id', utilisateur.id).eq('provider', provider);
       chargerConnexionEmail();
     } catch {}
   }
 
   async function toggleParsingActif() {
-    const nouveauStatut = !(emailConnection?.actif);
+    if (emailConnections.length === 0) return;
+    const nouveauStatut = !(connexionPrincipale?.actif);
     setSavingBookmakers(true);
     try {
-      if (emailConnection?.id) {
-        await supabase.from('user_email_connections').update({ actif: nouveauStatut }).eq('id', emailConnection.id);
-        setEmailConnection({ ...emailConnection, actif: nouveauStatut });
-      } else {
-        const { data } = await supabase.from('user_email_connections').insert({ user_id: utilisateur.id, actif: nouveauStatut }).select().single();
-        setEmailConnection(data);
-      }
+      await supabase.from('user_email_connections').update({ actif: nouveauStatut }).eq('user_id', utilisateur.id);
+      setEmailConnections(emailConnections.map(c => ({ ...c, actif: nouveauStatut })));
     } catch {}
     setSavingBookmakers(false);
   }
 
   async function toggleBookmaker(nom) {
-    const actuels = emailConnection?.bookmakers || [];
+    if (emailConnections.length === 0) return;
+    const actuels = connexionPrincipale?.bookmakers || [];
     const maj = actuels.includes(nom) ? actuels.filter(b => b !== nom) : [...actuels, nom];
     setSavingBookmakers(true);
     try {
-      if (emailConnection?.id) {
-        await supabase.from('user_email_connections').update({ bookmakers: maj }).eq('id', emailConnection.id);
-        setEmailConnection({ ...emailConnection, bookmakers: maj });
-      } else {
-        const { data } = await supabase.from('user_email_connections').insert({ user_id: utilisateur.id, bookmakers: maj }).select().single();
-        setEmailConnection(data);
-      }
+      await supabase.from('user_email_connections').update({ bookmakers: maj }).eq('user_id', utilisateur.id);
+      setEmailConnections(emailConnections.map(c => ({ ...c, bookmakers: maj })));
     } catch {}
     setSavingBookmakers(false);
   }
@@ -1206,49 +1219,54 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
         </div>
       </div>
 
-      {/* Mes Bookmakers — connexion Gmail + parsing automatique des paris */}
+      {/* Mes Bookmakers — connexion Gmail/Outlook + parsing automatique des paris */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
         <p style={{ margin: '0 0 4px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bookmakers_title')}</p>
         <p style={{ margin: '0 0 16px', color: '#444', fontSize: '12px', lineHeight: '1.5' }}>{t('bookmakers_sub')}</p>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div>
-            <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>{t('bookmakers_gmail_status')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
-              <span style={{ color: emailConnection?.gmail_token ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '600' }}>
-                {emailConnection?.gmail_token ? `✅ ${t('bookmakers_connected')}` : t('bookmakers_disconnected')}
-              </span>
+        {[
+          { provider: 'gmail', connexion: connexionGmail, statusLabel: t('bookmakers_gmail_status'), connecter: connecterGmail, connectLabel: t('bookmakers_connect_btn') },
+          { provider: 'outlook', connexion: connexionOutlook, statusLabel: t('bookmakers_outlook_status'), connecter: connecterOutlook, connectLabel: t('bookmakers_connect_outlook_btn') },
+        ].map(({ provider, connexion, statusLabel, connecter, connectLabel }) => (
+          <div key={provider} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div>
+              <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>{statusLabel}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: connexion?.access_token ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
+                <span style={{ color: connexion?.access_token ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '600' }}>
+                  {connexion?.access_token ? `✅ ${t('bookmakers_connected')}` : t('bookmakers_disconnected')}
+                </span>
+              </div>
             </div>
+            {connexion?.access_token ? (
+              <button onClick={() => deconnecterProvider(provider)} style={{ padding: '9px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                {t('bookmakers_disconnect_btn')}
+              </button>
+            ) : (
+              <button onClick={connecter} style={{ padding: '9px 16px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                {connectLabel}
+              </button>
+            )}
           </div>
-          {emailConnection?.gmail_token ? (
-            <button onClick={deconnecterGmail} style={{ padding: '9px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-              {t('bookmakers_disconnect_btn')}
-            </button>
-          ) : (
-            <button onClick={connecterGmail} style={{ padding: '9px 16px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-              {t('bookmakers_connect_btn')}
-            </button>
-          )}
-        </div>
+        ))}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #161616', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #161616', marginBottom: '14px', opacity: emailConnections.length === 0 ? 0.4 : 1 }}>
           <div>
             <div style={{ color: 'white', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>{t('bookmakers_auto_parsing')}</div>
             <div style={{ color: '#444', fontSize: '11px' }}>{t('bookmakers_auto_parsing_sub')}</div>
           </div>
-          <div onClick={toggleParsingActif} style={{ width: '42px', height: '24px', borderRadius: '12px', backgroundColor: emailConnection?.actif ? '#f97316' : '#222', cursor: 'pointer', position: 'relative', transition: 'background-color 0.2s', flexShrink: 0 }}>
-            <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', top: '3px', left: emailConnection?.actif ? '21px' : '3px', transition: 'left 0.2s' }} />
+          <div onClick={toggleParsingActif} style={{ width: '42px', height: '24px', borderRadius: '12px', backgroundColor: connexionPrincipale?.actif ? '#f97316' : '#222', cursor: emailConnections.length === 0 ? 'default' : 'pointer', position: 'relative', transition: 'background-color 0.2s', flexShrink: 0 }}>
+            <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', top: '3px', left: connexionPrincipale?.actif ? '21px' : '3px', transition: 'left 0.2s' }} />
           </div>
         </div>
 
-        <div>
+        <div style={{ opacity: emailConnections.length === 0 ? 0.4 : 1 }}>
           <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>{t('bookmakers_select_title')}</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {BOOKMAKERS_SUPPORTES.map(bm => {
-              const actif = (emailConnection?.bookmakers || []).includes(bm);
+              const actif = (connexionPrincipale?.bookmakers || []).includes(bm);
               return (
-                <button key={bm} onClick={() => toggleBookmaker(bm)} disabled={savingBookmakers}
+                <button key={bm} onClick={() => toggleBookmaker(bm)} disabled={savingBookmakers || emailConnections.length === 0}
                   style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: actif ? '#f97316' : '#1a1a1a', color: actif ? 'white' : '#666', fontSize: '12px', fontWeight: '600' }}>
                   {bm}
                 </button>
@@ -1613,7 +1631,10 @@ function App() {
   }
  
   if (window.location.pathname === '/auth/gmail/callback') {
-    return <GmailCallback lang={lang} />;
+    return <EmailOAuthCallback provider="gmail" lang={lang} />;
+  }
+  if (window.location.pathname === '/auth/outlook/callback') {
+    return <EmailOAuthCallback provider="outlook" lang={lang} />;
   }
 
   if (showAuth && !utilisateur) {
