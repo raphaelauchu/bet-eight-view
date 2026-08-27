@@ -365,109 +365,120 @@ function formatCote(prix) {
   return `${prix}`;
 }
 
-// Affiche les cotes du match format "sportsbook" : case visiteur (Moneyline + Spread/Puck line),
-// case centrale Total (Over/Under), case local (Spread/Puck line + Moneyline). Base sur les memes
-// donnees que getCotesHockey/trouverCotesPourMatch/extraireCotesMatch ; ne rend rien si le match
-// est deja joue ou si aucune cote n'est disponible.
-function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }) {
-  if (dejaJoue) return null;
-  if (!donnees) return null;
+// Carte "sportsbook" du matchup : titre du match centre, date en italique, puis soit un message
+// discret si le match est deja joue, soit trois cases (visiteur / total / local) avec Moneyline,
+// Puck line et Total O/U. Base sur les memes donnees que getCotesHockey/trouverCotesPourMatch/
+// extraireCotesMatch ; affiche un message discret si aucune cote n'est disponible pour le match.
+function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dateMatch, dejaJoue }) {
   const trouverParEquipe = (outcomes, nomEquipe) => outcomes?.find(o => {
     const n = (o.name || '').toLowerCase();
     const cible = nomEquipe.toLowerCase();
     return n.includes(cible) || cible.includes(n);
   });
-  const ml1 = trouverParEquipe(donnees.moneyline, nom1);
-  const ml2 = trouverParEquipe(donnees.moneyline, nom2);
-  const sp1 = trouverParEquipe(donnees.spread, nom1);
-  const sp2 = trouverParEquipe(donnees.spread, nom2);
-  const over = donnees.total?.find(o => o.name === 'Over');
-  const under = donnees.total?.find(o => o.name === 'Under');
-
-  if (!ml1 && !ml2 && !sp1 && !sp2 && !over && !under) return null;
+  const ml1 = trouverParEquipe(donnees?.moneyline, nom1);
+  const ml2 = trouverParEquipe(donnees?.moneyline, nom2);
+  const sp1 = trouverParEquipe(donnees?.spread, nom1);
+  const sp2 = trouverParEquipe(donnees?.spread, nom2);
+  const over = donnees?.total?.find(o => o.name === 'Over');
+  const under = donnees?.total?.find(o => o.name === 'Under');
+  const aDesCotes = !!(ml1 || ml2 || sp1 || sp2 || over || under);
 
   const formatSpread = s => s ? `${s.point > 0 ? '+' : ''}${s.point} (${formatCote(s.price)})` : '-';
 
   return (
-    <div style={{ marginBottom: '18px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{abbrev1}</div>
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
+    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
+      <div style={{ textAlign: 'center', fontSize: '19px', fontWeight: '900', color: 'white', letterSpacing: '0.3px' }}>{nom1} vs {nom2}</div>
+      <div style={{ textAlign: 'center', fontSize: '11px', color: '#666', fontStyle: 'italic', textTransform: 'capitalize', marginBottom: '16px' }}>{dateMatch}</div>
+
+      {dejaJoue ? (
+        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
+      ) : !aDesCotes ? (
+        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
+            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+              <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '4px' }} onError={e => e.target.style.display = 'none'} />
+              <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>{abbrev1}</div>
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
+              <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>O/U</div>
+              <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                <div>
+                  <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus</div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(over?.price)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins</div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+              <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '4px' }} onError={e => e.target.style.display = 'none'} />
+              <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>{abbrev2}</div>
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
-          </div>
-        </div>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus de {over?.point ?? '-'}</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(over?.price)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins de {under?.point ?? '-'}</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
-          </div>
-        </div>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{abbrev2}</div>
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
-          </div>
-        </div>
-      </div>
-      {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '6px' }}>Cotes : {donnees.bookmaker}</div>}
+          {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '10px' }}>Cotes : {donnees.bookmaker}</div>}
+        </>
+      )}
     </div>
   );
 }
 
-// Categories de props joueurs (memes stats/lignes candidates que l'ancien onglet Props :
-// voir chargerProps dans PageStatsJoueurs et PropsPage dans App.js), plus HIT/BLK puisque
-// getGameLogJoueur expose deja hits/blockedShots par match.
-const CATEGORIES_PROPS = [
-  { cle: 'SOG', label: 'Tirs', champ: 'shots', lignes: [1.5, 2.5, 3.5], couleur: '#3b82f6' },
-  { cle: 'GOAL', label: 'Buts', champ: 'goals', lignes: [0.5], couleur: '#22c55e' },
-  { cle: 'AST', label: 'Passes', champ: 'assists', lignes: [0.5], couleur: '#a78bfa' },
-  { cle: 'PTS', label: 'Points', champ: 'points', lignes: [0.5, 1.5], couleur: '#f97316' },
-  { cle: 'HIT', label: 'Mises en échec', champ: 'hits', lignes: [1.5, 2.5], couleur: '#ef4444' },
-  { cle: 'BLK', label: 'Blocs', champ: 'blockedShots', lignes: [0.5, 1.5], couleur: '#14b8a6' },
+// Categories de "lignes maison" : uniquement les stats pour lesquelles getGameLogJoueur (nhlApi.js)
+// expose de vraies valeurs par match dans la reponse NHL (goals/assists/points/shots). hits et
+// blockedShots ne sont PAS retournes par cet endpoint (toujours 0) : ces categories sont donc
+// volontairement absentes, faute de donnees historiques par match fiables.
+const CATEGORIES_LIGNES_MAISON = [
+  { cle: 'SOG', label: 'Tirs', champ: 'shots', couleur: '#3b82f6' },
+  { cle: 'GOAL', label: 'Buts', champ: 'goals', couleur: '#22c55e' },
+  { cle: 'AST', label: 'Passes', champ: 'assists', couleur: '#a78bfa' },
+  { cle: 'PTS', label: 'Points', champ: 'points', couleur: '#f97316' },
 ];
 
-// A partir d'un game log normalise (getGameLogJoueur), trouve parmi les lignes candidates celle dont
-// le taux d'atteinte L5/L10 est le plus eleve : reprend la meme ponderation (hit-rate moyen) que le
-// calcul de probabilite de l'ancien onglet Props, sans le seuil de filtrage (on affiche tous les joueurs).
-function calcLignesProp(gameLog, champ, lignes) {
+// Ligne "maison" calculee a partir des vraies stats du joueur (pas une cote de bookmaker) : moyenne
+// du champ sur les L10 derniers matchs, arrondie a la demi-unite la plus proche, puis taux d'atteinte
+// (strictement superieur a la ligne) sur L5 et L10. Necessite au moins 5 matchs dans le game log.
+function calcLigneMaison(gameLog, champ) {
   if (!gameLog || gameLog.length < 5) return null;
-  const l5 = gameLog.slice(0, 5);
   const l10 = gameLog.slice(0, Math.min(10, gameLog.length));
-  const tauxAtteinte = (matchs, ligne) => matchs.filter(g => (g[champ] || 0) > ligne).length / matchs.length;
-  let meilleure = null;
-  for (const ligne of lignes) {
-    const r5 = tauxAtteinte(l5, ligne);
-    const r10 = tauxAtteinte(l10, ligne);
-    const score = r5 * 0.5 + r10 * 0.5;
-    if (!meilleure || score > meilleure.score) meilleure = { ligne, r5, r10, score };
-  }
-  return meilleure;
+  const l5 = gameLog.slice(0, 5);
+  const moyenneL10 = l10.reduce((s, g) => s + (g[champ] || 0), 0) / l10.length;
+  const ligne = Math.round(moyenneL10 * 2) / 2;
+  const tauxAtteinte = matchs => matchs.filter(g => (g[champ] || 0) > ligne).length / matchs.length;
+  const r5 = tauxAtteinte(l5);
+  const r10 = tauxAtteinte(l10);
+  return { ligne, moyenneL10, r5, r10, score: (r5 + r10) / 2 };
 }
 
-function couleurTaux(taux) {
-  if (taux >= 0.7) return '#22c55e';
-  if (taux >= 0.5) return '#f97316';
+function couleurTendance(taux) {
+  if (taux >= 0.6) return '#22c55e';
+  if (taux <= 0.4) return '#ef4444';
   return '#888';
 }
 
-// Ligne joueur format "props sportsbook" : ligne actuelle + taux d'atteinte L5/L10.
-function CartePropJoueur({ joueur, prop, onSelect, isMobile }) {
+// Ligne joueur "ligne maison" : moyenne calculee (L10) + taux d'atteinte L5/L10. Libelle explicite
+// pour ne jamais laisser croire a une vraie cote de bookmaker.
+function CarteLigneMaison({ joueur, ligneMaison, onSelect, isMobile }) {
   return (
     <div
       onClick={() => onSelect(joueur)}
@@ -478,15 +489,15 @@ function CartePropJoueur({ joueur, prop, onSelect, isMobile }) {
       <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
-        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero} · Plus de {prop.ligne}</div>
+        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero} · Ligne maison {ligneMaison.ligne} <span style={{ color: '#444' }}>(moyenne calculée {ligneMaison.moyenneL10.toFixed(1)})</span></div>
       </div>
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTaux(prop.r5) }}>{Math.round(prop.r5 * 100)}%</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTendance(ligneMaison.r5) }}>{Math.round(ligneMaison.r5 * 100)}%</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L5</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTaux(prop.r10) }}>{Math.round(prop.r10 * 100)}%</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTendance(ligneMaison.r10) }}>{Math.round(ligneMaison.r10 * 100)}%</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
         </div>
       </div>
@@ -494,11 +505,10 @@ function CartePropJoueur({ joueur, prop, onSelect, isMobile }) {
   );
 }
 
-// Filtres de props joueurs (SOG/Buts/Passes/Points/Mises en échec/Blocs), en deux colonnes (une par
-// equipe). Reutilise la logique de game log + taux d'atteinte deja utilisee par l'ancien onglet Props
-// (chargerProps de PageStatsJoueurs / PropsPage), calculee ici par categorie et mise en cache par
-// categorie pour eviter de refetcher a chaque changement d'onglet.
-function SectionPropsFiltres({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, onSelect, isMobile }) {
+// Lignes calculees maison (Tirs/Buts/Passes/Points), en deux colonnes (une par equipe). A partir du
+// vrai game log de chaque joueur (getGameLogJoueur), calcule une ligne de reference par categorie et
+// la met en cache par categorie pour eviter de refetcher a chaque changement d'onglet.
+function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, onSelect, isMobile }) {
   const [categorieActive, setCategorieActive] = useState('SOG');
   const [cache, setCache] = useState({});
   const [enChargement, setEnChargement] = useState({});
@@ -509,7 +519,7 @@ function SectionPropsFiltres({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
   useEffect(() => {
     if (cache[categorieActive] || enChargement[categorieActive]) return;
     if (patineurs1.length === 0 && patineurs2.length === 0) return;
-    const categorie = CATEGORIES_PROPS.find(c => c.cle === categorieActive);
+    const categorie = CATEGORIES_LIGNES_MAISON.find(c => c.cle === categorieActive);
     setEnChargement(prev => ({ ...prev, [categorieActive]: true }));
     (async () => {
       const tousJoueurs = [...patineurs1, ...patineurs2];
@@ -519,11 +529,11 @@ function SectionPropsFiltres({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
         const batchRes = await Promise.all(batch.map(async (j) => {
           try {
             const gameLog = await getGameLogJoueur(j.id, SAISON_REG_2526.gameType, SAISON_REG_2526.seasonId);
-            const prop = calcLignesProp(gameLog, categorie.champ, categorie.lignes);
-            return prop ? { id: j.id, prop } : null;
+            const ligneMaison = calcLigneMaison(gameLog, categorie.champ);
+            return ligneMaison ? { id: j.id, ligneMaison } : null;
           } catch { return null; }
         }));
-        batchRes.filter(Boolean).forEach(({ id, prop }) => { resultats[id] = prop; });
+        batchRes.filter(Boolean).forEach(({ id, ligneMaison }) => { resultats[id] = ligneMaison; });
       }
       setCache(prev => ({ ...prev, [categorieActive]: resultats }));
       setEnChargement(prev => ({ ...prev, [categorieActive]: false }));
@@ -531,31 +541,32 @@ function SectionPropsFiltres({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorieActive, roster1, roster2]);
 
-  const propsCategorie = cache[categorieActive] || null;
+  const lignesCategorie = cache[categorieActive] || null;
   const chargementCategorie = !!enChargement[categorieActive];
 
   const colonneEquipe = (patineurs, abbrev, nom) => {
-    const avecProp = propsCategorie ? patineurs.filter(j => propsCategorie[j.id]).sort((a, b) => propsCategorie[b.id].score - propsCategorie[a.id].score) : [];
+    const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => lignesCategorie[b.id].score - lignesCategorie[a.id].score) : [];
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
           <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: 'white' }}>{nom}</h3>
         </div>
-        {avecProp.length === 0 ? (
+        {avecLigne.length === 0 ? (
           <p style={{ color: '#555', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>Aucune donnée disponible.</p>
-        ) : avecProp.map(j => <CartePropJoueur key={j.id} joueur={j} prop={propsCategorie[j.id]} onSelect={onSelect} isMobile={isMobile} />)}
+        ) : avecLigne.map(j => <CarteLigneMaison key={j.id} joueur={j} ligneMaison={lignesCategorie[j.id]} onSelect={onSelect} isMobile={isMobile} />)}
       </div>
     );
   };
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {CATEGORIES_PROPS.map(cat => (
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {CATEGORIES_LIGNES_MAISON.map(cat => (
           <button key={cat.cle} onClick={() => setCategorieActive(cat.cle)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieActive === cat.cle ? cat.couleur : '#0d0d0d', color: categorieActive === cat.cle ? 'white' : '#666', fontSize: '11px', fontWeight: '700' }}>{cat.label}</button>
         ))}
       </div>
+      <div style={{ fontSize: '10px', color: '#555', marginBottom: '14px' }}>Lignes maison calculées à partir de la moyenne des 10 derniers matchs (données réelles, pas des cotes de bookmaker).</div>
       {chargementCategorie ? (
         <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Calcul des tendances...</p>
       ) : (
@@ -664,7 +675,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
     <div>
       <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '18px' }}>← Retour</button>
 
-      <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dejaJoue={dejaJoue} />
+      <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dateMatch={dateMatch} dejaJoue={dejaJoue} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '16px' : '40px', marginBottom: '6px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
@@ -695,7 +706,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
       {chargement ? (
         <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
       ) : (
-        <SectionPropsFiltres roster1={roster1} roster2={roster2} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} onSelect={onSelectJoueur} isMobile={isMobile} />
+        <SectionLignesMaison roster1={roster1} roster2={roster2} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} onSelect={onSelectJoueur} isMobile={isMobile} />
       )}
     </div>
   );
