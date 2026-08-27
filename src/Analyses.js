@@ -393,7 +393,7 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dateMatch,
       {dejaJoue ? (
         <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
       ) : !aDesCotes ? (
-        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match</div>
+        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match <span style={{ color: '#444' }}>(souvent le cas hors saison régulière ou en match préparatoire)</span></div>
       ) : (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
@@ -456,29 +456,57 @@ const CATEGORIES_LIGNES_MAISON = [
 ];
 
 // Ligne "maison" calculee a partir des vraies stats du joueur (pas une cote de bookmaker) : moyenne
-// du champ sur les L10 derniers matchs, arrondie a la demi-unite la plus proche, puis taux d'atteinte
-// (strictement superieur a la ligne) sur L5 et L10. Necessite au moins 5 matchs dans le game log.
+// du champ sur les L10 derniers matchs, arrondie a la demi-unite la plus proche (= le "edge" affiche
+// en badge), plus les moyennes reelles L5/L10/Szn (Szn = tout le game log recu, deja limite a la
+// saison en cours par l'API) et un mini historique pour la sparkline. Necessite au moins 5 matchs.
 function calcLigneMaison(gameLog, champ) {
   if (!gameLog || gameLog.length < 5) return null;
   const l10 = gameLog.slice(0, Math.min(10, gameLog.length));
   const l5 = gameLog.slice(0, 5);
-  const moyenneL10 = l10.reduce((s, g) => s + (g[champ] || 0), 0) / l10.length;
+  const moyenne = matchs => matchs.reduce((s, g) => s + (g[champ] || 0), 0) / matchs.length;
+  const moyenneL5 = moyenne(l5);
+  const moyenneL10 = moyenne(l10);
+  const moyenneSzn = moyenne(gameLog);
   const ligne = Math.round(moyenneL10 * 2) / 2;
   const tauxAtteinte = matchs => matchs.filter(g => (g[champ] || 0) > ligne).length / matchs.length;
   const r5 = tauxAtteinte(l5);
   const r10 = tauxAtteinte(l10);
-  return { ligne, moyenneL10, r5, r10, score: (r5 + r10) / 2 };
+  const historique = l10.map(g => g[champ] || 0).reverse();
+  return { ligne, moyenneL5, moyenneL10, moyenneSzn, r5, r10, score: (r5 + r10) / 2, historique };
 }
 
-function couleurTendance(taux) {
-  if (taux >= 0.6) return '#22c55e';
-  if (taux <= 0.4) return '#ef4444';
+// Compare une moyenne de periode a sa reference (moyenne saison) pour en deduire une tendance :
+// vert si nettement au-dessus (>=15%), rouge si nettement en-dessous (<=15%), gris sinon. Meme
+// logique de seuil "relatif" que couleurTendance (taux d'atteinte) ailleurs dans l'app.
+function couleurMoyenne(valeur, reference) {
+  if (!reference) return '#888';
+  const ratio = valeur / reference;
+  if (ratio >= 1.15) return '#22c55e';
+  if (ratio <= 0.85) return '#ef4444';
   return '#888';
 }
 
-// Ligne joueur "ligne maison" : moyenne calculee (L10) + taux d'atteinte L5/L10. Libelle explicite
+// Mini sparkline (derniers matchs de la periode, du plus ancien au plus recent) : pas d'axes ni de
+// legende, juste la tendance visuelle, dans le meme esprit que les graphiques de tendance (recharts)
+// deja utilises ailleurs dans l'app mais compacte pour tenir dans une ligne de liste.
+function MiniSparkline({ valeurs, couleur = '#f97316', largeur = 56, hauteur = 22 }) {
+  if (!valeurs || valeurs.length < 2) return <div style={{ width: largeur, height: hauteur, flexShrink: 0 }} />;
+  const max = Math.max(...valeurs, 1);
+  const min = Math.min(...valeurs, 0);
+  const ecart = max - min || 1;
+  const pas = largeur / (valeurs.length - 1);
+  const points = valeurs.map((v, i) => `${(i * pas).toFixed(1)},${(hauteur - ((v - min) / ecart) * hauteur).toFixed(1)}`).join(' ');
+  return (
+    <svg width={largeur} height={hauteur} viewBox={`0 0 ${largeur} ${hauteur}`} style={{ flexShrink: 0 }}>
+      <polyline points={points} fill="none" stroke={couleur} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Ligne joueur "ligne maison" : badge "edge" calcule (o[ligne]) + sparkline des derniers matchs +
+// moyennes reelles L5/L10/Szn colorees selon la tendance vs la moyenne saison. Libelle explicite
 // pour ne jamais laisser croire a une vraie cote de bookmaker.
-function CarteLigneMaison({ joueur, ligneMaison, onSelect, isMobile }) {
+function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isMobile }) {
   return (
     <div
       onClick={() => onSelect(joueur)}
@@ -486,19 +514,25 @@ function CarteLigneMaison({ joueur, ligneMaison, onSelect, isMobile }) {
       onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
     >
+      <span style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '999px', padding: '3px 7px', fontSize: '10px', fontWeight: '900', flexShrink: 0 }}>o{ligneMaison.ligne}</span>
       <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
-        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero} · Ligne maison {ligneMaison.ligne} <span style={{ color: '#444' }}>(moyenne calculée {ligneMaison.moyenneL10.toFixed(1)})</span></div>
+        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero}</div>
       </div>
+      <MiniSparkline valeurs={ligneMaison.historique} couleur={couleurCategorie} />
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTendance(ligneMaison.r5) }}>{Math.round(ligneMaison.r5 * 100)}%</div>
+        <div style={{ textAlign: 'center', width: '22px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurMoyenne(ligneMaison.moyenneL5, ligneMaison.moyenneSzn) }}>{ligneMaison.moyenneL5.toFixed(1)}</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L5</div>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTendance(ligneMaison.r10) }}>{Math.round(ligneMaison.r10 * 100)}%</div>
+        <div style={{ textAlign: 'center', width: '22px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurMoyenne(ligneMaison.moyenneL10, ligneMaison.moyenneSzn) }}>{ligneMaison.moyenneL10.toFixed(1)}</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
+        </div>
+        <div style={{ textAlign: 'center', width: '22px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: 'white' }}>{ligneMaison.moyenneSzn.toFixed(1)}</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>Szn</div>
         </div>
       </div>
     </div>
@@ -543,6 +577,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
 
   const lignesCategorie = cache[categorieActive] || null;
   const chargementCategorie = !!enChargement[categorieActive];
+  const couleurCategorieActive = CATEGORIES_LIGNES_MAISON.find(c => c.cle === categorieActive)?.couleur;
 
   const colonneEquipe = (patineurs, abbrev, nom) => {
     const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => lignesCategorie[b.id].score - lignesCategorie[a.id].score) : [];
@@ -554,7 +589,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
         </div>
         {avecLigne.length === 0 ? (
           <p style={{ color: '#555', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>Aucune donnée disponible.</p>
-        ) : avecLigne.map(j => <CarteLigneMaison key={j.id} joueur={j} ligneMaison={lignesCategorie[j.id]} onSelect={onSelect} isMobile={isMobile} />)}
+        ) : avecLigne.map(j => <CarteLigneMaison key={j.id} joueur={j} ligneMaison={lignesCategorie[j.id]} couleurCategorie={couleurCategorieActive} onSelect={onSelect} isMobile={isMobile} />)}
       </div>
     );
   };
