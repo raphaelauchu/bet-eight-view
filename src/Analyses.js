@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
+import { getCotesHockey, trouverCotesPourMatch, extraireCotesMatch } from './cotes';
  
 const NHL_ABBREV_TO_SLUG = {
   'ANA': 'anaheim-ducks', 'BOS': 'boston-bruins', 'BUF': 'buffalo-sabres',
@@ -332,6 +333,253 @@ function SectionGardien({ gardien, onSelect }) {
   );
 }
  
+function trouverJoueurParNomDF(joueurs, nomDF) {
+  if (!nomDF) return null;
+  const nomLower = nomDF.toLowerCase();
+  const parties = nomLower.split(' ');
+  const prenomDF = parties[0];
+  const nomFamilleDF = parties[parties.length - 1];
+  let trouve = joueurs.find(j => j.nom.toLowerCase() === nomLower);
+  if (trouve) return trouve;
+  trouve = joueurs.find(j => j.nom.toLowerCase().includes(nomFamilleDF));
+  if (trouve) return trouve;
+  if (prenomDF.length > 4) {
+    trouve = joueurs.find(j => j.nom.toLowerCase().includes(prenomDF));
+    if (trouve) return trouve;
+  }
+  return null;
+}
+
+// Determine le gardien partant a partir des lineups Daily Faceoff (si disponibles), sinon
+// retombe sur le premier gardien du roster/boxscore.
+function trouverGardienPartant(joueurs, abbrev, lineupDF) {
+  const gardienRoster = joueurs.find(j => j.position === 'G') || null;
+  const nomDF = lineupDF?.[NHL_ABBREV_TO_SLUG[abbrev]]?.goalies?.[0];
+  if (!nomDF) return gardienRoster;
+  return trouverJoueurParNomDF(joueurs, nomDF) || gardienRoster;
+}
+
+function formatCote(prix) {
+  if (prix == null) return '-';
+  if (typeof prix === 'number' && Number.isInteger(prix) && Math.abs(prix) >= 100) return prix > 0 ? `+${prix}` : `${prix}`;
+  return `${prix}`;
+}
+
+function CoteBloc({ titre, ligne1, ligne2 }) {
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+      <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{titre}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px' }}>
+          <span style={{ color: '#888' }}>{ligne1.label}</span>
+          <span style={{ fontWeight: '900', color: 'white' }}>{ligne1.val}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px' }}>
+          <span style={{ color: '#888' }}>{ligne2.label}</span>
+          <span style={{ fontWeight: '900', color: 'white' }}>{ligne2.val}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Affiche moneyline / puck line / total pour le match si des cotes ont ete trouvees
+// (voir getCotesHockey/trouverCotesPourMatch) ; ne rend rien sinon.
+function BlocCotes({ donnees, abbrev1, abbrev2, nom1, nom2 }) {
+  if (!donnees) return null;
+  const trouverParEquipe = (outcomes, nomEquipe) => outcomes?.find(o => {
+    const n = (o.name || '').toLowerCase();
+    const cible = nomEquipe.toLowerCase();
+    return n.includes(cible) || cible.includes(n);
+  });
+  const ml1 = trouverParEquipe(donnees.moneyline, nom1);
+  const ml2 = trouverParEquipe(donnees.moneyline, nom2);
+  const sp1 = trouverParEquipe(donnees.spread, nom1);
+  const sp2 = trouverParEquipe(donnees.spread, nom2);
+  const over = donnees.total?.find(o => o.name === 'Over');
+  const under = donnees.total?.find(o => o.name === 'Under');
+
+  const blocs = [];
+  if (ml1 || ml2) blocs.push(<CoteBloc key="ml" titre="Moneyline" ligne1={{ label: abbrev1, val: formatCote(ml1?.price) }} ligne2={{ label: abbrev2, val: formatCote(ml2?.price) }} />);
+  if (sp1 || sp2) blocs.push(<CoteBloc key="sp" titre="Puck Line" ligne1={{ label: abbrev1, val: `${sp1?.point > 0 ? '+' : ''}${sp1?.point ?? '-'} (${formatCote(sp1?.price)})` }} ligne2={{ label: abbrev2, val: `${sp2?.point > 0 ? '+' : ''}${sp2?.point ?? '-'} (${formatCote(sp2?.price)})` }} />);
+  if (over || under) blocs.push(<CoteBloc key="tot" titre="Total" ligne1={{ label: `Plus de ${over?.point ?? '-'}`, val: formatCote(over?.price) }} ligne2={{ label: `Moins de ${under?.point ?? '-'}`, val: formatCote(under?.price) }} />);
+  if (blocs.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: '18px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${blocs.length}, 1fr)`, gap: '8px' }}>{blocs}</div>
+      {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '6px' }}>Cotes : {donnees.bookmaker}</div>}
+    </div>
+  );
+}
+
+// Grille condensee de petites cartes joueurs (photo/nom/stats) pour une equipe, sans regroupement par ligne.
+function EquipeCartesJoueurs({ abbrev, nom, logo, forwards, defenseurs, onSelect, isMobile }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid #f97316' }}>
+        <img src={logo} alt={abbrev} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+      </div>
+      {forwards.length > 0 && (
+        <div style={{ marginBottom: '14px' }}>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Attaquants</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {forwards.map(j => <CarteJoueurLigne key={j.id} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+          </div>
+        </div>
+      )}
+      {defenseurs.length > 0 && (
+        <div>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Défenseurs</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {defenseurs.map(j => <CarteJoueurLigne key={j.id} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Vue "aperçu du matchup" (tête-à-tête) : logos + cotes + comparaison des gardiens partants +
+// cartes joueurs condensées des deux équipes, cliquables vers FicheJoueur.
+function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
+  const isMobile = useIsMobile();
+  const [roster1, setRoster1] = useState([]);
+  const [roster2, setRoster2] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [cotes, setCotes] = useState(null);
+  const chargementLance = useRef(false);
+
+  const abbrev1 = match.awayTeam?.abbrev;
+  const abbrev2 = match.homeTeam?.abbrev;
+  const nom1 = match.awayTeam?.commonName?.default || abbrev1;
+  const nom2 = match.homeTeam?.commonName?.default || abbrev2;
+  const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  const dateMatch = new Date(match.startTimeUTC).toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' });
+  const etat = match.gameState;
+
+  async function chargerStatsEnBatch(joueurs, setRoster) {
+    const batchSize = 5;
+    const result = [...joueurs];
+    for (let i = 0; i < joueurs.length; i += batchSize) {
+      const batch = joueurs.slice(i, i + batchSize);
+      const stats = await Promise.all(batch.map(async (j) => {
+        try {
+          const res = await fetch(getUrl(`player/${j.id}/landing`));
+          const data = await res.json();
+          const saisonJoueur = data.featuredStats?.regularSeason?.subSeason;
+          const isGardien = j.position === 'G';
+          return { ...j, goals: isGardien ? null : (saisonJoueur?.goals ?? 0), assists: isGardien ? null : (saisonJoueur?.assists ?? 0), points: isGardien ? null : (saisonJoueur?.points ?? 0), gaa: isGardien ? (saisonJoueur?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (saisonJoueur?.savePctg ? (saisonJoueur.savePctg * 100).toFixed(1) + '%' : '-') : null };
+        } catch { return j; }
+      }));
+      stats.forEach((s, idx) => { result[i + idx] = s; });
+      setRoster([...result]);
+    }
+  }
+
+  async function chargerDepuisRoster() {
+    const [r1, r2] = await Promise.all([fetch(getUrl(`roster/${abbrev1}/current`)), fetch(getUrl(`roster/${abbrev2}/current`))]);
+    const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+    const fmt = (data, equipe) => [...(data.forwards || []), ...(data.defensemen || []), ...(data.goalies || [])].map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), numero: j.sweaterNumber || '', position: j.positionCode || '', equipe, ligne: null, goals: null, assists: null, points: null, gaa: null, svp: null }));
+    return { j1: fmt(d1, abbrev1), j2: fmt(d2, abbrev2) };
+  }
+
+  async function chargerRosters() {
+    setChargement(true);
+    try {
+      const gameId = match.id;
+      let joueurs1 = [], joueurs2 = [];
+      try {
+        const res = await fetch(getUrl(`gamecenter/${gameId}/boxscore`));
+        const data = await res.json();
+        const awayRaw = [...(data.playerByGameStats?.awayTeam?.forwards || []), ...(data.playerByGameStats?.awayTeam?.defense || []), ...(data.playerByGameStats?.awayTeam?.goalies || [])];
+        const homeRaw = [...(data.playerByGameStats?.homeTeam?.forwards || []), ...(data.playerByGameStats?.homeTeam?.defense || []), ...(data.playerByGameStats?.homeTeam?.goalies || [])];
+        if (awayRaw.length > 0) {
+          const fmt = (joueurs, equipe) => joueurs.map(j => ({ id: j.playerId || j.id, nom: j.name?.default || `${j.firstName?.default || j.firstName || ''} ${j.lastName?.default || j.lastName || ''}`.trim() || 'Joueur', numero: j.sweaterNumber || j.jerseyNumber || '', position: j.position || j.positionCode || '', equipe, ligne: j.lineNumber || null, goals: null, assists: null, points: null, gaa: null, svp: null })).filter(j => j.id && j.nom !== 'Joueur');
+          joueurs1 = fmt(awayRaw, abbrev1);
+          joueurs2 = fmt(homeRaw, abbrev2);
+        }
+      } catch (e) { }
+      if (joueurs1.length === 0) { const fallback = await chargerDepuisRoster(); joueurs1 = fallback.j1; joueurs2 = fallback.j2; }
+      setRoster1(joueurs1); setRoster2(joueurs2);
+      setChargement(false);
+      chargerStatsEnBatch(joueurs1, setRoster1);
+      chargerStatsEnBatch(joueurs2, setRoster2);
+    } catch (err) {
+      console.error(err);
+      try { const fallback = await chargerDepuisRoster(); setRoster1(fallback.j1); setRoster2(fallback.j2); chargerStatsEnBatch(fallback.j1, setRoster1); chargerStatsEnBatch(fallback.j2, setRoster2); } catch (e) { }
+      setChargement(false);
+    }
+  }
+
+  async function chargerCotes() {
+    try {
+      const data = await getCotesHockey();
+      const trouve = trouverCotesPourMatch(data, nom1, nom2);
+      setCotes(trouve ? extraireCotesMatch(trouve) : null);
+    } catch { setCotes(null); }
+  }
+
+  useEffect(() => {
+    if (chargementLance.current) return;
+    chargementLance.current = true;
+    chargerRosters();
+    chargerCotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const forwards1 = roster1.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
+  const defenseurs1 = roster1.filter(j => ['D', 'LD', 'RD'].includes(j.position));
+  const forwards2 = roster2.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
+  const defenseurs2 = roster2.filter(j => ['D', 'LD', 'RD'].includes(j.position));
+  const gardien1 = trouverGardienPartant(roster1, abbrev1, lineupDF);
+  const gardien2 = trouverGardienPartant(roster2, abbrev2, lineupDF);
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '18px' }}>← Retour</button>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '16px' : '40px', marginBottom: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: isMobile ? '52px' : '68px', height: isMobile ? '52px' : '68px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: '900', fontSize: isMobile ? '13px' : '15px', color: 'white', textAlign: 'center' }}>{nom1}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <span style={{ color: '#444', fontWeight: '900', fontSize: '18px' }}>@</span>
+          {etat === 'LIVE' || etat === 'CRIT'
+            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
+            : <span style={{ color: '#666', fontSize: '11px', whiteSpace: 'nowrap' }}>{heure}</span>}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: isMobile ? '52px' : '68px', height: isMobile ? '52px' : '68px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: '900', fontSize: isMobile ? '13px' : '15px', color: 'white', textAlign: 'center' }}>{nom2}</span>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', color: '#666', fontSize: '12px', marginBottom: '20px', textTransform: 'capitalize' }}>{dateMatch}</div>
+
+      <BlocCotes donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} />
+
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Gardiens partants</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+          <SectionGardien gardien={gardien1} onSelect={onSelectJoueur} />
+          <SectionGardien gardien={gardien2} onSelect={onSelectJoueur} />
+        </div>
+      </div>
+
+      {chargement ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
+          <EquipeCartesJoueurs abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} forwards={forwards1} defenseurs={defenseurs1} onSelect={onSelectJoueur} isMobile={isMobile} />
+          <EquipeCartesJoueurs abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} forwards={forwards2} defenseurs={defenseurs2} onSelect={onSelectJoueur} isMobile={isMobile} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, lineupDF }) {
   const forwards = joueurs.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
   const defenseurs = joueurs.filter(j => ['D', 'LD', 'RD'].includes(j.position));
@@ -465,147 +713,39 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   );
 }
  
-function CarteMatchJoueurs({ match, filtre, onSelectJoueur, lineupDF }) {
+function CarteMatchJoueurs({ match, onOpenMatchup }) {
   const isMobile = useIsMobile();
-  const [ouvert, setOuvert] = useState(false);
-  const [roster1, setRoster1] = useState([]);
-  const [roster2, setRoster2] = useState([]);
-  const [chargement, setChargement] = useState(false);
-  const [ongletEquipe, setOngletEquipe] = useState(0);
-  const [sourceData, setSourceData] = useState('');
-  const chargementLance = useRef(false);
-   
   const abbrev1 = match.awayTeam?.abbrev;
   const abbrev2 = match.homeTeam?.abbrev;
   const nom1 = match.awayTeam?.commonName?.default || abbrev1;
   const nom2 = match.homeTeam?.commonName?.default || abbrev2;
   const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
   const etat = match.gameState;
- 
-  useEffect(() => {
-    if (filtre && filtre.length >= 2) {
-      const f = filtre.toLowerCase();
-      const correspond = abbrev1.toLowerCase().includes(f) || abbrev2.toLowerCase().includes(f) || nom1.toLowerCase().includes(f) || nom2.toLowerCase().includes(f);
-      if (correspond) { setOuvert(true); if (!chargementLance.current) chargerRosters(); }
-    }
-  }, [filtre]);
- 
-  async function chargerStatsEnBatch(joueurs, setRoster) {
-    const batchSize = 5;
-    const result = [...joueurs];
-    for (let i = 0; i < joueurs.length; i += batchSize) {
-      const batch = joueurs.slice(i, i + batchSize);
-      const stats = await Promise.all(batch.map(async (j) => {
-        try {
-          const res = await fetch(getUrl(`player/${j.id}/landing`));
-          const data = await res.json();
-          const saisonJoueur = data.featuredStats?.regularSeason?.subSeason;
-          const isGardien = j.position === 'G';
-          return { ...j, goals: isGardien ? null : (saisonJoueur?.goals ?? 0), assists: isGardien ? null : (saisonJoueur?.assists ?? 0), points: isGardien ? null : (saisonJoueur?.points ?? 0), gaa: isGardien ? (saisonJoueur?.goalsAgainstAvg?.toFixed(2) ?? '-') : null, svp: isGardien ? (saisonJoueur?.savePctg ? (saisonJoueur.savePctg * 100).toFixed(1) + '%' : '-') : null };
-        } catch { return j; }
-      }));
-      stats.forEach((s, idx) => { result[i + idx] = s; });
-      setRoster([...result]);
-    }
-  }
- 
-  async function chargerDepuisRoster() {
-    const [r1, r2] = await Promise.all([fetch(getUrl(`roster/${abbrev1}/current`)), fetch(getUrl(`roster/${abbrev2}/current`))]);
-    const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
-    const fmt = (data, equipe) => [...(data.forwards || []), ...(data.defensemen || []), ...(data.goalies || [])].map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), numero: j.sweaterNumber || '', position: j.positionCode || '', equipe, ligne: null, goals: null, assists: null, points: null, gaa: null, svp: null }));
-    return { j1: fmt(d1, abbrev1), j2: fmt(d2, abbrev2) };
-  }
- 
-  async function chargerRosters() {
-    if (chargementLance.current) return;
-    chargementLance.current = true;
-    setChargement(true);
-    try {
-      const gameId = match.id;
-      let joueurs1 = [], joueurs2 = [], utiliséBoxscore = false;
-      try {
-        const res = await fetch(getUrl(`gamecenter/${gameId}/boxscore`));
-        const data = await res.json();
-        const awayRaw = [...(data.playerByGameStats?.awayTeam?.forwards || []), ...(data.playerByGameStats?.awayTeam?.defense || []), ...(data.playerByGameStats?.awayTeam?.goalies || [])];
-        const homeRaw = [...(data.playerByGameStats?.homeTeam?.forwards || []), ...(data.playerByGameStats?.homeTeam?.defense || []), ...(data.playerByGameStats?.homeTeam?.goalies || [])];
-        if (awayRaw.length > 0) {
-          const fmt = (joueurs, equipe) => joueurs.map(j => ({ id: j.playerId || j.id, nom: j.name?.default || `${j.firstName?.default || j.firstName || ''} ${j.lastName?.default || j.lastName || ''}`.trim() || 'Joueur', numero: j.sweaterNumber || j.jerseyNumber || '', position: j.position || j.positionCode || '', equipe, ligne: j.lineNumber || null, goals: null, assists: null, points: null, gaa: null, svp: null })).filter(j => j.id && j.nom !== 'Joueur');
-          joueurs1 = fmt(awayRaw, abbrev1);
-          joueurs2 = fmt(homeRaw, abbrev2);
-          utiliséBoxscore = true;
-        }
-      } catch (e) { }
-      if (joueurs1.length === 0) { const fallback = await chargerDepuisRoster(); joueurs1 = fallback.j1; joueurs2 = fallback.j2; }
-      setSourceData(utiliséBoxscore ? 'live' : 'roster');
-      setRoster1(joueurs1); setRoster2(joueurs2);
-      setChargement(false);
-      chargerStatsEnBatch(joueurs1, setRoster1);
-      chargerStatsEnBatch(joueurs2, setRoster2);
-    } catch (err) {
-      console.error(err);
-      try { const fallback = await chargerDepuisRoster(); setRoster1(fallback.j1); setRoster2(fallback.j2); chargerStatsEnBatch(fallback.j1, setRoster1); chargerStatsEnBatch(fallback.j2, setRoster2); } catch (e) { }
-      setChargement(false);
-    }
-  }
- 
-  function handleOuvrir() {
-    const nouvelEtat = !ouvert;
-    setOuvert(nouvelEtat);
-    if (nouvelEtat && !chargementLance.current) chargerRosters();
-  }
- 
-  const filtrerJoueurs = (joueurs) => {
-    if (!filtre || filtre.length < 2) return joueurs;
-    const f = filtre.toLowerCase();
-    if (abbrev1.toLowerCase().includes(f) || nom1.toLowerCase().includes(f) || abbrev2.toLowerCase().includes(f) || nom2.toLowerCase().includes(f)) return joueurs;
-    return joueurs.filter(j => j.nom.toLowerCase().includes(f));
-  };
- 
+
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px' }}>
-      <div onClick={handleOuvrir} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px', flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-            <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</span>
-          </div>
-          <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</span>
-            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-          </div>
+    <div
+      onClick={() => onOpenMatchup(match)}
+      style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px', padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {etat === 'LIVE' || etat === 'CRIT'
-            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
-            : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
-          <span style={{ color: ouvert ? '#f97316' : '#444', fontSize: '11px' }}>{ouvert ? '▲' : '▼'}</span>
+        <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</span>
+          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
         </div>
       </div>
-      {ouvert && (
-        <div style={{ borderTop: '1px solid #222', padding: isMobile ? '14px' : '20px' }}>
-          {chargement ? (
-            <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement...</p>
-          ) : (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[{ abbrev: abbrev1, logo: LOGOS_NHL[abbrev1] }, { abbrev: abbrev2, logo: LOGOS_NHL[abbrev2] }].map((eq, i) => (
-                    <button key={i} onClick={() => setOngletEquipe(i)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: ongletEquipe === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: ongletEquipe === i ? 'bold' : 'normal' }}>
-                      <img src={eq.logo} alt={eq.abbrev} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                      {eq.abbrev}
-                    </button>
-                  ))}
-                </div>
-                {sourceData === 'live' && <span style={{ fontSize: '10px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', padding: '3px 8px', borderRadius: '20px' }}>En direct</span>}
-              </div>
-              {ongletEquipe === 0 && filtrerJoueurs(roster1).length > 0 && <AlignementEquipe abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} joueurs={filtrerJoueurs(roster1)} onSelect={onSelectJoueur} isMobile={isMobile} lineupDF={lineupDF} />}
-              {ongletEquipe === 1 && filtrerJoueurs(roster2).length > 0 && <AlignementEquipe abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} joueurs={filtrerJoueurs(roster2)} onSelect={onSelectJoueur} isMobile={isMobile} lineupDF={lineupDF} />}
-              {((ongletEquipe === 0 && filtrerJoueurs(roster1).length === 0) || (ongletEquipe === 1 && filtrerJoueurs(roster2).length === 0)) && <p style={{ color: '#666', textAlign: 'center' }}>Aucun joueur trouve.</p>}
-            </>
-          )}
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {etat === 'LIVE' || etat === 'CRIT'
+          ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
+          : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
+        <span style={{ color: '#444', fontSize: '11px' }}>→</span>
+      </div>
     </div>
   );
 }
@@ -872,6 +1012,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const [ongletJoueurs, setOngletJoueurs] = useState('lineups');
   const [props, setProps] = useState([]);
   const [chargementProps, setChargementProps] = useState(false);
+  const [matchOuvert, setMatchOuvert] = useState(null);
 
   useEffect(() => { chargerSemaine(); }, []);
 
@@ -968,6 +1109,10 @@ function PageStatsJoueurs({ onSelectJoueur }) {
   const jours = Object.keys(matchsParJour).sort();
   const aucunMatch = !chargement && jours.length === 0;
 
+  if (matchOuvert) {
+    return <ApercuMatchup match={matchOuvert} lineupDF={lineupDF} onSelectJoueur={onSelectJoueur} onBack={() => setMatchOuvert(null)} />;
+  }
+
   return (
     <div>
       <div style={{ marginBottom: '14px', position: 'relative' }}>
@@ -1061,7 +1206,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
                   );
                 })}
               </div>
-              {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
+              {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} onOpenMatchup={setMatchOuvert} />)}
             </>
           )}
         </>
@@ -1118,6 +1263,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
   const [filtre, setFiltre] = useState('');
   const [recherchJoueurs, setRechercheJoueurs] = useState([]);
   const [tousLesJoueurs, setTousLesJoueurs] = useState([]);
+  const [matchOuvert, setMatchOuvert] = useState(null);
   const lineupDF = useLineupsDailyFaceoff();
 
   useEffect(() => { chargerSemaine(); }, []);
@@ -1150,6 +1296,10 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
     if (query.length < 2) { setRechercheJoueurs([]); return; }
     const q = query.toLowerCase();
     setRechercheJoueurs(tousLesJoueurs.filter(j => j.name.toLowerCase().includes(q)).slice(0, 10));
+  }
+
+  if (matchOuvert) {
+    return <ApercuMatchup match={matchOuvert} lineupDF={lineupDF} onSelectJoueur={onSelectJoueur} onBack={() => setMatchOuvert(null)} />;
   }
 
   return (
@@ -1202,7 +1352,7 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
               );
             })}
           </div>
-          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} filtre={filtre} onSelectJoueur={onSelectJoueur} lineupDF={lineupDF} />)}
+          {(matchsParJour[jourActif] || []).map((match, i) => <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} onOpenMatchup={setMatchOuvert} />)}
         </>
       )}
     </div>
