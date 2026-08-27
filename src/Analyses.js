@@ -430,28 +430,138 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
   );
 }
 
-// Grille condensee de petites cartes joueurs (photo/nom/stats) pour une equipe, sans regroupement par ligne.
-function EquipeCartesJoueurs({ abbrev, nom, logo, forwards, defenseurs, onSelect, isMobile }) {
+// Categories de props joueurs (memes stats/lignes candidates que l'ancien onglet Props :
+// voir chargerProps dans PageStatsJoueurs et PropsPage dans App.js), plus HIT/BLK puisque
+// getGameLogJoueur expose deja hits/blockedShots par match.
+const CATEGORIES_PROPS = [
+  { cle: 'SOG', label: 'Tirs', champ: 'shots', lignes: [1.5, 2.5, 3.5], couleur: '#3b82f6' },
+  { cle: 'GOAL', label: 'Buts', champ: 'goals', lignes: [0.5], couleur: '#22c55e' },
+  { cle: 'AST', label: 'Passes', champ: 'assists', lignes: [0.5], couleur: '#a78bfa' },
+  { cle: 'PTS', label: 'Points', champ: 'points', lignes: [0.5, 1.5], couleur: '#f97316' },
+  { cle: 'HIT', label: 'Mises en échec', champ: 'hits', lignes: [1.5, 2.5], couleur: '#ef4444' },
+  { cle: 'BLK', label: 'Blocs', champ: 'blockedShots', lignes: [0.5, 1.5], couleur: '#14b8a6' },
+];
+
+// A partir d'un game log normalise (getGameLogJoueur), trouve parmi les lignes candidates celle dont
+// le taux d'atteinte L5/L10 est le plus eleve : reprend la meme ponderation (hit-rate moyen) que le
+// calcul de probabilite de l'ancien onglet Props, sans le seuil de filtrage (on affiche tous les joueurs).
+function calcLignesProp(gameLog, champ, lignes) {
+  if (!gameLog || gameLog.length < 5) return null;
+  const l5 = gameLog.slice(0, 5);
+  const l10 = gameLog.slice(0, Math.min(10, gameLog.length));
+  const tauxAtteinte = (matchs, ligne) => matchs.filter(g => (g[champ] || 0) > ligne).length / matchs.length;
+  let meilleure = null;
+  for (const ligne of lignes) {
+    const r5 = tauxAtteinte(l5, ligne);
+    const r10 = tauxAtteinte(l10, ligne);
+    const score = r5 * 0.5 + r10 * 0.5;
+    if (!meilleure || score > meilleure.score) meilleure = { ligne, r5, r10, score };
+  }
+  return meilleure;
+}
+
+function couleurTaux(taux) {
+  if (taux >= 0.7) return '#22c55e';
+  if (taux >= 0.5) return '#f97316';
+  return '#888';
+}
+
+// Ligne joueur format "props sportsbook" : ligne actuelle + taux d'atteinte L5/L10.
+function CartePropJoueur({ joueur, prop, onSelect, isMobile }) {
+  return (
+    <div
+      onClick={() => onSelect(joueur)}
+      style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '6px' }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+    >
+      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero} · Plus de {prop.ligne}</div>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTaux(prop.r5) }}>{Math.round(prop.r5 * 100)}%</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>L5</div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurTaux(prop.r10) }}>{Math.round(prop.r10 * 100)}%</div>
+          <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Filtres de props joueurs (SOG/Buts/Passes/Points/Mises en échec/Blocs), en deux colonnes (une par
+// equipe). Reutilise la logique de game log + taux d'atteinte deja utilisee par l'ancien onglet Props
+// (chargerProps de PageStatsJoueurs / PropsPage), calculee ici par categorie et mise en cache par
+// categorie pour eviter de refetcher a chaque changement d'onglet.
+function SectionPropsFiltres({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, onSelect, isMobile }) {
+  const [categorieActive, setCategorieActive] = useState('SOG');
+  const [cache, setCache] = useState({});
+  const [enChargement, setEnChargement] = useState({});
+
+  const patineurs1 = roster1.filter(j => j.position !== 'G');
+  const patineurs2 = roster2.filter(j => j.position !== 'G');
+
+  useEffect(() => {
+    if (cache[categorieActive] || enChargement[categorieActive]) return;
+    if (patineurs1.length === 0 && patineurs2.length === 0) return;
+    const categorie = CATEGORIES_PROPS.find(c => c.cle === categorieActive);
+    setEnChargement(prev => ({ ...prev, [categorieActive]: true }));
+    (async () => {
+      const tousJoueurs = [...patineurs1, ...patineurs2];
+      const resultats = {};
+      for (let i = 0; i < tousJoueurs.length; i += 5) {
+        const batch = tousJoueurs.slice(i, i + 5);
+        const batchRes = await Promise.all(batch.map(async (j) => {
+          try {
+            const gameLog = await getGameLogJoueur(j.id, SAISON_REG_2526.gameType, SAISON_REG_2526.seasonId);
+            const prop = calcLignesProp(gameLog, categorie.champ, categorie.lignes);
+            return prop ? { id: j.id, prop } : null;
+          } catch { return null; }
+        }));
+        batchRes.filter(Boolean).forEach(({ id, prop }) => { resultats[id] = prop; });
+      }
+      setCache(prev => ({ ...prev, [categorieActive]: resultats }));
+      setEnChargement(prev => ({ ...prev, [categorieActive]: false }));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categorieActive, roster1, roster2]);
+
+  const propsCategorie = cache[categorieActive] || null;
+  const chargementCategorie = !!enChargement[categorieActive];
+
+  const colonneEquipe = (patineurs, abbrev, nom) => {
+    const avecProp = propsCategorie ? patineurs.filter(j => propsCategorie[j.id]).sort((a, b) => propsCategorie[b.id].score - propsCategorie[a.id].score) : [];
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
+          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+        </div>
+        {avecProp.length === 0 ? (
+          <p style={{ color: '#555', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>Aucune donnée disponible.</p>
+        ) : avecProp.map(j => <CartePropJoueur key={j.id} joueur={j} prop={propsCategorie[j.id]} onSelect={onSelect} isMobile={isMobile} />)}
+      </div>
+    );
+  };
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '8px', borderBottom: '2px solid #f97316' }}>
-        <img src={logo} alt={abbrev} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {CATEGORIES_PROPS.map(cat => (
+          <button key={cat.cle} onClick={() => setCategorieActive(cat.cle)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieActive === cat.cle ? cat.couleur : '#0d0d0d', color: categorieActive === cat.cle ? 'white' : '#666', fontSize: '11px', fontWeight: '700' }}>{cat.label}</button>
+        ))}
       </div>
-      {forwards.length > 0 && (
-        <div style={{ marginBottom: '14px' }}>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Attaquants</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {forwards.map(j => <CarteJoueurLigne key={j.id} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
-          </div>
-        </div>
-      )}
-      {defenseurs.length > 0 && (
-        <div>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Défenseurs</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {defenseurs.map(j => <CarteJoueurLigne key={j.id} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
-          </div>
+      {chargementCategorie ? (
+        <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Calcul des tendances...</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
+          {colonneEquipe(patineurs1, abbrev1, nom1)}
+          {colonneEquipe(patineurs2, abbrev2, nom2)}
         </div>
       )}
     </div>
@@ -547,10 +657,6 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const forwards1 = roster1.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
-  const defenseurs1 = roster1.filter(j => ['D', 'LD', 'RD'].includes(j.position));
-  const forwards2 = roster2.filter(j => ['L', 'C', 'R', 'LW', 'RW', 'F'].includes(j.position));
-  const defenseurs2 = roster2.filter(j => ['D', 'LD', 'RD'].includes(j.position));
   const gardien1 = trouverGardienPartant(roster1, abbrev1, lineupDF);
   const gardien2 = trouverGardienPartant(roster2, abbrev2, lineupDF);
 
@@ -589,10 +695,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
       {chargement ? (
         <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
-          <EquipeCartesJoueurs abbrev={abbrev1} nom={nom1} logo={LOGOS_NHL[abbrev1]} forwards={forwards1} defenseurs={defenseurs1} onSelect={onSelectJoueur} isMobile={isMobile} />
-          <EquipeCartesJoueurs abbrev={abbrev2} nom={nom2} logo={LOGOS_NHL[abbrev2]} forwards={forwards2} defenseurs={defenseurs2} onSelect={onSelectJoueur} isMobile={isMobile} />
-        </div>
+        <SectionPropsFiltres roster1={roster1} roster2={roster2} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} onSelect={onSelectJoueur} isMobile={isMobile} />
       )}
     </div>
   );
