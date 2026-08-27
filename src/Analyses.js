@@ -365,27 +365,12 @@ function formatCote(prix) {
   return `${prix}`;
 }
 
-function CoteBloc({ titre, ligne1, ligne2 }) {
-  return (
-    <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{titre}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px' }}>
-          <span style={{ color: '#888' }}>{ligne1.label}</span>
-          <span style={{ fontWeight: '900', color: 'white' }}>{ligne1.val}</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontSize: '11px' }}>
-          <span style={{ color: '#888' }}>{ligne2.label}</span>
-          <span style={{ fontWeight: '900', color: 'white' }}>{ligne2.val}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Affiche moneyline / puck line / total pour le match si des cotes ont ete trouvees
-// (voir getCotesHockey/trouverCotesPourMatch) ; ne rend rien sinon.
-function BlocCotes({ donnees, abbrev1, abbrev2, nom1, nom2 }) {
+// Affiche les cotes du match format "sportsbook" : case visiteur (Moneyline + Spread/Puck line),
+// case centrale Total (Over/Under), case local (Spread/Puck line + Moneyline). Base sur les memes
+// donnees que getCotesHockey/trouverCotesPourMatch/extraireCotesMatch ; ne rend rien si le match
+// est deja joue ou si aucune cote n'est disponible.
+function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }) {
+  if (dejaJoue) return null;
   if (!donnees) return null;
   const trouverParEquipe = (outcomes, nomEquipe) => outcomes?.find(o => {
     const n = (o.name || '').toLowerCase();
@@ -399,15 +384,47 @@ function BlocCotes({ donnees, abbrev1, abbrev2, nom1, nom2 }) {
   const over = donnees.total?.find(o => o.name === 'Over');
   const under = donnees.total?.find(o => o.name === 'Under');
 
-  const blocs = [];
-  if (ml1 || ml2) blocs.push(<CoteBloc key="ml" titre="Moneyline" ligne1={{ label: abbrev1, val: formatCote(ml1?.price) }} ligne2={{ label: abbrev2, val: formatCote(ml2?.price) }} />);
-  if (sp1 || sp2) blocs.push(<CoteBloc key="sp" titre="Puck Line" ligne1={{ label: abbrev1, val: `${sp1?.point > 0 ? '+' : ''}${sp1?.point ?? '-'} (${formatCote(sp1?.price)})` }} ligne2={{ label: abbrev2, val: `${sp2?.point > 0 ? '+' : ''}${sp2?.point ?? '-'} (${formatCote(sp2?.price)})` }} />);
-  if (over || under) blocs.push(<CoteBloc key="tot" titre="Total" ligne1={{ label: `Plus de ${over?.point ?? '-'}`, val: formatCote(over?.price) }} ligne2={{ label: `Moins de ${under?.point ?? '-'}`, val: formatCote(under?.price) }} />);
-  if (blocs.length === 0) return null;
+  if (!ml1 && !ml2 && !sp1 && !sp2 && !over && !under) return null;
+
+  const formatSpread = s => s ? `${s.point > 0 ? '+' : ''}${s.point} (${formatCote(s.price)})` : '-';
 
   return (
     <div style={{ marginBottom: '18px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${blocs.length}, 1fr)`, gap: '8px' }}>{blocs}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{abbrev1}</div>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
+          </div>
+        </div>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus de {over?.point ?? '-'}</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(over?.price)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins de {under?.point ?? '-'}</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
+          </div>
+        </div>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>{abbrev2}</div>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
+          </div>
+        </div>
+      </div>
       {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '6px' }}>Cotes : {donnees.bookmaker}</div>}
     </div>
   );
@@ -458,6 +475,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
   const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
   const dateMatch = new Date(match.startTimeUTC).toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' });
   const etat = match.gameState;
+  const dejaJoue = etat === 'FINAL' || etat === 'OFF';
 
   async function chargerStatsEnBatch(joueurs, setRoster) {
     const batchSize = 5;
@@ -540,6 +558,8 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
     <div>
       <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '18px' }}>← Retour</button>
 
+      <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dejaJoue={dejaJoue} />
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '16px' : '40px', marginBottom: '6px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
           <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: isMobile ? '52px' : '68px', height: isMobile ? '52px' : '68px', objectFit: 'contain' }} />
@@ -557,8 +577,6 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
         </div>
       </div>
       <div style={{ textAlign: 'center', color: '#666', fontSize: '12px', marginBottom: '20px', textTransform: 'capitalize' }}>{dateMatch}</div>
-
-      <BlocCotes donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} />
 
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Gardiens partants</div>
