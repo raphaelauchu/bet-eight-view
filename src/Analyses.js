@@ -369,7 +369,7 @@ function formatCote(prix) {
 // discret si le match est deja joue, soit trois cases (visiteur / total / local) avec Moneyline,
 // Puck line et Total O/U. Base sur les memes donnees que getCotesHockey/trouverCotesPourMatch/
 // extraireCotesMatch ; affiche un message discret si aucune cote n'est disponible pour le match.
-function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dateMatch, dejaJoue }) {
+function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }) {
   const trouverParEquipe = (outcomes, nomEquipe) => outcomes?.find(o => {
     const n = (o.name || '').toLowerCase();
     const cible = nomEquipe.toLowerCase();
@@ -385,61 +385,66 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dateMatch,
 
   const formatSpread = s => s ? `${s.point > 0 ? '+' : ''}${s.point} (${formatCote(s.price)})` : '-';
 
+  if (dejaJoue) {
+    return (
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
+        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
+      </div>
+    );
+  }
+
+  if (!aDesCotes) {
+    return (
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
+        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match <span style={{ color: '#444' }}>(souvent le cas hors saison régulière ou en match préparatoire)</span></div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
-      <div style={{ textAlign: 'center', fontSize: '19px', fontWeight: '900', color: 'white', letterSpacing: '0.3px' }}>{nom1} vs {nom2}</div>
-      <div style={{ textAlign: 'center', fontSize: '11px', color: '#666', fontStyle: 'italic', textTransform: 'capitalize', marginBottom: '16px' }}>{dateMatch}</div>
-
-      {dejaJoue ? (
-        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
-      ) : !aDesCotes ? (
-        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match <span style={{ color: '#444' }}>(souvent le cas hors saison régulière ou en match préparatoire)</span></div>
-      ) : (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
-            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-              <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '4px' }} onError={e => e.target.style.display = 'none'} />
-              <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>{abbrev1}</div>
-              <div style={{ marginBottom: '8px' }}>
-                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-                <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
+          <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom1}</div>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
+          </div>
+        </div>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
+          <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>O/U</div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div>
+              <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus</div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(over?.price)}</div>
             </div>
-            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
-              <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>O/U</div>
-              <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                <div>
-                  <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus</div>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(over?.price)}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins</div>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
-              <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '4px' }} onError={e => e.target.style.display = 'none'} />
-              <div style={{ fontSize: '10px', color: '#999', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>{abbrev2}</div>
-              <div style={{ marginBottom: '8px' }}>
-                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-                <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
-              </div>
+            <div>
+              <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins</div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
             </div>
           </div>
-          {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '10px' }}>Cotes : {donnees.bookmaker}</div>}
-        </>
-      )}
+        </div>
+        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
+          <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom2}</div>
+          <div style={{ marginBottom: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
+          </div>
+        </div>
+      </div>
+      {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '10px' }}>Cotes : {donnees.bookmaker}</div>}
     </div>
   );
 }
@@ -711,7 +716,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
     <div>
       <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '18px' }}>← Retour</button>
 
-      <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dateMatch={dateMatch} dejaJoue={dejaJoue} />
+      <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dejaJoue={dejaJoue} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '16px' : '40px', marginBottom: '6px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
