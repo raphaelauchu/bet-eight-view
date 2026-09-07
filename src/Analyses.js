@@ -3033,6 +3033,43 @@ const aggregerMatchs = (matchs, moyennePtsSaison) => ({
   pctAuDessus: matchs.length > 0 && moyennePtsSaison > 0 ? Math.round((matchs.filter(m => (m.points || 0) >= moyennePtsSaison).length / matchs.length) * 100) : 0,
 });
 
+// Categories de filtre pour l'historique face-a-face de FicheMatchup. Seules des categories avec de
+// vraies donnees par match sont proposees : shots/goals/assists/points/powerPlayPoints et toi viennent
+// directement de getGameLogJoueur, blockedShots/hits sont deja enrichis via getHitsBlocksParMatch dans
+// useHistoriqueVsAdversaire (l.3079). TOI/BLK/HITS ne sont pas pertinents "vs ce gardien" (stats
+// d'equipe/individuelles independantes du gardien affronte) donc reserves a la vue "vs cette equipe".
+const CATEGORIES_MATCHUP = [
+  { cle: 'SOG', label: 'Tirs', champ: 'shots', disponiblePour: ['equipe', 'gardien'] },
+  { cle: 'GOAL', label: 'Buts', champ: 'goals', disponiblePour: ['equipe', 'gardien'] },
+  { cle: 'AST', label: 'Passes', champ: 'assists', disponiblePour: ['equipe', 'gardien'] },
+  { cle: 'PTS', label: 'Points', champ: 'points', disponiblePour: ['equipe', 'gardien'] },
+  { cle: 'PPP', label: 'PPP', champ: 'powerPlayPoints', disponiblePour: ['equipe', 'gardien'] },
+  { cle: 'TOI', label: 'TOI', champ: 'toi', disponiblePour: ['equipe'], estToi: true },
+  { cle: 'BLK', label: 'BLK', champ: 'blockedShots', disponiblePour: ['equipe'] },
+  { cle: 'HITS', label: 'Hits', champ: 'hits', disponiblePour: ['equipe'] },
+];
+const CATEGORIE_PTS_DEFAUT = CATEGORIES_MATCHUP.find(c => c.cle === 'PTS');
+
+function valeurCategorieMatch(m, categorie) {
+  if (categorie.estToi) {
+    const [min, sec] = (m.toi || '0:00').split(':');
+    return parseFloat((parseInt(min || 0, 10) + parseInt(sec || 0, 10) / 60).toFixed(2));
+  }
+  return m[categorie.champ] || 0;
+}
+
+// Agregation generique pour une categorie de filtre donnee : moyenne/total sur les matchs, et un taux
+// de "% au-dessus de la moyenne" (vs la moyenne saison en points pour PTS comme avant, vs la moyenne du
+// sous-ensemble affiche pour les autres categories, faute de moyenne saison disponible pour celles-ci).
+function aggregerMatchsCategorie(matchs, categorie, moyennePtsSaison) {
+  const valeurs = matchs.map(m => valeurCategorieMatch(m, categorie));
+  const moyenne = valeurs.length > 0 ? parseFloat((valeurs.reduce((s, v) => s + v, 0) / valeurs.length).toFixed(2)) : 0;
+  const total = parseFloat(valeurs.reduce((s, v) => s + v, 0).toFixed(2));
+  const seuil = categorie.cle === 'PTS' && moyennePtsSaison > 0 ? moyennePtsSaison : moyenne;
+  const pctAuDessus = matchs.length > 0 ? Math.round((valeurs.filter(v => v >= seuil).length / matchs.length) * 100) : 0;
+  return { nb: matchs.length, matchs, moyenne, total, pctAuDessus };
+}
+
 // Charge l'historique du joueur (3 dernieres saisons), isole les matchs contre l'adversaire et les enrichit
 // (score final, mises en echec/blocages, gardien adverse ayant debute). Partage entre FicheMatchup (H2H)
 // et FicheAnalyseAvancee (projections).
@@ -3148,15 +3185,19 @@ function useStatsDefenseLigue(seasonId) {
   return { chargementDefense, statsToutesEquipes };
 }
 
-// Gardien partant probable = celui avec le plus de departs cette saison (club-stats/{abbrev}/now).
+// Gardien partant probable : priorite au partant Daily Faceoff (nhl_lineups.json via
+// useLineupsDailyFaceoff, meme source/logique que trouverGardienPartant utilise par ApercuMatchup et
+// AlignementEquipe), avec repli sur l'heuristique "le plus de departs cette saison" (club-stats/{abbrev}/now)
+// si Daily Faceoff n'a pas de donnees pour cette equipe ou si le nom ne matche aucun gardien du club-stats.
 function useGardienPartant(adversaireAbbrev, seasonId) {
   const [chargementGardien, setChargementGardien] = useState(true);
   const [gardienPartant, setGardienPartant] = useState(null);
+  const lineupDF = useLineupsDailyFaceoff();
 
   useEffect(() => {
     chargerGardienPartant();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adversaireAbbrev, seasonId]);
+  }, [adversaireAbbrev, seasonId, lineupDF]);
 
   async function chargerGardienPartant() {
     setChargementGardien(true);
@@ -3165,7 +3206,10 @@ function useGardienPartant(adversaireAbbrev, seasonId) {
       const data = await res.json();
       const goalies = data.goalies || [];
       if (goalies.length === 0) { setGardienPartant(null); setChargementGardien(false); return; }
-      const starter = [...goalies].sort((a, b) => (b.gamesStarted || 0) - (a.gamesStarted || 0))[0];
+      const nomDF = lineupDF?.[NHL_ABBREV_TO_SLUG[adversaireAbbrev]]?.goalies?.[0];
+      const goaliesAvecNom = goalies.map(g => ({ ...g, nom: `${g.firstName?.default || ''} ${g.lastName?.default || ''}`.trim() }));
+      const starter = (nomDF && trouverJoueurParNomDF(goaliesAvecNom, nomDF))
+        || [...goalies].sort((a, b) => (b.gamesStarted || 0) - (a.gamesStarted || 0))[0];
       setGardienPartant({
         id: starter.playerId,
         nom: `${starter.firstName?.default || ''} ${starter.lastName?.default || ''}`.trim(),
@@ -3190,6 +3234,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const pad = isMobile ? '14px' : '20px';
 
   const [ongletHistorique, setOngletHistorique] = useState('equipe');
+  const [categorieHistorique, setCategorieHistorique] = useState('PTS');
   const [gardienSelectionne, setGardienSelectionne] = useState(null);
   const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
 
@@ -3201,6 +3246,18 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const statsVsEquipe = aggregerMatchs(matchsVsAdversaire, moyennePtsSaison);
 
   const chargementGoalieH2H = chargementDetails || chargementGardien;
+  // Les details enrichis (hits/blocages, score, gardien adverse) arrivent apres le game log de base :
+  // on attend chargementDetails pour la vue "equipe" des que ces champs peuvent etre affiches/filtres.
+  const chargementHistoriqueEquipe = chargement || chargementDetails;
+  const categoriesDisponibles = CATEGORIES_MATCHUP.filter(c => c.disponiblePour.includes(ongletHistorique));
+  const categorieActive = CATEGORIES_MATCHUP.find(c => c.cle === categorieHistorique) || CATEGORIE_PTS_DEFAUT;
+
+  const changerOngletHistorique = (id) => {
+    setOngletHistorique(id);
+    if (!CATEGORIES_MATCHUP.find(c => c.cle === categorieHistorique)?.disponiblePour.includes(id)) {
+      setCategorieHistorique('PTS');
+    }
+  };
 
   // Navigation interne (apres tous les hooks, meme pattern que FicheJoueur pour matchupOuvert).
   if (gardienSelectionne) {
@@ -3323,18 +3380,26 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         )}
       </div>
 
-      {/* Historique detaille : liste des matchs, filtrable vs cette equipe / vs ce gardien */}
+      {/* Historique detaille : liste des matchs, filtrable vs cette equipe / vs ce gardien, par categorie */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
-        <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
           {[['equipe', 'vs Cette Équipe'], ['gardien', 'vs Ce Gardien']].map(([id, label]) => (
-            <button key={id} onClick={() => setOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+            <button key={id} onClick={() => changerOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+          {categoriesDisponibles.map(cat => (
+            <button key={cat.cle} onClick={() => setCategorieHistorique(cat.cle)} style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieHistorique === cat.cle ? '#f97316' : '#161616', color: categorieHistorique === cat.cle ? 'white' : '#777', fontSize: '11px', fontWeight: categorieHistorique === cat.cle ? '700' : '500', transition: 'background-color 0.2s ease' }}>{cat.label}</button>
           ))}
         </div>
 
         {ongletHistorique === 'equipe' && (
           <CategorieHistorique
-            chargement={chargement}
-            stats={statsVsEquipe}
+            chargement={chargementHistoriqueEquipe}
+            matchs={matchsVsAdversaire}
+            categorie={categorieActive}
+            moyennePtsSaison={moyennePtsSaison}
             titre={`Face à ${adversaireAbbrev}`}
             messageVide="Aucun affrontement contre cette équipe lors des 3 dernières saisons."
             onSelectMatch={setMatchDetailSelectionne}
@@ -3343,7 +3408,9 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         {ongletHistorique === 'gardien' && (
           <CategorieHistorique
             chargement={chargementGoalieH2H}
-            stats={statsVsGardien}
+            matchs={matchsVsGardien}
+            categorie={categorieActive}
+            moyennePtsSaison={moyennePtsSaison}
             titre={gardienPartant ? `Face à ${gardienPartant.nom}` : 'Face à ce gardien'}
             messageVide="Premier affrontement contre ce gardien lors des 3 dernières saisons."
             onSelectMatch={setMatchDetailSelectionne}
@@ -3520,7 +3587,9 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
             {ongletHistoriqueDef === 'style' && (
               <CategorieHistorique
                 chargement={chargementDefense}
-                stats={statsVsStyle}
+                matchs={statsVsStyle.matchs}
+                categorie={CATEGORIE_PTS_DEFAUT}
+                moyennePtsSaison={moyennePtsSaison}
                 titre={styleActif && styleActif.id !== 'standard' ? `Face aux défenses « ${styleActif.label} »` : 'Aucun style distinctif détecté'}
                 messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
                 onSelectMatch={setMatchDetailSelectionne}
@@ -3529,7 +3598,9 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
             {ongletHistoriqueDef === 'tirs' && (
               <CategorieHistorique
                 chargement={chargementDefense}
-                stats={categorieAdversaireTirs ? statsParCategorieTirs.find(c => c.id === categorieAdversaireTirs.id).stats : aggregerMatchs([], moyennePtsSaison)}
+                matchs={categorieAdversaireTirs ? statsParCategorieTirs.find(c => c.id === categorieAdversaireTirs.id).stats.matchs : []}
+                categorie={CATEGORIE_PTS_DEFAUT}
+                moyennePtsSaison={moyennePtsSaison}
                 titre={categorieAdversaireTirs ? `Face aux défenses « ${categorieAdversaireTirs.label} »` : 'Catégorie indisponible'}
                 messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
                 onSelectMatch={setMatchDetailSelectionne}
@@ -3570,13 +3641,14 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
   );
 }
 
-// Onglet de la section "Historique" : stats agregees + graphique 10 derniers matchs + liste cliquable.
-function CategorieHistorique({ chargement, stats, titre, messageVide, onSelectMatch }) {
+// Onglet de la section "Historique" : stats agregees + graphique 10 derniers matchs + liste cliquable,
+// pour la categorie de filtre selectionnee (Tirs/Buts/Passes/Points/PPP/TOI/BLK/Hits).
+function CategorieHistorique({ chargement, matchs, categorie, moyennePtsSaison, titre, messageVide, onSelectMatch }) {
   const isMobile = useIsMobile();
   if (chargement) {
     return <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Chargement...</p>;
   }
-  if (!stats || stats.nb === 0) {
+  if (!matchs || matchs.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '30px 0' }}>
         <div style={{ fontSize: '26px', marginBottom: '6px' }}>🆕</div>
@@ -3584,12 +3656,21 @@ function CategorieHistorique({ chargement, stats, titre, messageVide, onSelectMa
       </div>
     );
   }
-  const derniers10 = [...stats.matchs].slice(0, 10).reverse();
+  const stats = aggregerMatchsCategorie(matchs, categorie, moyennePtsSaison);
+  const derniers10 = [...matchs].slice(0, 10).reverse();
+  const colonnesBase = [
+    { l: 'B', champ: 'goals', v: m => m.goals || 0 },
+    { l: 'A', champ: 'assists', v: m => m.assists || 0 },
+    { l: 'PTS', champ: 'points', v: m => m.points || 0 },
+  ];
+  const colonneCategorie = colonnesBase.some(c => c.champ === categorie.champ)
+    ? null
+    : { l: categorie.label.toUpperCase(), champ: categorie.champ, v: m => valeurCategorieMatch(m, categorie) };
   return (
     <>
       <div style={{ color: 'white', fontWeight: '700', fontSize: '13px', marginBottom: '10px' }}>{titre}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: '6px', marginBottom: '14px' }}>
-        {[['PJ', stats.nb], ['B/M', stats.moy.goals], ['A/M', stats.moy.assists], ['PTS/M', stats.moy.points], ['TIRS/M', stats.moy.shots], ['%>MOY', stats.pctAuDessus + '%']].map(([l, v], i) => (
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
+        {[['PJ', stats.nb], [`${categorie.label.toUpperCase()}/M`, stats.moyenne], [`TOTAL ${categorie.label.toUpperCase()}`, stats.total], ['%>MOY', stats.pctAuDessus + '%']].map(([l, v], i) => (
           <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#161616', borderRadius: '8px', border: '1px solid #1f1f1f' }}>
             <div style={{ fontSize: '14px', fontWeight: '900', color: '#3b82f6' }}>{v}</div>
             <div style={{ fontSize: '8px', color: '#555', marginTop: '2px' }}>{l}</div>
@@ -3598,17 +3679,17 @@ function CategorieHistorique({ chargement, stats, titre, messageVide, onSelectMa
       </div>
       <div style={{ width: '100%', height: 150, marginBottom: '14px' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={derniers10.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', points: m.points || 0 }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <BarChart data={derniers10.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', valeur: valeurCategorieMatch(m, categorie) }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
             <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 9 }} axisLine={{ stroke: '#222' }} tickLine={false} />
             <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={26} allowDecimals={false} />
-            <RechartsTooltip contentStyle={{ backgroundColor: '#161616', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} pts`, '']} />
-            <Bar dataKey="points" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+            <RechartsTooltip contentStyle={{ backgroundColor: '#161616', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} ${categorie.label.toLowerCase()}`, '']} />
+            <Bar dataKey="valeur" fill="#f97316" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {stats.matchs.slice(0, 10).map((m, i) => (
+        {matchs.slice(0, 10).map((m, i) => (
           <div key={i} onClick={() => onSelectMatch(m)} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#161616', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1c1c1c'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#161616'}
@@ -3625,9 +3706,18 @@ function CategorieHistorique({ chargement, stats, titre, messageVide, onSelectMa
               <div style={{ fontSize: '10px', color: '#555' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div>
             </div>
             <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
-              <div><div style={{ color: '#666', fontSize: '9px' }}>B</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
-              <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
-              <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: '#3b82f6', fontWeight: 'bold' }}>{m.points}</div></div>
+              {colonnesBase.map(c => (
+                <div key={c.champ}>
+                  <div style={{ color: '#666', fontSize: '9px' }}>{c.l}</div>
+                  <div style={{ color: c.champ === categorie.champ ? '#f97316' : (c.champ === 'points' ? '#3b82f6' : 'white'), fontWeight: 'bold' }}>{c.v(m)}</div>
+                </div>
+              ))}
+              {colonneCategorie && (
+                <div>
+                  <div style={{ color: '#666', fontSize: '9px' }}>{colonneCategorie.l}</div>
+                  <div style={{ color: '#f97316', fontWeight: 'bold' }}>{colonneCategorie.v(m)}</div>
+                </div>
+              )}
             </div>
             <span style={{ color: '#3b82f6', fontSize: '12px' }}>→</span>
           </div>
