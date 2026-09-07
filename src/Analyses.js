@@ -2453,6 +2453,7 @@ function FicheJoueur({ joueur, onBack }) {
   const [modeStats, setModeStats] = useState('regular');
   const [prochainAdversaire, setProchainAdversaire] = useState(null);
   const [matchupOuvert, setMatchupOuvert] = useState(false);
+  const [analyseAvanceeOuverte, setAnalyseAvanceeOuverte] = useState(false);
   const seasonId = useSaisonCourante();
 
   useEffect(() => {
@@ -2733,9 +2734,30 @@ const getMatchsChart = () => {
     );
   }
 
+  if (analyseAvanceeOuverte && prochainAdversaire) {
+    return (
+      <FicheAnalyseAvancee
+        joueur={joueur}
+        adversaireAbbrev={prochainAdversaire.abbrev}
+        prochainMatch={prochainAdversaire}
+        moyennePtsSaison={getMoyenneSaison('PTS')}
+        onBack={() => setAnalyseAvanceeOuverte(false)}
+      />
+    );
+  }
+
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        {!isGardien && (
+          <button
+            onClick={() => prochainAdversaire && setAnalyseAvanceeOuverte(true)}
+            disabled={!prochainAdversaire}
+            style={{ backgroundColor: 'transparent', color: '#f97316', border: '1px solid #f97316', padding: '7px 14px', borderRadius: '8px', cursor: prochainAdversaire ? 'pointer' : 'default', fontSize: '12px', fontWeight: '700', opacity: prochainAdversaire ? 1 : 0.5 }}
+          >Analyse avancée</button>
+        )}
+      </div>
  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
   <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Saison régulière</button>
   <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
@@ -3017,37 +3039,42 @@ const CATEGORIES_TIRS_ACCORDES = [
 
 const LABELS_STAT = { shots: 'tirs', goals: 'buts', points: 'points' };
 
-function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
-  const isMobile = useIsMobile();
-  const seasonId = useSaisonCourante();
+// --- Agregation / derives (partages entre FicheMatchup et FicheAnalyseAvancee) ---
+const moyenneCle = (matchs, cle) => matchs.length > 0 ? parseFloat((matchs.reduce((s, m) => s + (m[cle] || 0), 0) / matchs.length).toFixed(2)) : 0;
+const ecartTypeCle = (matchs, cle) => {
+  if (matchs.length < 2) return 0;
+  const m = moyenneCle(matchs, cle);
+  const variance = matchs.reduce((s, x) => s + Math.pow((x[cle] || 0) - m, 2), 0) / matchs.length;
+  return Math.sqrt(variance);
+};
+const aggregerMatchs = (matchs, moyennePtsSaison) => ({
+  nb: matchs.length,
+  matchs,
+  goals: matchs.reduce((s, m) => s + (m.goals || 0), 0),
+  assists: matchs.reduce((s, m) => s + (m.assists || 0), 0),
+  points: matchs.reduce((s, m) => s + (m.points || 0), 0),
+  shots: matchs.reduce((s, m) => s + (m.shots || 0), 0),
+  moy: { goals: moyenneCle(matchs, 'goals'), assists: moyenneCle(matchs, 'assists'), points: moyenneCle(matchs, 'points'), shots: moyenneCle(matchs, 'shots') },
+  pctAuDessus: matchs.length > 0 && moyennePtsSaison > 0 ? Math.round((matchs.filter(m => (m.points || 0) >= moyennePtsSaison).length / matchs.length) * 100) : 0,
+});
+
+// Charge l'historique du joueur (3 dernieres saisons), isole les matchs contre l'adversaire et les enrichit
+// (score final, mises en echec/blocages, gardien adverse ayant debute). Partage entre FicheMatchup (H2H)
+// et FicheAnalyseAvancee (projections).
+function useHistoriqueVsAdversaire(joueurId, adversaireAbbrev, seasonId) {
   const saisons = getSeasonsRecentes(seasonId, 3);
-  const pad = isMobile ? '14px' : '20px';
-
-  const [ongletPrincipal, setOngletPrincipal] = useState('match');
-  const [ongletHistorique, setOngletHistorique] = useState('gardien');
-
   const [chargement, setChargement] = useState(true);
+  const [chargementDetails, setChargementDetails] = useState(true);
   const [historiqueComplet, setHistoriqueComplet] = useState([]);
   const [matchsVsAdversaire, setMatchsVsAdversaire] = useState([]);
-  const [chargementDetails, setChargementDetails] = useState(true);
   const detailsChargesRef = useRef(false);
 
-  const [statsToutesEquipes, setStatsToutesEquipes] = useState([]);
-  const [chargementDefense, setChargementDefense] = useState(true);
+  useEffect(() => {
+    detailsChargesRef.current = false;
+    chargerHistorique();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joueurId, adversaireAbbrev, seasonId]);
 
-  const [gardienPartant, setGardienPartant] = useState(null);
-  const [chargementGardien, setChargementGardien] = useState(true);
-
-  const [gardienSelectionne, setGardienSelectionne] = useState(null);
-  const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
-
-  const [lignesEdge, setLignesEdge] = useState({ shots: '', goals: '', points: '' });
-  const [editionLigne, setEditionLigne] = useState(null);
-
-  useEffect(() => { detailsChargesRef.current = false; }, [joueur.id, adversaireAbbrev, seasonId]);
-  useEffect(() => { chargerHistorique(); }, [joueur.id, adversaireAbbrev, seasonId]);
-  useEffect(() => { chargerStatsDefense(); }, [seasonId]);
-  useEffect(() => { chargerGardienPartant(); }, [adversaireAbbrev, seasonId]);
   useEffect(() => {
     if (matchsVsAdversaire.length > 0 && !detailsChargesRef.current) {
       detailsChargesRef.current = true;
@@ -3060,7 +3087,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargement(true);
     try {
       const logsParSaison = await Promise.all(
-        saisons.map(s => getGameLogJoueur(joueur.id, 2, s).then(log => log.map(m => ({ ...m, seasonId: s }))))
+        saisons.map(s => getGameLogJoueur(joueurId, 2, s).then(log => log.map(m => ({ ...m, seasonId: s }))))
       );
       const tous = logsParSaison.flat().sort((a, b) => (a.gameDate < b.gameDate ? 1 : -1));
       setHistoriqueComplet(tous);
@@ -3071,12 +3098,10 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargement(false);
   }
 
-  // Enrichit les matchs vs l'adversaire avec mises en echec/blocages, score final et gardien adverse
-  // ayant debute (starter, via boxscore) - reutilise pour la section "vs Ce Gardien" et le detail de match.
   async function chargerDetailsMatchs() {
     setChargementDetails(true);
     try {
-      const avecHits = await getHitsBlocksParMatch(joueur.id, matchsVsAdversaire);
+      const avecHits = await getHitsBlocksParMatch(joueurId, matchsVsAdversaire);
       const resultat = [...avecHits];
       for (let i = 0; i < resultat.length; i += 5) {
         const batch = resultat.slice(i, i + 5);
@@ -3105,8 +3130,20 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargementDetails(false);
   }
 
-  // Stats defensives de toutes les equipes (tirs accordes/match, PK%, mises en echec/match + rang) pour
-  // detecter automatiquement le style defensif de l'adversaire.
+  return { chargement, chargementDetails, historiqueComplet, matchsVsAdversaire };
+}
+
+// Stats defensives de toutes les equipes (tirs accordes/match, PK%, mises en echec/match + rang) pour
+// detecter automatiquement le style defensif d'une equipe. Utilise par FicheAnalyseAvancee.
+function useStatsDefenseLigue(seasonId) {
+  const [chargementDefense, setChargementDefense] = useState(true);
+  const [statsToutesEquipes, setStatsToutesEquipes] = useState([]);
+
+  useEffect(() => {
+    chargerStatsDefense();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonId]);
+
   async function chargerStatsDefense() {
     setChargementDefense(true);
     try {
@@ -3133,7 +3170,19 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargementDefense(false);
   }
 
-  // Gardien partant probable = celui avec le plus de departs cette saison (club-stats/{abbrev}/now).
+  return { chargementDefense, statsToutesEquipes };
+}
+
+// Gardien partant probable = celui avec le plus de departs cette saison (club-stats/{abbrev}/now).
+function useGardienPartant(adversaireAbbrev, seasonId) {
+  const [chargementGardien, setChargementGardien] = useState(true);
+  const [gardienPartant, setGardienPartant] = useState(null);
+
+  useEffect(() => {
+    chargerGardienPartant();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adversaireAbbrev, seasonId]);
+
   async function chargerGardienPartant() {
     setChargementGardien(true);
     try {
@@ -3154,24 +3203,202 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
     setChargementGardien(false);
   }
 
-  // --- Agregation / derives ---
-  const moyenneCle = (matchs, cle) => matchs.length > 0 ? parseFloat((matchs.reduce((s, m) => s + (m[cle] || 0), 0) / matchs.length).toFixed(2)) : 0;
-  const ecartTypeCle = (matchs, cle) => {
-    if (matchs.length < 2) return 0;
-    const m = moyenneCle(matchs, cle);
-    const variance = matchs.reduce((s, x) => s + Math.pow((x[cle] || 0) - m, 2), 0) / matchs.length;
-    return Math.sqrt(variance);
+  return { chargementGardien, gardienPartant };
+}
+
+// Vue "Matchup" : face-a-face historique du joueur contre son prochain adversaire et contre le gardien
+// partant adverse, sur les 3 dernieres saisons. Le style defensif/tirs accordes et les projections vivent
+// dans FicheAnalyseAvancee (accessible depuis un bouton dedie sur FicheJoueur).
+function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
+  const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
+  const pad = isMobile ? '14px' : '20px';
+
+  const [ongletHistorique, setOngletHistorique] = useState('equipe');
+  const [gardienSelectionne, setGardienSelectionne] = useState(null);
+  const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
+
+  const { chargement, chargementDetails, matchsVsAdversaire } = useHistoriqueVsAdversaire(joueur.id, adversaireAbbrev, seasonId);
+  const { chargementGardien, gardienPartant } = useGardienPartant(adversaireAbbrev, seasonId);
+
+  const matchsVsGardien = gardienPartant ? matchsVsAdversaire.filter(m => m.gardienAdversaireId === gardienPartant.id) : [];
+  const statsVsGardien = aggregerMatchs(matchsVsGardien, moyennePtsSaison);
+  const statsVsEquipe = aggregerMatchs(matchsVsAdversaire, moyennePtsSaison);
+
+  const chargementGoalieH2H = chargementDetails || chargementGardien;
+
+  // Navigation interne (apres tous les hooks, meme pattern que FicheJoueur pour matchupOuvert).
+  if (gardienSelectionne) {
+    return <FicheJoueur joueur={gardienSelectionne} onBack={() => setGardienSelectionne(null)} />;
+  }
+  if (matchDetailSelectionne) {
+    return <DetailMatchHistorique match={matchDetailSelectionne} joueurNom={joueur.nom} onBack={() => setMatchDetailSelectionne(null)} />;
+  }
+
+  const selectionnerGardien = () => {
+    if (!gardienPartant) return;
+    setGardienSelectionne({ id: gardienPartant.id, nom: gardienPartant.nom, equipe: adversaireAbbrev, position: 'G', numero: '' });
   };
-  const aggregerMatchs = (matchs) => ({
-    nb: matchs.length,
-    matchs,
-    goals: matchs.reduce((s, m) => s + (m.goals || 0), 0),
-    assists: matchs.reduce((s, m) => s + (m.assists || 0), 0),
-    points: matchs.reduce((s, m) => s + (m.points || 0), 0),
-    shots: matchs.reduce((s, m) => s + (m.shots || 0), 0),
-    moy: { goals: moyenneCle(matchs, 'goals'), assists: moyenneCle(matchs, 'assists'), points: moyenneCle(matchs, 'points'), shots: moyenneCle(matchs, 'shots') },
-    pctAuDessus: matchs.length > 0 && moyennePtsSaison > 0 ? Math.round((matchs.filter(m => (m.points || 0) >= moyennePtsSaison).length / matchs.length) * 100) : 0,
-  });
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+          <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
+        </div>
+        <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ textAlign: 'center', cursor: gardienPartant ? 'pointer' : 'default' }} onClick={selectionnerGardien}>
+          <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
+          <div style={{ color: '#666', fontSize: '10px' }}>
+            {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
+          </div>
+        </div>
+      </div>
+
+      <div
+        onClick={selectionnerGardien}
+        style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px', cursor: gardienPartant ? 'pointer' : 'default', transition: 'border-color 0.2s ease' }}
+        onMouseEnter={e => gardienPartant && (e.currentTarget.style.borderColor = '#f97316')}
+        onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+      >
+        <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>GARDIEN PARTANT PROBABLE</div>
+        {chargementGardien ? (
+          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+        ) : !gardienPartant ? (
+          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Gardien partant indisponible.</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: 'white', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
+                <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
+              </div>
+              <span style={{ color: '#f97316', fontSize: '14px' }}>→</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '10px' }}>
+              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.gaa}</div>
+                <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>GAA</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.svp}</div>
+                <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>SV%</div>
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
+              <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '8px' }}>HISTORIQUE FACE À CE GARDIEN</div>
+              {chargementGoalieH2H ? (
+                <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Analyse de l'historique...</p>
+              ) : statsVsGardien.nb === 0 ? (
+                <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                  <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
+                  <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.goals}</div>
+                    <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsGardien.nb} MJ</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsGardien.moy.points}</div>
+                    <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
+                  </div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.shots}</div>
+                    <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
+        <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>HISTORIQUE FACE À {adversaireAbbrev}</div>
+        {chargement ? (
+          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+        ) : statsVsEquipe.nb === 0 ? (
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
+            <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsEquipe.moy.goals}</div>
+              <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsEquipe.nb} MJ</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsEquipe.moy.points}</div>
+              <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsEquipe.moy.shots}</div>
+              <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Historique detaille : liste des matchs, filtrable vs cette equipe / vs ce gardien */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
+        <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+          {[['equipe', 'vs Cette Équipe'], ['gardien', 'vs Ce Gardien']].map(([id, label]) => (
+            <button key={id} onClick={() => setOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+          ))}
+        </div>
+
+        {ongletHistorique === 'equipe' && (
+          <CategorieHistorique
+            chargement={chargement}
+            stats={statsVsEquipe}
+            titre={`Face à ${adversaireAbbrev}`}
+            messageVide="Aucun affrontement contre cette équipe lors des 3 dernières saisons."
+            onSelectMatch={setMatchDetailSelectionne}
+          />
+        )}
+        {ongletHistorique === 'gardien' && (
+          <CategorieHistorique
+            chargement={chargementGoalieH2H}
+            stats={statsVsGardien}
+            titre={gardienPartant ? `Face à ${gardienPartant.nom}` : 'Face à ce gardien'}
+            messageVide="Premier affrontement contre ce gardien lors des 3 dernières saisons."
+            onSelectMatch={setMatchDetailSelectionne}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Vue "Analyse avancée" : style defensif et tirs accordes de l'adversaire du prochain match, et projections
+// du joueur (tirs/buts/points) basees sur son historique reel (forme recente, vs style adverse, vs gardien,
+// domicile/exterieur). Accessible depuis un bouton dedie sur FicheJoueur.
+function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
+  const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
+  const pad = isMobile ? '14px' : '20px';
+
+  const [ongletPrincipal, setOngletPrincipal] = useState('defense');
+  const [ongletHistoriqueDef, setOngletHistoriqueDef] = useState('style');
+  const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
+  const [lignesEdge, setLignesEdge] = useState({ shots: '', goals: '', points: '' });
+  const [editionLigne, setEditionLigne] = useState(null);
+
+  const { chargement, chargementDetails, historiqueComplet, matchsVsAdversaire } = useHistoriqueVsAdversaire(joueur.id, adversaireAbbrev, seasonId);
+  const { chargementDefense, statsToutesEquipes } = useStatsDefenseLigue(seasonId);
+  const { chargementGardien, gardienPartant } = useGardienPartant(adversaireAbbrev, seasonId);
+
+  const chargementGoalieH2H = chargementDetails || chargementGardien;
+  const chargementComplet = chargement || chargementDefense || chargementGoalieH2H;
 
   const teamIdAdversaire = ABBREV_TO_TEAM_ID[adversaireAbbrev];
   const statsAdversaire = statsToutesEquipes.find(e => e.teamId === teamIdAdversaire) || null;
@@ -3184,19 +3411,16 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   });
 
   const matchsVsGardien = gardienPartant ? matchsVsAdversaire.filter(m => m.gardienAdversaireId === gardienPartant.id) : [];
-  const statsVsGardien = aggregerMatchs(matchsVsGardien);
-  const statsVsStyle = styleActif && styleActif.id !== 'standard' ? aggregerMatchs(matchsVsFiltreEquipe(styleActif.test)) : aggregerMatchs([]);
-  const statsParCategorieTirs = CATEGORIES_TIRS_ACCORDES.map(cat => ({ ...cat, stats: aggregerMatchs(matchsVsFiltreEquipe(cat.test)) }));
+  const statsVsGardien = aggregerMatchs(matchsVsGardien, moyennePtsSaison);
+  const statsVsStyle = styleActif && styleActif.id !== 'standard' ? aggregerMatchs(matchsVsFiltreEquipe(styleActif.test), moyennePtsSaison) : aggregerMatchs([], moyennePtsSaison);
+  const statsParCategorieTirs = CATEGORIES_TIRS_ACCORDES.map(cat => ({ ...cat, stats: aggregerMatchs(matchsVsFiltreEquipe(cat.test), moyennePtsSaison) }));
 
-  const l5 = aggregerMatchs(historiqueComplet.slice(0, 5));
-  const l10 = aggregerMatchs(historiqueComplet.slice(0, 10));
-  const l20 = aggregerMatchs(historiqueComplet.slice(0, 20));
+  const l5 = aggregerMatchs(historiqueComplet.slice(0, 5), moyennePtsSaison);
+  const l10 = aggregerMatchs(historiqueComplet.slice(0, 10), moyennePtsSaison);
+  const l20 = aggregerMatchs(historiqueComplet.slice(0, 20), moyennePtsSaison);
   const matchsDomicile = historiqueComplet.filter(m => m.homeRoadFlag === 'H');
   const matchsExterieur = historiqueComplet.filter(m => m.homeRoadFlag !== 'H');
-  const statsDomExt = aggregerMatchs(prochainMatch?.domicile ? matchsDomicile : matchsExterieur);
-
-  const chargementGoalieH2H = chargementDetails || chargementGardien;
-  const chargementComplet = chargement || chargementDefense || chargementGoalieH2H;
+  const statsDomExt = aggregerMatchs(prochainMatch?.domicile ? matchsDomicile : matchsExterieur, moyennePtsSaison);
 
   const blendRecent = (cle) => {
     const composantes = [{ p: 0.45, f: l5 }, { p: 0.33, f: l10 }, { p: 0.22, f: l20 }].filter(c => c.f.nb > 0);
@@ -3239,18 +3463,9 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
 
   const projections = { shots: projeterStat('shots'), goals: projeterStat('goals'), points: projeterStat('points') };
 
-  // Navigation interne (apres tous les hooks, meme pattern que FicheJoueur pour matchupOuvert).
-  if (gardienSelectionne) {
-    return <FicheJoueur joueur={gardienSelectionne} onBack={() => setGardienSelectionne(null)} />;
-  }
   if (matchDetailSelectionne) {
     return <DetailMatchHistorique match={matchDetailSelectionne} joueurNom={joueur.nom} onBack={() => setMatchDetailSelectionne(null)} />;
   }
-
-  const selectionnerGardien = () => {
-    if (!gardienPartant) return;
-    setGardienSelectionne({ id: gardienPartant.id, nom: gardienPartant.nom, equipe: adversaireAbbrev, position: 'G', numero: '' });
-  };
 
   return (
     <div>
@@ -3263,7 +3478,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
           <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
         <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
-        <div style={{ textAlign: 'center', cursor: gardienPartant ? 'pointer' : 'default' }} onClick={selectionnerGardien}>
+        <div style={{ textAlign: 'center' }}>
           <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
           <div style={{ color: '#666', fontSize: '10px' }}>
@@ -3272,77 +3487,15 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         </div>
       </div>
 
-      {/* Navigation principale : 3 grands onglets */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '4px', border: '1px solid #1a1a1a' }}>
-        {[['match', 'Ce Match'], ['historique', 'Historique'], ['projection', 'Projection']].map(([id, label]) => (
+        {[['defense', 'Défense Adverse'], ['projection', 'Projections']].map(([id, label]) => (
           <button key={id} onClick={() => setOngletPrincipal(id)} style={{ flex: 1, padding: '10px 6px', borderRadius: '9px', border: 'none', cursor: 'pointer', backgroundColor: ongletPrincipal === id ? '#f97316' : 'transparent', color: ongletPrincipal === id ? 'white' : '#888', fontSize: '13px', fontWeight: ongletPrincipal === id ? '700' : '500', transition: 'background-color 0.2s ease, color 0.2s ease' }}>{label}</button>
         ))}
       </div>
 
-      {/* ================= SECTION 1 : CE MATCH (fond #111, accents orange) ================= */}
-      {ongletPrincipal === 'match' && (
+      {/* ================= SECTION 1 : DÉFENSE ADVERSE (fond #111, accents orange) ================= */}
+      {ongletPrincipal === 'defense' && (
         <div>
-          <div
-            onClick={selectionnerGardien}
-            style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px', cursor: gardienPartant ? 'pointer' : 'default', transition: 'border-color 0.2s ease' }}
-            onMouseEnter={e => gardienPartant && (e.currentTarget.style.borderColor = '#f97316')}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
-          >
-            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>GARDIEN PARTANT PROBABLE</div>
-            {chargementGardien ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
-            ) : !gardienPartant ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Gardien partant indisponible.</p>
-            ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: 'white', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
-                    <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
-                  </div>
-                  <span style={{ color: '#f97316', fontSize: '14px' }}>→</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '10px' }}>
-                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.gaa}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>GAA</div>
-                  </div>
-                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.svp}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>SV%</div>
-                  </div>
-                </div>
-                <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
-                  <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '8px' }}>HISTORIQUE FACE À CE GARDIEN</div>
-                  {chargementGoalieH2H ? (
-                    <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Analyse de l'historique...</p>
-                  ) : statsVsGardien.nb === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                      <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
-                      <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.goals}</div>
-                        <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsGardien.nb} MJ</div>
-                      </div>
-                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsGardien.moy.points}</div>
-                        <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
-                      </div>
-                      <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.shots}</div>
-                        <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
           <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
             <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>STYLE DÉFENSIF ADVERSE</div>
             {chargementDefense ? (
@@ -3362,7 +3515,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
             )}
           </div>
 
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
+          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
             <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>TIRS ACCORDÉS</div>
             {chargementDefense ? (
               <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
@@ -3381,49 +3534,37 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* ================= SECTION 2 : HISTORIQUE PAR CATÉGORIE (fond #0d0d0d, accents bleu) ================= */}
-      {ongletPrincipal === 'historique' && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
-          <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
-            {[['gardien', 'vs Ce Gardien'], ['style', 'vs Ce Style Défensif'], ['tirs', 'vs Ces Tirs Accordés']].map(([id, label]) => (
-              <button key={id} onClick={() => setOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
-            ))}
+          <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
+            <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
+              {[['style', 'vs Ce Style Défensif'], ['tirs', 'vs Ces Tirs Accordés']].map(([id, label]) => (
+                <button key={id} onClick={() => setOngletHistoriqueDef(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistoriqueDef === id ? '#3b82f6' : '#161616', color: ongletHistoriqueDef === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistoriqueDef === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+              ))}
+            </div>
+
+            {ongletHistoriqueDef === 'style' && (
+              <CategorieHistorique
+                chargement={chargementDefense}
+                stats={statsVsStyle}
+                titre={styleActif && styleActif.id !== 'standard' ? `Face aux défenses « ${styleActif.label} »` : 'Aucun style distinctif détecté'}
+                messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
+                onSelectMatch={setMatchDetailSelectionne}
+              />
+            )}
+            {ongletHistoriqueDef === 'tirs' && (
+              <CategorieHistorique
+                chargement={chargementDefense}
+                stats={categorieAdversaireTirs ? statsParCategorieTirs.find(c => c.id === categorieAdversaireTirs.id).stats : aggregerMatchs([], moyennePtsSaison)}
+                titre={categorieAdversaireTirs ? `Face aux défenses « ${categorieAdversaireTirs.label} »` : 'Catégorie indisponible'}
+                messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
+                onSelectMatch={setMatchDetailSelectionne}
+              />
+            )}
           </div>
-
-          {ongletHistorique === 'gardien' && (
-            <CategorieHistorique
-              chargement={chargementGoalieH2H}
-              stats={statsVsGardien}
-              titre={gardienPartant ? `Face à ${gardienPartant.nom}` : 'Face à ce gardien'}
-              messageVide="Premier affrontement contre ce gardien lors des 3 dernières saisons."
-              onSelectMatch={setMatchDetailSelectionne}
-            />
-          )}
-          {ongletHistorique === 'style' && (
-            <CategorieHistorique
-              chargement={chargementDefense}
-              stats={statsVsStyle}
-              titre={styleActif && styleActif.id !== 'standard' ? `Face aux défenses « ${styleActif.label} »` : 'Aucun style distinctif détecté'}
-              messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
-              onSelectMatch={setMatchDetailSelectionne}
-            />
-          )}
-          {ongletHistorique === 'tirs' && (
-            <CategorieHistorique
-              chargement={chargementDefense}
-              stats={categorieAdversaireTirs ? statsParCategorieTirs.find(c => c.id === categorieAdversaireTirs.id).stats : aggregerMatchs([])}
-              titre={categorieAdversaireTirs ? `Face aux défenses « ${categorieAdversaireTirs.label} »` : 'Catégorie indisponible'}
-              messageVide="Aucun match disputé contre ce type de défense sur les 3 dernières saisons."
-              onSelectMatch={setMatchDetailSelectionne}
-            />
-          )}
         </div>
       )}
 
-      {/* ================= SECTION 3 : PROJECTION & PROBABILITÉ (fond #111, vert/rouge) ================= */}
+      {/* ================= SECTION 2 : PROJECTION & PROBABILITÉ (fond #111, vert/rouge) ================= */}
       {ongletPrincipal === 'projection' && (
         <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
           <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>MODÈLE DE PROJECTION</div>
