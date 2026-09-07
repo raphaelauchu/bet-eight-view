@@ -3185,10 +3185,10 @@ function useStatsDefenseLigue(seasonId) {
   return { chargementDefense, statsToutesEquipes };
 }
 
-// Gardien partant probable : priorite au partant Daily Faceoff (nhl_lineups.json via
-// useLineupsDailyFaceoff, meme source/logique que trouverGardienPartant utilise par ApercuMatchup et
-// AlignementEquipe), avec repli sur l'heuristique "le plus de departs cette saison" (club-stats/{abbrev}/now)
-// si Daily Faceoff n'a pas de donnees pour cette equipe ou si le nom ne matche aucun gardien du club-stats.
+// Gardien partant probable : reutilise exactement trouverGardienPartant(joueurs, abbrev, lineupDF),
+// la meme fonction (memes parametres) qu'ApercuMatchup et AlignementEquipe, appliquee au roster complet
+// de l'equipe (roster/{abbrev}/current) pour identifier le meme partant partout dans l'app. Les stats
+// (GAA/SV%/departs) du partant trouve sont ensuite completees via club-stats/{abbrev}/now.
 function useGardienPartant(adversaireAbbrev, seasonId) {
   const [chargementGardien, setChargementGardien] = useState(true);
   const [gardienPartant, setGardienPartant] = useState(null);
@@ -3202,21 +3202,23 @@ function useGardienPartant(adversaireAbbrev, seasonId) {
   async function chargerGardienPartant() {
     setChargementGardien(true);
     try {
-      const res = await fetch(getUrl(`club-stats/${adversaireAbbrev}/now`));
-      const data = await res.json();
-      const goalies = data.goalies || [];
-      if (goalies.length === 0) { setGardienPartant(null); setChargementGardien(false); return; }
-      const nomDF = lineupDF?.[NHL_ABBREV_TO_SLUG[adversaireAbbrev]]?.goalies?.[0];
-      const goaliesAvecNom = goalies.map(g => ({ ...g, nom: `${g.firstName?.default || ''} ${g.lastName?.default || ''}`.trim() }));
-      const starter = (nomDF && trouverJoueurParNomDF(goaliesAvecNom, nomDF))
-        || [...goalies].sort((a, b) => (b.gamesStarted || 0) - (a.gamesStarted || 0))[0];
+      const [resRoster, resStats] = await Promise.all([
+        fetch(getUrl(`roster/${adversaireAbbrev}/current`)),
+        fetch(getUrl(`club-stats/${adversaireAbbrev}/now`)),
+      ]);
+      const [dataRoster, dataStats] = await Promise.all([resRoster.json(), resStats.json()]);
+      const roster = [...(dataRoster.forwards || []), ...(dataRoster.defensemen || []), ...(dataRoster.goalies || [])]
+        .map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), position: j.positionCode || '', headshot: j.headshot }));
+      const starter = trouverGardienPartant(roster, adversaireAbbrev, lineupDF);
+      if (!starter) { setGardienPartant(null); setChargementGardien(false); return; }
+      const statsStarter = (dataStats.goalies || []).find(g => g.playerId === starter.id) || null;
       setGardienPartant({
-        id: starter.playerId,
-        nom: `${starter.firstName?.default || ''} ${starter.lastName?.default || ''}`.trim(),
-        gaa: starter.goalsAgainstAverage != null ? starter.goalsAgainstAverage.toFixed(2) : '-',
-        svp: starter.savePercentage != null ? (starter.savePercentage * 100).toFixed(1) + '%' : '-',
-        photo: starter.headshot,
-        gamesStarted: starter.gamesStarted || 0,
+        id: starter.id,
+        nom: starter.nom,
+        gaa: statsStarter?.goalsAgainstAverage != null ? statsStarter.goalsAgainstAverage.toFixed(2) : '-',
+        svp: statsStarter?.savePercentage != null ? (statsStarter.savePercentage * 100).toFixed(1) + '%' : '-',
+        photo: starter.headshot || statsStarter?.headshot,
+        gamesStarted: statsStarter?.gamesStarted || 0,
       });
     } catch (err) { console.error(err); setGardienPartant(null); }
     setChargementGardien(false);
