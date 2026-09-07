@@ -478,17 +478,8 @@ function calcLigneMaison(gameLog, champ) {
 // Compare une moyenne de periode a sa reference (moyenne saison) pour en deduire une tendance :
 // vert si nettement au-dessus (>=15%), rouge si nettement en-dessous (<=15%), gris sinon. Meme
 // logique de seuil "relatif" que couleurTendance (taux d'atteinte) ailleurs dans l'app.
-function couleurMoyenne(valeur, reference) {
-  if (!reference) return '#888';
-  const ratio = valeur / reference;
-  if (ratio >= 1.15) return '#22c55e';
-  if (ratio <= 0.85) return '#ef4444';
-  return '#888';
-}
-
 // Compare une moyenne a la ligne maison calculee (o[ligne]) : vert si elle l'atteint ou la depasse,
-// rouge sinon. Utilisee pour Szn, qui ne peut pas se comparer a elle-meme comme le fait couleurMoyenne
-// pour L5/L10 (reference = moyenne saison).
+// rouge sinon. Utilisee pour L5, L10 et Szn.
 function couleurVsLigne(valeur, ligne) {
   return valeur >= ligne ? '#22c55e' : '#ef4444';
 }
@@ -530,11 +521,11 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
       <MiniSparkline valeurs={ligneMaison.historique} couleur={couleurCategorie} />
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <div style={{ textAlign: 'center', width: '22px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurMoyenne(ligneMaison.moyenneL5, ligneMaison.moyenneSzn) }}>{ligneMaison.moyenneL5.toFixed(1)}</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneL5, ligneMaison.ligne) }}>{ligneMaison.moyenneL5.toFixed(1)}</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L5</div>
         </div>
         <div style={{ textAlign: 'center', width: '22px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurMoyenne(ligneMaison.moyenneL10, ligneMaison.moyenneSzn) }}>{ligneMaison.moyenneL10.toFixed(1)}</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneL10, ligneMaison.ligne) }}>{ligneMaison.moyenneL10.toFixed(1)}</div>
           <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
         </div>
         <div style={{ textAlign: 'center', width: '22px' }}>
