@@ -472,13 +472,7 @@ function calcLigneMaison(gameLog, champ) {
   const r5 = tauxAtteinte(l5);
   const r10 = tauxAtteinte(l10);
   const historique = l10.map(g => g[champ] || 0).reverse();
-  // Score "chaud" : priorise le L5 par rapport a la ligne Szn (ratio), avec un bonus si le L5
-  // depasse le L10 (tendance a la hausse). Sert uniquement a trier les joueurs du plus au moins
-  // "hot" dans SectionLignesMaison, independamment du taux d'atteinte (score).
-  const ratioL5Szn = moyenneSzn > 0 ? moyenneL5 / moyenneSzn : (moyenneL5 > 0 ? 2 : 1);
-  const bonusTendance = moyenneL5 > moyenneL10 ? 0.15 : 0;
-  const scoreChaud = ratioL5Szn + bonusTendance;
-  return { ligne, moyenneL5, moyenneL10, moyenneSzn, r5, r10, score: (r5 + r10) / 2, scoreChaud, historique };
+  return { ligne, moyenneL5, moyenneL10, moyenneSzn, r5, r10, score: (r5 + r10) / 2, historique };
 }
 
 // Compare une moyenne de periode a sa reference (moyenne saison) pour en deduire une tendance :
@@ -490,6 +484,13 @@ function couleurMoyenne(valeur, reference) {
   if (ratio >= 1.15) return '#22c55e';
   if (ratio <= 0.85) return '#ef4444';
   return '#888';
+}
+
+// Compare une moyenne a la ligne maison calculee (o[ligne]) : vert si elle l'atteint ou la depasse,
+// rouge sinon. Utilisee pour Szn, qui ne peut pas se comparer a elle-meme comme le fait couleurMoyenne
+// pour L5/L10 (reference = moyenne saison).
+function couleurVsLigne(valeur, ligne) {
+  return valeur >= ligne ? '#22c55e' : '#ef4444';
 }
 
 // Mini sparkline (derniers matchs de la periode, du plus ancien au plus recent) : pas d'axes ni de
@@ -537,7 +538,7 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
           <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
         </div>
         <div style={{ textAlign: 'center', width: '22px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: 'white' }}>{ligneMaison.moyenneSzn.toFixed(1)}</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneSzn, ligneMaison.ligne) }}>{ligneMaison.moyenneSzn.toFixed(1)}</div>
           <div style={{ fontSize: '8px', color: '#555' }}>Szn</div>
         </div>
       </div>
@@ -586,7 +587,10 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
   const couleurCategorieActive = CATEGORIES_LIGNES_MAISON.find(c => c.cle === categorieActive)?.couleur;
 
   const colonneEquipe = (patineurs, abbrev, nom) => {
-    const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => lignesCategorie[b.id].scoreChaud - lignesCategorie[a.id].scoreChaud) : [];
+    const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => {
+      const la = lignesCategorie[a.id], lb = lignesCategorie[b.id];
+      return (lb.moyenneL5 - la.moyenneL5) || (lb.moyenneL10 - la.moyenneL10) || (lb.moyenneSzn - la.moyenneSzn);
+    }) : [];
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
