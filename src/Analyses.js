@@ -472,7 +472,13 @@ function calcLigneMaison(gameLog, champ) {
   const r5 = tauxAtteinte(l5);
   const r10 = tauxAtteinte(l10);
   const historique = l10.map(g => g[champ] || 0).reverse();
-  return { ligne, moyenneL5, moyenneL10, moyenneSzn, r5, r10, score: (r5 + r10) / 2, historique };
+  // Score "chaud" : priorise le L5 par rapport a la ligne Szn (ratio), avec un bonus si le L5
+  // depasse le L10 (tendance a la hausse). Sert uniquement a trier les joueurs du plus au moins
+  // "hot" dans SectionLignesMaison, independamment du taux d'atteinte (score).
+  const ratioL5Szn = moyenneSzn > 0 ? moyenneL5 / moyenneSzn : (moyenneL5 > 0 ? 2 : 1);
+  const bonusTendance = moyenneL5 > moyenneL10 ? 0.15 : 0;
+  const scoreChaud = ratioL5Szn + bonusTendance;
+  return { ligne, moyenneL5, moyenneL10, moyenneSzn, r5, r10, score: (r5 + r10) / 2, scoreChaud, historique };
 }
 
 // Compare une moyenne de periode a sa reference (moyenne saison) pour en deduire une tendance :
@@ -580,7 +586,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
   const couleurCategorieActive = CATEGORIES_LIGNES_MAISON.find(c => c.cle === categorieActive)?.couleur;
 
   const colonneEquipe = (patineurs, abbrev, nom) => {
-    const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => lignesCategorie[b.id].score - lignesCategorie[a.id].score) : [];
+    const avecLigne = lignesCategorie ? patineurs.filter(j => lignesCategorie[j.id]).sort((a, b) => lignesCategorie[b.id].scoreChaud - lignesCategorie[a.id].scoreChaud) : [];
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
