@@ -409,38 +409,28 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
           <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom1}</div>
           <div style={{ marginBottom: '8px' }}>
             <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml1?.price)}</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(ml1?.price)}</div>
           </div>
           <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Spread</div>
             <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
           </div>
         </div>
         <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
           <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
-          <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>O/U</div>
-          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-            <div>
-              <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Plus</div>
-              <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(over?.price)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moins</div>
-              <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(under?.price)}</div>
-            </div>
-          </div>
+          <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px' }}>O/U</div>
         </div>
         <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
           <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
           <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom2}</div>
           <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Puck Line</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(ml2?.price)}</div>
           </div>
           <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{formatCote(ml2?.price)}</div>
+            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Spread</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
           </div>
         </div>
       </div>
@@ -634,8 +624,6 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
   const abbrev2 = match.homeTeam?.abbrev;
   const nom1 = match.awayTeam?.commonName?.default || abbrev1;
   const nom2 = match.homeTeam?.commonName?.default || abbrev2;
-  const heure = new Date(match.startTimeUTC).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
-  const dateMatch = new Date(match.startTimeUTC).toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' });
   const etat = match.gameState;
   const dejaJoue = etat === 'FINAL' || etat === 'OFF';
 
@@ -717,24 +705,6 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
       <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '18px' }}>← Retour</button>
 
       <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dejaJoue={dejaJoue} />
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '16px' : '40px', marginBottom: '6px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: isMobile ? '52px' : '68px', height: isMobile ? '52px' : '68px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: '900', fontSize: isMobile ? '13px' : '15px', color: 'white', textAlign: 'center' }}>{nom1}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <span style={{ color: '#444', fontWeight: '900', fontSize: '18px' }}>@</span>
-          {etat === 'LIVE' || etat === 'CRIT'
-            ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
-            : <span style={{ color: '#666', fontSize: '11px', whiteSpace: 'nowrap' }}>{heure}</span>}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: isMobile ? '52px' : '68px', height: isMobile ? '52px' : '68px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: '900', fontSize: isMobile ? '13px' : '15px', color: 'white', textAlign: 'center' }}>{nom2}</span>
-        </div>
-      </div>
-      <div style={{ textAlign: 'center', color: '#666', fontSize: '12px', marginBottom: '20px', textTransform: 'capitalize' }}>{dateMatch}</div>
 
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Gardiens partants</div>
