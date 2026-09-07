@@ -383,7 +383,7 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
   const under = donnees?.total?.find(o => o.name === 'Under');
   const aDesCotes = !!(ml1 || ml2 || sp1 || sp2 || over || under);
 
-  const formatSpread = s => s ? `${s.point > 0 ? '+' : ''}${s.point} (${formatCote(s.price)})` : '-';
+  const formatSpread = s => s ? `${s.point > 0 ? '+' : ''}${s.point}` : '-';
 
   if (dejaJoue) {
     return (
