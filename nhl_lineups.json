@@ -1,21 +1,21 @@
 {
-  "last_updated": "2026-09-09 20:45",
+  "last_updated": "2026-09-10 20:40",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
       "forwards": {
         "L1": {
-          "LW": "Chris Kreider",
+          "LW": "Cutter Gauthier",
           "C": "Leo Carlsson",
-          "RW": "Cutter Gauthier"
+          "RW": "Beckett Sennecke"
         },
         "L2": {
           "LW": "Alex Killorn",
           "C": "Mikael Granlund",
-          "RW": "Beckett Sennecke"
+          "RW": "Frank Vatrano"
         },
         "L3": {
-          "LW": "Frank Vatrano",
+          "LW": "Nikita Nesterenko",
           "C": "Ryan Poehling",
           "RW": "Nathan Gaucher"
         },
@@ -41,16 +41,16 @@
       },
       "pp_units": {
         "PP1": [
-          "Chris Kreider",
+          "Beckett Sennecke",
           "Leo Carlsson",
           "Mikael Granlund",
           "Jackson Lacombe",
           "Cutter Gauthier"
         ],
         "PP2": [
-          "Frank Vatrano",
           "Alex Killorn",
-          "Beckett Sennecke",
+          "Ryan Poehling",
+          "Frank Vatrano",
           "Pavel Mintyukov",
           "Tristan Luneau"
         ]
@@ -595,24 +595,24 @@
       "name": "Edmonton Oilers",
       "forwards": {
         "L1": {
-          "LW": "Isaac Howard",
+          "LW": "Vasily Podkolzin",
           "C": "Connor McDavid",
-          "RW": "Zach Hyman"
+          "RW": "Leon Draisaitl"
         },
         "L2": {
-          "LW": "Vasily Podkolzin",
-          "C": "Leon Draisaitl",
-          "RW": "Matthew Savoie"
+          "LW": "Isaac Howard",
+          "C": "Ryan Nugent-Hopkins",
+          "RW": "Zach Hyman"
         },
         "L3": {
-          "LW": "Ryan Nugent-Hopkins",
+          "LW": "Trent Frederic",
           "C": "Jason Dickinson",
           "RW": "Kasperi Kapanen"
         },
         "L4": {
-          "LW": "Mathieu Joseph",
+          "LW": "Colton Dach",
           "C": "Josh Samanski",
-          "RW": "Trent Frederic"
+          "RW": "Mathieu Joseph"
         }
       },
       "defence": {
@@ -639,15 +639,15 @@
         ],
         "PP2": [
           "Vasily Podkolzin",
-          "Matthew Savoie",
+          "Kasperi Kapanen",
           "Isaac Howard",
           "Mattias Ekholm",
           "Jake Walman"
         ]
       },
       "goalies": [
-        "Frederik Andersen",
-        "Tristan Jarry"
+        "Tristan Jarry",
+        "Devon Levi"
       ]
     },
     "florida-panthers": {
