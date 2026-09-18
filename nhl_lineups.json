@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-17 21:09",
+  "last_updated": "2026-09-18 20:41",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -69,9 +69,9 @@
           "RW": "David Pastrnak"
         },
         "L2": {
-          "LW": "JJ Peterka",
+          "LW": "Casey Mittelstadt",
           "C": "Pavel Zacha",
-          "RW": "Casey Mittelstadt"
+          "RW": "JJ Peterka"
         },
         "L3": {
           "LW": "James Hagens",
@@ -159,15 +159,15 @@
       },
       "pp_units": {
         "PP1": [
+          "Jack Quinn",
           "Zach Benson",
-          "Josh Norris",
           "Josh Doan",
           "Tage Thompson",
           "Rasmus Dahlin"
         ],
         "PP2": [
-          "Jack Quinn",
           "Ryan McLeod",
+          "Josh Norris",
           "Noah Ostlund",
           "Owen Power",
           "Jiri Kulich"
@@ -218,17 +218,17 @@
       },
       "pp_units": {
         "PP1": [
-          "Connor Zary",
+          "Joel Farabee",
           "Morgan Frost",
           "Matt Coronato",
           "Matvei Gridin",
-          "Zayne Parekh"
+          "Simon Nemec"
         ],
         "PP2": [
-          "Joel Farabee",
-          "Mikael Backlund",
+          "Maxim Tsyplakov",
           "Ryan Strome",
-          "Simon Nemec",
+          "Connor Zary",
+          "Zayne Parekh",
           "Yegor Sharangovich"
         ]
       },
@@ -277,9 +277,9 @@
       },
       "pp_units": {
         "PP1": [
-          "Nikolaj Ehlers",
-          "Jordan Staal",
           "Andrei Svechnikov",
+          "Jordan Staal",
+          "Jackson Blake",
           "Shayne Gostisbehere",
           "Sebastian Aho"
         ],
@@ -287,7 +287,7 @@
           "Taylor Hall",
           "Logan Stankoven",
           "Mark Jankowski",
-          "Jackson Blake",
+          "Nikolaj Ehlers",
           "Sean Walker"
         ]
       },
@@ -339,7 +339,7 @@
           "Tyler Bertuzzi",
           "Anton Frondell",
           "Roman Kantserov",
-          "Artyom Levshunov",
+          "Bowen Byram",
           "Patrick Kane"
         ],
         "PP2": [
@@ -347,7 +347,7 @@
           "Frank Nazar",
           "Nick Lardis",
           "Sam Rinzel",
-          "Bowen Byram"
+          "Artyom Levshunov"
         ]
       },
       "goalies": [
@@ -423,14 +423,14 @@
           "RW": "Kirill Marchenko"
         },
         "L2": {
-          "LW": "Valeri Nichushkin",
+          "LW": "Dmitri Voronkov",
           "C": "Sean Monahan",
-          "RW": "Dmitri Voronkov"
+          "RW": "Valeri Nichushkin"
         },
         "L3": {
-          "LW": "Miles Wood",
+          "LW": "Mathieu Olivier",
           "C": "Charlie Coyle",
-          "RW": "Mathieu Olivier"
+          "RW": "Miles Wood"
         },
         "L4": {
           "LW": "Ryan Lomberg",
@@ -714,21 +714,21 @@
       "forwards": {
         "L1": {
           "LW": "Artemi Panarin",
-          "C": "Quinton Byfield",
-          "RW": "Adrian Kempe"
+          "C": "Adrian Kempe",
+          "RW": "Alex Laferriere"
         },
         "L2": {
-          "LW": "Trevor Moore",
-          "C": "Scott Laughton",
-          "RW": "Erik Haula"
-        },
-        "L3": {
-          "LW": "Alex Laferriere",
-          "C": "Alex Turcotte",
+          "LW": "Erik Haula",
+          "C": "Quinton Byfield",
           "RW": "Mats Zuccarello"
         },
+        "L3": {
+          "LW": "Trevor Moore",
+          "C": "Scott Laughton",
+          "RW": "Joel Armia"
+        },
         "L4": {
-          "LW": "Joel Armia",
+          "LW": "Taylor Ward",
           "C": "Samuel Helenius",
           "RW": "Corey Perry"
         }
@@ -1013,14 +1013,14 @@
           "RW": "Kyle Palmieri"
         },
         "L2": {
-          "LW": "Victor Eklund",
-          "C": "Jean-Gabriel Pageau",
-          "RW": "Emil Heineman"
-        },
-        "L3": {
           "LW": "Matias Maccelli",
           "C": "Calum Ritchie",
           "RW": "Brayden Schenn"
+        },
+        "L3": {
+          "LW": "Victor Eklund",
+          "C": "Jean-Gabriel Pageau",
+          "RW": "Emil Heineman"
         },
         "L4": {
           "LW": "Ondrej Palat",
@@ -1034,11 +1034,11 @@
           "RD": "Ryan Pulock"
         },
         "D2": {
-          "LD": "Adam Pelech",
+          "LD": "Alexander Romanov",
           "RD": "Tony DeAngelo"
         },
         "D3": {
-          "LD": "Alexander Romanov",
+          "LD": "Adam Pelech",
           "RD": "Scott Mayfield"
         }
       },
@@ -1246,7 +1246,7 @@
         "L1": {
           "LW": "Rickard Rakell",
           "C": "Sidney Crosby",
-          "RW": "Bryan Rust"
+          "RW": "Nicholas Robertson"
         },
         "L2": {
           "LW": "Egor Chinakhov",
@@ -1256,12 +1256,12 @@
         "L3": {
           "LW": "Andrei Kuzmenko",
           "C": "Ben Kindel",
-          "RW": "Ville Koivunen"
+          "RW": "Bryan Rust"
         },
         "L4": {
-          "LW": "Justin Brazeau",
-          "C": "Blake Lizotte",
-          "RW": "Nicholas Robertson"
+          "LW": "Filip Hallander",
+          "C": "Hendrix Lapierre",
+          "RW": "Justin Brazeau"
         }
       },
       "defence": {
@@ -1549,24 +1549,24 @@
           "RW": "William Nylander"
         },
         "L3": {
-          "LW": "Nick Paul",
-          "C": "Colton Sissons",
-          "RW": "Easton Cowan"
+          "LW": "Easton Cowan",
+          "C": "Nick Paul",
+          "RW": "Colton Sissons"
         },
         "L4": {
-          "LW": "Brandon Duhaime",
+          "LW": "Dakota Joshua",
           "C": "Teddy Blueger",
-          "RW": "Steven Lorentz"
+          "RW": "Brandon Duhaime"
         }
       },
       "defence": {
         "D1": {
-          "LD": "Jake McCabe",
-          "RD": "Chris Tanev"
-        },
-        "D2": {
           "LD": "Oliver Ekman-Larsson",
           "RD": "Darren Raddysh"
+        },
+        "D2": {
+          "LD": "Jake McCabe",
+          "RD": "Chris Tanev"
         },
         "D3": {
           "LD": "Morgan Rielly",
@@ -1839,9 +1839,9 @@
           "RW": "Cole Perfetti"
         },
         "L2": {
-          "LW": "Isak Rosen",
+          "LW": "Gabriel Vilardi",
           "C": "Viggo Björck",
-          "RW": "Gabriel Vilardi"
+          "RW": "Isak Rosen"
         },
         "L3": {
           "LW": "Morgan Barron",
