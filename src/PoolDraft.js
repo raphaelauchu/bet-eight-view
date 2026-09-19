@@ -39,10 +39,12 @@ const POSITION_FORM_OPTIONS = [['C', 'Centre'], ['L', 'Ailier gauche'], ['R', 'A
 
 // Construit un joueur "manuel" (recrue jamais apparue en LNH, ex. Gavin McKenna) avec les memes champs
 // qu'un joueur charge depuis l'API, pour qu'il fonctionne exactement comme les autres une fois ajoute.
-function construireJoueurManuel(nom, positionCode, equipe) {
+// idConnu (optionnel) : vrai playerId NHL si connu (ex. trouve via la recherche mais sans stats) - permet
+// de detecter correctement "deja pris" si quelqu'un recherche a nouveau le meme joueur.
+function construireJoueurManuel(nom, positionCode, equipe, idConnu) {
   const estGardien = positionCode === 'G';
   return {
-    id: -Date.now(),
+    id: idConnu || -Date.now(),
     nom,
     equipe,
     positionCode,
@@ -618,6 +620,10 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     return draftPicks.filter(p => p.participantId === participantId);
   }
 
+  function participantNomDe(participantId) {
+    return config.participants.find(p => p.id === participantId)?.nom || '?';
+  }
+
   // Choisir son equipe NHL pendant le draft consomme une ronde complete, exactement comme un joueur.
   function choisirEquipeParticipant(participantId, equipe) {
     const participant = config.participants.find(p => p.id === participantId);
@@ -653,12 +659,19 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   }
 
   // Ajoute un joueur manuel (recrue jamais apparue en LNH) a la liste des joueurs comme les autres,
-  // puis le drafte immediatement pour le participant courant.
+  // puis le drafte immediatement pour le participant courant. Reutilise une entree existante (meme id
+  // NHL connu, ou meme nom pour un ajout manuel sans id) au lieu d'en dupliquer une, pour que la
+  // detection "deja pris" fonctionne correctement si quelqu'un recherche a nouveau le meme joueur.
   function ajouterJoueurManuel() {
     if (!ajoutManuel || !ajoutManuel.nom.trim() || !ajoutManuel.equipe) return;
-    const nouveau = construireJoueurManuel(ajoutManuel.nom.trim(), ajoutManuel.positionCode, ajoutManuel.equipe);
-    setJoueurs(js => [...js, nouveau]);
-    drafter({ ...nouveau, valeurIA: 0 });
+    const nomTape = ajoutManuel.nom.trim();
+    const existant = ajoutManuel.idConnu
+      ? joueursAvecValeur.find(j => j.id === ajoutManuel.idConnu)
+      : joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === nomTape.toLowerCase());
+    if (existant && !estDisponible(existant.id)) { setAjoutManuel(null); return; } // deja pris, securite
+    const nouveau = existant || construireJoueurManuel(nomTape, ajoutManuel.positionCode, ajoutManuel.equipe, ajoutManuel.idConnu);
+    if (!existant) setJoueurs(js => [...js, nouveau]);
+    drafter({ ...nouveau, valeurIA: nouveau.valeurIA ?? 0 });
     if (config.salaryCapActif && ajoutManuel.salaire) {
       setSalaires(s => ({ ...s, [nouveau.id]: parseInt(ajoutManuel.salaire, 10) || 0 }));
     }
@@ -785,47 +798,67 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
             placeholder="Rechercher un joueur (dès 2 lettres)..."
             style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
           />
-          {dropdownRechercheOuvert && recherche.trim().length >= 2 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
-              {resultatsRecherche.map((r, i) => {
-                const trouve = joueursAvecValeur.find(j => j.id === Number(r.playerId));
-                return (
-                  <div key={r.playerId ?? i}
-                    onClick={() => {
-                      if (trouve) {
-                        drafter(trouve);
-                        setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
-                      } else {
-                        setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', salaire: '' });
-                        setDropdownRechercheOuvert(false);
-                      }
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #222' }}
+          {dropdownRechercheOuvert && recherche.trim().length >= 2 && (() => {
+            const nomRechercheNorm = recherche.trim().toLowerCase();
+            const manuelExistant = joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === nomRechercheNorm);
+            const pickManuelExistant = manuelExistant && draftPicks.find(p => p.joueurId === manuelExistant.id);
+            return (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+                {resultatsRecherche.map((r, i) => {
+                  const trouve = joueursAvecValeur.find(j => j.id === Number(r.playerId))
+                    || joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === r.name.toLowerCase());
+                  const pickExistant = trouve && draftPicks.find(p => p.joueurId === trouve.id);
+                  const dejaPris = !!pickExistant;
+                  return (
+                    <div key={r.playerId ?? i}
+                      onClick={() => {
+                        if (dejaPris) return;
+                        if (trouve) {
+                          drafter(trouve);
+                          setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
+                        } else {
+                          setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', salaire: '', idConnu: Number(r.playerId) || null });
+                          setDropdownRechercheOuvert(false);
+                        }
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: dejaPris ? 'not-allowed' : 'pointer', borderBottom: '1px solid #222', opacity: dejaPris ? 0.5 : 1 }}
+                      onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = '#222'; }}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                        onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
+                      <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
+                        <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : '#666' }}>
+                          {dejaPris
+                            ? `Pris par ${participantNomDe(pickExistant.participantId)} (ronde ${pickExistant.ronde})`
+                            : `${r.teamAbbrev} · ${r.positionCode}${!trouve ? ' · pas de stats NHL' : ''}`}
+                        </div>
+                      </div>
+                      {dejaPris && <span style={{ fontSize: '9px', color: '#ef4444', fontWeight: '700', flexShrink: 0, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: '6px', padding: '3px 6px' }}>DÉJÀ PRIS</span>}
+                      {!dejaPris && !trouve && <span style={{ fontSize: '9px', color: '#a78bfa', fontWeight: '700', flexShrink: 0 }}>AJOUTER</span>}
+                    </div>
+                  );
+                })}
+                {pickManuelExistant ? (
+                  <div style={{ padding: '10px 14px', color: '#ef4444', fontSize: '12px' }}>
+                    <strong>{manuelExistant.nom}</strong> · DÉJÀ PRIS — Pris par {participantNomDe(pickManuelExistant.participantId)} (ronde {pickManuelExistant.ronde})
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', salaire: '', idConnu: null }); setDropdownRechercheOuvert(false); }}
+                    style={{ padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
-                      onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
-                    <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
-                      <div style={{ fontSize: '11px', color: '#666' }}>{r.teamAbbrev} · {r.positionCode}{!trouve ? ' · pas de stats NHL' : ''}</div>
-                    </div>
-                    {!trouve && <span style={{ fontSize: '9px', color: '#a78bfa', fontWeight: '700', flexShrink: 0 }}>AJOUTER</span>}
+                    + Ajouter manuellement : {recherche}
                   </div>
-                );
-              })}
-              <div
-                onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', salaire: '' }); setDropdownRechercheOuvert(false); }}
-                style={{ padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                + Ajouter manuellement : {recherche}
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {['ALL', ...POS_REEL_ORDER].map(p => (
