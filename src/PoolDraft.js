@@ -70,10 +70,26 @@ const DEFAULT_CONFIG = {
   points: clonePoints(POINTS_DEFAUT),
   salaryCapActif: false,
   plafond: 0,
+  ordreType: 'snake',
 };
 
 function totalRosterSlots(roster) {
   return (roster.F || 0) + (roster.D || 0) + (roster.G || 0) + (roster.bench || 0);
+}
+
+const ORDRE_TYPES = [
+  { id: 'lineaire', label: 'Linéaire', desc: 'Même ordre à chaque ronde (1,2,3,4 / 1,2,3,4 / ...)' },
+  { id: 'snake', label: 'Snake', desc: 'Ordre inversé à chaque ronde (1,2,3,4 / 4,3,2,1 / 1,2,3,4 / ...)' },
+];
+
+// Ordre de pick complet pour tout le draft, selon le type (lineaire ou snake) et l'ordre des participants.
+function calculerOrdreDraft(participants, totalRondes, ordreType) {
+  const o = [];
+  for (let r = 0; r < totalRondes; r++) {
+    const inverser = ordreType === 'snake' && r % 2 === 1;
+    o.push(...(inverser ? [...participants].reverse() : participants));
+  }
+  return o;
 }
 
 function Stepper({ etape }) {
@@ -145,6 +161,17 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
   const padding = isMobile ? '16px' : '32px';
   const typeInfo = getTypeInfo(config.typePool);
   const totalSlots = totalRosterSlots(config.roster);
+  const [dragIndex, setDragIndex] = useState(null);
+
+  function reordonnerParticipants(depuis, vers) {
+    if (depuis === null || depuis === vers) return;
+    setConfig(c => {
+      const liste = [...c.participants];
+      const [retire] = liste.splice(depuis, 1);
+      liste.splice(vers, 0, retire);
+      return { ...c, participants: liste };
+    });
+  }
 
   function appliquerType(typeId) {
     const t = getTypeInfo(typeId);
@@ -332,6 +359,66 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
         <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs par équipe · <strong style={{ color: 'white' }}>{totalSlots}</strong> rondes de draft</div>
       </div>
 
+      {/* Ordre du draft */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '20px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Ordre du draft</div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Type d'ordre</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px' }}>
+            {ORDRE_TYPES.map(o => (
+              <button key={o.id} onClick={() => setConfig(c => ({ ...c, ordreType: o.id }))}
+                style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.ordreType === o.id ? '1px solid #f97316' : '1px solid #222', backgroundColor: config.ordreType === o.id ? 'rgba(249,115,22,0.08)' : '#111' }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: config.ordreType === o.id ? 'white' : '#ccc', marginBottom: '4px' }}>{o.label}</div>
+                <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.5' }}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Ordre des participants</div>
+          <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>Glisse les participants (icône ≡) pour réorganiser l'ordre de la 1ʳᵉ ronde.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {config.participants.map((p, i) => (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={() => setDragIndex(i)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => { reordonnerParticipants(dragIndex, i); setDragIndex(null); }}
+                onDragEnd={() => setDragIndex(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: dragIndex === i ? 'rgba(249,115,22,0.08)' : '#111', border: dragIndex === i ? '1px solid #f97316' : '1px solid #222', borderRadius: '10px', padding: '9px 12px', cursor: 'grab' }}>
+                <span style={{ color: '#555', fontSize: '16px', fontWeight: '700', lineHeight: 1 }}>≡</span>
+                <span style={{ fontSize: '11px', color: '#444', minWidth: '18px' }}>#{i + 1}</span>
+                <span style={{ flex: 1, fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', color: 'white' }}>{p.estMoi ? '★ ' : ''}{p.nom}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Aperçu complet</div>
+          <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', maxHeight: '260px', overflowY: 'auto' }}>
+            {totalSlots === 0 ? (
+              <div style={{ fontSize: '12px', color: '#444' }}>Ajoute des joueurs au roster pour voir l'aperçu.</div>
+            ) : (() => {
+              const nbParticipants = config.participants.length;
+              const ordreComplet = calculerOrdreDraft(config.participants, totalSlots, config.ordreType);
+              return Array.from({ length: totalSlots }).map((_, r) => {
+                const debut = r * nbParticipants;
+                const joueursRonde = ordreComplet.slice(debut, debut + nbParticipants);
+                return (
+                  <div key={r} style={{ fontSize: '12px', color: '#888', padding: '3px 0' }}>
+                    <strong style={{ color: 'white' }}>Ronde {r + 1}</strong> : {joueursRonde.map(p => p.nom).join(' → ')}
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      </div>
+
       <button
         onClick={onSuivant}
         disabled={totalSlots === 0 || config.participants.length < 2}
@@ -454,16 +541,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const totalSlots = totalRosterSlots(config.roster);
   const nbParticipants = config.participants.length;
 
-  // Ordre de draft en serpentin (snake) pour les types tour-par-tour.
+  // Ordre de draft (lineaire ou snake selon config.ordreType) pour les types tour-par-tour.
   const ordre = useMemo(() => {
     if (!typeInfo.tourParTour) return [];
-    const o = [];
-    for (let r = 0; r < totalSlots; r++) {
-      const ronde = r % 2 === 0 ? config.participants : [...config.participants].reverse();
-      o.push(...ronde);
-    }
-    return o;
-  }, [config.participants, totalSlots, typeInfo.tourParTour]);
+    return calculerOrdreDraft(config.participants, totalSlots, config.ordreType);
+  }, [config.participants, totalSlots, typeInfo.tourParTour, config.ordreType]);
 
   const draftTermine = typeInfo.tourParTour ? pickIndex >= ordre.length : config.participants.every(p => draftPicks.filter(d => d.participantId === p.id).length >= totalSlots);
   const participantCourant = typeInfo.tourParTour ? (ordre[pickIndex] || null) : config.participants.find(p => p.id === participantActifBox) || config.participants[0];
