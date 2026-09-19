@@ -34,6 +34,26 @@ function joueurCorrespondFiltre(positionCode, filtre) {
   return false;
 }
 
+// Options du formulaire d'ajout manuel : valeur = positionCode brut NHL (comme retourne par l'API).
+const POSITION_FORM_OPTIONS = [['C', 'Centre'], ['L', 'Ailier gauche'], ['R', 'Ailier droit'], ['D', 'Défenseur'], ['G', 'Gardien']];
+
+// Construit un joueur "manuel" (recrue jamais apparue en LNH, ex. Gavin McKenna) avec les memes champs
+// qu'un joueur charge depuis l'API, pour qu'il fonctionne exactement comme les autres une fois ajoute.
+function construireJoueurManuel(nom, positionCode, equipe) {
+  const estGardien = positionCode === 'G';
+  return {
+    id: -Date.now(),
+    nom,
+    equipe,
+    positionCode,
+    posGroupe: estGardien ? 'G' : mapPositionCode(positionCode),
+    posReel: estGardien ? 'G' : mapPosReel(positionCode),
+    manuel: true,
+    gamesPlayed: 0, goals: 0, assists: 0, points: 0, plusMinus: 0, shots: 0, ppGoals: 0, ppPoints: 0,
+    wins: 0, shutouts: 0, saves: 0, savePct: 0,
+  };
+}
+
 // En prod on passe par le proxy /api/nhl (qui accepte une URL complete), en dev on fetch directement.
 function getStatsUrl(fullUrl) {
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
@@ -499,6 +519,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const [recherche, setRecherche] = useState('');
   const [resultatsRecherche, setResultatsRecherche] = useState([]);
   const [dropdownRechercheOuvert, setDropdownRechercheOuvert] = useState(false);
+  const [ajoutManuel, setAjoutManuel] = useState(null); // null = ferme, sinon { nom, positionCode, equipe, salaire }
   const [filtrePos, setFiltrePos] = useState('ALL');
   const [nbAffiches, setNbAffiches] = useState(50);
   const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
@@ -631,6 +652,22 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     if (typeInfo.tourParTour) setPickIndex(i => i + 1);
   }
 
+  // Ajoute un joueur manuel (recrue jamais apparue en LNH) a la liste des joueurs comme les autres,
+  // puis le drafte immediatement pour le participant courant.
+  function ajouterJoueurManuel() {
+    if (!ajoutManuel || !ajoutManuel.nom.trim() || !ajoutManuel.equipe) return;
+    const nouveau = construireJoueurManuel(ajoutManuel.nom.trim(), ajoutManuel.positionCode, ajoutManuel.equipe);
+    setJoueurs(js => [...js, nouveau]);
+    drafter({ ...nouveau, valeurIA: 0 });
+    if (config.salaryCapActif && ajoutManuel.salaire) {
+      setSalaires(s => ({ ...s, [nouveau.id]: parseInt(ajoutManuel.salaire, 10) || 0 }));
+    }
+    setAjoutManuel(null);
+    setRecherche('');
+    setResultatsRecherche([]);
+    setDropdownRechercheOuvert(false);
+  }
+
   function retirer(pickPos) {
     const pick = draftPicks[pickPos];
     if (pick?.type === 'equipe') {
@@ -744,39 +781,110 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
           <input
             value={recherche}
-            onChange={e => { setRecherche(e.target.value); setNbAffiches(50); rechercherJoueur(e.target.value); }}
+            onChange={e => { setRecherche(e.target.value); setFiltrePos('ALL'); setNbAffiches(50); rechercherJoueur(e.target.value); }}
             placeholder="Rechercher un joueur (dès 2 lettres)..."
             style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
           />
-          {dropdownRechercheOuvert && resultatsRecherche.length > 0 && (
+          {dropdownRechercheOuvert && recherche.trim().length >= 2 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
-              {resultatsRecherche.map((r, i) => (
-                <div key={r.playerId ?? i}
-                  onClick={() => { setRecherche(r.name); setDropdownRechercheOuvert(false); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < resultatsRecherche.length - 1 ? '1px solid #222' : 'none' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
-                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
-                    onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
-                  <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                  <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>{r.teamAbbrev} · {r.positionCode}</div>
+              {resultatsRecherche.map((r, i) => {
+                const trouve = joueursAvecValeur.find(j => j.id === Number(r.playerId));
+                return (
+                  <div key={r.playerId ?? i}
+                    onClick={() => {
+                      if (trouve) {
+                        drafter(trouve);
+                        setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
+                      } else {
+                        setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', salaire: '' });
+                        setDropdownRechercheOuvert(false);
+                      }
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #222' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                      onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
+                    <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
+                      <div style={{ fontSize: '11px', color: '#666' }}>{r.teamAbbrev} · {r.positionCode}{!trouve ? ' · pas de stats NHL' : ''}</div>
+                    </div>
+                    {!trouve && <span style={{ fontSize: '9px', color: '#a78bfa', fontWeight: '700', flexShrink: 0 }}>AJOUTER</span>}
                   </div>
-                </div>
-              ))}
+                );
+              })}
+              <div
+                onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', salaire: '' }); setDropdownRechercheOuvert(false); }}
+                style={{ padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                + Ajouter manuellement : {recherche}
+              </div>
             </div>
           )}
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {['ALL', ...POS_REEL_ORDER].map(p => (
-            <button key={p} onClick={() => { setFiltrePos(p); setNbAffiches(50); }} title={p === 'ALL' ? 'Tous' : POS_REEL_LABELS[p]}
+            <button key={p} onClick={() => { setFiltrePos(p); setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false); setNbAffiches(50); }} title={p === 'ALL' ? 'Tous' : POS_REEL_LABELS[p]}
               style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtrePos === p ? (POS_REEL_COLORS[p] || '#f97316') : '#111', color: filtrePos === p ? 'white' : '#555', fontSize: '11px', fontWeight: '700' }}>{p === 'ALL' ? 'Tous' : p}</button>
           ))}
         </div>
       </div>
+
+      {/* Ajout manuel d'un joueur non present dans les stats NHL (ex. recrue jamais jouee en LNH) */}
+      {ajoutManuel && (
+        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid rgba(167,139,250,0.35)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <img src={ajoutManuel.equipe ? LOGOS_NHL[ajoutManuel.equipe] : undefined} alt={ajoutManuel.equipe || 'logo'}
+              style={{ width: '36px', height: '36px', objectFit: 'contain', backgroundColor: '#111', borderRadius: '8px', visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }} />
+            <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ajouter un joueur manuellement</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : config.salaryCapActif ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}>
+            <div>
+              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Nom</div>
+              <input value={ajoutManuel.nom} onChange={e => setAjoutManuel(a => ({ ...a, nom: e.target.value }))}
+                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Position</div>
+              <select value={ajoutManuel.positionCode} onChange={e => setAjoutManuel(a => ({ ...a, positionCode: e.target.value }))}
+                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px' }}>
+                {POSITION_FORM_OPTIONS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Équipe</div>
+              <select value={ajoutManuel.equipe} onChange={e => setAjoutManuel(a => ({ ...a, equipe: e.target.value }))}
+                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px' }}>
+                <option value="">Choisir...</option>
+                {Object.keys(LOGOS_NHL).sort().map(abbrev => <option key={abbrev} value={abbrev}>{abbrev}</option>)}
+              </select>
+            </div>
+            {config.salaryCapActif && (
+              <div>
+                <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Salaire ($)</div>
+                <input value={ajoutManuel.salaire} onChange={e => setAjoutManuel(a => ({ ...a, salaire: e.target.value.replace(/[^0-9]/g, '') }))}
+                  placeholder="Ex. 950000"
+                  style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={ajouterJoueurManuel} disabled={!ajoutManuel.nom.trim() || !ajoutManuel.equipe}
+              style={{ padding: '9px 16px', borderRadius: '8px', border: 'none', cursor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'not-allowed' : 'pointer', backgroundColor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#222' : EQUIPE_COLOR, color: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#555' : 'white', fontSize: '12px', fontWeight: '700' }}>
+              Ajouter et drafter
+            </button>
+            <button onClick={() => setAjoutManuel(null)}
+              style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer', backgroundColor: 'transparent', color: '#888', fontSize: '12px', fontWeight: '700' }}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '16px' }}>
         <div>
