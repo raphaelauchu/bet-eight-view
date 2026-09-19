@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 
-const POS_ORDER = ['C', 'LW', 'RW', 'D', 'G'];
-const POS_LABELS = { C: 'Centres', LW: 'Ailiers gauches', RW: 'Ailiers droits', D: 'Défenseurs', G: 'Gardiens' };
-const POS_COLORS = { C: '#f97316', LW: '#fb923c', RW: '#eab308', D: '#3b82f6', G: '#22c55e' };
+const POS_ORDER = ['F', 'D', 'G'];
+const POS_LABELS = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
+const POS_COLORS = { F: '#f97316', D: '#3b82f6', G: '#22c55e' };
 
 function mapPositionCode(code) {
-  if (code === 'L') return 'LW';
-  if (code === 'R') return 'RW';
-  if (code === 'C') return 'C';
-  if (code === 'D') return 'D';
-  return 'C';
+  return code === 'D' ? 'D' : 'F';
 }
 
 // En prod on passe par le proxy /api/nhl (qui accepte une URL complete), en dev on fetch directement.
@@ -22,18 +18,18 @@ function getStatsUrl(fullUrl) {
 function clonePoints(p) { return JSON.parse(JSON.stringify(p)); }
 
 const POINTS_DEFAUT = {
-  F: { but: 6, passe: 4, ppb: 2, ppp: 1, shg: 3, tirs: 0.5, plusMinus: 1 },
-  D: { but: 8, passe: 5, ppb: 2, ppp: 1, tirs: 0.5, plusMinus: 1, blocs: 0.5 },
-  G: { victoire: 4, blanchissage: 3, butsAccordes: -1, arrets: 0.2 },
+  F: { but: 0, passe: 0, ppb: 0, ppp: 0, tirs: 0, plusMinus: 0 },
+  D: { but: 0, passe: 0, ppb: 0, ppp: 0, tirs: 0, plusMinus: 0 },
+  G: { victoire: 0, blanchissage: 0, but: 0, arrets: 0 },
 };
 
 const POOL_TYPES = [
-  { id: 'classique', label: 'Draft classique', desc: 'Tour par tour. Chaque joueur choisi devient exclusif à une équipe.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
-  { id: 'box', label: 'Box Pool', desc: 'Boîtes de joueurs, choix multiples permis : plusieurs participants peuvent avoir le même joueur.', exclusif: false, tourParTour: false, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 2 } },
-  { id: 'grand', label: 'Grand Pool', desc: 'Choix libre par rondes, rosters plus généreux, tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 3, LW: 3, RW: 3, D: 5, G: 3, bench: 5 } },
-  { id: 'keeper', label: 'Keeper', desc: 'Conservation de joueurs pour la saison suivante. Tour par tour comme un draft classique.', exclusif: true, tourParTour: true, salaryCap: false, keeper: true, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
-  { id: 'h2h', label: 'Head-to-Head', desc: 'Affrontements hebdomadaires entre participants pendant la saison. Tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
-  { id: 'salarycap', label: 'Salary Cap', desc: 'Plafond salarial basé sur les vrais contrats NHL. Salaires à entrer manuellement (aucune source de salaires n\'est légalement redistribuable via API). Tour par tour.', exclusif: true, tourParTour: true, salaryCap: true, plafond: 88000000, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
+  { id: 'classique', label: 'Draft classique', desc: 'Tour par tour. Chaque joueur choisi devient exclusif à une équipe.', exclusif: true, tourParTour: true, salaryCap: false, roster: { F: 6, D: 4, G: 2, bench: 3 } },
+  { id: 'box', label: 'Box Pool', desc: 'Boîtes de joueurs, choix multiples permis : plusieurs participants peuvent avoir le même joueur.', exclusif: false, tourParTour: false, salaryCap: false, roster: { F: 6, D: 4, G: 2, bench: 2 } },
+  { id: 'grand', label: 'Grand Pool', desc: 'Choix libre par rondes, rosters plus généreux, tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { F: 9, D: 5, G: 3, bench: 5 } },
+  { id: 'keeper', label: 'Keeper', desc: 'Conservation de joueurs pour la saison suivante. Tour par tour comme un draft classique.', exclusif: true, tourParTour: true, salaryCap: false, keeper: true, roster: { F: 6, D: 4, G: 2, bench: 3 } },
+  { id: 'h2h', label: 'Head-to-Head', desc: 'Affrontements hebdomadaires entre participants pendant la saison. Tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { F: 6, D: 4, G: 2, bench: 3 } },
+  { id: 'salarycap', label: 'Salary Cap', desc: 'Plafond salarial basé sur les vrais contrats NHL. Salaires à entrer manuellement (aucune source de salaires n\'est légalement redistribuable via API). Tour par tour.', exclusif: true, tourParTour: true, salaryCap: true, plafond: 0, roster: { F: 6, D: 4, G: 2, bench: 3 } },
 ];
 
 function getTypeInfo(id) { return POOL_TYPES.find(t => t.id === id) || POOL_TYPES[0]; }
@@ -41,14 +37,10 @@ function getTypeInfo(id) { return POOL_TYPES.find(t => t.id === id) || POOL_TYPE
 function calculerValeurIA(j, points) {
   if (j.posGroupe === 'G') {
     const p = points.G;
-    return Math.round((j.wins * p.victoire + j.shutouts * p.blanchissage + j.goalsAgainst * p.butsAccordes + j.saves * p.arrets) * 10) / 10;
+    return Math.round((j.wins * p.victoire + j.shutouts * p.blanchissage + j.goals * p.but + j.saves * p.arrets) * 10) / 10;
   }
-  if (j.posGroupe === 'D') {
-    const p = points.D;
-    return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shots * p.tirs + j.plusMinus * p.plusMinus + j.blockedShots * p.blocs) * 10) / 10;
-  }
-  const p = points.F;
-  return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shGoals * p.shg + j.shots * p.tirs + j.plusMinus * p.plusMinus) * 10) / 10;
+  const p = j.posGroupe === 'D' ? points.D : points.F;
+  return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shots * p.tirs + j.plusMinus * p.plusMinus) * 10) / 10;
 }
 
 const DEFAULT_CONFIG = {
@@ -58,14 +50,14 @@ const DEFAULT_CONFIG = {
     { id: 1, nom: 'Moi', estMoi: true },
     { id: 2, nom: 'Participant 2', estMoi: false },
   ],
-  roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 },
+  roster: { F: 6, D: 4, G: 2, bench: 3 },
   points: clonePoints(POINTS_DEFAUT),
   salaryCapActif: false,
-  plafond: 88000000,
+  plafond: 0,
 };
 
 function totalRosterSlots(roster) {
-  return (roster.C || 0) + (roster.LW || 0) + (roster.RW || 0) + (roster.D || 0) + (roster.G || 0) + (roster.bench || 0);
+  return (roster.F || 0) + (roster.D || 0) + (roster.G || 0) + (roster.bench || 0);
 }
 
 function Stepper({ etape }) {
@@ -145,7 +137,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
       typePool: typeId,
       roster: { ...t.roster },
       salaryCapActif: t.salaryCap,
-      plafond: t.plafond || c.plafond || 88000000,
+      plafond: t.salaryCap ? (t.plafond ?? c.plafond ?? 0) : c.plafond,
     }));
   }
 
@@ -181,11 +173,11 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
     setConfig(c => ({ ...c, roster: { ...c.roster, [cle]: val } }));
   }
 
-  const rosterFields = [['C', 'Centres'], ['LW', 'Ailiers gauches'], ['RW', 'Ailiers droits'], ['D', 'Défenseurs'], ['G', 'Gardiens'], ['bench', 'Remplaçants']];
+  const rosterFields = [['F', 'Attaquants'], ['D', 'Défenseurs'], ['G', 'Gardiens'], ['bench', 'Remplaçants']];
 
-  const labelsF = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', shg: 'SHG', tirs: 'Tirs', plusMinus: '+/-' };
-  const labelsD = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-', blocs: 'Blocs' };
-  const labelsG = { victoire: 'Victoire', blanchissage: 'Blanchissage', butsAccordes: 'Buts accordés', arrets: 'Arrêts' };
+  const labelsF = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-' };
+  const labelsD = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-' };
+  const labelsG = { victoire: 'Victoire', blanchissage: 'Blanchissage', but: 'But', arrets: 'Arrêts' };
 
   return (
     <div style={{ padding, maxWidth: '1100px', margin: '0 auto' }}>
@@ -253,8 +245,8 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
         <p style={{ margin: '0 0 14px', fontSize: '11px', color: '#555' }}>Ajusté selon le type de pool sélectionné · sert aussi à calculer le score de valeur IA à l'étape 2</p>
 
         <div style={{ marginBottom: '14px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.C, marginBottom: '8px' }}>Attaquants</div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', gap: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.F, marginBottom: '8px' }}>Attaquants</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: '8px' }}>
             {Object.keys(labelsF).map(k => (
               <ChampPoint key={k} label={labelsF[k]} value={config.points.F[k]} onChange={v => setPoints('F', k, v)} />
             ))}
@@ -263,7 +255,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
 
         <div style={{ marginBottom: '14px' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.D, marginBottom: '8px' }}>Défenseurs</div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: '8px' }}>
             {Object.keys(labelsD).map(k => (
               <ChampPoint key={k} label={labelsD[k]} value={config.points.D[k]} onChange={v => setPoints('D', k, v)} />
             ))}
@@ -306,9 +298,9 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
       {/* Composition roster */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '20px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Composition du roster</div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px' }}>
           {rosterFields.map(([cle, label]) => (
-            <ChampNombre key={cle} label={label} value={config.roster[cle]} onChange={v => setRoster(cle, v)} min={0} max={cle === 'bench' ? 15 : 10} />
+            <ChampNombre key={cle} label={label} value={config.roster[cle]} onChange={v => setRoster(cle, v)} min={0} max={cle === 'bench' ? 15 : cle === 'F' ? 20 : 12} />
           ))}
         </div>
         <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs par équipe · <strong style={{ color: 'white' }}>{totalSlots}</strong> rondes de draft</div>
@@ -345,14 +337,11 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
       setChargement(true);
       setErreur(false);
       try {
-        const [resSum, resRt, resGoal] = await Promise.all([
+        const [resSum, resGoal] = await Promise.all([
           fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
-          fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=seasonId=${seasonId}&limit=-1`)),
           fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
         ]);
-        const [dataSum, dataRt, dataGoal] = await Promise.all([resSum.json(), resRt.json(), resGoal.json()]);
-        const blocsParId = {};
-        (dataRt.data || []).forEach(r => { blocsParId[r.playerId] = r.blockedShots || 0; });
+        const [dataSum, dataGoal] = await Promise.all([resSum.json(), resGoal.json()]);
 
         const skaters = (dataSum.data || []).map(s => ({
           id: s.playerId,
@@ -367,8 +356,6 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
           shots: s.shots || 0,
           ppGoals: s.ppGoals || 0,
           ppPoints: s.ppPoints || 0,
-          shGoals: s.shGoals || 0,
-          blockedShots: blocsParId[s.playerId] || 0,
         }));
 
         const goalies = (dataGoal.data || []).map(g => ({
@@ -379,7 +366,7 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
           gamesPlayed: g.gamesPlayed || 0,
           wins: g.wins || 0,
           shutouts: g.shutouts || 0,
-          goalsAgainst: g.goalsAgainst || 0,
+          goals: g.goals || 0,
           saves: g.saves || 0,
           savePct: g.savePct || 0,
         }));
