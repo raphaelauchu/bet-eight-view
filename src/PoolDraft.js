@@ -521,10 +521,18 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const [recherche, setRecherche] = useState('');
   const [resultatsRecherche, setResultatsRecherche] = useState([]);
   const [dropdownRechercheOuvert, setDropdownRechercheOuvert] = useState(false);
-  const [ajoutManuel, setAjoutManuel] = useState(null); // null = ferme, sinon { nom, positionCode, equipe, salaire }
+  const [ajoutManuel, setAjoutManuel] = useState(null); // null = ferme, sinon { nom, positionCode, equipe, idConnu }
+  const [choixEnAttente, setChoixEnAttente] = useState(null); // null = pas de popup, sinon le joueur en attente de confirmation (salary cap actif)
+  const [salairePopup, setSalairePopup] = useState('0');
   const [filtrePos, setFiltrePos] = useState('ALL');
   const [nbAffiches, setNbAffiches] = useState(50);
   const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
+
+  // Pre-remplit le salaire de la popup avec la valeur deja saisie pour ce joueur (0 si inconnue) a chaque ouverture.
+  useEffect(() => {
+    if (choixEnAttente) setSalairePopup(String(salaires[choixEnAttente.id] || 0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [choixEnAttente?.id]);
 
   useEffect(() => {
     let annule = false;
@@ -658,10 +666,31 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     if (typeInfo.tourParTour) setPickIndex(i => i + 1);
   }
 
+  // Point d'entree unique pour choisir un joueur (liste, suggestions, recherche, ajout manuel) :
+  // si le salary cap est actif, ouvre la popup de confirmation avec saisie du salaire avant de drafter ;
+  // sinon, drafte directement au clic (comportement inchange).
+  function demanderChoix(joueur) {
+    if (!participantCourant) return;
+    if (!estDisponible(joueur.id)) return;
+    if (config.salaryCapActif) {
+      setChoixEnAttente(joueur);
+    } else {
+      drafter(joueur);
+    }
+  }
+
+  function confirmerChoix() {
+    if (!choixEnAttente) return;
+    const montant = parseInt(salairePopup, 10) || 0;
+    setSalaires(s => ({ ...s, [choixEnAttente.id]: montant }));
+    drafter(choixEnAttente);
+    setChoixEnAttente(null);
+  }
+
   // Ajoute un joueur manuel (recrue jamais apparue en LNH) a la liste des joueurs comme les autres,
-  // puis le drafte immediatement pour le participant courant. Reutilise une entree existante (meme id
-  // NHL connu, ou meme nom pour un ajout manuel sans id) au lieu d'en dupliquer une, pour que la
-  // detection "deja pris" fonctionne correctement si quelqu'un recherche a nouveau le meme joueur.
+  // puis lance le meme flow de choix que les autres joueurs (popup salaire si salary cap actif).
+  // Reutilise une entree existante (meme id NHL connu, ou meme nom pour un ajout manuel sans id) au lieu
+  // d'en dupliquer une, pour que la detection "deja pris" fonctionne si quelqu'un recherche le meme joueur.
   function ajouterJoueurManuel() {
     if (!ajoutManuel || !ajoutManuel.nom.trim() || !ajoutManuel.equipe) return;
     const nomTape = ajoutManuel.nom.trim();
@@ -671,10 +700,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     if (existant && !estDisponible(existant.id)) { setAjoutManuel(null); return; } // deja pris, securite
     const nouveau = existant || construireJoueurManuel(nomTape, ajoutManuel.positionCode, ajoutManuel.equipe, ajoutManuel.idConnu);
     if (!existant) setJoueurs(js => [...js, nouveau]);
-    drafter({ ...nouveau, valeurIA: nouveau.valeurIA ?? 0 });
-    if (config.salaryCapActif && ajoutManuel.salaire) {
-      setSalaires(s => ({ ...s, [nouveau.id]: parseInt(ajoutManuel.salaire, 10) || 0 }));
-    }
+    demanderChoix({ ...nouveau, valeurIA: nouveau.valeurIA ?? 0 });
     setAjoutManuel(null);
     setRecherche('');
     setResultatsRecherche([]);
@@ -782,7 +808,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
                 <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>{j.equipe}</div>
-                <button onClick={() => drafter(j)} style={{ width: '100%', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', fontSize: '11px', fontWeight: '700' }}>Choisir</button>
+                <button onClick={() => demanderChoix(j)} style={{ width: '100%', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', fontSize: '11px', fontWeight: '700' }}>Choisir</button>
               </div>
             ))}
           </div>
@@ -814,10 +840,10 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       onClick={() => {
                         if (dejaPris) return;
                         if (trouve) {
-                          drafter(trouve);
+                          demanderChoix(trouve);
                           setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
                         } else {
-                          setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', salaire: '', idConnu: Number(r.playerId) || null });
+                          setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', idConnu: Number(r.playerId) || null });
                           setDropdownRechercheOuvert(false);
                         }
                       }}
@@ -848,7 +874,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                   </div>
                 ) : (
                   <div
-                    onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', salaire: '', idConnu: null }); setDropdownRechercheOuvert(false); }}
+                    onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', idConnu: null }); setDropdownRechercheOuvert(false); }}
                     style={{ padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -876,7 +902,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
               style={{ width: '36px', height: '36px', objectFit: 'contain', backgroundColor: '#111', borderRadius: '8px', visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }} />
             <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ajouter un joueur manuellement</div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : config.salaryCapActif ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}>
             <div>
               <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Nom</div>
               <input value={ajoutManuel.nom} onChange={e => setAjoutManuel(a => ({ ...a, nom: e.target.value }))}
@@ -897,24 +923,56 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 {Object.keys(LOGOS_NHL).sort().map(abbrev => <option key={abbrev} value={abbrev}>{abbrev}</option>)}
               </select>
             </div>
-            {config.salaryCapActif && (
-              <div>
-                <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Salaire ($)</div>
-                <input value={ajoutManuel.salaire} onChange={e => setAjoutManuel(a => ({ ...a, salaire: e.target.value.replace(/[^0-9]/g, '') }))}
-                  placeholder="Ex. 950000"
-                  style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
-              </div>
-            )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={ajouterJoueurManuel} disabled={!ajoutManuel.nom.trim() || !ajoutManuel.equipe}
               style={{ padding: '9px 16px', borderRadius: '8px', border: 'none', cursor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'not-allowed' : 'pointer', backgroundColor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#222' : EQUIPE_COLOR, color: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#555' : 'white', fontSize: '12px', fontWeight: '700' }}>
-              Ajouter et drafter
+              Ajouter
             </button>
             <button onClick={() => setAjoutManuel(null)}
               style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer', backgroundColor: 'transparent', color: '#888', fontSize: '12px', fontWeight: '700' }}>
               Annuler
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Popup de confirmation avec saisie du salaire (salary cap actif uniquement) avant d'ajouter le joueur au roster */}
+      {choixEnAttente && (
+        <div onClick={() => setChoixEnAttente(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+              <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${choixEnAttente.equipe}/${choixEnAttente.id}.png`} alt={choixEnAttente.nom}
+                style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[choixEnAttente.equipe]; }} />
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>{choixEnAttente.nom}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[choixEnAttente.posReel] }}>{choixEnAttente.posReel}</span>
+                  <span style={{ fontSize: '12px', color: '#888' }}>· {choixEnAttente.equipe}</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontSize: '11px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Salaire ($)</div>
+              <input
+                type="number"
+                autoFocus
+                value={salairePopup}
+                onChange={e => setSalairePopup(e.target.value.replace(/[^0-9]/g, ''))}
+                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', fontWeight: '700', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={confirmerChoix}
+                style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', fontSize: '13px', fontWeight: '700' }}>
+                Confirmer le choix
+              </button>
+              <button onClick={() => setChoixEnAttente(null)}
+                style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer', backgroundColor: 'transparent', color: '#888', fontSize: '13px', fontWeight: '700' }}>
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -956,17 +1014,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</div>
                       <div style={{ fontSize: '8px', color: '#555', letterSpacing: '0.3px' }}>PROJECTION</div>
                     </div>
-                    {config.salaryCapActif && (
-                      <input
-                        type="number"
-                        placeholder="Salaire $"
-                        value={salaires[j.id] || ''}
-                        onChange={e => setSalaires(s => ({ ...s, [j.id]: parseInt(e.target.value) || 0 }))}
-                        style={{ width: '90px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 8px', color: 'white', fontSize: '11px', flexShrink: 0 }}
-                      />
+                    {config.salaryCapActif && salaires[j.id] > 0 && (
+                      <div style={{ fontSize: '11px', color: '#888', flexShrink: 0 }}>{salaires[j.id].toLocaleString('fr-CA')} $</div>
                     )}
                     <button
-                      onClick={() => drafter(j)}
+                      onClick={() => demanderChoix(j)}
                       disabled={!disponible}
                       style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: disponible ? 'pointer' : 'not-allowed', backgroundColor: disponible ? 'rgba(249,115,22,0.15)' : '#1a1a1a', color: disponible ? '#f97316' : '#444', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
                       {disponible ? 'Marquer comme choisi' : 'Déjà pris'}
