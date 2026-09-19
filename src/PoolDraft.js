@@ -22,12 +22,6 @@ function mapPosReel(code) {
   return 'C';
 }
 
-// Normalise pour la recherche : minuscules + accents/diacritiques retires (ex. "Nečas" -> "necas"),
-// pour que la recherche fonctionne meme sans taper les accents des noms europeens frequents en LNH.
-function normaliserRecherche(texte) {
-  return (texte || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 // Comparaison tolerante avec le champ brut positionCode retourne par l'API NHL
 // (skater/summary : 'C'|'L'|'R'|'D' ; goalie/summary : pas de positionCode, on force 'G').
 function joueurCorrespondFiltre(positionCode, filtre) {
@@ -503,6 +497,8 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
   const [recherche, setRecherche] = useState('');
+  const [resultatsRecherche, setResultatsRecherche] = useState([]);
+  const [dropdownRechercheOuvert, setDropdownRechercheOuvert] = useState(false);
   const [filtrePos, setFiltrePos] = useState('ALL');
   const [nbAffiches, setNbAffiches] = useState(50);
   const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
@@ -565,6 +561,20 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     charger();
     return () => { annule = true; };
   }, [seasonId]);
+
+  // Meme endpoint et meme logique de recherche que PageStatsJoueurs dans Analyses.js :
+  // recherche NHL en temps reel des que 2 caracteres sont tapes.
+  async function rechercherJoueur(query) {
+    if (query.trim().length < 2) { setResultatsRecherche([]); return; }
+    try {
+      const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=10&q=${encodeURIComponent(query)}&active=true`);
+      const data = await res.json();
+      setResultatsRecherche(data || []);
+      setDropdownRechercheOuvert(true);
+    } catch { setResultatsRecherche([]); }
+  }
+
+  const idsRecherche = useMemo(() => new Set(resultatsRecherche.map(r => Number(r.playerId))), [resultatsRecherche]);
 
   const joueursAvecValeur = useMemo(() => joueurs.map(j => ({ ...j, valeurIA: calculerValeurIA(j, config.points) })), [joueurs, config.points]);
 
@@ -652,16 +662,18 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joueursAvecValeur, draftPicks, participantCourant, participantActifBox, config, salaires]);
 
-  const rechercheNormalisee = normaliserRecherche(recherche);
+  // Recherche active des 2 caracteres tapes : ne garde que les joueurs renvoyes par l'API de recherche NHL,
+  // combine avec le filtre de position (les deux s'appliquent ensemble, comme un AND).
+  const rechercheActive = recherche.trim().length >= 2;
   const joueursFiltres = useMemo(() => {
     return joueursAvecValeur
       .filter(j => {
         if (!joueurCorrespondFiltre(j.positionCode, filtrePos)) return false;
-        if (rechercheNormalisee && !normaliserRecherche(j.nom).includes(rechercheNormalisee) && !normaliserRecherche(j.equipe).includes(rechercheNormalisee)) return false;
+        if (rechercheActive && !idsRecherche.has(j.id)) return false;
         return true;
       })
       .sort((a, b) => b.valeurIA - a.valeurIA);
-  }, [joueursAvecValeur, filtrePos, rechercheNormalisee]);
+  }, [joueursAvecValeur, filtrePos, rechercheActive, idsRecherche]);
 
   const rosterVu = rosterDe(participantVu);
   const besoinsVu = POS_ORDER.map(pos => ({ pos, pris: rosterVu.filter(j => j.posGroupe === pos).length, total: config.roster[pos] || 0 }));
@@ -729,12 +741,35 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
 
       {/* Recherche / filtres */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        <input
-          value={recherche}
-          onChange={e => { setRecherche(e.target.value); setNbAffiches(50); }}
-          placeholder="Rechercher un joueur ou une équipe..."
-          style={{ flex: 1, minWidth: '200px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
-        />
+        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+          <input
+            value={recherche}
+            onChange={e => { setRecherche(e.target.value); setNbAffiches(50); rechercherJoueur(e.target.value); }}
+            placeholder="Rechercher un joueur (dès 2 lettres)..."
+            style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
+          />
+          {dropdownRechercheOuvert && resultatsRecherche.length > 0 && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+              {resultatsRecherche.map((r, i) => (
+                <div key={r.playerId ?? i}
+                  onClick={() => { setRecherche(r.name); setDropdownRechercheOuvert(false); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < resultatsRecherche.length - 1 ? '1px solid #222' : 'none' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
+                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                    onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
+                  <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
+                    <div style={{ fontSize: '11px', color: '#666' }}>{r.teamAbbrev} · {r.positionCode}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {['ALL', ...POS_REEL_ORDER].map(p => (
             <button key={p} onClick={() => { setFiltrePos(p); setNbAffiches(50); }} title={p === 'ALL' ? 'Tous' : POS_REEL_LABELS[p]}
@@ -761,9 +796,15 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 const disponible = estDisponible(j.id);
                 return (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                    <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${j.equipe}/${j.id}.png`} alt={j.nom}
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                      onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[j.equipe]; }} />
                     <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: '#111', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
                     <div style={{ flex: 1, minWidth: '100px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '14px', height: '14px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                        {j.nom}
+                      </div>
                       <div style={{ fontSize: '10px', color: '#555' }}>
                         {j.equipe} · {j.posGroupe === 'G'
                           ? `${j.wins}V · ${(j.savePct * 100).toFixed(1)}% arrêts`
