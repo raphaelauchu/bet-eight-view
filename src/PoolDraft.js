@@ -371,7 +371,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
             <ChampNombre key={cle} label={label} value={config.roster[cle]} onChange={v => setRoster(cle, v)} min={0} max={cle === 'bench' ? 15 : cle === 'F' ? 20 : 12} />
           ))}
         </div>
-        <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs par équipe · <strong style={{ color: 'white' }}>{totalSlots}</strong> rondes de draft</div>
+        <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs + <strong style={{ color: 'white' }}>1</strong> équipe par participant · <strong style={{ color: 'white' }}>{totalSlots + 1}</strong> rondes de draft</div>
       </div>
 
       {/* Ordre du draft */}
@@ -414,13 +414,15 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
 
         <div>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Aperçu complet</div>
+          <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>Le choix de l'équipe NHL compte comme une ronde complète, comme un joueur.</p>
           <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', maxHeight: '260px', overflowY: 'auto' }}>
             {totalSlots === 0 ? (
               <div style={{ fontSize: '12px', color: '#444' }}>Ajoute des joueurs au roster pour voir l'aperçu.</div>
             ) : (() => {
               const nbParticipants = config.participants.length;
-              const ordreComplet = calculerOrdreDraft(config.participants, totalSlots, config.ordreType);
-              return Array.from({ length: totalSlots }).map((_, r) => {
+              const totalRondes = totalSlots + 1;
+              const ordreComplet = calculerOrdreDraft(config.participants, totalRondes, config.ordreType);
+              return Array.from({ length: totalRondes }).map((_, r) => {
                 const debut = r * nbParticipants;
                 const joueursRonde = ordreComplet.slice(debut, debut + nbParticipants);
                 return (
@@ -561,24 +563,35 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const joueursAvecValeur = useMemo(() => joueurs.map(j => ({ ...j, valeurIA: calculerValeurIA(j, config.points) })), [joueurs, config.points]);
 
   const totalSlots = totalRosterSlots(config.roster);
+  // Le choix de l'equipe NHL favorite compte comme une ronde complete, comme un joueur.
+  const totalRondes = totalSlots + 1;
   const nbParticipants = config.participants.length;
 
   // Ordre de draft (lineaire ou snake selon config.ordreType) pour les types tour-par-tour.
   const ordre = useMemo(() => {
     if (!typeInfo.tourParTour) return [];
-    return calculerOrdreDraft(config.participants, totalSlots, config.ordreType);
-  }, [config.participants, totalSlots, typeInfo.tourParTour, config.ordreType]);
+    return calculerOrdreDraft(config.participants, totalRondes, config.ordreType);
+  }, [config.participants, totalRondes, typeInfo.tourParTour, config.ordreType]);
 
-  const draftTermine = typeInfo.tourParTour ? pickIndex >= ordre.length : config.participants.every(p => draftPicks.filter(d => d.participantId === p.id).length >= totalSlots);
+  const draftTermine = typeInfo.tourParTour ? pickIndex >= ordre.length : config.participants.every(p => draftPicks.filter(d => d.participantId === p.id).length >= totalRondes);
   const participantCourant = typeInfo.tourParTour ? (ordre[pickIndex] || null) : config.participants.find(p => p.id === participantActifBox) || config.participants[0];
-  const rondeCourante = typeInfo.tourParTour ? Math.min(Math.floor(pickIndex / nbParticipants) + 1, totalSlots) : null;
+  const rondeCourante = typeInfo.tourParTour ? Math.min(Math.floor(pickIndex / nbParticipants) + 1, totalRondes) : null;
 
   function rosterDe(participantId) {
     return draftPicks.filter(p => p.participantId === participantId);
   }
 
+  // Choisir son equipe NHL pendant le draft consomme une ronde complete, exactement comme un joueur.
   function choisirEquipeParticipant(participantId, equipe) {
+    const participant = config.participants.find(p => p.id === participantId);
+    if (!participant || participant.equipe) return;
     setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === participantId ? { ...p, equipe } : p) }));
+    setDraftPicks(dp => [...dp, {
+      type: 'equipe', equipe, nom: null, posGroupe: null, posReel: null, valeurIA: 0,
+      participantId,
+      pick: dp.length + 1, ronde: rondeCourante || Math.floor(dp.length / nbParticipants) + 1,
+    }]);
+    if (typeInfo.tourParTour) setPickIndex(i => i + 1);
   }
 
   function budgetRestant(participantId) {
@@ -603,6 +616,10 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   }
 
   function retirer(pickPos) {
+    const pick = draftPicks[pickPos];
+    if (pick?.type === 'equipe') {
+      setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === pick.participantId ? { ...p, equipe: '' } : p) }));
+    }
     setDraftPicks(dp => dp.filter((_, i) => i !== pickPos));
     if (typeInfo.tourParTour) setPickIndex(i => Math.max(0, i - 1));
   }
@@ -655,7 +672,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
       {typeInfo.tourParTour ? (
         draftTermine ? (
           <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '14px', padding: '16px', marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#22c55e' }}>Draft terminé — {draftPicks.length} joueurs sélectionnés</div>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#22c55e' }}>Draft terminé — {draftPicks.length} choix effectués</div>
           </div>
         ) : (
           <div style={{ background: participantCourant?.estMoi ? 'linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.08))' : 'rgba(249,115,22,0.04)', border: participantCourant?.estMoi ? '1px solid #f97316' : '1px solid rgba(249,115,22,0.2)', borderRadius: '14px', padding: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -665,7 +682,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
             </div>
             <SelecteurEquipe participant={participantCourant} onChoisir={choisirEquipeParticipant} />
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#888' }}>Ronde {rondeCourante}/{totalSlots}</div>
+              <div style={{ fontSize: '12px', color: '#888' }}>Ronde {rondeCourante}/{totalRondes}</div>
               <div style={{ fontSize: '12px', color: '#888' }}>Choix global #{pickIndex + 1}</div>
             </div>
           </div>
@@ -809,6 +826,16 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
               <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
                 {rosterVu.map((j) => {
                   const idxGlobal = draftPicks.indexOf(j);
+                  if (j.type === 'equipe') {
+                    return (
+                      <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
+                        <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>{j.pick}</span>
+                        <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                        <span style={{ flex: 1, fontSize: '12px', color: 'white', fontWeight: '700' }}>Équipe : {j.equipe}</span>
+                        <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                      </div>
+                    );
+                  }
                   return (
                     <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
                       <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>{j.pick}</span>
@@ -839,6 +866,8 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
   const isMobile = useIsMobile();
   const padding = isMobile ? '16px' : '32px';
   const totalSlots = totalRosterSlots(config.roster);
+  // Le choix de l'equipe NHL favorite compte comme une ronde complete, comme un joueur.
+  const totalRondes = totalSlots + 1;
   const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
 
   function rosterDe(participantId) { return draftPicks.filter(p => p.participantId === participantId); }
@@ -879,13 +908,13 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
 
       <select value={participantVu} onChange={e => setParticipantVu(parseInt(e.target.value))}
         style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
-        {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''} — {rosterDe(p.id).length}/{totalSlots}</option>)}
+        {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''} — {rosterDe(p.id).length}/{totalRondes}</option>)}
       </select>
 
       <div style={{ display: 'grid', gridTemplateColumns: config.salaryCapActif ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
         <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{roster.length}/{totalSlots}</div>
-          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Joueurs draftés</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{roster.length}/{totalRondes}</div>
+          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rondes complétées</div>
         </div>
         <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{projection}</div>
@@ -912,6 +941,17 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
           ))}
         </div>
       </div>
+
+      {roster.filter(j => j.type === 'equipe').map(j => (
+        <div key={j.pick} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Équipe favorite</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
+            <span style={{ fontSize: '10px', color: '#444', minWidth: '20px' }}>#{j.pick}</span>
+            <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+            <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'white' }}>{j.equipe}</span>
+          </div>
+        </div>
+      ))}
 
       {POS_ORDER.map(pos => {
         const joueursPos = roster.filter(j => j.posGroupe === pos).sort((a, b) => a.pick - b.pick);
