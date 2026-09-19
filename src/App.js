@@ -5,6 +5,7 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux } from './Analyses';
 import ModelesFlux from './Modeles';
+import PoolDraft from './PoolDraft';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { supabase } from './supabase';
@@ -73,6 +74,17 @@ function IconSearch({ color = 'currentColor', size = 20 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
+function IconDraft({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M9 8h6" />
+      <path d="M9 12h6" />
+      <path d="M9 16h3" />
     </svg>
   );
 }
@@ -1671,7 +1683,7 @@ function App() {
       { id: 'analyses', label: t('nav_tab_analyses'), Icon: IconSearch },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
-    const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' ? page : 'home';
+    const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' || page === 'pooldraft' ? page : 'home';
 
     return (
       <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
@@ -1708,6 +1720,7 @@ function App() {
                   { Icon: IconProfile, label: t('menu_profile'), page: 'profile' },
                   { Icon: IconTicket, label: t('menu_bets'), page: 'bets' },
                   { Icon: IconWallet, label: t('menu_bankroll'), page: 'bankroll' },
+                  { Icon: IconDraft, label: 'Assistant Draft Pool', page: 'pooldraft' },
                 ].map((item) => (
                   <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
                     <item.Icon color={page === item.page ? '#f97316' : '#555'} size={18} />
@@ -1754,6 +1767,8 @@ function App() {
             <Dashboard lang={lang} />
           ) : page === 'bankroll' ? (
             <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
+          ) : page === 'pooldraft' ? (
+            <PoolDraft />
           ) : page === 'admin' ? (
             <AdminPage />
           ) : activeTab === 'home' ? (
