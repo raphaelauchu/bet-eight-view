@@ -22,6 +22,18 @@ function mapPosReel(code) {
   return 'C';
 }
 
+// Comparaison tolerante avec le champ brut positionCode retourne par l'API NHL
+// (skater/summary : 'C'|'L'|'R'|'D' ; goalie/summary : pas de positionCode, on force 'G').
+function joueurCorrespondFiltre(positionCode, filtre) {
+  if (filtre === 'ALL') return true;
+  if (filtre === 'C') return positionCode === 'C';
+  if (filtre === 'LW') return positionCode === 'L' || positionCode === 'LW';
+  if (filtre === 'RW') return positionCode === 'R' || positionCode === 'RW';
+  if (filtre === 'D') return positionCode === 'D';
+  if (filtre === 'G') return positionCode === 'G';
+  return false;
+}
+
 // En prod on passe par le proxy /api/nhl (qui accepte une URL complete), en dev on fetch directement.
 function getStatsUrl(fullUrl) {
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
@@ -50,13 +62,16 @@ const POOL_TYPES = [
 
 function getTypeInfo(id) { return POOL_TYPES.find(t => t.id === id) || POOL_TYPES[0]; }
 
+// Projection de points selon le systeme de points du pool :
+// Patineurs : (buts x But) + (passes x Passe) + (PPB x PPB) + (PPP x PPP) + (+/- x +/-) + (tirs x Tirs)
+// Gardiens  : (victoires x Victoire) + (blanchissages x Blanchissage) + (arrets x Arrets)
 function calculerValeurIA(j, points) {
   if (j.posGroupe === 'G') {
     const p = points.G;
-    return Math.round((j.wins * p.victoire + j.shutouts * p.blanchissage + j.goals * p.but + j.saves * p.arrets) * 10) / 10;
+    return Math.round((j.wins * p.victoire + j.shutouts * p.blanchissage + j.saves * p.arrets) * 10) / 10;
   }
   const p = j.posGroupe === 'D' ? points.D : points.F;
-  return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shots * p.tirs + j.plusMinus * p.plusMinus) * 10) / 10;
+  return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.plusMinus * p.plusMinus + j.shots * p.tirs) * 10) / 10;
 }
 
 const DEFAULT_CONFIG = {
@@ -496,10 +511,16 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
         ]);
         const [dataSum, dataGoal] = await Promise.all([resSum.json(), resGoal.json()]);
 
+        // Diagnostic : verifie dans la console le nom exact du champ position renvoye par l'API NHL.
+        if (dataSum.data?.[0]) console.log('[PoolDraft] Exemple joueur brut (skater/summary) :', dataSum.data[0]);
+        if (dataGoal.data?.[0]) console.log('[PoolDraft] Exemple gardien brut (goalie/summary) :', dataGoal.data[0]);
+        if (dataSum.data?.length) console.log('[PoolDraft] Valeurs distinctes de positionCode :', [...new Set(dataSum.data.map(s => s.positionCode))]);
+
         const skaters = (dataSum.data || []).map(s => ({
           id: s.playerId,
           nom: s.skaterFullName,
           equipe: s.teamAbbrevs,
+          positionCode: s.positionCode,
           posGroupe: mapPositionCode(s.positionCode),
           posReel: mapPosReel(s.positionCode),
           gamesPlayed: s.gamesPlayed || 0,
@@ -516,6 +537,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           id: g.playerId,
           nom: g.goalieFullName,
           equipe: g.teamAbbrevs,
+          positionCode: 'G',
           posGroupe: 'G',
           posReel: 'G',
           gamesPlayed: g.gamesPlayed || 0,
@@ -610,7 +632,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   const joueursFiltres = useMemo(() => {
     return joueursAvecValeur
       .filter(j => {
-        if (filtrePos !== 'ALL' && j.posReel !== filtrePos) return false;
+        if (!joueurCorrespondFiltre(j.positionCode, filtrePos)) return false;
         if (recherche && !j.nom.toLowerCase().includes(recherche.toLowerCase()) && !j.equipe.toLowerCase().includes(recherche.toLowerCase())) return false;
         return true;
       })
@@ -726,7 +748,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     </div>
                     <div style={{ textAlign: 'center', flexShrink: 0 }}>
                       <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</div>
-                      <div style={{ fontSize: '8px', color: '#555', letterSpacing: '0.3px' }}>VALEUR IA</div>
+                      <div style={{ fontSize: '8px', color: '#555', letterSpacing: '0.3px' }}>PROJECTION</div>
                     </div>
                     {config.salaryCapActif && (
                       <input
