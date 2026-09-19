@@ -22,6 +22,12 @@ function mapPosReel(code) {
   return 'C';
 }
 
+// Normalise pour la recherche : minuscules + accents/diacritiques retires (ex. "Nečas" -> "necas"),
+// pour que la recherche fonctionne meme sans taper les accents des noms europeens frequents en LNH.
+function normaliserRecherche(texte) {
+  return (texte || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Comparaison tolerante avec le champ brut positionCode retourne par l'API NHL
 // (skater/summary : 'C'|'L'|'R'|'D' ; goalie/summary : pas de positionCode, on force 'G').
 function joueurCorrespondFiltre(positionCode, filtre) {
@@ -646,15 +652,16 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joueursAvecValeur, draftPicks, participantCourant, participantActifBox, config, salaires]);
 
+  const rechercheNormalisee = normaliserRecherche(recherche);
   const joueursFiltres = useMemo(() => {
     return joueursAvecValeur
       .filter(j => {
         if (!joueurCorrespondFiltre(j.positionCode, filtrePos)) return false;
-        if (recherche && !j.nom.toLowerCase().includes(recherche.toLowerCase()) && !j.equipe.toLowerCase().includes(recherche.toLowerCase())) return false;
+        if (rechercheNormalisee && !normaliserRecherche(j.nom).includes(rechercheNormalisee) && !normaliserRecherche(j.equipe).includes(rechercheNormalisee)) return false;
         return true;
       })
       .sort((a, b) => b.valeurIA - a.valeurIA);
-  }, [joueursAvecValeur, filtrePos, recherche]);
+  }, [joueursAvecValeur, filtrePos, rechercheNormalisee]);
 
   const rosterVu = rosterDe(participantVu);
   const besoinsVu = POS_ORDER.map(pos => ({ pos, pris: rosterVu.filter(j => j.posGroupe === pos).length, total: config.roster[pos] || 0 }));
