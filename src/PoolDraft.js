@@ -34,7 +34,10 @@ const POINTS_DEFAUT = {
   F: { but: 0, passe: 0, ppb: 0, ppp: 0, tirs: 0, plusMinus: 0 },
   D: { but: 0, passe: 0, ppb: 0, ppp: 0, tirs: 0, plusMinus: 0 },
   G: { victoire: 0, blanchissage: 0, but: 0, arrets: 0 },
+  equipe: { victoire: 0, defaiteOT: 0, blanchissageEquipe: 0, butsEquipe: 0 },
 };
+
+const EQUIPE_COLOR = '#a78bfa';
 
 const POOL_TYPES = [
   { id: 'classique', label: 'Draft classique', desc: 'Tour par tour. Chaque joueur choisi devient exclusif à une équipe.', exclusif: true, tourParTour: true, salaryCap: false, roster: { F: 6, D: 4, G: 2, bench: 3 } },
@@ -174,10 +177,6 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
     setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === id ? { ...p, nom } : p) }));
   }
 
-  function changerEquipe(id, equipe) {
-    setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === id ? { ...p, equipe } : p) }));
-  }
-
   function definirMoi(id) {
     setConfig(c => ({ ...c, participants: c.participants.map(p => ({ ...p, estMoi: p.id === id })) }));
   }
@@ -195,6 +194,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
   const labelsF = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-' };
   const labelsD = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-' };
   const labelsG = { victoire: 'Victoire', blanchissage: 'Blanchissage', but: 'But', arrets: 'Arrêts' };
+  const labelsEquipe = { victoire: 'Victoire', defaiteOT: 'Défaite en prolongation', blanchissageEquipe: 'Blanchissage équipe', butsEquipe: 'Buts équipe' };
 
   return (
     <div style={{ padding, maxWidth: '1100px', margin: '0 auto' }}>
@@ -226,7 +226,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
           {config.participants.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '8px 10px', flexWrap: 'wrap' }}>
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '8px 10px' }}>
               <button onClick={() => definirMoi(p.id)} title="C'est moi"
                 style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: p.estMoi ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '13px' }}>
                 {p.estMoi ? '★' : '☆'}
@@ -234,22 +234,12 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
               <input
                 value={p.nom}
                 onChange={e => renommer(p.id, e.target.value)}
-                style={{ flex: 1, minWidth: '60px', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', outline: 'none' }}
+                style={{ flex: 1, minWidth: 0, backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', outline: 'none' }}
               />
-              <select
-                value={p.equipe}
-                onChange={e => changerEquipe(p.id, e.target.value)}
-                title="Équipe NHL favorite"
-                style={{ flexShrink: 0, backgroundColor: '#1a1a1a', border: '1px solid #222', borderRadius: '8px', padding: '4px 6px', color: p.equipe ? 'white' : '#555', fontSize: '11px', fontWeight: '700' }}>
-                <option value="">Équipe</option>
-                {Object.keys(LOGOS_NHL).sort().map(abbrev => (
-                  <option key={abbrev} value={abbrev}>{abbrev}</option>
-                ))}
-              </select>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: '10px', fontSize: '11px', color: '#555' }}>★ = c'est toi dans le pool (utilisé pour les suggestions IA à l'étape suivante) · Équipe = ton équipe NHL favorite</div>
+        <div style={{ marginTop: '10px', fontSize: '11px', color: '#555' }}>★ = c'est toi dans le pool (utilisé pour les suggestions IA à l'étape suivante) · l'équipe NHL favorite de chacun se choisit pendant le draft</div>
       </div>
 
       {/* Type de pool */}
@@ -289,11 +279,20 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
           </div>
         </div>
 
-        <div>
+        <div style={{ marginBottom: '14px' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.G, marginBottom: '8px' }}>Gardiens</div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px' }}>
             {Object.keys(labelsG).map(k => (
               <ChampPoint key={k} label={labelsG[k]} value={config.points.G[k]} onChange={v => setPoints('G', k, v)} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: EQUIPE_COLOR, marginBottom: '8px' }}>Équipe</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px' }}>
+            {Object.keys(labelsEquipe).map(k => (
+              <ChampPoint key={k} label={labelsEquipe[k]} value={config.points.equipe[k]} onChange={v => setPoints('equipe', k, v)} />
             ))}
           </div>
         </div>
@@ -343,8 +342,48 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
   );
 }
 
+// Choix de l'equipe NHL favorite du participant courant, assignee pour toute la saison (persiste dans config.participants).
+function SelecteurEquipe({ participant, onChoisir }) {
+  const [ouvert, setOuvert] = useState(false);
+  useEffect(() => { setOuvert(false); }, [participant?.id]);
+
+  if (!participant) return null;
+
+  if (participant.equipe) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px' }}>
+        <span style={{ fontSize: '10px', color: '#666' }}>Équipe :</span>
+        <span style={{ fontSize: '12px', fontWeight: '800', color: '#f97316' }}>{participant.equipe}</span>
+      </div>
+    );
+  }
+
+  if (ouvert) {
+    return (
+      <select
+        autoFocus
+        defaultValue=""
+        onChange={e => { if (e.target.value) { onChoisir(participant.id, e.target.value); setOuvert(false); } }}
+        onBlur={() => setOuvert(false)}
+        style={{ backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '8px', padding: '6px 10px', color: 'white', fontSize: '12px', fontWeight: '700' }}>
+        <option value="">Choisir...</option>
+        {Object.keys(LOGOS_NHL).sort().map(abbrev => (
+          <option key={abbrev} value={abbrev}>{abbrev}</option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <button onClick={() => setOuvert(true)}
+      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #f97316', backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', cursor: 'pointer', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+      Choisir mon équipe NHL
+    </button>
+  );
+}
+
 // ===================== ETAPE 2 : DRAFT ASSISTE =====================
-function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex, salaires, setSalaires, participantActifBox, setParticipantActifBox, onSuivant, onRetour }) {
+function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, setPickIndex, salaires, setSalaires, participantActifBox, setParticipantActifBox, onSuivant, onRetour }) {
   const isMobile = useIsMobile();
   const padding = isMobile ? '16px' : '32px';
   const seasonId = useSaisonCourante();
@@ -434,6 +473,10 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
     return draftPicks.filter(p => p.participantId === participantId);
   }
 
+  function choisirEquipeParticipant(participantId, equipe) {
+    setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === participantId ? { ...p, equipe } : p) }));
+  }
+
   function budgetRestant(participantId) {
     if (!config.salaryCapActif) return null;
     const utilise = rosterDe(participantId).reduce((s, j) => s + (salaires[j.joueurId] || 0), 0);
@@ -516,6 +559,7 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
               <div style={{ fontSize: '10px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '4px' }}>C'est au tour de</div>
               <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{participantCourant?.estMoi ? '🎯 ' : ''}{participantCourant?.nom}</div>
             </div>
+            <SelecteurEquipe participant={participantCourant} onChoisir={choisirEquipeParticipant} />
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '12px', color: '#888' }}>Ronde {rondeCourante}/{totalSlots}</div>
               <div style={{ fontSize: '12px', color: '#888' }}>Choix global #{pickIndex + 1}</div>
@@ -529,6 +573,7 @@ function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex
             style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px', color: 'white', fontSize: '13px', fontWeight: '700' }}>
             {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''}</option>)}
           </select>
+          <SelecteurEquipe participant={participantCourant} onChoisir={choisirEquipeParticipant} />
         </div>
       )}
 
@@ -826,6 +871,7 @@ export default function PoolDraft() {
       {etape === 2 && (
         <EtapeDraft
           config={config}
+          setConfig={setConfig}
           draftPicks={draftPicks}
           setDraftPicks={setDraftPicks}
           pickIndex={pickIndex}
