@@ -844,8 +844,10 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       disabled={dejaPris}
                       onClick={() => {
                         if (trouve) {
+                          setRecherche('');
+                          setResultatsRecherche([]);
+                          setDropdownRechercheOuvert(false);
                           demanderChoix(trouve);
-                          setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
                         } else {
                           setAjoutManuel({ nom: r.name, positionCode: r.positionCode || 'C', equipe: r.teamAbbrev || '', idConnu: Number(r.playerId) || null });
                           setDropdownRechercheOuvert(false);
