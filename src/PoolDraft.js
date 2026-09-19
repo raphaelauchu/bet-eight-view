@@ -835,10 +835,14 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     || joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === r.name.toLowerCase());
                   const pickExistant = trouve && draftPicks.find(p => p.joueurId === trouve.id);
                   const dejaPris = !!pickExistant;
+                  // Choisir un joueur trouve par recherche appelle demanderChoix(trouve), exactement la meme
+                  // fonction que le bouton "Choisir" des suggestions IA. Utilise un vrai <button> (comme
+                  // "Choisir") plutot qu'un <div onClick> pour garantir un clic fiable sur tous les appareils.
                   return (
-                    <div key={r.playerId ?? i}
+                    <button key={r.playerId ?? i}
+                      type="button"
+                      disabled={dejaPris}
                       onClick={() => {
-                        if (dejaPris) return;
                         if (trouve) {
                           demanderChoix(trouve);
                           setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false);
@@ -847,15 +851,15 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                           setDropdownRechercheOuvert(false);
                         }
                       }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: dejaPris ? 'not-allowed' : 'pointer', borderBottom: '1px solid #222', opacity: dejaPris ? 0.5 : 1 }}
+                      style={{ all: 'unset', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', width: '100%', cursor: dejaPris ? 'not-allowed' : 'pointer', borderBottom: '1px solid #222', opacity: dejaPris ? 0.5 : 1 }}
                       onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = '#222'; }}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0, pointerEvents: 'none' }}
                         onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
-                      <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                      <div style={{ flex: 1 }}>
+                      <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0, pointerEvents: 'none' }} onError={e => { e.target.style.display = 'none'; }} />
+                      <div style={{ flex: 1, textAlign: 'left' }}>
                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
                         <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : '#666' }}>
                           {dejaPris
@@ -865,7 +869,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       </div>
                       {dejaPris && <span style={{ fontSize: '9px', color: '#ef4444', fontWeight: '700', flexShrink: 0, backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: '6px', padding: '3px 6px' }}>DÉJÀ PRIS</span>}
                       {!dejaPris && !trouve && <span style={{ fontSize: '9px', color: '#a78bfa', fontWeight: '700', flexShrink: 0 }}>AJOUTER</span>}
-                    </div>
+                    </button>
                   );
                 })}
                 {pickManuelExistant ? (
@@ -873,14 +877,15 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     <strong>{manuelExistant.nom}</strong> · DÉJÀ PRIS — Pris par {participantNomDe(pickManuelExistant.participantId)} (ronde {pickManuelExistant.ronde})
                   </div>
                 ) : (
-                  <div
+                  <button
+                    type="button"
                     onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', idConnu: null }); setDropdownRechercheOuvert(false); }}
-                    style={{ padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
+                    style={{ all: 'unset', boxSizing: 'border-box', display: 'block', width: '100%', padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     + Ajouter manuellement : {recherche}
-                  </div>
+                  </button>
                 )}
               </div>
             );
