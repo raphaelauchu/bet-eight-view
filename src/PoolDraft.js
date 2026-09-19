@@ -1,26 +1,82 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getUrl } from './nhlApi';
-import { LOGOS_NHL, useIsMobile, useSaisonCourante } from './Analyses';
+import { useIsMobile, useSaisonCourante } from './Analyses';
 
-const POSITIONS = ['F', 'D', 'G'];
-const POS_LABELS = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
-const POS_COLORS = { F: '#f97316', D: '#3b82f6', G: '#22c55e' };
+const POS_ORDER = ['C', 'LW', 'RW', 'D', 'G'];
+const POS_LABELS = { C: 'Centres', LW: 'Ailiers gauches', RW: 'Ailiers droits', D: 'Défenseurs', G: 'Gardiens' };
+const POS_COLORS = { C: '#f97316', LW: '#fb923c', RW: '#eab308', D: '#3b82f6', G: '#22c55e' };
 
-function mapPosition(posNhl) {
-  if (posNhl === 'G') return 'G';
-  if (posNhl === 'D') return 'D';
-  return 'F';
+function mapPositionCode(code) {
+  if (code === 'L') return 'LW';
+  if (code === 'R') return 'RW';
+  if (code === 'C') return 'C';
+  if (code === 'D') return 'D';
+  return 'C';
+}
+
+// En prod on passe par le proxy /api/nhl (qui accepte une URL complete), en dev on fetch directement.
+function getStatsUrl(fullUrl) {
+  const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+  return estEnProduction ? `/api/nhl?path=${encodeURIComponent(fullUrl)}` : fullUrl;
+}
+
+function clonePoints(p) { return JSON.parse(JSON.stringify(p)); }
+
+const POINTS_DEFAUT = {
+  F: { but: 6, passe: 4, ppb: 2, ppp: 1, shg: 3, tirs: 0.5, plusMinus: 1 },
+  D: { but: 8, passe: 5, ppb: 2, ppp: 1, tirs: 0.5, plusMinus: 1, blocs: 0.5 },
+  G: { victoire: 4, blanchissage: 3, butsAccordes: -1, arrets: 0.2 },
+};
+
+const POOL_TYPES = [
+  { id: 'classique', label: 'Draft classique', desc: 'Tour par tour. Chaque joueur choisi devient exclusif à une équipe.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
+  { id: 'box', label: 'Box Pool', desc: 'Boîtes de joueurs, choix multiples permis : plusieurs participants peuvent avoir le même joueur.', exclusif: false, tourParTour: false, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 2 } },
+  { id: 'grand', label: 'Grand Pool', desc: 'Choix libre par rondes, rosters plus généreux, tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 3, LW: 3, RW: 3, D: 5, G: 3, bench: 5 } },
+  { id: 'keeper', label: 'Keeper', desc: 'Conservation de joueurs pour la saison suivante. Tour par tour comme un draft classique.', exclusif: true, tourParTour: true, salaryCap: false, keeper: true, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
+  { id: 'h2h', label: 'Head-to-Head', desc: 'Affrontements hebdomadaires entre participants pendant la saison. Tour par tour.', exclusif: true, tourParTour: true, salaryCap: false, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
+  { id: 'salarycap', label: 'Salary Cap', desc: 'Plafond salarial basé sur les vrais contrats NHL. Salaires à entrer manuellement (aucune source de salaires n\'est légalement redistribuable via API). Tour par tour.', exclusif: true, tourParTour: true, salaryCap: true, plafond: 88000000, roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 } },
+];
+
+function getTypeInfo(id) { return POOL_TYPES.find(t => t.id === id) || POOL_TYPES[0]; }
+
+function calculerValeurIA(j, points) {
+  if (j.posGroupe === 'G') {
+    const p = points.G;
+    return Math.round((j.wins * p.victoire + j.shutouts * p.blanchissage + j.goalsAgainst * p.butsAccordes + j.saves * p.arrets) * 10) / 10;
+  }
+  if (j.posGroupe === 'D') {
+    const p = points.D;
+    return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shots * p.tirs + j.plusMinus * p.plusMinus + j.blockedShots * p.blocs) * 10) / 10;
+  }
+  const p = points.F;
+  return Math.round((j.goals * p.but + j.assists * p.passe + j.ppGoals * p.ppb + j.ppPoints * p.ppp + j.shGoals * p.shg + j.shots * p.tirs + j.plusMinus * p.plusMinus) * 10) / 10;
+}
+
+const DEFAULT_CONFIG = {
+  nomPool: '',
+  typePool: 'classique',
+  participants: [
+    { id: 1, nom: 'Moi', estMoi: true },
+    { id: 2, nom: 'Participant 2', estMoi: false },
+  ],
+  roster: { C: 2, LW: 2, RW: 2, D: 4, G: 2, bench: 3 },
+  points: clonePoints(POINTS_DEFAUT),
+  salaryCapActif: false,
+  plafond: 88000000,
+};
+
+function totalRosterSlots(roster) {
+  return (roster.C || 0) + (roster.LW || 0) + (roster.RW || 0) + (roster.D || 0) + (roster.G || 0) + (roster.bench || 0);
 }
 
 function Stepper({ etape }) {
   const isMobile = useIsMobile();
   const steps = [
-    { n: 1, label: 'Règles du pool' },
+    { n: 1, label: 'Configuration du pool' },
     { n: 2, label: 'Draft assisté' },
-    { n: 3, label: 'Résumé roster' },
+    { n: 3, label: 'Résumé' },
   ];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: isMobile ? '16px 16px 0' : '24px 32px 0', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: isMobile ? '16px 16px 0' : '24px 32px 0', maxWidth: '1100px', margin: '0 auto' }}>
       {steps.map((s, i) => (
         <React.Fragment key={s.n}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? '1' : 'none' }}>
@@ -45,92 +101,222 @@ function Stepper({ etape }) {
   );
 }
 
-const DEFAULT_REGLES = {
-  nomPool: '',
-  nbEquipes: 10,
-  slotsF: 9,
-  slotsD: 4,
-  slotsG: 2,
-  slotsUtil: 1,
-  typeScoring: 'points',
-  typeDraft: 'snake',
-};
-
-// Etape 1 : configuration des regles du pool (format roster, scoring, type de draft).
-function EtapeRegles({ regles, setRegles, onSuivant }) {
-  const isMobile = useIsMobile();
-  const padding = isMobile ? '16px' : '32px';
-  const totalSlots = regles.slotsF + regles.slotsD + regles.slotsG + regles.slotsUtil;
-
-  const champ = (label, key, min, max) => (
-    <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '14px 16px', border: '1px solid #222' }}>
-      <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px', fontWeight: '600' }}>{label}</div>
+function ChampNombre({ label, value, onChange, min = 0, max = 20 }) {
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '12px 14px', border: '1px solid #222' }}>
+      <div style={{ fontSize: '11px', color: '#888', marginBottom: '8px', fontWeight: '600' }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <button onClick={() => setRegles(r => ({ ...r, [key]: Math.max(min, r[key] - 1) }))}
-          style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>−</button>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{regles[key]}</div>
-        <button onClick={() => setRegles(r => ({ ...r, [key]: Math.min(max, r[key] + 1) }))}
-          style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '16px', fontWeight: '700' }}>+</button>
+        <button onClick={() => onChange(Math.max(min, value - 1))}
+          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>−</button>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{value}</div>
+        <button onClick={() => onChange(Math.min(max, value + 1))}
+          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>+</button>
       </div>
     </div>
   );
+}
+
+function ChampPoint({ label, value, onChange }) {
+  return (
+    <div style={{ backgroundColor: '#111', borderRadius: '10px', padding: '8px 10px', border: '1px solid #222' }}>
+      <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>{label}</div>
+      <input
+        type="number"
+        step="0.5"
+        value={value}
+        onChange={e => onChange(parseFloat(e.target.value) || 0)}
+        style={{ width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '6px 8px', color: '#f97316', fontSize: '14px', fontWeight: '800', boxSizing: 'border-box' }}
+      />
+    </div>
+  );
+}
+
+// ===================== ETAPE 1 : CONFIGURATION DU POOL =====================
+function EtapeConfig({ config, setConfig, onSuivant }) {
+  const isMobile = useIsMobile();
+  const padding = isMobile ? '16px' : '32px';
+  const typeInfo = getTypeInfo(config.typePool);
+  const totalSlots = totalRosterSlots(config.roster);
+
+  function appliquerType(typeId) {
+    const t = getTypeInfo(typeId);
+    setConfig(c => ({
+      ...c,
+      typePool: typeId,
+      roster: { ...t.roster },
+      salaryCapActif: t.salaryCap,
+      plafond: t.plafond || c.plafond || 88000000,
+    }));
+  }
+
+  function setNbParticipants(n) {
+    setConfig(c => {
+      let participants = [...c.participants];
+      if (n > participants.length) {
+        for (let i = participants.length; i < n; i++) {
+          participants.push({ id: Date.now() + i, nom: `Participant ${i + 1}`, estMoi: false });
+        }
+      } else if (n < participants.length) {
+        const retires = participants.slice(n);
+        participants = participants.slice(0, n);
+        if (retires.some(p => p.estMoi) && !participants.some(p => p.estMoi)) participants[0].estMoi = true;
+      }
+      return { ...c, participants };
+    });
+  }
+
+  function renommer(id, nom) {
+    setConfig(c => ({ ...c, participants: c.participants.map(p => p.id === id ? { ...p, nom } : p) }));
+  }
+
+  function definirMoi(id) {
+    setConfig(c => ({ ...c, participants: c.participants.map(p => ({ ...p, estMoi: p.id === id })) }));
+  }
+
+  function setPoints(groupe, cle, val) {
+    setConfig(c => ({ ...c, points: { ...c.points, [groupe]: { ...c.points[groupe], [cle]: val } } }));
+  }
+
+  function setRoster(cle, val) {
+    setConfig(c => ({ ...c, roster: { ...c.roster, [cle]: val } }));
+  }
+
+  const rosterFields = [['C', 'Centres'], ['LW', 'Ailiers gauches'], ['RW', 'Ailiers droits'], ['D', 'Défenseurs'], ['G', 'Gardiens'], ['bench', 'Remplaçants']];
+
+  const labelsF = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', shg: 'SHG', tirs: 'Tirs', plusMinus: '+/-' };
+  const labelsD = { but: 'But', passe: 'Passe', ppb: 'PPB', ppp: 'PPP', tirs: 'Tirs', plusMinus: '+/-', blocs: 'Blocs' };
+  const labelsG = { victoire: 'Victoire', blanchissage: 'Blanchissage', butsAccordes: 'Buts accordés', arrets: 'Arrêts' };
 
   return (
-    <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Règles du pool</h2>
-      <p style={{ margin: '0 0 20px', color: '#666', fontSize: '13px' }}>Configure le format de ton pool avant de commencer le draft assisté.</p>
+    <div style={{ padding, maxWidth: '1100px', margin: '0 auto' }}>
+      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Configuration du pool</h2>
+      <p style={{ margin: '0 0 20px', color: '#666', fontSize: '13px' }}>Configure les règles de ton pool de hockey avant de commencer le draft assisté.</p>
 
+      {/* Infos generales */}
       <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
-        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Informations générales</div>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Nom du pool</div>
+        <input
+          value={config.nomPool}
+          onChange={e => setConfig(c => ({ ...c, nomPool: e.target.value }))}
+          placeholder="Ex. Pool des Chums 2026-27"
+          style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+        />
+      </div>
+
+      {/* Participants */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Participants</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={() => setNbParticipants(Math.max(2, config.participants.length - 1))}
+              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>−</button>
+            <span style={{ fontSize: '14px', fontWeight: '800', color: '#f97316', minWidth: '18px', textAlign: 'center' }}>{config.participants.length}</span>
+            <button onClick={() => setNbParticipants(Math.min(20, config.participants.length + 1))}
+              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>+</button>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
+          {config.participants.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '8px 10px' }}>
+              <button onClick={() => definirMoi(p.id)} title="C'est moi"
+                style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: p.estMoi ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '13px' }}>
+                {p.estMoi ? '★' : '☆'}
+              </button>
+              <input
+                value={p.nom}
+                onChange={e => renommer(p.id, e.target.value)}
+                style={{ flex: 1, minWidth: 0, backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', outline: 'none' }}
+              />
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: '10px', fontSize: '11px', color: '#555' }}>★ = c'est toi dans le pool (utilisé pour les suggestions IA à l'étape suivante)</div>
+      </div>
+
+      {/* Type de pool */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Type de pool</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px' }}>
+          {POOL_TYPES.map(t => (
+            <button key={t.id} onClick={() => appliquerType(t.id)}
+              style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.typePool === t.id ? '1px solid #f97316' : '1px solid #222', backgroundColor: config.typePool === t.id ? 'rgba(249,115,22,0.08)' : '#111' }}>
+              <div style={{ fontSize: '14px', fontWeight: '800', color: config.typePool === t.id ? 'white' : '#ccc', marginBottom: '4px' }}>{t.label}</div>
+              <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.5' }}>{t.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Systeme de points */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '4px' }}>Système de points personnalisable</div>
+        <p style={{ margin: '0 0 14px', fontSize: '11px', color: '#555' }}>Ajusté selon le type de pool sélectionné · sert aussi à calculer le score de valeur IA à l'étape 2</p>
+
         <div style={{ marginBottom: '14px' }}>
-          <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px', fontWeight: '600' }}>Nom du pool</div>
-          <input
-            value={regles.nomPool}
-            onChange={e => setRegles(r => ({ ...r, nomPool: e.target.value }))}
-            placeholder="Ex. Pool des Chums 2026"
-            style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
-          />
+          <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.C, marginBottom: '8px' }}>Attaquants</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', gap: '8px' }}>
+            {Object.keys(labelsF).map(k => (
+              <ChampPoint key={k} label={labelsF[k]} value={config.points.F[k]} onChange={v => setPoints('F', k, v)} />
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
-          {champ('Nombre d\'équipes', 'nbEquipes', 2, 20)}
+
+        <div style={{ marginBottom: '14px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.D, marginBottom: '8px' }}>Défenseurs</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', gap: '8px' }}>
+            {Object.keys(labelsD).map(k => (
+              <ChampPoint key={k} label={labelsD[k]} value={config.points.D[k]} onChange={v => setPoints('D', k, v)} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.G, marginBottom: '8px' }}>Gardiens</div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px' }}>
+            {Object.keys(labelsG).map(k => (
+              <ChampPoint key={k} label={labelsG[k]} value={config.points.G[k]} onChange={v => setPoints('G', k, v)} />
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
-        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Format du roster</div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '10px' }}>
-          {champ('Attaquants (F)', 'slotsF', 0, 20)}
-          {champ('Défenseurs (D)', 'slotsD', 0, 12)}
-          {champ('Gardiens (G)', 'slotsG', 0, 6)}
-          {champ('Utilitaire / réserve', 'slotsUtil', 0, 10)}
+      {/* Salary cap */}
+      {(config.salaryCapActif || typeInfo.salaryCap) && (
+        <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '14px', padding: '18px', marginBottom: '14px' }}>
+          <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Salary Cap</div>
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#888', lineHeight: '1.6' }}>
+            Aucune API publique ne redistribue légalement les vrais salaires NHL (vérifié : NHL officiel, PuckPedia, CapFriendly, Spotrac, CapWages, marqueur.com — tous interdisent la redistribution ou n'ont pas ces données). Les salaires se saisissent donc manuellement pendant le draft — réfère-toi à PuckPedia ou CapWages pour les vrais chiffres.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888', cursor: 'pointer' }}>
+              <input type="checkbox" checked={config.salaryCapActif} onChange={e => setConfig(c => ({ ...c, salaryCapActif: e.target.checked }))} />
+              Activer le plafond salarial
+            </label>
+            {config.salaryCapActif && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#888' }}>Plafond ($) :</span>
+                <input type="number" step="500000" value={config.plafond} onChange={e => setConfig(c => ({ ...c, plafond: parseInt(e.target.value) || 0 }))}
+                  style={{ width: '140px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px', color: '#f97316', fontSize: '13px', fontWeight: '800' }} />
+              </div>
+            )}
+          </div>
         </div>
-        <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs par équipe</div>
-      </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px' }}>
-          <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Type de scoring</div>
-          {[['points', 'Points (standard)'], ['categories', 'Catégories']].map(([val, label]) => (
-            <button key={val} onClick={() => setRegles(r => ({ ...r, typeScoring: val }))}
-              style={{ width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: '10px', marginBottom: '8px', cursor: 'pointer', border: regles.typeScoring === val ? '1px solid #f97316' : '1px solid #222', backgroundColor: regles.typeScoring === val ? 'rgba(249,115,22,0.08)' : '#111', color: regles.typeScoring === val ? 'white' : '#888', fontSize: '13px', fontWeight: regles.typeScoring === val ? '700' : '500' }}>
-              {label}
-            </button>
+      {/* Composition roster */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '20px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Composition du roster</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '10px' }}>
+          {rosterFields.map(([cle, label]) => (
+            <ChampNombre key={cle} label={label} value={config.roster[cle]} onChange={v => setRoster(cle, v)} min={0} max={cle === 'bench' ? 15 : 10} />
           ))}
         </div>
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px' }}>
-          <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Type de draft</div>
-          {[['snake', 'Snake draft'], ['auction', 'Enchères (auction)']].map(([val, label]) => (
-            <button key={val} onClick={() => setRegles(r => ({ ...r, typeDraft: val }))}
-              style={{ width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: '10px', marginBottom: '8px', cursor: 'pointer', border: regles.typeDraft === val ? '1px solid #f97316' : '1px solid #222', backgroundColor: regles.typeDraft === val ? 'rgba(249,115,22,0.08)' : '#111', color: regles.typeDraft === val ? 'white' : '#888', fontSize: '13px', fontWeight: regles.typeDraft === val ? '700' : '500' }}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs par équipe · <strong style={{ color: 'white' }}>{totalSlots}</strong> rondes de draft</div>
       </div>
 
       <button
         onClick={onSuivant}
-        disabled={totalSlots === 0}
+        disabled={totalSlots === 0 || config.participants.length < 2}
         style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', cursor: totalSlots === 0 ? 'not-allowed' : 'pointer', background: totalSlots === 0 ? '#222' : 'linear-gradient(135deg, #f97316, #ea580c)', color: totalSlots === 0 ? '#555' : 'white', fontSize: '15px', fontWeight: '700' }}>
         Commencer le draft assisté →
       </button>
@@ -138,207 +324,342 @@ function EtapeRegles({ regles, setRegles, onSuivant }) {
   );
 }
 
-// Etape 2 : draft assiste - liste des joueurs NHL, recherche/filtre par position, ajout au roster.
-function EtapeDraft({ regles, roster, setRoster, onSuivant, onRetour }) {
+// ===================== ETAPE 2 : DRAFT ASSISTE =====================
+function EtapeDraft({ config, draftPicks, setDraftPicks, pickIndex, setPickIndex, salaires, setSalaires, participantActifBox, setParticipantActifBox, onSuivant, onRetour }) {
   const isMobile = useIsMobile();
   const padding = isMobile ? '16px' : '32px';
   const seasonId = useSaisonCourante();
+  const typeInfo = getTypeInfo(config.typePool);
 
   const [joueurs, setJoueurs] = useState([]);
   const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(false);
   const [recherche, setRecherche] = useState('');
   const [filtrePos, setFiltrePos] = useState('ALL');
+  const [nbAffiches, setNbAffiches] = useState(50);
+  const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
 
   useEffect(() => {
     let annule = false;
-    async function chargerJoueurs() {
+    async function charger() {
       setChargement(true);
-      const abbrevs = Object.keys(LOGOS_NHL);
-      const tous = [];
-      for (let i = 0; i < abbrevs.length; i += 6) {
-        const batch = abbrevs.slice(i, i + 6);
-        const resultats = await Promise.all(batch.map(async (abbrev) => {
-          try {
-            const res = await fetch(getUrl(`roster/${abbrev}/${seasonId}`));
-            const data = await res.json();
-            const tous2 = [
-              ...(data.forwards || []).map(j => ({ ...j, equipe: abbrev, positionGroupe: 'F' })),
-              ...(data.defensemen || []).map(j => ({ ...j, equipe: abbrev, positionGroupe: 'D' })),
-              ...(data.goalies || []).map(j => ({ ...j, equipe: abbrev, positionGroupe: 'G' })),
-            ];
-            return tous2.map(j => ({
-              id: j.id,
-              nom: ((j.firstName?.default || '') + ' ' + (j.lastName?.default || '')).trim(),
-              equipe: j.equipe,
-              position: mapPosition(j.positionCode) || j.positionGroupe,
-              numero: j.sweaterNumber || '-',
-              photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${abbrev}/${j.id}.png`,
-            }));
-          } catch { return []; }
+      setErreur(false);
+      try {
+        const [resSum, resRt, resGoal] = await Promise.all([
+          fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
+          fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=seasonId=${seasonId}&limit=-1`)),
+          fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
+        ]);
+        const [dataSum, dataRt, dataGoal] = await Promise.all([resSum.json(), resRt.json(), resGoal.json()]);
+        const blocsParId = {};
+        (dataRt.data || []).forEach(r => { blocsParId[r.playerId] = r.blockedShots || 0; });
+
+        const skaters = (dataSum.data || []).map(s => ({
+          id: s.playerId,
+          nom: s.skaterFullName,
+          equipe: s.teamAbbrevs,
+          posGroupe: mapPositionCode(s.positionCode),
+          gamesPlayed: s.gamesPlayed || 0,
+          goals: s.goals || 0,
+          assists: s.assists || 0,
+          points: s.points || 0,
+          plusMinus: s.plusMinus || 0,
+          shots: s.shots || 0,
+          ppGoals: s.ppGoals || 0,
+          ppPoints: s.ppPoints || 0,
+          shGoals: s.shGoals || 0,
+          blockedShots: blocsParId[s.playerId] || 0,
         }));
-        resultats.forEach(arr => tous.push(...arr));
-      }
-      if (!annule) {
-        tous.sort((a, b) => a.nom.localeCompare(b.nom));
-        setJoueurs(tous);
-        setChargement(false);
+
+        const goalies = (dataGoal.data || []).map(g => ({
+          id: g.playerId,
+          nom: g.goalieFullName,
+          equipe: g.teamAbbrevs,
+          posGroupe: 'G',
+          gamesPlayed: g.gamesPlayed || 0,
+          wins: g.wins || 0,
+          shutouts: g.shutouts || 0,
+          goalsAgainst: g.goalsAgainst || 0,
+          saves: g.saves || 0,
+          savePct: g.savePct || 0,
+        }));
+
+        const tous = [...skaters, ...goalies].sort((a, b) => a.nom.localeCompare(b.nom));
+        if (!annule) { setJoueurs(tous); setChargement(false); }
+      } catch {
+        if (!annule) { setErreur(true); setChargement(false); }
       }
     }
-    chargerJoueurs();
+    charger();
     return () => { annule = true; };
   }, [seasonId]);
 
-  const draftedIds = useMemo(() => new Set(roster.map(j => j.id)), [roster]);
+  const joueursAvecValeur = useMemo(() => joueurs.map(j => ({ ...j, valeurIA: calculerValeurIA(j, config.points) })), [joueurs, config.points]);
 
-  const besoinsParPosition = useMemo(() => {
-    const compte = { F: 0, D: 0, G: 0 };
-    roster.forEach(j => { compte[j.position] = (compte[j.position] || 0) + 1; });
-    return {
-      F: { pris: compte.F, total: regles.slotsF },
-      D: { pris: compte.D, total: regles.slotsD },
-      G: { pris: compte.G, total: regles.slotsG },
-    };
-  }, [roster, regles]);
+  const totalSlots = totalRosterSlots(config.roster);
+  const nbParticipants = config.participants.length;
 
-  const totalSlots = regles.slotsF + regles.slotsD + regles.slotsG + regles.slotsUtil;
-  const rosterPlein = roster.length >= totalSlots;
+  // Ordre de draft en serpentin (snake) pour les types tour-par-tour.
+  const ordre = useMemo(() => {
+    if (!typeInfo.tourParTour) return [];
+    const o = [];
+    for (let r = 0; r < totalSlots; r++) {
+      const ronde = r % 2 === 0 ? config.participants : [...config.participants].reverse();
+      o.push(...ronde);
+    }
+    return o;
+  }, [config.participants, totalSlots, typeInfo.tourParTour]);
 
-  // Position la plus prioritaire = celle dont le ratio pris/total est le plus faible (encore des trous a combler).
-  const positionPrioritaire = useMemo(() => {
-    let pire = null;
-    let pireRatio = 2;
-    POSITIONS.forEach(p => {
-      const b = besoinsParPosition[p];
-      if (b.total === 0) return;
-      const ratio = b.pris / b.total;
-      if (ratio < 1 && ratio < pireRatio) { pireRatio = ratio; pire = p; }
-    });
-    return pire;
-  }, [besoinsParPosition]);
+  const draftTermine = typeInfo.tourParTour ? pickIndex >= ordre.length : config.participants.every(p => draftPicks.filter(d => d.participantId === p.id).length >= totalSlots);
+  const participantCourant = typeInfo.tourParTour ? (ordre[pickIndex] || null) : config.participants.find(p => p.id === participantActifBox) || config.participants[0];
+  const rondeCourante = typeInfo.tourParTour ? Math.min(Math.floor(pickIndex / nbParticipants) + 1, totalSlots) : null;
 
+  function rosterDe(participantId) {
+    return draftPicks.filter(p => p.participantId === participantId);
+  }
+
+  function budgetRestant(participantId) {
+    if (!config.salaryCapActif) return null;
+    const utilise = rosterDe(participantId).reduce((s, j) => s + (salaires[j.joueurId] || 0), 0);
+    return config.plafond - utilise;
+  }
+
+  const estDisponible = (joueurId) => typeInfo.exclusif
+    ? !draftPicks.some(p => p.joueurId === joueurId)
+    : !draftPicks.some(p => p.joueurId === joueurId && p.participantId === (participantCourant?.id));
+
+  function drafter(joueur) {
+    if (!participantCourant) return;
+    if (!estDisponible(joueur.id)) return;
+    setDraftPicks(dp => [...dp, {
+      joueurId: joueur.id, nom: joueur.nom, equipe: joueur.equipe, posGroupe: joueur.posGroupe,
+      valeurIA: joueur.valeurIA, participantId: participantCourant.id,
+      pick: dp.length + 1, ronde: rondeCourante || Math.floor(dp.length / nbParticipants) + 1,
+    }]);
+    if (typeInfo.tourParTour) setPickIndex(i => i + 1);
+  }
+
+  function retirer(pickPos) {
+    setDraftPicks(dp => dp.filter((_, i) => i !== pickPos));
+    if (typeInfo.tourParTour) setPickIndex(i => Math.max(0, i - 1));
+  }
+
+  const moiParticipant = config.participants.find(p => p.estMoi);
   const suggestions = useMemo(() => {
-    if (!positionPrioritaire) return [];
-    return joueurs.filter(j => j.position === positionPrioritaire && !draftedIds.has(j.id)).slice(0, 5);
-  }, [joueurs, positionPrioritaire, draftedIds]);
+    const estTourDeMoi = typeInfo.tourParTour ? (participantCourant?.estMoi) : (participantActifBox === moiParticipant?.id);
+    if (!estTourDeMoi || !moiParticipant) return [];
+    const monRoster = rosterDe(moiParticipant.id);
+    const besoins = POS_ORDER.filter(pos => monRoster.filter(j => j.posGroupe === pos).length < (config.roster[pos] || 0));
+    const restant = config.salaryCapActif ? budgetRestant(moiParticipant.id) : Infinity;
 
-  const joueursFiltres = joueurs.filter(j => {
-    const posOk = filtrePos === 'ALL' || j.position === filtrePos;
-    const rechOk = !recherche || j.nom.toLowerCase().includes(recherche.toLowerCase()) || j.equipe.toLowerCase().includes(recherche.toLowerCase());
-    return posOk && rechOk;
-  });
+    let candidats = joueursAvecValeur.filter(j => {
+      if (!estDisponible(j.id)) return false;
+      if (config.salaryCapActif && restant != null) {
+        const sal = salaires[j.id] || 0;
+        if (sal > 0 && sal > restant) return false;
+      }
+      return true;
+    });
+    const parBesoin = besoins.length > 0 ? candidats.filter(j => besoins.includes(j.posGroupe)) : candidats;
+    const pool = parBesoin.length >= 3 ? parBesoin : candidats;
+    return [...pool].sort((a, b) => b.valeurIA - a.valeurIA).slice(0, 3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joueursAvecValeur, draftPicks, participantCourant, participantActifBox, config, salaires]);
 
-  function drafterJoueur(joueur) {
-    if (draftedIds.has(joueur.id) || rosterPlein) return;
-    setRoster(r => [...r, { ...joueur, pick: r.length + 1 }]);
-  }
+  const joueursFiltres = useMemo(() => {
+    return joueursAvecValeur
+      .filter(j => {
+        if (filtrePos !== 'ALL' && j.posGroupe !== filtrePos) return false;
+        if (recherche && !j.nom.toLowerCase().includes(recherche.toLowerCase()) && !j.equipe.toLowerCase().includes(recherche.toLowerCase())) return false;
+        return true;
+      })
+      .sort((a, b) => b.valeurIA - a.valeurIA);
+  }, [joueursAvecValeur, filtrePos, recherche]);
 
-  function retirerJoueur(id) {
-    setRoster(r => r.filter(j => j.id !== id).map((j, i) => ({ ...j, pick: i + 1 })));
-  }
+  const rosterVu = rosterDe(participantVu);
+  const besoinsVu = POS_ORDER.map(pos => ({ pos, pris: rosterVu.filter(j => j.posGroupe === pos).length, total: config.roster[pos] || 0 }));
 
   return (
-    <div style={{ padding, maxWidth: '1000px', margin: '0 auto' }}>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Règles</button>
+    <div style={{ padding, maxWidth: '1200px', margin: '0 auto' }}>
+      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Configuration</button>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Draft assisté</h2>
-          <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>{regles.nomPool || 'Mon pool'} · {roster.length}/{totalSlots} joueurs sélectionnés</p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {POSITIONS.map(p => (
-            <div key={p} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '6px 10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '9px', color: POS_COLORS[p], fontWeight: '700', letterSpacing: '0.5px' }}>{p}</div>
-              <div style={{ fontSize: '13px', fontWeight: '800', color: 'white' }}>{besoinsParPosition[p].pris}/{besoinsParPosition[p].total}</div>
-            </div>
-          ))}
-        </div>
+      <div style={{ marginBottom: '14px' }}>
+        <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Draft assisté</h2>
+        <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {typeInfo.label} · {draftPicks.length} choix effectués</p>
       </div>
 
+      {/* Bandeau tour actuel */}
+      {typeInfo.tourParTour ? (
+        draftTermine ? (
+          <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '14px', padding: '16px', marginBottom: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#22c55e' }}>Draft terminé — {draftPicks.length} joueurs sélectionnés</div>
+          </div>
+        ) : (
+          <div style={{ background: participantCourant?.estMoi ? 'linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.08))' : 'rgba(249,115,22,0.04)', border: participantCourant?.estMoi ? '1px solid #f97316' : '1px solid rgba(249,115,22,0.2)', borderRadius: '14px', padding: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: '10px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '4px' }}>C'est au tour de</div>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{participantCourant?.estMoi ? '🎯 ' : ''}{participantCourant?.nom}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', color: '#888' }}>Ronde {rondeCourante}/{totalSlots}</div>
+              <div style={{ fontSize: '12px', color: '#888' }}>Choix global #{pickIndex + 1}</div>
+            </div>
+          </div>
+        )
+      ) : (
+        <div style={{ backgroundColor: 'rgba(249,115,22,0.04)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '14px', padding: '14px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: '#888' }}>Choix multiples permis · Piocher pour :</span>
+          <select value={participantActifBox} onChange={e => setParticipantActifBox(parseInt(e.target.value))}
+            style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px', color: 'white', fontSize: '13px', fontWeight: '700' }}>
+            {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Suggestions IA */}
       {suggestions.length > 0 && !chargement && (
         <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '14px', padding: '14px 16px', marginBottom: '16px' }}>
           <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>
-            Suggestions · besoin prioritaire : {POS_LABELS[positionPrioritaire]}
+            Top 3 suggestions IA (positions manquantes · budget · meilleure valeur)
           </div>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
-            {suggestions.map(j => (
-              <button key={j.id} onClick={() => drafterJoueur(j)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'white', whiteSpace: 'nowrap' }}>{j.nom}</span>
-                <span style={{ fontSize: '11px', color: '#666' }}>{j.equipe}</span>
-                <span style={{ color: '#f97316', fontSize: '14px', fontWeight: '900' }}>+</span>
-              </button>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '8px' }}>
+            {suggestions.map((j, i) => (
+              <div key={j.id} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[j.posGroupe] }}>#{i + 1} · {j.posGroupe}</span>
+                  <span style={{ fontSize: '13px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</span>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+                <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>{j.equipe}</div>
+                <button onClick={() => drafter(j)} style={{ width: '100%', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', fontSize: '11px', fontWeight: '700' }}>Choisir</button>
+              </div>
             ))}
           </div>
         </div>
       )}
 
+      {/* Recherche / filtres */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <input
           value={recherche}
-          onChange={e => setRecherche(e.target.value)}
+          onChange={e => { setRecherche(e.target.value); setNbAffiches(50); }}
           placeholder="Rechercher un joueur ou une équipe..."
           style={{ flex: 1, minWidth: '200px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
         />
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {['ALL', ...POSITIONS].map(p => (
-            <button key={p} onClick={() => setFiltrePos(p)} style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtrePos === p ? (POS_COLORS[p] || '#f97316') : '#111', color: filtrePos === p ? 'white' : '#555', fontSize: '12px', fontWeight: '700' }}>{p === 'ALL' ? 'Tous' : p}</button>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {['ALL', ...POS_ORDER].map(p => (
+            <button key={p} onClick={() => { setFiltrePos(p); setNbAffiches(50); }} style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtrePos === p ? (POS_COLORS[p] || '#f97316') : '#111', color: filtrePos === p ? 'white' : '#555', fontSize: '11px', fontWeight: '700' }}>{p === 'ALL' ? 'Tous' : p}</button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: '16px' }}>
-        <div style={{ maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 340px', gap: '16px' }}>
+        <div>
           {chargement ? (
             <div style={{ textAlign: 'center', padding: '60px 0' }}>
               <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
               <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
-              <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Chargement des rosters NHL...</p>
+              <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Chargement des joueurs NHL ({seasonId})...</p>
             </div>
+          ) : erreur ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#ef4444', fontSize: '13px' }}>Impossible de charger les joueurs NHL pour l'instant.</div>
           ) : joueursFiltres.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '13px' }}>Aucun joueur trouvé</div>
-          ) : joueursFiltres.map(j => {
-            const drafte = draftedIds.has(j.id);
-            return (
-              <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: drafte ? 0.4 : 1 }}>
-                <img src={j.photo} alt={j.nom} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.style.visibility = 'hidden'; }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
-                  <div style={{ fontSize: '11px', color: '#555' }}>{j.equipe} · #{j.numero}</div>
-                </div>
-                <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[j.position], backgroundColor: '#111', borderRadius: '6px', padding: '3px 8px' }}>{j.position}</span>
-                <button
-                  onClick={() => drafte ? retirerJoueur(j.id) : drafterJoueur(j)}
-                  disabled={!drafte && rosterPlein}
-                  style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: (!drafte && rosterPlein) ? 'not-allowed' : 'pointer', backgroundColor: drafte ? 'rgba(239,68,68,0.1)' : 'rgba(249,115,22,0.12)', color: drafte ? '#ef4444' : '#f97316', fontSize: '11px', fontWeight: '700' }}>
-                  {drafte ? 'Retirer' : 'Draft'}
+          ) : (
+            <>
+              {joueursFiltres.slice(0, nbAffiches).map(j => {
+                const disponible = estDisponible(j.id);
+                return (
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[j.posGroupe], backgroundColor: '#111', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posGroupe}</span>
+                    <div style={{ flex: 1, minWidth: '100px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+                      <div style={{ fontSize: '10px', color: '#555' }}>
+                        {j.equipe} · {j.posGroupe === 'G'
+                          ? `${j.wins}V · ${(j.savePct * 100).toFixed(1)}% arrêts`
+                          : `${j.points} PTS (${j.goals}B-${j.assists}P) · ${j.gamesPlayed} PJ`}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</div>
+                      <div style={{ fontSize: '8px', color: '#555', letterSpacing: '0.3px' }}>VALEUR IA</div>
+                    </div>
+                    {config.salaryCapActif && (
+                      <input
+                        type="number"
+                        placeholder="Salaire $"
+                        value={salaires[j.id] || ''}
+                        onChange={e => setSalaires(s => ({ ...s, [j.id]: parseInt(e.target.value) || 0 }))}
+                        style={{ width: '90px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 8px', color: 'white', fontSize: '11px', flexShrink: 0 }}
+                      />
+                    )}
+                    <button
+                      onClick={() => drafter(j)}
+                      disabled={!disponible}
+                      style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: disponible ? 'pointer' : 'not-allowed', backgroundColor: disponible ? 'rgba(249,115,22,0.15)' : '#1a1a1a', color: disponible ? '#f97316' : '#444', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
+                      {disponible ? 'Marquer comme choisi' : 'Déjà pris'}
+                    </button>
+                  </div>
+                );
+              })}
+              {nbAffiches < joueursFiltres.length && (
+                <button onClick={() => setNbAffiches(n => n + 50)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #222', backgroundColor: '#111', color: '#888', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginTop: '4px' }}>
+                  Voir plus ({joueursFiltres.length - nbAffiches} restants)
                 </button>
-              </div>
-            );
-          })}
+              )}
+            </>
+          )}
         </div>
 
+        {/* Roster en construction */}
         <div>
           <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '14px', padding: '14px', position: isMobile ? 'static' : 'sticky', top: '16px' }}>
-            <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Mon roster · {roster.length}/{totalSlots}</div>
-            {roster.length === 0 ? (
-              <div style={{ color: '#333', fontSize: '12px', padding: '10px 0' }}>Aucun joueur sélectionné pour l'instant.</div>
-            ) : (
-              <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
-                {roster.map(j => (
-                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
-                    <span style={{ fontSize: '10px', color: '#444', minWidth: '16px' }}>{j.pick}</span>
-                    <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS[j.position] }}>{j.position}</span>
-                    <span style={{ flex: 1, fontSize: '12px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
-                    <button onClick={() => retirerJoueur(j.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}>✕</button>
-                  </div>
-                ))}
+            <select value={participantVu} onChange={e => setParticipantVu(parseInt(e.target.value))}
+              style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', fontWeight: '700', marginBottom: '10px' }}>
+              {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}</option>)}
+            </select>
+
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              {besoinsVu.map(b => (
+                <div key={b.pos} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '5px 8px', textAlign: 'center', flex: 1, minWidth: '48px' }}>
+                  <div style={{ fontSize: '9px', color: POS_COLORS[b.pos], fontWeight: '700' }}>{b.pos}</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'white' }}>{b.pris}/{b.total}</div>
+                </div>
+              ))}
+            </div>
+
+            {config.salaryCapActif && (
+              <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', color: '#666' }}>BUDGET RESTANT</div>
+                <div style={{ fontSize: '14px', fontWeight: '900', color: (budgetRestant(participantVu) || 0) < 0 ? '#ef4444' : '#22c55e' }}>
+                  {(budgetRestant(participantVu) || 0).toLocaleString('fr-CA')} $
+                </div>
               </div>
             )}
+
+            {rosterVu.length === 0 ? (
+              <div style={{ color: '#333', fontSize: '12px', padding: '10px 0' }}>Aucun joueur sélectionné pour l'instant.</div>
+            ) : (
+              <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
+                {rosterVu.map((j) => {
+                  const idxGlobal = draftPicks.indexOf(j);
+                  return (
+                    <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
+                      <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>{j.pick}</span>
+                      <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS[j.posGroupe] }}>{j.posGroupe}</span>
+                      <span style={{ flex: 1, fontSize: '12px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                      <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <button
               onClick={onSuivant}
-              disabled={roster.length === 0}
-              style={{ width: '100%', marginTop: '14px', padding: '12px', borderRadius: '10px', border: 'none', cursor: roster.length === 0 ? 'not-allowed' : 'pointer', background: roster.length === 0 ? '#222' : 'linear-gradient(135deg, #f97316, #ea580c)', color: roster.length === 0 ? '#555' : 'white', fontSize: '13px', fontWeight: '700' }}>
-              {rosterPlein ? 'Terminer le draft →' : 'Voir le résumé →'}
+              disabled={draftPicks.length === 0}
+              style={{ width: '100%', marginTop: '14px', padding: '12px', borderRadius: '10px', border: 'none', cursor: draftPicks.length === 0 ? 'not-allowed' : 'pointer', background: draftPicks.length === 0 ? '#222' : 'linear-gradient(135deg, #f97316, #ea580c)', color: draftPicks.length === 0 ? '#555' : 'white', fontSize: '13px', fontWeight: '700' }}>
+              {draftTermine ? 'Voir le résumé →' : 'Voir le résumé (draft en cours) →'}
             </button>
           </div>
         </div>
@@ -347,41 +668,99 @@ function EtapeDraft({ regles, roster, setRoster, onSuivant, onRetour }) {
   );
 }
 
-// Etape 3 : resume final du roster, groupe par position.
-function EtapeResume({ regles, roster, onRetour, onRecommencer }) {
+// ===================== ETAPE 3 : RESUME =====================
+function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) {
   const isMobile = useIsMobile();
   const padding = isMobile ? '16px' : '32px';
-  const totalSlots = regles.slotsF + regles.slotsD + regles.slotsG + regles.slotsUtil;
+  const totalSlots = totalRosterSlots(config.roster);
+  const [participantVu, setParticipantVu] = useState(() => config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
+
+  function rosterDe(participantId) { return draftPicks.filter(p => p.participantId === participantId); }
+
+  function analyser(participantId) {
+    return POS_ORDER.map(pos => {
+      const mesJoueurs = rosterDe(participantId).filter(j => j.posGroupe === pos);
+      const total = config.roster[pos] || 0;
+      const valeurMoyenneMoi = mesJoueurs.length ? mesJoueurs.reduce((s, j) => s + j.valeurIA, 0) / mesJoueurs.length : 0;
+      const tousAPos = draftPicks.filter(j => j.posGroupe === pos);
+      const valeurMoyennePool = tousAPos.length ? tousAPos.reduce((s, j) => s + j.valeurIA, 0) / tousAPos.length : 0;
+      let statut = 'neutre';
+      if (mesJoueurs.length < total) statut = 'faiblesse';
+      else if (valeurMoyennePool > 0 && valeurMoyenneMoi >= valeurMoyennePool * 1.1) statut = 'force';
+      else if (valeurMoyennePool > 0 && valeurMoyenneMoi <= valeurMoyennePool * 0.9) statut = 'faiblesse';
+      return { pos, pris: mesJoueurs.length, total, valeurMoyenneMoi: Math.round(valeurMoyenneMoi * 10) / 10, statut };
+    });
+  }
+
+  const roster = rosterDe(participantVu);
+  const projection = Math.round(roster.reduce((s, j) => s + j.valeurIA, 0) * 10) / 10;
+  const budgetUtilise = roster.reduce((s, j) => s + (salaires[j.joueurId] || 0), 0);
+  const analyse = analyser(participantVu);
+  const participant = config.participants.find(p => p.id === participantVu);
+
+  const STATUT_STYLE = {
+    force: { color: '#22c55e', label: 'Force' },
+    faiblesse: { color: '#ef4444', label: 'Faiblesse' },
+    neutre: { color: '#666', label: 'Neutre' },
+  };
 
   return (
-    <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding, maxWidth: '1000px', margin: '0 auto' }}>
       <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Draft</button>
 
       <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Résumé du roster</h2>
-      <p style={{ margin: '0 0 20px', color: '#666', fontSize: '13px' }}>{regles.nomPool || 'Mon pool'} · {regles.nbEquipes} équipes · scoring {regles.typeScoring === 'points' ? 'points' : 'catégories'} · draft {regles.typeDraft === 'snake' ? 'snake' : 'enchères'}</p>
+      <p style={{ margin: '0 0 16px', color: '#666', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {getTypeInfo(config.typePool).label} · {config.participants.length} participants</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
-        {[['Joueurs draftés', `${roster.length}/${totalSlots}`], ['Attaquants', roster.filter(j => j.position === 'F').length + '/' + regles.slotsF], ['Défense + Gardiens', (roster.filter(j => j.position === 'D').length + roster.filter(j => j.position === 'G').length) + '/' + (regles.slotsD + regles.slotsG)]].map(([label, val], i) => (
-          <div key={i} style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{val}</div>
-            <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+      <select value={participantVu} onChange={e => setParticipantVu(parseInt(e.target.value))}
+        style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
+        {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom} ({rosterDe(p.id).length}/{totalSlots})</option>)}
+      </select>
+
+      <div style={{ display: 'grid', gridTemplateColumns: config.salaryCapActif ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{roster.length}/{totalSlots}</div>
+          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Joueurs draftés</div>
+        </div>
+        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{projection}</div>
+          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Projection de points</div>
+        </div>
+        {config.salaryCapActif && (
+          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: budgetUtilise > config.plafond ? '#ef4444' : '#22c55e' }}>{budgetUtilise.toLocaleString('fr-CA')} $</div>
+            <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>sur {config.plafond.toLocaleString('fr-CA')} $</div>
           </div>
-        ))}
+        )}
       </div>
 
-      {POSITIONS.map(pos => {
-        const joueursPos = roster.filter(j => j.position === pos).sort((a, b) => a.pick - b.pick);
+      {/* Forces / faiblesses */}
+      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Analyse forces / faiblesses</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {analyse.map(a => (
+            <div key={a.pos} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[a.pos], minWidth: '28px' }}>{a.pos}</span>
+              <span style={{ flex: 1, fontSize: '12px', color: '#888' }}>{POS_LABELS[a.pos]} · {a.pris}/{a.total} · valeur moy. {a.valeurMoyenneMoi}</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: STATUT_STYLE[a.statut].color }}>{STATUT_STYLE[a.statut].label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {POS_ORDER.map(pos => {
+        const joueursPos = roster.filter(j => j.posGroupe === pos).sort((a, b) => a.pick - b.pick);
         if (joueursPos.length === 0) return null;
         return (
           <div key={pos} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '12px' }}>
             <div style={{ fontSize: '11px', color: POS_COLORS[pos], fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>{POS_LABELS[pos]} · {joueursPos.length}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {joueursPos.map(j => (
-                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
-                  <img src={j.photo} alt={j.nom} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.style.visibility = 'hidden'; }} />
-                  <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>#{j.pick}</span>
+                <div key={j.joueurId} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
+                  <span style={{ fontSize: '10px', color: '#444', minWidth: '20px' }}>#{j.pick}</span>
                   <span style={{ flex: 1, fontSize: '13px', fontWeight: '600', color: 'white' }}>{j.nom}</span>
                   <span style={{ fontSize: '11px', color: '#555' }}>{j.equipe}</span>
+                  {config.salaryCapActif && <span style={{ fontSize: '11px', color: '#888' }}>{(salaires[j.joueurId] || 0).toLocaleString('fr-CA')} $</span>}
+                  <span style={{ fontSize: '12px', fontWeight: '800', color: '#f97316' }}>{j.valeurIA}</span>
                 </div>
               ))}
             </div>
@@ -390,7 +769,7 @@ function EtapeResume({ regles, roster, onRetour, onRecommencer }) {
       })}
 
       {roster.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '13px' }}>Aucun joueur n'a encore été drafté.</div>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '13px' }}>{participant?.nom} n'a encore aucun joueur drafté.</div>
       )}
 
       <button onClick={onRecommencer} style={{ width: '100%', marginTop: '10px', padding: '14px', borderRadius: '12px', border: '1px solid #222', cursor: 'pointer', backgroundColor: '#111', color: '#888', fontSize: '13px', fontWeight: '700' }}>
@@ -400,15 +779,21 @@ function EtapeResume({ regles, roster, onRetour, onRecommencer }) {
   );
 }
 
-// Composant principal : Assistant Draft Pool, configuration en 3 etapes.
+// ===================== COMPOSANT PRINCIPAL =====================
 export default function PoolDraft() {
   const [etape, setEtape] = useState(1);
-  const [regles, setRegles] = useState(DEFAULT_REGLES);
-  const [roster, setRoster] = useState([]);
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [draftPicks, setDraftPicks] = useState([]);
+  const [pickIndex, setPickIndex] = useState(0);
+  const [salaires, setSalaires] = useState({});
+  const [participantActifBox, setParticipantActifBox] = useState(() => DEFAULT_CONFIG.participants.find(p => p.estMoi)?.id);
 
   function recommencer() {
-    setRegles(DEFAULT_REGLES);
-    setRoster([]);
+    setConfig(DEFAULT_CONFIG);
+    setDraftPicks([]);
+    setPickIndex(0);
+    setSalaires({});
+    setParticipantActifBox(DEFAULT_CONFIG.participants.find(p => p.estMoi)?.id);
     setEtape(1);
   }
 
@@ -416,13 +801,28 @@ export default function PoolDraft() {
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
       <Stepper etape={etape} />
       {etape === 1 && (
-        <EtapeRegles regles={regles} setRegles={setRegles} onSuivant={() => setEtape(2)} />
+        <EtapeConfig config={config} setConfig={setConfig} onSuivant={() => {
+          setParticipantActifBox(config.participants.find(p => p.estMoi)?.id || config.participants[0]?.id);
+          setEtape(2);
+        }} />
       )}
       {etape === 2 && (
-        <EtapeDraft regles={regles} roster={roster} setRoster={setRoster} onSuivant={() => setEtape(3)} onRetour={() => setEtape(1)} />
+        <EtapeDraft
+          config={config}
+          draftPicks={draftPicks}
+          setDraftPicks={setDraftPicks}
+          pickIndex={pickIndex}
+          setPickIndex={setPickIndex}
+          salaires={salaires}
+          setSalaires={setSalaires}
+          participantActifBox={participantActifBox}
+          setParticipantActifBox={setParticipantActifBox}
+          onSuivant={() => setEtape(3)}
+          onRetour={() => setEtape(1)}
+        />
       )}
       {etape === 3 && (
-        <EtapeResume regles={regles} roster={roster} onRetour={() => setEtape(2)} onRecommencer={recommencer} />
+        <EtapeResume config={config} draftPicks={draftPicks} salaires={salaires} onRetour={() => setEtape(2)} onRecommencer={recommencer} />
       )}
     </div>
   );
