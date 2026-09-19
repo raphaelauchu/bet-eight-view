@@ -670,9 +670,12 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
   // si le salary cap est actif, ouvre la popup de confirmation avec saisie du salaire avant de drafter ;
   // sinon, drafte directement au clic (comportement inchange).
   function demanderChoix(joueur) {
+    const salaryCapActif = config.salaryCapActif; // pas de variable separee : reprend la meme valeur que config.salaryCapActif
+    console.log('demanderChoix appelé', joueur?.nom, 'salaryCapActif:', salaryCapActif, 'config.salaryCapActif:', config?.salaryCapActif);
     if (!participantCourant) return;
     if (!estDisponible(joueur.id)) return;
     if (config.salaryCapActif) {
+      console.log('Ouverture popup salary cap');
       setChoixEnAttente(joueur);
     } else {
       drafter(joueur);
