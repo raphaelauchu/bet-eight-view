@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-20 20:35",
+  "last_updated": "2026-09-21 21:51",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -573,14 +573,14 @@
       "pp_units": {
         "PP1": [
           "Viktor Arvidsson",
-          "Nate Danielson",
+          "Andrew Copp",
           "Lucas Raymond",
           "Alex DeBrincat",
           "Moritz Seider"
         ],
         "PP2": [
           "Emmitt Finnie",
-          "Andrew Copp",
+          "J.T. Compher",
           "Marco Kasper",
           "Justin Faulk",
           "Axel Sandin-Pellikka"
@@ -714,33 +714,33 @@
       "forwards": {
         "L1": {
           "LW": "Artemi Panarin",
-          "C": "Adrian Kempe",
-          "RW": "Alex Laferriere"
+          "C": "Quinton Byfield",
+          "RW": "Adrian Kempe"
         },
         "L2": {
-          "LW": "Erik Haula",
-          "C": "Quinton Byfield",
-          "RW": "Mats Zuccarello"
+          "LW": "Mats Zuccarello",
+          "C": "Erik Haula",
+          "RW": "Alex Laferriere"
         },
         "L3": {
-          "LW": "Trevor Moore",
+          "LW": "Andre Lee",
           "C": "Scott Laughton",
-          "RW": "Joel Armia"
+          "RW": "Trevor Moore"
         },
         "L4": {
-          "LW": "Taylor Ward",
+          "LW": "Alex Turcotte",
           "C": "Samuel Helenius",
-          "RW": "Corey Perry"
+          "RW": "Joel Armia"
         }
       },
       "defence": {
         "D1": {
           "LD": "Mikey Anderson",
-          "RD": "Drew Doughty"
+          "RD": "Brandt Clarke"
         },
         "D2": {
           "LD": "Joel Edmundson",
-          "RD": "Brandt Clarke"
+          "RD": "Drew Doughty"
         },
         "D3": {
           "LD": "Brian Dumoulin",
@@ -756,9 +756,9 @@
           "Brandt Clarke"
         ],
         "PP2": [
-          "Trevor Moore",
+          "Alex Turcotte",
           "Erik Haula",
-          "Corey Perry",
+          "Trevor Moore",
           "Drew Doughty",
           "Alex Laferriere"
         ]
@@ -896,18 +896,18 @@
         },
         "L2": {
           "LW": "Filip Forsberg",
-          "C": "Mavrik Bourque",
-          "RW": "Matthew Wood"
+          "C": "Matthew Wood",
+          "RW": "Nils Hoglander"
         },
         "L3": {
           "LW": "Ross Colton",
-          "C": "Jack Drury",
+          "C": "Mavrik Bourque",
           "RW": "Brady Martin"
         },
         "L4": {
-          "LW": "Alex Kerfoot",
-          "C": "Vitali Pinchuk",
-          "RW": "Nils Hoglander"
+          "LW": "Adam Edstrom",
+          "C": "Jack Drury",
+          "RW": "Alex Kerfoot"
         }
       },
       "defence": {
@@ -920,7 +920,7 @@
           "RD": "Nick Perbix"
         },
         "D3": {
-          "LD": "Adam Wilsby",
+          "LD": "Ryan Ufko",
           "RD": "Ilya Lyubushkin"
         }
       },
@@ -928,16 +928,16 @@
         "PP1": [
           "Filip Forsberg",
           "Ryan O'Reilly",
-          "Jonathan Marchessault",
+          "Matthew Wood",
           "Steven Stamkos",
           "Roman Josi"
         ],
         "PP2": [
-          "Vitali Pinchuk",
-          "Mavrik Bourque",
           "Brady Martin",
-          "Matthew Wood",
-          "Brady Skjei"
+          "Ross Colton",
+          "Jonathan Marchessault",
+          "Mavrik Bourque",
+          "Ryan Ufko"
         ]
       },
       "goalies": [
@@ -1084,7 +1084,7 @@
         "L4": {
           "LW": "Tye Kartye",
           "C": "Joe Veleno",
-          "RW": "Taylor Raddysh"
+          "RW": "Jaroslav Chmelar"
         }
       },
       "defence": {
@@ -1162,18 +1162,18 @@
       },
       "pp_units": {
         "PP1": [
-          "William Eklund",
-          "Dylan Cozens",
           "Drake Batherson",
+          "Tim Stützle",
+          "Dylan Cozens",
           "Jake Sanderson",
-          "Tim Stützle"
+          "William Eklund"
         ],
         "PP2": [
-          "Fabian Zetterlund",
+          "Andre Burakovsky",
           "Shane Pinto",
           "Claude Giroux",
-          "Thomas Chabot",
-          "Andre Burakovsky"
+          "Carter Yakemchuk",
+          "Thomas Chabot"
         ]
       },
       "goalies": [
@@ -1339,18 +1339,18 @@
       },
       "pp_units": {
         "PP1": [
-          "Tyler Toffoli",
-          "Michael Misa",
+          "Igor Chernyshov",
+          "Alexander Wennberg",
           "Will Smith",
           "Macklin Celebrini",
           "Luca Cagnoni"
         ],
         "PP2": [
           "Mason Marchment",
-          "Alexander Wennberg",
-          "Ivar Stenberg",
-          "Igor Chernyshov",
-          "Dmitry Orlov"
+          "Michael Misa",
+          "Tyler Toffoli",
+          "Dmitry Orlov",
+          "Ivar Stenberg"
         ]
       },
       "goalies": [
@@ -1457,18 +1457,18 @@
       },
       "pp_units": {
         "PP1": [
-          "Mason McTavish",
+          "Jimmy Snuggerud",
           "Robert Thomas",
           "Dylan Holloway",
-          "Jimmy Snuggerud",
-          "Philip Broberg"
+          "Philip Broberg",
+          "Mason McTavish"
         ],
         "PP2": [
           "Jake Neighbours",
           "Pavel Buchnevich",
+          "Dalibor Dvorsky",
           "Connor McMichael",
-          "Logan Mailloux",
-          "Dalibor Dvorsky"
+          "Logan Mailloux"
         ]
       },
       "goalies": [
@@ -1726,12 +1726,12 @@
           "RW": "Mitch Marner"
         },
         "L3": {
-          "LW": "Victor Olofsson",
+          "LW": "Trevor Connelly",
           "C": "Tomas Hertl",
-          "RW": "Braeden Bowman"
+          "RW": "Victor Olofsson"
         },
         "L4": {
-          "LW": "Alexander Holtz",
+          "LW": "Braeden Bowman",
           "C": "Nic Dowd",
           "RW": "Marc Gatcomb"
         }
@@ -1752,18 +1752,18 @@
       },
       "pp_units": {
         "PP1": [
-          "Jack Eichel",
-          "Tomas Hertl",
           "Mark Stone",
-          "Shea Theodore",
-          "Mitch Marner"
+          "Tomas Hertl",
+          "Mitch Marner",
+          "Jack Eichel",
+          "Shea Theodore"
         ],
         "PP2": [
-          "Ivan Barbashev",
+          "Braeden Bowman",
           "William Karlsson",
-          "Victor Olofsson",
+          "Ivan Barbashev",
           "Rasmus Andersson",
-          "Noah Hanifin"
+          "Victor Olofsson"
         ]
       },
       "goalies": [
