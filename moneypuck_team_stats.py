@@ -49,11 +49,19 @@ OUTPUT_DIR = "public/data"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "moneypuck_team_stats.json")
 TEAMS_URL = "https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/regular/teams.csv"
 
+# MoneyPuck bloque les requêtes sans User-Agent de navigateur (mur "data license").
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+
 
 def telecharger_teams_csv(season):
     print("Telechargement teams.csv saison " + str(season) + "...")
     url = TEAMS_URL.format(season=season)
-    response = requests.get(url, timeout=60)
+    response = requests.get(url, headers=REQUEST_HEADERS, timeout=60)
     response.raise_for_status()
     df = pd.read_csv(io.StringIO(response.text))
     print(str(len(df)) + " lignes chargees (equipes x situations)")

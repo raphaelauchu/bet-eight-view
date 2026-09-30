@@ -3230,6 +3230,36 @@ function useGardienPartant(adversaireAbbrev, seasonId) {
 // Vue "Matchup" : face-a-face historique du joueur contre son prochain adversaire et contre le gardien
 // partant adverse, sur les 3 dernieres saisons. Le style defensif/tirs accordes et les projections vivent
 // dans FicheAnalyseAvancee (accessible depuis un bouton dedie sur FicheJoueur).
+// Couleur du score de matchup (donut) : rouge/orange < 40%, jaune 40-60%, vert > 60%.
+function couleurScoreMatchup(pct) {
+  if (pct >= 60) return '#22c55e';
+  if (pct >= 40) return '#eab308';
+  return '#f97316';
+}
+
+// Anneau SVG affichant un pourcentage au centre (score de matchup).
+function AnneauMatchup({ pourcentage, taille = 120, epaisseur = 10 }) {
+  const rayon = (taille - epaisseur) / 2;
+  const circonference = 2 * Math.PI * rayon;
+  const offset = circonference * (1 - pourcentage / 100);
+  const couleur = couleurScoreMatchup(pourcentage);
+  return (
+    <div style={{ position: 'relative', width: taille, height: taille }}>
+      <svg width={taille} height={taille} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={taille / 2} cy={taille / 2} r={rayon} fill="none" stroke="#1a1a1a" strokeWidth={epaisseur} />
+        <circle
+          cx={taille / 2} cy={taille / 2} r={rayon} fill="none" stroke={couleur} strokeWidth={epaisseur}
+          strokeDasharray={circonference} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+        />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '26px', fontWeight: '900', color: 'white' }}>{Math.round(pourcentage)}%</div>
+      </div>
+    </div>
+  );
+}
+
 function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaison, onBack }) {
   const isMobile = useIsMobile();
   const seasonId = useSaisonCourante();
@@ -3239,6 +3269,18 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
   const [categorieHistorique, setCategorieHistorique] = useState('PTS');
   const [gardienSelectionne, setGardienSelectionne] = useState(null);
   const [matchDetailSelectionne, setMatchDetailSelectionne] = useState(null);
+  const [donutScores, setDonutScores] = useState(null);
+
+  useEffect(() => {
+    let annule = false;
+    fetch('/data/donut_scores.json')
+      .then(res => { if (!res.ok) throw new Error('JSON introuvable'); return res.json(); })
+      .then(data => { if (!annule) setDonutScores(data.scores || {}); })
+      .catch(() => { if (!annule) setDonutScores({}); });
+    return () => { annule = true; };
+  }, []);
+
+  const donutInfo = donutScores ? donutScores[String(joueur.id)] : null;
 
   const { chargement, chargementDetails, matchsVsAdversaire } = useHistoriqueVsAdversaire(joueur.id, adversaireAbbrev, seasonId);
   const { chargementGardien, gardienPartant } = useGardienPartant(adversaireAbbrev, seasonId);
@@ -3293,6 +3335,28 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
           </div>
         </div>
       </div>
+
+      {donutInfo && (
+        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
+          <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>QUALITÉ DU MATCHUP</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <AnneauMatchup pourcentage={donutInfo.moyenne} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+            {[
+              { label: 'TIRS', valeur: donutInfo.tirs },
+              { label: 'BUTS', valeur: donutInfo.buts },
+              { label: 'PASSES', valeur: donutInfo.passes },
+              { label: 'POINTS', valeur: donutInfo.points },
+            ].map(item => (
+              <div key={item.label} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: couleurScoreMatchup(item.valeur) }}>{item.valeur}%</div>
+                <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div
         onClick={selectionnerGardien}
