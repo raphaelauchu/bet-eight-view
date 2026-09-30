@@ -4262,137 +4262,739 @@ function BracketPlayoffs({ bracket }) {
     </div>
   );
 }
-function Analyses({ onLigueChange }) {
-  const isMobile = useIsMobile();
-  const [ligue] = useState('nhl');
-  const [categorie, setCategorie] = useState(null);
-  const [classement, setClassement] = useState([]);
-  const [chargement, setChargement] = useState(false);
-  const [meneurs, setMeneurs] = useState({ buts: [], passes: [], points: [] });
-  const [joueurSelectionne, setJoueurSelectionne] = useState(null);
-  const lineupDF = useLineupsDailyFaceoff();
-  const [playoffBracket, setPlayoffBracket] = useState(null);
-  const [estPlayoffs, setEstPlayoffs] = useState(false);
+// ===================== ONGLET STATS — REDESIGN STYLE WEALTHSIMPLE =====================
 
-  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
-  useEffect(() => { if (ligue === 'nhl' && !categorie) chargerPreview(); }, [ligue, categorie]);
-  useEffect(() => { if (ligue === 'nhl' && categorie === 'equipes') chargerDonneesNHL(); }, [ligue, categorie]);
+const WS_THEME = {
+  dark: {
+    bg: '#0a0a0a', panelBg: '#0a0a0a', card: '#111111', cardBorder: '#1a1a1a', cardHover: '#181818',
+    text: '#ffffff', textMuted: '#8a8a8a', textFaint: '#555555', accent: '#f97316', accentSoft: 'rgba(249,115,22,0.12)',
+    inputBg: '#111111', inputBorder: '#1e1e1e', divider: '#1a1a1a',
+  },
+  light: {
+    bg: '#f5f5f5', panelBg: '#ffffff', card: '#ffffff', cardBorder: '#e8e8e8', cardHover: '#f0f0f0',
+    text: '#1a1a1a', textMuted: '#666666', textFaint: '#9a9a9a', accent: '#f97316', accentSoft: 'rgba(249,115,22,0.10)',
+    inputBg: '#f5f5f5', inputBorder: '#e2e2e2', divider: '#ececec',
+  },
+};
 
- async function chargerPreview() {
-    try {
-      const res = await fetch(getUrl('standings/now'));
-      const data = await res.json();
-      setClassement(data.standings || []);
-      await chargerMeneurs();
-      await detecterEtChargerPlayoffs();
-    } catch (err) { console.error(err); }
+function useWSTheme() {
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem('betrics_stats_theme') || 'dark'; } catch { return 'dark'; }
+  });
+  useEffect(() => { try { localStorage.setItem('betrics_stats_theme', mode); } catch {} }, [mode]);
+  return [mode, () => setMode(m => (m === 'dark' ? 'light' : 'dark'))];
+}
+
+function WSIconSearch({ color = 'currentColor', size = 16 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" /></svg>);
+}
+function WSIconSun({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>);
+}
+function WSIconMoon({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" /></svg>);
+}
+function WSIconBack({ color = 'currentColor', size = 16 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>);
+}
+function WSIconSkater({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2.5" /><path d="M12 8v6l-4 7M12 14l4 7M8 11h8" /></svg>);
+}
+function WSIconShield({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6Z" /></svg>);
+}
+function WSIconMask({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12c0-4.5 3.5-8 8-8s8 3.5 8 8-3 8-8 8-8-3.5-8-8Z" /><path d="M4 12h16M9 9v.01M15 9v.01M9 15c1 1 4 1 6 0" /></svg>);
+}
+function WSIconTrophy({ color = 'currentColor', size = 18 }) {
+  return (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0Z" /><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4" /><path d="M12 13v3M9 20h6M10 20v-2.5h4V20" /></svg>);
+}
+
+const STATS_SECTIONS = [
+  { id: 'attaquants', label: 'Attaquants', Icon: WSIconSkater },
+  { id: 'defenseurs', label: 'Défenseurs', Icon: WSIconShield },
+  { id: 'gardiens', label: 'Gardiens', Icon: WSIconMask },
+  { id: 'equipes', label: 'Équipes', Icon: WSIconTrophy },
+];
+
+function WSLoading({ theme }) {
+  return (
+    <div style={{ padding: '50px 0', textAlign: 'center' }}>
+      <div style={{ width: '30px', height: '30px', border: `3px solid ${theme.cardBorder}`, borderTop: `3px solid ${theme.accent}`, borderRadius: '50%', margin: '0 auto', animation: 'wsspin 0.8s linear infinite' }} />
+    </div>
+  );
+}
+
+function WSEmpty({ theme, texte = 'Aucune donnée' }) {
+  return <div style={{ padding: '40px 0', textAlign: 'center', color: theme.textFaint, fontSize: '13px' }}>{texte}</div>;
+}
+
+function WSBackButton({ theme, onClick }) {
+  return (
+    <button onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${theme.cardBorder}`, padding: '8px 14px', borderRadius: '10px', cursor: 'pointer', fontSize: '12.5px', fontWeight: '600', marginBottom: '16px' }}>
+      <WSIconBack color={theme.textMuted} /> Retour
+    </button>
+  );
+}
+
+function WSCard({ theme, title, subtitle, children }) {
+  return (
+    <div style={{ backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '18px', padding: '8px', marginBottom: '20px' }}>
+      {title && (
+        <div style={{ padding: '14px 16px 6px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: theme.text, letterSpacing: '-0.3px' }}>{title}</h3>
+          {subtitle && <p style={{ margin: '3px 0 0', fontSize: '12px', color: theme.textMuted }}>{subtitle}</p>}
+        </div>
+      )}
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function WSPlayerRow({ theme, rang, joueur, valeur, label, sousLabel, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderRadius: '14px', cursor: 'pointer', transition: 'background-color 0.15s' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = theme.cardHover; }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+    >
+      <span style={{ width: '20px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: rang <= 3 ? theme.accent : theme.textFaint }}>{rang}</span>
+      <img
+        src={joueur.photo}
+        alt={joueur.nom}
+        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, border: `1px solid ${theme.cardBorder}`, flexShrink: 0 }}
+        onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[joueur.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.border = 'none'; }}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+        <div style={{ fontSize: '11.5px', color: theme.textMuted }}>{joueur.equipe}{sousLabel ? ` · ${sousLabel}` : ''}</div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontSize: '20px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{valeur}</div>
+        {label && <div style={{ fontSize: '9.5px', color: theme.textFaint, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{label}</div>}
+      </div>
+    </div>
+  );
+}
+
+function WSSearchBar({ theme, skaters, goalies, classement, onSelectPlayer, onSelectTeam }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  const q = query.trim().toLowerCase();
+  let results = [];
+  if (q.length >= 1) {
+    const joueurs = [
+      ...skaters.map(j => ({ type: 'player', id: j.playerId, nom: j.skaterFullName, equipe: (j.teamAbbrevs || '').split(',')[0].trim(), sousTitre: j.positionCode })),
+      ...goalies.map(j => ({ type: 'player', id: j.playerId, nom: j.goalieFullName, equipe: (j.teamAbbrevs || '').split(',')[0].trim(), sousTitre: 'G' })),
+    ].filter(j => j.nom.toLowerCase().includes(q));
+    const equipes = classement.filter(e =>
+      (e.teamAbbrev?.default || '').toLowerCase().includes(q) ||
+      (e.teamName?.default || '').toLowerCase().includes(q) ||
+      (e.teamCommonName?.default || '').toLowerCase().includes(q)
+    ).map(e => ({ type: 'team', id: e.teamAbbrev?.default, nom: e.teamName?.default || e.teamAbbrev?.default, equipe: e.teamAbbrev?.default, sousTitre: e.divisionName, data: e }));
+    results = [...joueurs.slice(0, 6), ...equipes.slice(0, 4)].slice(0, 8);
   }
 
-  async function chargerDonneesNHL() {
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: theme.inputBg, border: `1px solid ${theme.inputBorder}`, borderRadius: '12px', padding: '10px 14px' }}>
+        <WSIconSearch color={theme.textFaint} />
+        <input
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder="Rechercher un joueur ou une équipe"
+          style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: theme.text, fontSize: '13px' }}
+        />
+      </div>
+      {open && q.length >= 1 && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '12px', boxShadow: '0 12px 40px rgba(0,0,0,0.35)', zIndex: 60, overflow: 'hidden', maxHeight: '360px', overflowY: 'auto' }}>
+          {results.length === 0 ? (
+            <div style={{ padding: '16px', color: theme.textFaint, fontSize: '12px', textAlign: 'center' }}>Aucun résultat</div>
+          ) : results.map((r, i) => (
+            <div
+              key={r.type + r.id + i}
+              onClick={() => { if (r.type === 'player') onSelectPlayer(r); else onSelectTeam(r.data); setQuery(''); setOpen(false); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < results.length - 1 ? `1px solid ${theme.divider}` : 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = theme.cardHover; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              {r.type === 'player' ? (
+                <img src={`https://assets.nhle.com/mugs/nhl/20252026/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
+              ) : (
+                <img src={LOGOS_NHL[r.equipe]} alt={r.nom} style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</div>
+                <div style={{ fontSize: '11px', color: theme.textFaint }}>{r.type === 'player' ? `${r.sousTitre} · ${r.equipe}` : r.sousTitre}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WSSidebar({ theme, mode, onToggleTheme, section, setSection, skaters, goalies, classement, onSelectPlayer, onSelectTeam }) {
+  return (
+    <div style={{ width: '280px', flexShrink: 0, borderRight: `1px solid ${theme.divider}`, padding: '24px 18px', backgroundColor: theme.panelBg, display: 'flex', flexDirection: 'column', gap: '22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '18px', fontWeight: '900', color: theme.accent, letterSpacing: '-0.5px' }}>Stats</span>
+        <button onClick={onToggleTheme} aria-label="Changer de thème" style={{ width: '34px', height: '34px', borderRadius: '10px', border: `1px solid ${theme.cardBorder}`, backgroundColor: theme.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {mode === 'dark' ? <WSIconSun color={theme.textMuted} /> : <WSIconMoon color={theme.textMuted} />}
+        </button>
+      </div>
+      <WSSearchBar theme={theme} skaters={skaters} goalies={goalies} classement={classement} onSelectPlayer={onSelectPlayer} onSelectTeam={onSelectTeam} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {STATS_SECTIONS.map(s => {
+          const actif = section === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSection(s.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: actif ? theme.accentSoft : 'transparent', textAlign: 'left', transition: 'background-color 0.15s' }}
+              onMouseEnter={e => { if (!actif) e.currentTarget.style.backgroundColor = theme.cardHover; }}
+              onMouseLeave={e => { if (!actif) e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <s.Icon color={actif ? theme.accent : theme.textMuted} size={18} />
+              <span style={{ fontSize: '14px', fontWeight: actif ? '700' : '500', color: actif ? theme.accent : theme.text }}>{s.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WSMobileNav({ theme, mode, onToggleTheme, section, setSection, skaters, goalies, classement, onSelectPlayer, onSelectTeam }) {
+  return (
+    <div style={{ backgroundColor: theme.panelBg, borderBottom: `1px solid ${theme.divider}`, padding: '14px 16px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <WSSearchBar theme={theme} skaters={skaters} goalies={goalies} classement={classement} onSelectPlayer={onSelectPlayer} onSelectTeam={onSelectTeam} />
+        </div>
+        <button onClick={onToggleTheme} aria-label="Changer de thème" style={{ width: '38px', height: '38px', borderRadius: '10px', border: `1px solid ${theme.cardBorder}`, backgroundColor: theme.card, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {mode === 'dark' ? <WSIconSun color={theme.textMuted} /> : <WSIconMoon color={theme.textMuted} />}
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
+        {STATS_SECTIONS.map(s => {
+          const actif = section === s.id;
+          return (
+            <button key={s.id} onClick={() => setSection(s.id)} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 16px', borderRadius: '100px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: actif ? theme.accent : theme.card, flexShrink: 0 }}>
+              <s.Icon color={actif ? 'white' : theme.textMuted} size={15} />
+              <span style={{ fontSize: '12.5px', fontWeight: '700', color: actif ? 'white' : theme.text }}>{s.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SectionSkaters({ theme, titre, sousTitre, joueurs, onSelect, chargement }) {
+  return (
+    <WSCard theme={theme} title={titre} subtitle={sousTitre}>
+      {chargement ? <WSLoading theme={theme} /> : joueurs.length === 0 ? <WSEmpty theme={theme} /> : (
+        <div>
+          {joueurs.map((j, i) => (
+            <WSPlayerRow key={j.id} theme={theme} rang={i + 1} joueur={j} valeur={j.points} label="PTS" sousLabel={`${j.goals}B ${j.assists}P`} onClick={() => onSelect(j)} />
+          ))}
+        </div>
+      )}
+    </WSCard>
+  );
+}
+
+function SectionGardiens({ theme, parGAA, parSVP, onSelect, chargement }) {
+  const [tri, setTri] = useState('gaa');
+  const liste = tri === 'gaa' ? parGAA : parSVP;
+  return (
+    <WSCard theme={theme} title="Gardiens" subtitle="Top 10 · saison régulière 2025-26">
+      <div style={{ display: 'flex', gap: '8px', padding: '0 16px 12px' }}>
+        {[['gaa', 'GAA'], ['svp', 'SV%']].map(([id, label]) => (
+          <button key={id} onClick={() => setTri(id)} style={{ padding: '6px 14px', borderRadius: '100px', border: 'none', cursor: 'pointer', backgroundColor: tri === id ? theme.accent : theme.cardHover, color: tri === id ? 'white' : theme.textMuted, fontSize: '11.5px', fontWeight: '700' }}>{label}</button>
+        ))}
+      </div>
+      {chargement ? <WSLoading theme={theme} /> : liste.length === 0 ? <WSEmpty theme={theme} /> : (
+        <div>
+          {liste.map((g, i) => (
+            <WSPlayerRow key={g.id} theme={theme} rang={i + 1} joueur={g} valeur={tri === 'gaa' ? g.gaa : g.svp} label={tri === 'gaa' ? 'GAA' : 'SV%'} sousLabel={`${g.wins}V ${g.gp}PJ`} onClick={() => onSelect(g)} />
+          ))}
+        </div>
+      )}
+    </WSCard>
+  );
+}
+
+function SectionEquipes({ theme, classement, onSelect, chargement }) {
+  if (chargement) return <WSCard theme={theme} title="Équipes"><WSLoading theme={theme} /></WSCard>;
+  const divisions = {};
+  classement.forEach(e => {
+    const d = e.divisionName || 'Autre';
+    if (!divisions[d]) divisions[d] = [];
+    divisions[d].push(e);
+  });
+  Object.values(divisions).forEach(arr => arr.sort((a, b) => (b.points || 0) - (a.points || 0)));
+  return (
+    <div>
+      {Object.entries(divisions).map(([nom, equipes]) => (
+        <WSCard key={nom} theme={theme} title={`Division ${nom}`}>
+          <div>
+            {equipes.map((e, i) => {
+              const abbrev = e.teamAbbrev?.default;
+              return (
+                <div
+                  key={abbrev || i}
+                  onClick={() => onSelect(e)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderRadius: '14px', cursor: 'pointer' }}
+                  onMouseEnter={ev => { ev.currentTarget.style.backgroundColor = theme.cardHover; }}
+                  onMouseLeave={ev => { ev.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <span style={{ width: '20px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: i < 3 ? theme.accent : theme.textFaint }}>{i + 1}</span>
+                  <img src={e.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '34px', height: '34px', objectFit: 'contain' }} onError={ev => { ev.target.style.display = 'none'; }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.teamName?.default || abbrev}</div>
+                    <div style={{ fontSize: '11.5px', color: theme.textMuted }}>{e.wins ?? 0}-{e.losses ?? 0}-{e.otLosses ?? 0}</div>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: '900', color: theme.text }}>{e.points ?? 0}</div>
+                </div>
+              );
+            })}
+          </div>
+        </WSCard>
+      ))}
+    </div>
+  );
+}
+
+function FicheJoueurWS({ theme, joueur, onBack }) {
+  const isMobile = useIsMobile();
+  const [chargement, setChargement] = useState(true);
+  const [infos, setInfos] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [carriere, setCarriere] = useState([]);
+  const [derniers, setDerniers] = useState([]);
+  const seasonId = useSaisonCourante();
+
+  useEffect(() => { chargerStats(); }, [joueur.id, seasonId]);
+
+  async function chargerStats() {
     setChargement(true);
     try {
-      const res = await fetch(getUrl('standings/now'));
+      const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
-      setClassement(data.standings || []);
+      const isGardien = (data.position || joueur.position) === 'G';
+
+      setInfos({
+        headshot: data.headshot,
+        teamLogo: data.teamLogo,
+        equipe: data.currentTeamAbbrev || joueur.equipe,
+        nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
+        position: data.position || joueur.position,
+        numero: data.sweaterNumber || joueur.numero,
+        naissance: data.birthDate,
+      });
+
+      const statsSaison = extraireStatsSaisonJoueur(data, seasonId, 2);
+
+      if (isGardien) {
+        setStats({
+          gardien: true,
+          gp: statsSaison?.gamesPlayed ?? 0,
+          wins: statsSaison?.wins ?? 0,
+          losses: statsSaison?.losses ?? 0,
+          otl: statsSaison?.otLosses ?? 0,
+          gaa: statsSaison?.goalsAgainstAvg != null ? statsSaison.goalsAgainstAvg.toFixed(2) : '-',
+          svp: statsSaison?.savePctg != null ? (statsSaison.savePctg * 100).toFixed(1) + '%' : '-',
+          shutouts: statsSaison?.shutouts ?? 0,
+        });
+      } else {
+        const base = {
+          gardien: false,
+          gp: statsSaison?.gamesPlayed ?? 0,
+          goals: statsSaison?.goals ?? 0,
+          assists: statsSaison?.assists ?? 0,
+          points: statsSaison?.points ?? 0,
+          plusMinus: statsSaison?.plusMinus ?? 0,
+          ppp: statsSaison?.powerPlayPoints ?? 0,
+          sog: statsSaison?.shots ?? 0,
+          shPct: statsSaison?.shootingPctg != null ? (statsSaison.shootingPctg * 100).toFixed(1) + '%' : '-',
+          fowPct: statsSaison?.faceoffWinningPctg != null ? (statsSaison.faceoffWinningPctg * 100).toFixed(1) + '%' : '-',
+          toi: statsSaison?.avgToi ?? '-',
+          hits: 0,
+          blocks: 0,
+        };
+        try {
+          const cayenne = encodeURIComponent(`playerId=${joueur.id} and seasonId=${seasonId} and gameTypeId=2`);
+          const rtRes = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/realtime?cayenneExp=${cayenne}`));
+          const rtData = await rtRes.json();
+          const rt = rtData.data?.[0];
+          base.hits = rt?.hits ?? 0;
+          base.blocks = rt?.blockedShots ?? 0;
+        } catch {}
+        setStats(base);
+      }
+
+      setCarriere((data.seasonTotals || []).filter(s => s.leagueAbbrev === 'NHL' && s.gameTypeId === 2).sort((a, b) => b.season - a.season));
+
+      try {
+        const logRes = await fetch(getUrl(`player/${joueur.id}/game-log/${seasonId}/2`));
+        const logData = await logRes.json();
+        setDerniers((logData.gameLog || []).slice(0, 5).map(m => ({
+          gameDate: m.gameDate, opponentAbbrev: m.opponentAbbrev, homeRoadFlag: m.homeRoadFlag,
+          goals: m.goals ?? 0, assists: m.assists ?? 0, points: m.points ?? 0,
+          goalsAgainst: m.goalsAgainst ?? 0, savePctg: m.savePctg, shotsAgainst: m.shotsAgainst ?? 0,
+        })));
+      } catch {}
     } catch (err) { console.error(err); }
     setChargement(false);
   }
 
-  async function chargerMeneurs() {
-    try {
-      const [r1, r2, r3] = await Promise.all([
-        fetch(getUrl('skater-stats-leaders/current?categories=goals&limit=10')),
-        fetch(getUrl('skater-stats-leaders/current?categories=assists&limit=10')),
-        fetch(getUrl('skater-stats-leaders/current?categories=points&limit=10')),
-      ]);
-      const [d1, d2, d3] = await Promise.all([r1.json(), r2.json(), r3.json()]);
-      const fmt = (data, cat) => (data[cat] || []).map((j, i) => ({ rang: i + 1, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), equipe: j.teamAbbrevs || j.teamAbbrev || '', position: j.position || '', valeur: j.value || 0, playerId: j.playerId || j.id || '' }));
-      setMeneurs({ buts: fmt(d1, 'goals'), passes: fmt(d2, 'assists'), points: fmt(d3, 'points') });
-    } catch (err) { console.error(err); }
-  }
-
-  async function detecterEtChargerPlayoffs() {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const resSchedule = await fetch(getUrl(`schedule/${today}`));
-      const dataSchedule = await resSchedule.json();
-      const allGames = (dataSchedule.gameWeek || []).flatMap(w => w.games || []);
-      const enPlayoffs = allGames.some(g => g.gameType === 3);
-      setEstPlayoffs(enPlayoffs);
-      if (enPlayoffs) {
-        const resBracket = await fetch(getUrl('playoff-series/carousel/20252026'));
-        const dataBracket = await resBracket.json();
-        setPlayoffBracket(dataBracket);
-      }
-    } catch (err) { console.error(err); }
-  }
-  const padding = isMobile ? '16px' : '32px';
-  const maxWidth = isMobile ? '100%' : '1000px';
-
-  if (joueurSelectionne) {
+  if (chargement && !infos) {
     return (
-      <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-        <FicheJoueurStats joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
-      </div>
-    );
-  }
- 
-  if (!categorie) {
-    const ligueInfo = LIGUES.find(l => l.id === ligue);
-    return (
-      <div style={{ minHeight: '85vh', padding: padding, maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <div>
-              <h2 style={{ margin: '0 0 2px', fontSize: isMobile ? '22px' : '28px', fontWeight: '900', color: 'white' }}>{ligueInfo.label}</h2>
-              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>Choisis une categorie</p>
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
-          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
-            <div style={{ marginBottom: '16px' }}>
-              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Team Statistics</h3>
-              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Bracket' : 'Classement par division · Top 10'}</p>
-            </div>
-            <div style={{ flex: 1 }}>{estPlayoffs ? <BracketPlayoffs bracket={playoffBracket} /> : <CarrouselDivisions classement={classement} />}</div>
-            <button onClick={() => setCategorie('equipes')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
-          </div>
-          <div style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '22px', display: 'flex', flexDirection: 'column', height: '720px' }}>
-            <div style={{ marginBottom: '16px' }}>
-              <h3 style={{ margin: '0 0 3px', fontSize: '17px', fontWeight: '900', color: 'white' }}>Player Statistics</h3>
-              <p style={{ color: '#666', margin: 0, fontSize: '12px' }}>{estPlayoffs ? 'Playoff Leaders' : 'Goals, assists and points · Top 10'}</p>
-            </div>
-            <div style={{ flex: 1 }}><CarrouselMeneurs meneurs={meneurs} /></div>
-            <button onClick={() => setCategorie('joueurs')} style={{ marginTop: '16px', background: '#f97316', color: 'white', border: 'none', padding: '13px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', width: '100%' }}>View Statistics</button>
-          </div>
-        </div>
+      <div>
+        <WSBackButton theme={theme} onClick={onBack} />
+        <WSLoading theme={theme} />
       </div>
     );
   }
 
-  const ligueInfo = LIGUES.find(l => l.id === ligue);
+  const age = calculerAge(infos?.naissance);
+  const chartData = [...derniers].reverse().map(m => ({
+    nom: m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : '',
+    valeur: stats?.gardien ? (m.savePctg != null ? Math.round(m.savePctg * 100) : 0) : m.points,
+  }));
+
   return (
-    <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-        <button onClick={() => setCategorie(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src={ligueInfo.logo} alt={ligueInfo.label} style={{ height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-          <div>
-            <h2 style={{ margin: '0 0 1px', fontSize: isMobile ? '16px' : '20px', fontWeight: '900', color: 'white' }}>
-              {ligueInfo.label} · {categorie === 'equipes' ? 'Teams' : 'Players'}
-            </h2>
-            <p style={{ color: '#666', margin: 0, fontSize: '11px' }}>
-              {categorie === 'equipes' ? "Click on a match to analyze" : "Click on a player"}
-            </p>
+    <div>
+      <WSBackButton theme={theme} onClick={onBack} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '76px' : '96px', height: isMobile ? '76px' : '96px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, border: `2px solid ${theme.cardBorder}` }} onError={e => { e.target.style.display = 'none'; }} />
+        <div style={{ flex: 1, minWidth: '180px' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{infos?.nomComplet}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+            <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}{age != null ? ` · ${age} ans` : ''}</span>
           </div>
         </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {(stats?.gardien ? [['W', stats?.wins], ['GAA', stats?.gaa], ['SV%', stats?.svp]] : [['PTS', stats?.points], ['B', stats?.goals], ['A', stats?.assists]]).map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: theme.accent, letterSpacing: '-1px' }}>{v ?? '-'}</div>
+              <div style={{ fontSize: '9.5px', color: theme.textFaint, fontWeight: '700', letterSpacing: '0.5px' }}>{l}</div>
+            </div>
+          ))}
+        </div>
       </div>
-      {categorie === 'equipes' && <PageStatsEquipes classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
-      {categorie === 'joueurs' && <PageStatsJoueurs onSelectJoueur={setJoueurSelectionne} />}
+
+      <WSCard theme={theme} title="Saison 2025-26" subtitle="Statistiques de base et avancées">
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '10px', padding: '4px 16px 16px' }}>
+          {(stats?.gardien
+            ? [['PJ', stats?.gp], ['V', stats?.wins], ['D', stats?.losses], ['DP', stats?.otl], ['BL', stats?.shutouts], ['GAA', stats?.gaa], ['SV%', stats?.svp]]
+            : [['PJ', stats?.gp], ['B', stats?.goals], ['A', stats?.assists], ['PTS', stats?.points], ['+/-', stats?.plusMinus], ['PPP', stats?.ppp], ['TIRS', stats?.sog], ['TIR%', stats?.shPct], ['FOW%', stats?.fowPct], ['HITS', stats?.hits], ['BLK', stats?.blocks], ['TOI', stats?.toi]]
+          ).map(([label, valeur]) => (
+            <div key={label} style={{ backgroundColor: theme.cardHover, borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: theme.text }}>{valeur ?? '-'}</div>
+              <div style={{ fontSize: '9px', color: theme.textFaint, fontWeight: '700', letterSpacing: '0.5px', marginTop: '3px' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </WSCard>
+
+      {chartData.length > 0 && (
+        <WSCard theme={theme} title="Tendance" subtitle={stats?.gardien ? 'SV% — 5 derniers matchs' : 'Points — 5 derniers matchs'}>
+          <div style={{ padding: '4px 12px 16px', height: '140px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <XAxis dataKey="nom" tick={{ fontSize: 10, fill: theme.textFaint }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <RechartsTooltip contentStyle={{ backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '8px', fontSize: '12px' }} labelStyle={{ color: theme.textMuted }} />
+                <Bar dataKey="valeur" radius={[6, 6, 0, 0]} fill={theme.accent} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </WSCard>
+      )}
+
+      <WSCard theme={theme} title="Carrière NHL">
+        {carriere.length === 0 ? <WSEmpty theme={theme} /> : (
+          <div style={{ overflowX: 'auto', padding: '0 16px 16px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${theme.divider}` }}>
+                  {(stats?.gardien ? ['Saison', 'Équipe', 'PJ', 'V', 'D', 'GAA'] : ['Saison', 'Équipe', 'PJ', 'B', 'A', 'PTS']).map(h => (
+                    <th key={h} style={{ textAlign: h === 'Équipe' ? 'left' : 'center', padding: '10px 6px', color: theme.textFaint, fontSize: '10px', fontWeight: '700', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {carriere.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${theme.divider}` }}>
+                    <td style={{ padding: '9px 6px', color: theme.text, fontWeight: '600', whiteSpace: 'nowrap' }}>{formatSaison(s.season)}</td>
+                    <td style={{ padding: '9px 6px', color: theme.textMuted, whiteSpace: 'nowrap' }}>{s.teamCommonName?.default || s.teamName?.default || '-'}</td>
+                    <td style={{ padding: '9px 6px', color: theme.textMuted, textAlign: 'center' }}>{s.gamesPlayed ?? 0}</td>
+                    {stats?.gardien ? (
+                      <>
+                        <td style={{ padding: '9px 6px', color: theme.textMuted, textAlign: 'center' }}>{s.wins ?? 0}</td>
+                        <td style={{ padding: '9px 6px', color: theme.textMuted, textAlign: 'center' }}>{s.losses ?? 0}</td>
+                        <td style={{ padding: '9px 6px', color: theme.accent, fontWeight: '900', textAlign: 'center' }}>{s.goalsAgainstAvg != null ? s.goalsAgainstAvg.toFixed(2) : '-'}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ padding: '9px 6px', color: theme.textMuted, textAlign: 'center' }}>{s.goals ?? 0}</td>
+                        <td style={{ padding: '9px 6px', color: theme.textMuted, textAlign: 'center' }}>{s.assists ?? 0}</td>
+                        <td style={{ padding: '9px 6px', color: theme.accent, fontWeight: '900', textAlign: 'center' }}>{s.points ?? 0}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </WSCard>
+
+      <WSCard theme={theme} title="Derniers matchs">
+        {derniers.length === 0 ? <WSEmpty theme={theme} /> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 16px 16px' }}>
+            {derniers.map((m, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: theme.cardHover, borderRadius: '12px', padding: '10px 14px' }}>
+                <img src={LOGOS_NHL[m.opponentAbbrev]} alt={m.opponentAbbrev} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12.5px', color: theme.text, fontWeight: '600' }}>{m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}</div>
+                  <div style={{ fontSize: '10.5px', color: theme.textFaint }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '11.5px', color: theme.textMuted, textAlign: 'center' }}>
+                  {stats?.gardien ? (
+                    <>
+                      <div><div style={{ fontSize: '9px', color: theme.textFaint }}>SA</div><div style={{ color: theme.text, fontWeight: '700' }}>{m.shotsAgainst}</div></div>
+                      <div><div style={{ fontSize: '9px', color: theme.textFaint }}>SV%</div><div style={{ color: theme.text, fontWeight: '700' }}>{m.savePctg != null ? (m.savePctg * 100).toFixed(1) : '-'}</div></div>
+                    </>
+                  ) : (
+                    <>
+                      <div><div style={{ fontSize: '9px', color: theme.textFaint }}>B</div><div style={{ color: theme.text, fontWeight: '700' }}>{m.goals}</div></div>
+                      <div><div style={{ fontSize: '9px', color: theme.textFaint }}>A</div><div style={{ color: theme.text, fontWeight: '700' }}>{m.assists}</div></div>
+                      <div><div style={{ fontSize: '9px', color: theme.textFaint }}>PTS</div><div style={{ color: theme.text, fontWeight: '700' }}>{m.points}</div></div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </WSCard>
     </div>
   );
+}
+
+function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
+  const isMobile = useIsMobile();
+  const [avance, setAvance] = useState(null);
+  const [chargement, setChargement] = useState(true);
+  const abbrev = equipe?.teamAbbrev?.default || '';
+  const nom = equipe?.teamName?.default || equipe?.teamCommonName?.default || abbrev;
+
+  useEffect(() => { chargerAvance(); }, [abbrev]);
+
+  async function chargerAvance() {
+    setChargement(true);
+    try {
+      const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+      const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=${cayenne}`));
+      const data = await res.json();
+      const found = (data.data || []).find(t =>
+        t.teamFullName?.toLowerCase().includes(nom.split(' ').pop().toLowerCase()) ||
+        t.teamFullName?.toLowerCase().includes((equipe?.placeName?.default || '').toLowerCase())
+      );
+      setAvance(found || null);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  const leaders = skaters
+    .filter(j => (j.teamAbbrevs || '').split(',').map(s => s.trim()).includes(abbrev))
+    .sort((a, b) => (b.points || 0) - (a.points || 0))
+    .slice(0, 5);
+
+  return (
+    <div>
+      <WSBackButton theme={theme} onClick={onBack} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <img src={equipe?.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '64px' : '80px', height: isMobile ? '64px' : '80px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+        <div style={{ flex: 1, minWidth: '180px' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{nom}</h2>
+          <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>Division {equipe?.divisionName} · {equipe?.conferenceName}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {[['PTS', equipe?.points], ['FA', `${equipe?.wins ?? 0}-${equipe?.losses ?? 0}-${equipe?.otLosses ?? 0}`]].map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: theme.accent, letterSpacing: '-1px' }}>{v ?? '-'}</div>
+              <div style={{ fontSize: '9.5px', color: theme.textFaint, fontWeight: '700', letterSpacing: '0.5px' }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <WSCard theme={theme} title="Statistiques d'équipe" subtitle="Saison régulière 2025-26 · avancées">
+        {chargement ? <WSLoading theme={theme} /> : (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: '10px', padding: '4px 16px 16px' }}>
+            {[
+              ['GF/M', avance?.goalsForPerGame != null ? avance.goalsForPerGame.toFixed(2) : '-'],
+              ['GA/M', avance?.goalsAgainstPerGame != null ? avance.goalsAgainstPerGame.toFixed(2) : '-'],
+              ['AVANTAGE %', avance?.powerPlayPct != null ? (avance.powerPlayPct * 100).toFixed(1) + '%' : '-'],
+              ['DÉSAVANTAGE %', avance?.penaltyKillPct != null ? (avance.penaltyKillPct * 100).toFixed(1) + '%' : '-'],
+              ['TIRS/M', avance?.shotsForPerGame != null ? avance.shotsForPerGame.toFixed(1) : '-'],
+              ['TIRS C./M', avance?.shotsAgainstPerGame != null ? avance.shotsAgainstPerGame.toFixed(1) : '-'],
+              ['MISES EN JEU %', avance?.faceoffWinPct != null ? (avance.faceoffWinPct * 100).toFixed(1) + '%' : '-'],
+              ['POINT %', avance?.pointPct != null ? (avance.pointPct * 100).toFixed(1) + '%' : '-'],
+            ].map(([label, valeur]) => (
+              <div key={label} style={{ backgroundColor: theme.cardHover, borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '17px', fontWeight: '900', color: theme.text }}>{valeur}</div>
+                <div style={{ fontSize: '8.5px', color: theme.textFaint, fontWeight: '700', letterSpacing: '0.4px', marginTop: '3px' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </WSCard>
+
+      <WSCard theme={theme} title="Meneurs de l'équipe" subtitle="Top 5 pointeurs">
+        {leaders.length === 0 ? <WSEmpty theme={theme} /> : leaders.map((j, i) => (
+          <WSPlayerRow
+            key={j.playerId}
+            theme={theme}
+            rang={i + 1}
+            joueur={{ nom: j.skaterFullName, equipe: abbrev, photo: `https://assets.nhle.com/mugs/nhl/20252026/${abbrev}/${j.playerId}.png` }}
+            valeur={j.points}
+            label="PTS"
+            sousLabel={`${j.goals}B ${j.assists}P`}
+            onClick={() => onSelectPlayer({ id: j.playerId, nom: j.skaterFullName, position: j.positionCode, equipe: abbrev })}
+          />
+        ))}
+      </WSCard>
+    </div>
+  );
+}
+
+function StatsHub({ onLigueChange }) {
+  const isMobile = useIsMobile();
+  const [mode, toggleTheme] = useWSTheme();
+  const theme = WS_THEME[mode];
+  const [section, setSection] = useState('attaquants');
+  const [chargement, setChargement] = useState(true);
+  const [skaters, setSkaters] = useState([]);
+  const [goalies, setGoalies] = useState([]);
+  const [classement, setClassement] = useState([]);
+  const [joueurSelectionne, setJoueurSelectionne] = useState(null);
+  const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
+
+  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
+  useEffect(() => { chargerDonnees(); }, []);
+
+  async function chargerDonnees() {
+    setChargement(true);
+    try {
+      const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+      const [p1, p2, p3, rGoalies, rStandings] = await Promise.all([
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=0&limit=100`)),
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=100&limit=100`)),
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=200&limit=100`)),
+        fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${cayenne}&sort=gamesPlayed&dir=DESC&start=0&limit=100`)),
+        fetch(getUrl('standings/now')),
+      ]);
+      const [d1, d2, d3, dGoalies, dStandings] = await Promise.all([p1.json(), p2.json(), p3.json(), rGoalies.json(), rStandings.json()]);
+      setSkaters([...(d1.data || []), ...(d2.data || []), ...(d3.data || [])]);
+      setGoalies(dGoalies.data || []);
+      setClassement(dStandings.standings || []);
+    } catch (err) { console.error(err); }
+    setChargement(false);
+  }
+
+  function photoJoueur(id, equipe) { return `https://assets.nhle.com/mugs/nhl/20252026/${equipe}/${id}.png`; }
+
+  const fmtSkater = (j) => {
+    const eq = (j.teamAbbrevs || '').split(',')[0].trim();
+    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, goals: j.goals, assists: j.assists, points: j.points, photo: photoJoueur(j.playerId, eq) };
+  };
+  const attaquants = skaters.filter(j => j.positionCode !== 'D').slice(0, 10).map(fmtSkater);
+  const defenseurs = skaters.filter(j => j.positionCode === 'D').slice(0, 10).map(fmtSkater);
+
+  const fmtGardien = (g) => {
+    const eq = (g.teamAbbrevs || '').split(',')[0].trim();
+    return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', gp: g.gamesPlayed, wins: g.wins, goalsAgainstAverage: g.goalsAgainstAverage, savePct: g.savePct, gaa: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-', svp: g.savePct != null ? (g.savePct * 100).toFixed(1) + '%' : '-', photo: photoJoueur(g.playerId, eq) };
+  };
+  const goaliesFiltres = goalies.filter(g => (g.gamesPlayed || 0) >= 3).map(fmtGardien);
+  const gardiensGAA = [...goaliesFiltres].sort((a, b) => a.goalsAgainstAverage - b.goalsAgainstAverage).slice(0, 10);
+  const gardiensSVP = [...goaliesFiltres].sort((a, b) => b.savePct - a.savePct).slice(0, 10);
+
+  function selectionnerJoueurRecherche(r) {
+    setJoueurSelectionne({ id: r.id, nom: r.nom, position: r.sousTitre, equipe: r.equipe });
+  }
+
+  let corps;
+  if (joueurSelectionne) {
+    corps = (
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '16px' : '32px' }}>
+        <FicheJoueurWS theme={theme} joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
+      </div>
+    );
+  } else if (equipeSelectionnee) {
+    corps = (
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '16px' : '32px' }}>
+        <FicheEquipeWS theme={theme} equipe={equipeSelectionnee} skaters={skaters} onBack={() => setEquipeSelectionnee(null)} onSelectPlayer={setJoueurSelectionne} />
+      </div>
+    );
+  } else {
+    corps = (
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        {!isMobile && (
+          <WSSidebar
+            theme={theme} mode={mode} onToggleTheme={toggleTheme} section={section} setSection={setSection}
+            skaters={skaters} goalies={goalies} classement={classement}
+            onSelectPlayer={selectionnerJoueurRecherche} onSelectTeam={setEquipeSelectionnee}
+          />
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {isMobile && (
+            <WSMobileNav
+              theme={theme} mode={mode} onToggleTheme={toggleTheme} section={section} setSection={setSection}
+              skaters={skaters} goalies={goalies} classement={classement}
+              onSelectPlayer={selectionnerJoueurRecherche} onSelectTeam={setEquipeSelectionnee}
+            />
+          )}
+          <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '16px' : '32px' }}>
+            {section === 'attaquants' && <SectionSkaters theme={theme} titre="Attaquants" sousTitre="Top 10 pointeurs · saison régulière 2025-26" joueurs={attaquants} onSelect={setJoueurSelectionne} chargement={chargement} />}
+            {section === 'defenseurs' && <SectionSkaters theme={theme} titre="Défenseurs" sousTitre="Top 10 pointeurs · saison régulière 2025-26" joueurs={defenseurs} onSelect={setJoueurSelectionne} chargement={chargement} />}
+            {section === 'gardiens' && <SectionGardiens theme={theme} parGAA={gardiensGAA} parSVP={gardiensSVP} onSelect={setJoueurSelectionne} chargement={chargement} />}
+            {section === 'equipes' && <SectionEquipes theme={theme} classement={classement} onSelect={setEquipeSelectionnee} chargement={chargement} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
+      <style>{'@keyframes wsspin { to { transform: rotate(360deg); } }'}</style>
+      {corps}
+    </div>
+  );
+}
+
+function Analyses({ onLigueChange }) {
+  return <StatsHub onLigueChange={onLigueChange} />;
 }
 
 // Flux dedie a l'onglet Analyses : page d'accueil avec 2 cartes (Equipe / Joueur), pas de
