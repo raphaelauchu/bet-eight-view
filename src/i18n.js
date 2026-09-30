@@ -37,6 +37,12 @@ const translations = {
     nav_tab_stats: 'Stats',
     nav_tab_analyses: 'Analyses',
     nav_tab_models: 'Modèles',
+    nav_tab_search: 'Recherche',
+    nav_tab_pool: 'Pool',
+    menu_settings: 'Réglages',
+    menu_appearance: 'Apparence',
+    menu_language: 'Langue',
+    menu_admin: 'Admin',
 
     // HomeDashboard
     home_welcome: 'Bon retour',
@@ -250,6 +256,12 @@ const translations = {
     nav_tab_stats: 'Stats',
     nav_tab_analyses: 'Analyses',
     nav_tab_models: 'Models',
+    nav_tab_search: 'Search',
+    nav_tab_pool: 'Pool',
+    menu_settings: 'Settings',
+    menu_appearance: 'Appearance',
+    menu_language: 'Language',
+    menu_admin: 'Admin',
 
     // HomeDashboard
     home_welcome: 'Welcome back',

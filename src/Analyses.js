@@ -5079,6 +5079,209 @@ function AnalysesRecherche() {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
+// Overlay de recherche global (style Wealthsimple) : barre de recherche + pills de filtres
+// (Attaquants/Défenseurs/Gardiens/Équipes) + sous-filtre équipe. Sans recherche/filtre actif,
+// affiche le hub Stats existant (StatsHub, via <Analyses/>) tel quel — code non supprimé, déplacé ici.
+function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
+  const isMobile = useIsMobile();
+  const [query, setQuery] = useState('');
+  const [categorie, setCategorie] = useState(null); // null | 'attaquants' | 'defenseurs' | 'gardiens' | 'equipes'
+  const [equipeFiltre, setEquipeFiltre] = useState('ALL');
+  const [resultatsRecherche, setResultatsRecherche] = useState([]);
+  const [chargementRecherche, setChargementRecherche] = useState(false);
+  const [resultatsCategorie, setResultatsCategorie] = useState([]);
+  const [chargementCategorie, setChargementCategorie] = useState(false);
+  const [standings, setStandings] = useState([]);
+  const [skatersFull, setSkatersFull] = useState([]);
+  const [chargementEquipe, setChargementEquipe] = useState(false);
+  const debounceRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    function onKeyDown(e) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKeyDown);
+    document.body.style.overflow = 'hidden';
+    if (inputRef.current) inputRef.current.focus();
+    return () => { window.removeEventListener('keydown', onKeyDown); document.body.style.overflow = ''; };
+  }, [onClose]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = query.trim();
+    if (q.length < 2) { setResultatsRecherche([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setChargementRecherche(true);
+      try {
+        const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=30&q=${encodeURIComponent(q)}&active=true`);
+        const data = await res.json();
+        setResultatsRecherche(data || []);
+      } catch { setResultatsRecherche([]); }
+      setChargementRecherche(false);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query]);
+
+  useEffect(() => {
+    if (!categorie || categorie === 'equipes') { setResultatsCategorie([]); return; }
+    let annule = false;
+    (async () => {
+      setChargementCategorie(true);
+      try {
+        const teamAbbrev = equipeFiltre === 'ALL' ? null : equipeFiltre;
+        if (categorie === 'gardiens') {
+          const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
+          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=gamesPlayed&dir=DESC&start=0&limit=50`));
+          const data = await res.json();
+          if (!annule) setResultatsCategorie((data.data || []).map(g => ({ id: g.playerId, nom: g.goalieFullName, equipe: (g.teamAbbrevs || '').split(',')[0].trim(), position: 'G', numero: '' })));
+        } else {
+          const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
+          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=100`));
+          const data = await res.json();
+          const tous = (data.data || []).map(j => ({ id: j.playerId, nom: j.skaterFullName, equipe: (j.teamAbbrevs || '').split(',')[0].trim(), position: j.positionCode, numero: '' }));
+          if (!annule) setResultatsCategorie(categorie === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D'));
+        }
+      } catch { if (!annule) setResultatsCategorie([]); }
+      if (!annule) setChargementCategorie(false);
+    })();
+    return () => { annule = true; };
+  }, [categorie, equipeFiltre]);
+
+  async function handleTeamClick(abbrev) {
+    setChargementEquipe(true);
+    try {
+      let stand = standings;
+      if (stand.length === 0) {
+        const res = await fetch(getUrl('standings/now'));
+        const data = await res.json();
+        stand = data.standings || [];
+        setStandings(stand);
+      }
+      let sk = skatersFull;
+      if (sk.length === 0) {
+        const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+        const pages = await Promise.all([0, 100, 200].map(start =>
+          fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=${start}&limit=100`)).then(r => r.json())
+        ));
+        sk = pages.flatMap(p => p.data || []);
+        setSkatersFull(sk);
+      }
+      const entry = stand.find(s => s.teamAbbrev?.default === abbrev) || { teamAbbrev: { default: abbrev } };
+      onSelectTeam({ equipe: entry, skaters: sk });
+    } catch {
+      onSelectTeam({ equipe: { teamAbbrev: { default: abbrev } }, skaters: [] });
+    }
+    setChargementEquipe(false);
+  }
+
+  function photoJoueur(id) { return `https://assets.nhle.com/mugs/${id}.png`; }
+
+  const rechercheActive = query.trim().length >= 2;
+  const resultatsAffiches = rechercheActive ? resultatsRecherche.filter(j => {
+    const posOk = !categorie || categorie === 'equipes' ? true
+      : categorie === 'gardiens' ? j.positionCode === 'G'
+      : categorie === 'defenseurs' ? j.positionCode === 'D'
+      : j.positionCode !== 'D' && j.positionCode !== 'G';
+    const eqOk = equipeFiltre === 'ALL' || j.teamAbbrev === equipeFiltre;
+    return posOk && eqOk;
+  }).map(j => ({ id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '' })) : [];
+
+  const equipesAffichees = categorie === 'equipes'
+    ? Object.keys(LOGOS_NHL).sort().filter(a => !query.trim() || a.toLowerCase().includes(query.trim().toLowerCase()))
+    : [];
+
+  const pills = [
+    { id: 'attaquants', label: 'Attaquants' },
+    { id: 'defenseurs', label: 'Défenseurs' },
+    { id: 'gardiens', label: 'Gardiens' },
+    { id: 'equipes', label: 'Équipes' },
+  ];
+
+  const ligneJoueur = (j) => (
+    <div key={j.id} onClick={() => onSelectPlayer(j)}
+      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+    >
+      <img src={photoJoueur(j.id)} alt={j.nom} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+        <div style={{ fontSize: '12px', color: '#666' }}>{j.equipe} · {j.position}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: isMobile ? 'stretch' : 'flex-start', padding: isMobile ? 0 : '60px 20px' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#111', border: isMobile ? 'none' : '1px solid #222', borderRadius: isMobile ? 0 : '16px', width: '100%', maxWidth: '760px', maxHeight: isMobile ? '100vh' : '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+        {/* Barre de recherche */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 20px', borderBottom: '1px solid #222' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Rechercher un joueur, une équipe..."
+            style={{ flex: 1, backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 14px', color: 'white', fontSize: '15px', outline: 'none' }}
+          />
+          <button onClick={onClose} style={{ backgroundColor: 'transparent', border: 'none', color: '#888', fontSize: '20px', cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>✕</button>
+        </div>
+
+        {/* Pills filtres */}
+        <div style={{ display: 'flex', gap: '8px', padding: '14px 20px 0', flexWrap: 'wrap' }}>
+          {pills.map(p => (
+            <button key={p.id} onClick={() => setCategorie(categorie === p.id ? null : p.id)}
+              style={{ padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: categorie === p.id ? '#f97316' : '#1a1a1a', color: categorie === p.id ? 'white' : '#999', fontSize: '13px', fontWeight: categorie === p.id ? '700' : '500' }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sous-filtre equipe (32 equipes NHL) */}
+        {categorie && categorie !== 'equipes' && (
+          <div style={{ padding: '10px 20px 0' }}>
+            <select value={equipeFiltre} onChange={e => setEquipeFiltre(e.target.value)}
+              style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: 'white', fontSize: '13px', outline: 'none' }}
+            >
+              <option value="ALL">Toutes les équipes</option>
+              {Object.keys(LOGOS_NHL).sort().map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Contenu */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 24px' }}>
+          {rechercheActive ? (
+            chargementRecherche ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Recherche...</p>
+            : resultatsAffiches.length === 0 ? <p style={{ color: '#444', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
+            : resultatsAffiches.map(ligneJoueur)
+          ) : categorie === 'equipes' ? (
+            chargementEquipe ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+            : equipesAffichees.map(a => (
+              <div key={a} onClick={() => handleTeamClick(a)}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <img src={LOGOS_NHL[a]} alt={a} style={{ width: '32px', height: '32px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+                <div style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{a}</div>
+              </div>
+            ))
+          ) : categorie ? (
+            chargementCategorie ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+            : resultatsCategorie.length === 0 ? <p style={{ color: '#444', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
+            : resultatsCategorie.map(ligneJoueur)
+          ) : (
+            <Analyses onLigueChange={() => {}} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export { AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
 export default Analyses;
  

@@ -3,7 +3,7 @@ import Dashboard, { titreBetAuto } from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses, { AnalysesFlux } from './Analyses';
+import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile } from './Analyses';
 import ModelesFlux from './Modeles';
 import PoolDraft from './PoolDraft';
 import EmailOAuthCallback from './EmailOAuthCallback';
@@ -94,6 +94,168 @@ function IconStar({ color = 'currentColor', size = 20 }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
     </svg>
+  );
+}
+
+function IconMore({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+    </svg>
+  );
+}
+
+// Bouton avatar utilisateur + popup (Settings / Appearance / Language / Logout), reutilise
+// dans la sidebar desktop et la top bar mobile.
+function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up' }) {
+  const [ouvert, setOuvert] = useState(false);
+  const ref = React.useRef(null);
+
+  useEffect(() => {
+    if (!ouvert) return;
+    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setOuvert(false); }
+    document.addEventListener('mousedown', onClickDehors);
+    return () => document.removeEventListener('mousedown', onClickDehors);
+  }, [ouvert]);
+
+  const initiale = (utilisateur?.email || '?').charAt(0).toUpperCase();
+  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'block' };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOuvert(o => !o)} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', fontWeight: '900', fontSize: '14px', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initiale}
+      </button>
+      {ouvert && (
+        <div style={{
+          position: 'absolute', [popupPosition === 'up' ? 'bottom' : 'top']: '46px',
+          left: popupPosition === 'up' ? '0' : 'auto', right: popupPosition === 'up' ? 'auto' : '0',
+          backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', padding: '8px', minWidth: '200px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400,
+        }}>
+          <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid #1e1e1e', marginBottom: '4px' }}>
+            <div style={{ color: '#888', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{utilisateur?.email}</div>
+          </div>
+          <button onClick={() => { onGoToProfile(); setOuvert(false); }} style={itemStyle}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+            {t('menu_settings')}
+          </button>
+          <div style={{ padding: '10px 12px' }}>
+            <div style={{ fontSize: '10px', color: '#666', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_appearance')}</div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => { if (mode !== 'dark') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'dark' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: mode === 'dark' ? '700' : '400' }}>Dark</button>
+              <button onClick={() => { if (mode !== 'light') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'light' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: mode === 'light' ? '700' : '400' }}>Light</button>
+            </div>
+          </div>
+          <div style={{ padding: '4px 12px 10px' }}>
+            <div style={{ fontSize: '10px', color: '#666', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_language')}</div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {['fr', 'en'].map(l => (
+                <button key={l} onClick={() => setLang(l)} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: lang === l ? '700' : '400' }}>{l.toUpperCase()}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ height: '1px', backgroundColor: '#1e1e1e', margin: '4px 0' }} />
+          <button onClick={onLogout} style={{ ...itemStyle, color: '#ef4444' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+            {t('menu_signout')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : icones + tooltips au survol.
+function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t }) {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '60px', backgroundColor: '#111', borderRight: '1px solid #1e1e1e', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 14px', zIndex: 300 }}>
+      <style>{`
+        .sb-item { position: relative; }
+        .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: #1a1a1a; border: 1px solid #2a2a2a; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
+        .sb-item:hover .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
+      `}</style>
+      <div style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px' }}>B</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', alignItems: 'center' }}>
+        {tabsPrincipaux.map(tab => (
+          <div key={tab.id} className="sb-item">
+            <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <tab.Icon color={activeId === tab.id ? '#f97316' : '#777'} size={20} />
+            </button>
+            <span className="sb-tooltip">{tab.label}</span>
+          </div>
+        ))}
+        {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: '#1e1e1e', margin: '8px 0' }} />}
+        {tabsSecondaires.map(tab => (
+          <div key={tab.id} className="sb-item">
+            <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <tab.Icon color={activeId === tab.id ? '#f97316' : '#777'} size={18} />
+            </button>
+            <span className="sb-tooltip">{tab.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="sb-item">
+        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" />
+      </div>
+    </div>
+  );
+}
+
+// Navigation du bas (mobile <768px) : 4 onglets seulement (pas Pool).
+function BottomNav({ tabs, activeId, onSelectTab }) {
+  return (
+    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
+      <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid #1a1a1a', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => onSelectTab(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
+            <tab.Icon color={activeId === tab.id ? '#f97316' : '#444'} size={20} />
+            <span style={{ fontSize: '10px', fontWeight: activeId === tab.id ? '600' : '400', color: activeId === tab.id ? '#f97316' : '#444', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
+            {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Top bar mobile : marque + acces rapide (Pool/Paris/Bankroll/Admin, absents de la bottom nav) + profil.
+function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t }) {
+  const [menuOuvert, setMenuOuvert] = useState(false);
+  const ref = React.useRef(null);
+
+  useEffect(() => {
+    if (!menuOuvert) return;
+    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setMenuOuvert(false); }
+    document.addEventListener('mousedown', onClickDehors);
+    return () => document.removeEventListener('mousedown', onClickDehors);
+  }, [menuOuvert]);
+
+  return (
+    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid #161616' }}>
+      <h1 style={{ color: '#f97316', margin: 0, fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {tabsSecondaires.length > 0 && (
+          <div ref={ref} style={{ position: 'relative' }}>
+            <button onClick={() => setMenuOuvert(o => !o)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #222', backgroundColor: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconMore color="#888" size={16} />
+            </button>
+            {menuOuvert && (
+              <div style={{ position: 'absolute', top: '40px', right: 0, backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', padding: '6px', minWidth: '170px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400 }}>
+                {tabsSecondaires.map(tab => (
+                  <button key={tab.id} onClick={() => { onSelectTab(tab); setMenuOuvert(false); }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <tab.Icon color="#888" size={16} />
+                    <span style={{ fontSize: '13px', color: 'white' }}>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="down" />
+      </div>
+    </div>
   );
 }
 
@@ -1635,14 +1797,19 @@ function App() {
     if (new URLSearchParams(window.location.search).get('page') === 'profile') return 'profile';
     return 'home';
   });
-  const [menuOuvert, setMenuOuvert] = useState(false);
   const [utilisateur, setUtilisateur] = useState(null);
   const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
   const [showAuth, setShowAuth] = useState(false);
   const [nombreMatchs, setNombreMatchs] = useState(0);
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
   const [lang, setLang] = useState('en');
- 
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [mode, toggleTheme] = useWSTheme();
+  const [showRecherche, setShowRecherche] = useState(false);
+  const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
+  const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUtilisateur(session?.user ?? null);
@@ -1652,13 +1819,19 @@ function App() {
     });
     return () => subscription.unsubscribe();
   }, []);
- 
+
+  useEffect(() => {
+    if (!utilisateur?.id) { setAvatarUrl(null); return; }
+    supabase.from('profiles').select('avatar_url').eq('id', utilisateur.id).single()
+      .then(({ data }) => setAvatarUrl(data?.avatar_url || null));
+  }, [utilisateur?.id]);
+
   async function handleDeconnexion() {
     await supabase.auth.signOut();
     setUtilisateur(null);
     setPage('home');
   }
- 
+
   if (window.location.pathname === '/auth/gmail/callback') {
     return <EmailOAuthCallback provider="gmail" lang={lang} />;
   }
@@ -1669,85 +1842,94 @@ function App() {
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
-        <Auth onConnexion={() => { setShowAuth(false); setPage('dashboard'); }} lang={lang} />
+        <Auth onConnexion={() => { setShowAuth(false); setPage('home'); }} lang={lang} />
       </div>
     );
   }
- 
-  // App connectée avec bottom nav style Oura
+
+  // App connectée : sidebar gauche fixe (desktop/tablette) ou bottom nav (mobile)
   if (utilisateur) {
     const t = getT(lang);
-    const tabs = [
+    const tabsPrincipaux = [
       { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
-      { id: 'stats', label: t('nav_tab_stats'), Icon: IconBarChart },
-      { id: 'analyses', label: t('nav_tab_analyses'), Icon: IconSearch },
+      { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
+      { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
+      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
     ];
-    const activeTab = ['home', 'stats', 'analyses', 'props'].includes(page) ? page : page === 'bets' || page === 'admin' || page === 'bankroll' || page === 'profile' || page === 'pooldraft' ? page : 'home';
+    const tabsMobile = tabsPrincipaux.filter(tab => tab.id !== 'pooldraft');
+    const tabsSecondaires = [
+      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
+      { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
+      { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
+      ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconGear }] : []),
+    ];
+    const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
+
+    function handleSelectTab(tab) {
+      if (tab.id === 'search') { setShowRecherche(true); return; }
+      setJoueurFicheGlobal(null);
+      setEquipeFicheGlobal(null);
+      setPage(tab.id);
+    }
+
+    const contenuPrincipal = joueurFicheGlobal ? (
+      <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '900px', margin: '0 auto' }}>
+        <FicheJoueur joueur={joueurFicheGlobal} onBack={() => setJoueurFicheGlobal(null)} />
+      </div>
+    ) : equipeFicheGlobal ? (
+      <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '900px', margin: '0 auto' }}>
+        <FicheEquipeWS theme={WS_THEME[mode]} equipe={equipeFicheGlobal.equipe} skaters={equipeFicheGlobal.skaters}
+          onBack={() => setEquipeFicheGlobal(null)}
+          onSelectPlayer={(j) => { setEquipeFicheGlobal(null); setJoueurFicheGlobal(j); }} />
+      </div>
+    ) : page === 'profile' ? (
+      <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
+    ) : page === 'bets' ? (
+      <Dashboard lang={lang} />
+    ) : page === 'bankroll' ? (
+      <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
+    ) : page === 'pooldraft' ? (
+      <PoolDraft />
+    ) : page === 'admin' ? (
+      <AdminPage />
+    ) : page === 'stats' ? (
+      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
+    ) : page === 'props' ? (
+      <ModelesFlux />
+    ) : (
+      <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')} lang={lang} />
+    );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingBottom: '80px' }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingLeft: isMobile ? 0 : '60px', paddingBottom: isMobile ? '80px' : 0 }}>
 
-        {/* Top bar connecté */}
-        <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(10px)' }}>
-          <button onClick={() => setMenuOuvert(true)} style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <div style={{ width: '22px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
-            <div style={{ width: '22px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
-            <div style={{ width: '14px', height: '2px', backgroundColor: '#888', borderRadius: '2px' }} />
-          </button>
-          <h1 style={{ color: '#f97316', margin: 0, fontSize: '20px', fontWeight: '900', letterSpacing: '-0.5px', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Betrics</h1>
-          <div style={{ display: 'flex', backgroundColor: '#111', borderRadius: '8px', padding: '2px', border: '1px solid #222' }}>
-            {['fr', 'en'].map(l => (
-              <button key={l} onClick={() => setLang(l)}
-                style={{ padding: '3px 8px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : 'transparent', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Menu hamburger overlay */}
-        {menuOuvert && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 500, display: 'flex' }}>
-            <div style={{ width: '75%', maxWidth: '300px', backgroundColor: '#0a0a0a', height: '100%', padding: '0', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 40px rgba(0,0,0,0.8)' }}>
-              <div style={{ padding: '20px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, color: '#f97316', fontWeight: '900', fontSize: '18px' }}>Betrics</h2>
-                <button onClick={() => setMenuOuvert(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
-              </div>
-              <div style={{ padding: '12px', flex: 1 }}>
-                <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginBottom: '4px' }}>Menu</div>
-                {[
-                  { Icon: IconProfile, label: t('menu_profile'), page: 'profile' },
-                  { Icon: IconTicket, label: t('menu_bets'), page: 'bets' },
-                  { Icon: IconWallet, label: t('menu_bankroll'), page: 'bankroll' },
-                  { Icon: IconDraft, label: 'Pool Hockey', page: 'pooldraft' },
-                ].map((item) => (
-                  <button key={item.page} onClick={() => { setPage(item.page); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: page === item.page ? 'rgba(249,115,22,0.08)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '2px' }}>
-                    <item.Icon color={page === item.page ? '#f97316' : '#555'} size={18} />
-                    <span style={{ fontSize: '15px', fontWeight: page === item.page ? '600' : '400', color: page === item.page ? 'white' : '#888' }}>{item.label}</span>
-                  </button>
-                ))}
-                {isAdmin && (
-                  <>
-                    <div style={{ color: '#333', fontSize: '11px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 12px', marginTop: '12px', marginBottom: '4px' }}>Admin</div>
-                    <button onClick={() => { setPage('admin'); setMenuOuvert(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
-                      <IconGear color="#555" size={18} />
-                      <span style={{ fontSize: '15px', color: '#888' }}>Admin Panel</span>
-                    </button>
-                  </>
-                )}
-              </div>
-              <div style={{ padding: '20px', borderTop: '1px solid #111' }}>
-                <div style={{ color: '#444', fontSize: '12px', marginBottom: '12px' }}>{utilisateur?.email}</div>
-                <button onClick={() => { handleDeconnexion(); setMenuOuvert(false); }} style={{ width: '100%', padding: '12px', backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>{t('menu_signout')}</button>
-              </div>
-            </div>
-            <div onClick={() => setMenuOuvert(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} />
-          </div>
+        {!isMobile && (
+          <AppSidebar
+            tabsPrincipaux={tabsPrincipaux} tabsSecondaires={tabsSecondaires} activeId={activeId} onSelectTab={handleSelectTab}
+            utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
+            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+          />
         )}
 
-        {/* Selecteur de ligue - toujours visible dans Stats et Analyses */}
-        {(activeTab === 'stats' || activeTab === 'analyses') && (
+        {isMobile && (
+          <MobileTopBar
+            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
+            utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
+            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+          />
+        )}
+
+        {showRecherche && (
+          <RechercheOverlay
+            onClose={() => setShowRecherche(false)}
+            onSelectPlayer={(j) => { setShowRecherche(false); setEquipeFicheGlobal(null); setJoueurFicheGlobal(j); }}
+            onSelectTeam={(payload) => { setShowRecherche(false); setJoueurFicheGlobal(null); setEquipeFicheGlobal(payload); }}
+          />
+        )}
+
+        {/* Selecteur de ligue - visible sur l'onglet Analyses */}
+        {page === 'stats' && !joueurFicheGlobal && !equipeFicheGlobal && (
           <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid #161616' }}>
             <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
             <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#1a1a1a', border: '1px solid #222', color: '#555', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
@@ -1755,45 +1937,18 @@ function App() {
         )}
 
         {/* Ticker NHL */}
-        {(activeTab === 'stats' || activeTab === 'analyses') && ligueAnalyses === 'nhl' ? (
+        {page === 'stats' && !joueurFicheGlobal && !equipeFicheGlobal && ligueAnalyses === 'nhl' ? (
           <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
         ) : null}
 
         {/* Contenu */}
         <div style={{ padding: '0' }}>
-          {page === 'profile' ? (
-            <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
-          ) : page === 'bets' ? (
-            <Dashboard lang={lang} />
-          ) : page === 'bankroll' ? (
-            <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
-          ) : page === 'pooldraft' ? (
-            <PoolDraft />
-          ) : page === 'admin' ? (
-            <AdminPage />
-          ) : activeTab === 'home' ? (
-            <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')} lang={lang} />
-          ) : activeTab === 'stats' ? (
-            <Analyses onLigueChange={(l) => setLigueAnalyses(l)} />
-          ) : activeTab === 'analyses' ? (
-            <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
-          ) : activeTab === 'props' ? (
-            <ModelesFlux />
-          ) : null}
+          {contenuPrincipal}
         </div>
 
-        {/* Bottom Nav style Oura */}
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
-          <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid #1a1a1a', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
-            {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setPage(tab.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
-                <tab.Icon color={activeTab === tab.id ? '#f97316' : '#444'} size={20} />
-                <span style={{ fontSize: '10px', fontWeight: activeTab === tab.id ? '600' : '400', color: activeTab === tab.id ? '#f97316' : '#444', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
-                {activeTab === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
-              </button>
-            ))}
-          </div>
-        </div>
+        {isMobile && (
+          <BottomNav tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab} />
+        )}
       </div>
     );
   }
