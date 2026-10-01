@@ -5154,11 +5154,23 @@ const ORDRE_DIVISIONS = ['Metropolitan', 'Atlantic', 'Central', 'Pacific'];
 async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
   if (categorie === 'gardiens') {
     const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
-    const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=wins&dir=DESC&start=0&limit=100`));
+    const url = getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=wins&dir=DESC&start=0&limit=100`);
+    console.log('[Recherche] gardiens -> fetch', url);
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error('[Recherche] gardiens -> HTTP', res.status, res.statusText);
+      throw new Error(`goalie/summary HTTP ${res.status}`);
+    }
     const data = await res.json();
+    console.log('[Recherche] gardiens -> reponse brute', data);
+    if (data.error) {
+      console.error('[Recherche] gardiens -> erreur proxy', data.error);
+      throw new Error(data.error);
+    }
     let pool = data.data || [];
     if (!teamAbbrev) pool = pool.filter(g => (g.gamesPlayed || 0) >= 3);
     const tries = [...pool].sort((a, b) => (b.wins ?? 0) - (a.wins ?? 0));
+    console.log('[Recherche] gardiens -> pool', pool.length, 'resultats finaux', tries.length);
     return tries.map(g => {
       const eq = (g.teamAbbrevs || '').split(',')[0].trim();
       const svp = g.savePct != null ? (g.savePct * 100).toFixed(1) : '-';
@@ -5166,8 +5178,17 @@ async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
     });
   }
   const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
-  const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=100`));
+  const url = getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=100`);
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error('[Recherche] skaters -> HTTP', res.status, res.statusText);
+    throw new Error(`skater/summary HTTP ${res.status}`);
+  }
   const data = await res.json();
+  if (data.error) {
+    console.error('[Recherche] skaters -> erreur proxy', data.error);
+    throw new Error(data.error);
+  }
   const tous = (data.data || []).map(j => {
     const eq = (j.teamAbbrevs || '').split(',')[0].trim();
     return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${j.playerId}.png`, statText: `${j.goals ?? 0}B · ${j.assists ?? 0}P · ${j.points ?? 0}PTS` };
@@ -5231,7 +5252,10 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
       try {
         const liste = await fetchClassementPosition(categorieEffective, equipeChoisie, seasonId);
         if (!annule) setTop10(equipeChoisie ? liste : liste.slice(0, 10));
-      } catch { if (!annule) setTop10([]); }
+      } catch (err) {
+        console.error('[Recherche] echec chargement classement', categorieEffective, err);
+        if (!annule) setTop10([]);
+      }
       if (!annule) setChargementTop10(false);
     })();
     return () => { annule = true; };
