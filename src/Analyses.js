@@ -5168,7 +5168,7 @@ async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
       throw new Error(data.error);
     }
     let pool = data.data || [];
-    if (!teamAbbrev) pool = pool.filter(g => (g.gamesPlayed || 0) >= 3);
+    pool = pool.filter(g => (g.gamesPlayed || 0) >= 1);
     const tries = [...pool].sort((a, b) => (b.wins ?? 0) - (a.wins ?? 0));
     console.log('[Recherche] gardiens -> pool', pool.length, 'resultats finaux', tries.length);
     return tries.map(g => {
