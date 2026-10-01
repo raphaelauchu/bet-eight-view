@@ -138,8 +138,8 @@ function getStatsRestUrl(fullUrl) {
   return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
 }
 
-function buildCayenneExp({ gameType, teamAbbrev, positionCode }) {
-  let exp = `seasonId=20252026 and gameTypeId=${gameType}`;
+function buildCayenneExp({ seasonId = SAISON_REG_2526.seasonId, gameType, teamAbbrev, positionCode }) {
+  let exp = `seasonId=${seasonId} and gameTypeId=${gameType}`;
   if (teamAbbrev && teamAbbrev !== 'ALL') exp += ` and teamId=${ABBREV_TO_TEAM_ID[teamAbbrev]}`;
   if (positionCode && positionCode !== 'ALL') exp += ` and positionCode="${positionCode}"`;
   return exp;
@@ -5148,14 +5148,42 @@ function AnalysesRecherche() {
 // affiche le hub Stats existant (StatsHub, via <Analyses/>) tel quel — code non supprimé, déplacé ici.
 const ORDRE_DIVISIONS = ['Metropolitan', 'Atlantic', 'Central', 'Pacific'];
 
+// Classement complet (non tronque) d'une categorie de joueurs pour une saison/equipe donnees.
+// Sans teamAbbrev : jusqu'a 100 joueurs tries (large marge pour isoler le vrai top 10 par position
+// apres filtrage cote client). Avec teamAbbrev : l'API filtre deja sur l'equipe (effectif complet).
+async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
+  if (categorie === 'gardiens') {
+    const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
+    const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=gamesPlayed&dir=DESC&start=0&limit=100`));
+    const data = await res.json();
+    let pool = data.data || [];
+    if (!teamAbbrev) pool = pool.filter(g => (g.gamesPlayed || 0) >= 3);
+    const tries = [...pool].sort((a, b) => (a.goalsAgainstAverage ?? 99) - (b.goalsAgainstAverage ?? 99));
+    return tries.map(g => {
+      const eq = (g.teamAbbrevs || '').split(',')[0].trim();
+      return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${g.playerId}.png`, statLabel: 'GAA', statValeur: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-' };
+    });
+  }
+  const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
+  const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=100`));
+  const data = await res.json();
+  const tous = (data.data || []).map(j => {
+    const eq = (j.teamAbbrevs || '').split(',')[0].trim();
+    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${j.playerId}.png`, statLabel: 'PTS', statValeur: j.points };
+  });
+  return categorie === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D');
+}
+
 function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
   const [query, setQuery] = useState('');
-  const [categorie, setCategorie] = useState(null); // null (= Attaquants par defaut) | 'attaquants' | 'defenseurs' | 'gardiens' | 'equipes'
+  const [categorie, setCategorie] = useState(null); // null (= 3 sections par defaut) | 'attaquants' | 'defenseurs' | 'gardiens' | 'equipes'
   const [equipeFiltre, setEquipeFiltre] = useState('ALL');
   const [resultatsRecherche, setResultatsRecherche] = useState([]);
   const [chargementRecherche, setChargementRecherche] = useState(false);
   const [top10, setTop10] = useState([]);
+  const [sectionsDefaut, setSectionsDefaut] = useState({ attaquants: [], defenseurs: [], gardiens: [] });
   const [chargementTop10, setChargementTop10] = useState(false);
   const [standings, setStandings] = useState([]);
   const [chargementStandings, setChargementStandings] = useState(false);
@@ -5165,7 +5193,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   const inputRef = useRef(null);
 
   const rechercheActive = query.trim().length >= 2;
-  const categorieEffective = categorie || 'attaquants';
+  const equipeChoisie = equipeFiltre !== 'ALL' ? equipeFiltre : null;
 
   useEffect(() => {
     function onKeyDown(e) { if (e.key === 'Escape') onClose(); }
@@ -5191,40 +5219,40 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
-  // Top 10 attaquants/defenseurs/gardiens, selon la categorie active (ou attaquants par defaut).
+  // Vue par defaut (aucun pill actif) : 3 sections top 10 (attaquants/defenseurs/gardiens), ligue entiere.
   useEffect(() => {
-    if (rechercheActive || categorieEffective === 'equipes') return;
+    if (rechercheActive || categorie !== null) return;
     let annule = false;
     (async () => {
       setChargementTop10(true);
       try {
-        const teamAbbrev = equipeFiltre === 'ALL' ? null : equipeFiltre;
-        if (categorieEffective === 'gardiens') {
-          const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
-          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=gamesPlayed&dir=DESC&start=0&limit=50`));
-          const data = await res.json();
-          const admissibles = (data.data || []).filter(g => (g.gamesPlayed || 0) >= 3);
-          const tries = admissibles.sort((a, b) => (a.goalsAgainstAverage || 99) - (b.goalsAgainstAverage || 99)).slice(0, 10);
-          if (!annule) setTop10(tries.map(g => {
-            const eq = (g.teamAbbrevs || '').split(',')[0].trim();
-            return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/20252026/${eq}/${g.playerId}.png`, statLabel: 'GAA', statValeur: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-' };
-          }));
-        } else {
-          const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
-          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=50`));
-          const data = await res.json();
-          const tous = (data.data || []).map(j => {
-            const eq = (j.teamAbbrevs || '').split(',')[0].trim();
-            return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/20252026/${eq}/${j.playerId}.png`, statLabel: 'PTS', statValeur: j.points };
-          });
-          const filtres = (categorieEffective === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D')).slice(0, 10);
-          if (!annule) setTop10(filtres);
-        }
+        const [att, def, gar] = await Promise.all([
+          fetchClassementPosition('attaquants', null, seasonId),
+          fetchClassementPosition('defenseurs', null, seasonId),
+          fetchClassementPosition('gardiens', null, seasonId),
+        ]);
+        if (!annule) setSectionsDefaut({ attaquants: att.slice(0, 10), defenseurs: def.slice(0, 10), gardiens: gar.slice(0, 10) });
+      } catch { if (!annule) setSectionsDefaut({ attaquants: [], defenseurs: [], gardiens: [] }); }
+      if (!annule) setChargementTop10(false);
+    })();
+    return () => { annule = true; };
+  }, [categorie, rechercheActive, seasonId]);
+
+  // Pill Attaquants/Defenseurs/Gardiens actif : top 10 ligue si aucune equipe choisie,
+  // ou effectif complet (tous les joueurs de la position) trie, si une equipe est choisie.
+  useEffect(() => {
+    if (rechercheActive || categorie === null || categorie === 'equipes') return;
+    let annule = false;
+    (async () => {
+      setChargementTop10(true);
+      try {
+        const liste = await fetchClassementPosition(categorie, equipeChoisie, seasonId);
+        if (!annule) setTop10(equipeChoisie ? liste : liste.slice(0, 10));
       } catch { if (!annule) setTop10([]); }
       if (!annule) setChargementTop10(false);
     })();
     return () => { annule = true; };
-  }, [categorieEffective, equipeFiltre, rechercheActive]);
+  }, [categorie, equipeChoisie, rechercheActive, seasonId]);
 
   // Classement par division pour le filtre Equipes.
   useEffect(() => {
@@ -5244,7 +5272,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
 
   async function assurerSkatersFull() {
     if (skatersFull.length > 0) return skatersFull;
-    const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+    const cayenne = encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`);
     const pages = await Promise.all([0, 100, 200].map(start =>
       fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=${start}&limit=100`)).then(r => r.json())
     ));
@@ -5387,6 +5415,24 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
                 {d.equipes.map(ligneEquipe)}
               </div>
             ))
+          ) : categorie === null ? (
+            chargementTop10 ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+            : (
+              <>
+                {[
+                  { titre: 'Top 10 Attaquants', liste: sectionsDefaut.attaquants },
+                  { titre: 'Top 10 Défenseurs', liste: sectionsDefaut.defenseurs },
+                  { titre: 'Top 10 Gardiens (GAA)', liste: sectionsDefaut.gardiens },
+                ].map(section => (
+                  <div key={section.titre} style={{ marginBottom: '20px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', padding: '0 12px 8px' }}>{section.titre}</div>
+                    {section.liste.length === 0 ? (
+                      <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '12px 0' }}>Aucun résultat.</p>
+                    ) : section.liste.map((j, i) => ligneJoueur(j, i + 1))}
+                  </div>
+                ))}
+              </>
+            )
           ) : (
             chargementTop10 ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
             : top10.length === 0 ? <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
