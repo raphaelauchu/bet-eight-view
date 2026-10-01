@@ -4,6 +4,54 @@
   box-sizing: border-box;
 }
 
+/* Theme global de l'app connectee : bascule via data-theme sur <html> (voir ThemeContext). */
+:root,
+:root[data-theme="dark"] {
+  --c-080808: #080808;
+  --c-0a0a0a: #0a0a0a;
+  --c-0d0d0d: #0d0d0d;
+  --c-0f0f0f: #0f0f0f;
+  --c-111: #111111;
+  --c-1a1a1a: #1a1a1a;
+  --c-1f1f1f: #1f1f1f;
+  --c-161616: #161616;
+  --c-1e1e1e: #1e1e1e;
+  --c-222: #222222;
+  --c-2a2a2a: #2a2a2a;
+  --c-white: #ffffff;
+  --c-ccc: #cccccc;
+  --c-aaa: #aaaaaa;
+  --c-888: #888888;
+  --c-777: #777777;
+  --c-666: #666666;
+  --c-555: #555555;
+  --c-444: #444444;
+  --c-333: #333333;
+}
+
+:root[data-theme="light"] {
+  --c-080808: #f5f5f5;
+  --c-0a0a0a: #f7f7f7;
+  --c-0d0d0d: #f0f0f0;
+  --c-0f0f0f: #eeeeee;
+  --c-111: #ffffff;
+  --c-1a1a1a: #ececec;
+  --c-1f1f1f: #e4e4e4;
+  --c-161616: #ebebeb;
+  --c-1e1e1e: #e3e3e3;
+  --c-222: #dddddd;
+  --c-2a2a2a: #cccccc;
+  --c-white: #141414;
+  --c-ccc: #2a2a2a;
+  --c-aaa: #3d3d3d;
+  --c-888: #595959;
+  --c-777: #666666;
+  --c-666: #777777;
+  --c-555: #8a8a8a;
+  --c-444: #a3a3a3;
+  --c-333: #b8b8b8;
+}
+
 body {
   margin: 0;
   padding: 0;

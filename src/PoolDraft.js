@@ -144,17 +144,17 @@ function Stepper({ etape }) {
             <div style={{
               width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backgroundColor: etape >= s.n ? '#f97316' : '#1a1a1a',
-              color: etape >= s.n ? 'white' : '#555',
+              backgroundColor: etape >= s.n ? '#f97316' : 'var(--c-1a1a1a)',
+              color: etape >= s.n ? 'white' : 'var(--c-555)',
               fontSize: '12px', fontWeight: '800',
               border: etape === s.n ? '2px solid rgba(249,115,22,0.4)' : 'none',
             }}>{s.n}</div>
             {!isMobile && (
-              <span style={{ fontSize: '13px', fontWeight: etape === s.n ? '700' : '500', color: etape >= s.n ? 'white' : '#555' }}>{s.label}</span>
+              <span style={{ fontSize: '13px', fontWeight: etape === s.n ? '700' : '500', color: etape >= s.n ? 'white' : 'var(--c-555)' }}>{s.label}</span>
             )}
           </div>
           {i < steps.length - 1 && (
-            <div style={{ flex: 1, height: '2px', backgroundColor: etape > s.n ? '#f97316' : '#1a1a1a', margin: '0 8px', minWidth: '16px' }} />
+            <div style={{ flex: 1, height: '2px', backgroundColor: etape > s.n ? '#f97316' : 'var(--c-1a1a1a)', margin: '0 8px', minWidth: '16px' }} />
           )}
         </React.Fragment>
       ))}
@@ -164,14 +164,14 @@ function Stepper({ etape }) {
 
 function ChampNombre({ label, value, onChange, min = 0, max = 20 }) {
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '12px 14px', border: '1px solid #222' }}>
-      <div style={{ fontSize: '11px', color: '#888', marginBottom: '8px', fontWeight: '600' }}>{label}</div>
+    <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', padding: '12px 14px', border: '1px solid var(--c-222)' }}>
+      <div style={{ fontSize: '11px', color: 'var(--c-888)', marginBottom: '8px', fontWeight: '600' }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button onClick={() => onChange(Math.max(min, value - 1))}
-          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>−</button>
+          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-white)', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>−</button>
         <div style={{ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{value}</div>
         <button onClick={() => onChange(Math.min(max, value + 1))}
-          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>+</button>
+          style={{ width: '28px', height: '28px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-white)', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>+</button>
       </div>
     </div>
   );
@@ -179,14 +179,14 @@ function ChampNombre({ label, value, onChange, min = 0, max = 20 }) {
 
 function ChampPoint({ label, value, onChange }) {
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '10px', padding: '8px 10px', border: '1px solid #222' }}>
-      <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>{label}</div>
+    <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', padding: '8px 10px', border: '1px solid var(--c-222)' }}>
+      <div style={{ fontSize: '10px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>{label}</div>
       <input
         type="number"
         step="0.5"
         value={value}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        style={{ width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '8px', padding: '6px 8px', color: '#f97316', fontSize: '14px', fontWeight: '800', boxSizing: 'border-box' }}
+        style={{ width: '100%', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '6px 8px', color: '#f97316', fontSize: '14px', fontWeight: '800', boxSizing: 'border-box' }}
       />
     </div>
   );
@@ -262,68 +262,68 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
 
   return (
     <div style={{ padding, maxWidth: '1100px', margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Configuration du pool</h2>
-      <p style={{ margin: '0 0 20px', color: '#666', fontSize: '13px' }}>Configure les règles de ton pool de hockey avant de commencer le draft assisté.</p>
+      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'var(--c-white)' }}>Configuration du pool</h2>
+      <p style={{ margin: '0 0 20px', color: 'var(--c-666)', fontSize: '13px' }}>Configure les règles de ton pool de hockey avant de commencer le draft assisté.</p>
 
       {/* Infos generales */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Nom du pool</div>
         <input
           value={config.nomPool}
           onChange={e => setConfig(c => ({ ...c, nomPool: e.target.value }))}
           placeholder="Ex. Pool des Chums 2026-27"
-          style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+          style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 14px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box' }}
         />
       </div>
 
       {/* Participants */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Participants</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button onClick={() => setNbParticipants(Math.max(2, config.participants.length - 1))}
-              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>−</button>
+              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-white)', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>−</button>
             <span style={{ fontSize: '14px', fontWeight: '800', color: '#f97316', minWidth: '18px', textAlign: 'center' }}>{config.participants.length}</span>
             <button onClick={() => setNbParticipants(Math.min(20, config.participants.length + 1))}
-              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid #333', backgroundColor: '#1a1a1a', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>+</button>
+              style={{ width: '26px', height: '26px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-white)', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>+</button>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
           {config.participants.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '8px 10px' }}>
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '8px 10px' }}>
               <button onClick={() => definirMoi(p.id)} title="C'est moi"
-                style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: p.estMoi ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '13px' }}>
+                style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: p.estMoi ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '13px' }}>
                 {p.estMoi ? '★' : '☆'}
               </button>
               <input
                 value={p.nom}
                 onChange={e => renommer(p.id, e.target.value)}
-                style={{ flex: 1, minWidth: 0, backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', outline: 'none' }}
+                style={{ flex: 1, minWidth: 0, backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', outline: 'none' }}
               />
             </div>
           ))}
         </div>
-        <div style={{ marginTop: '10px', fontSize: '11px', color: '#555' }}>★ = c'est toi dans le pool (utilisé pour les suggestions IA à l'étape suivante) · l'équipe NHL favorite de chacun se choisit pendant le draft</div>
+        <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--c-555)' }}>★ = c'est toi dans le pool (utilisé pour les suggestions IA à l'étape suivante) · l'équipe NHL favorite de chacun se choisit pendant le draft</div>
       </div>
 
       {/* Type de pool */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Type de pool</div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px' }}>
           {POOL_TYPES.map(t => (
             <button key={t.id} onClick={() => appliquerType(t.id)}
-              style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.typePool === t.id ? '1px solid #f97316' : '1px solid #222', backgroundColor: config.typePool === t.id ? 'rgba(249,115,22,0.08)' : '#111' }}>
-              <div style={{ fontSize: '14px', fontWeight: '800', color: config.typePool === t.id ? 'white' : '#ccc', marginBottom: '4px' }}>{t.label}</div>
-              <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.5' }}>{t.desc}</div>
+              style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.typePool === t.id ? '1px solid #f97316' : '1px solid var(--c-222)', backgroundColor: config.typePool === t.id ? 'rgba(249,115,22,0.08)' : 'var(--c-111)' }}>
+              <div style={{ fontSize: '14px', fontWeight: '800', color: config.typePool === t.id ? 'white' : 'var(--c-ccc)', marginBottom: '4px' }}>{t.label}</div>
+              <div style={{ fontSize: '11px', color: 'var(--c-666)', lineHeight: '1.5' }}>{t.desc}</div>
             </button>
           ))}
         </div>
       </div>
 
       {/* Systeme de points */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '14px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '14px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '4px' }}>Système de points personnalisable</div>
-        <p style={{ margin: '0 0 14px', fontSize: '11px', color: '#555' }}>Ajusté selon le type de pool sélectionné · sert aussi à calculer le score de valeur IA à l'étape 2</p>
+        <p style={{ margin: '0 0 14px', fontSize: '11px', color: 'var(--c-555)' }}>Ajusté selon le type de pool sélectionné · sert aussi à calculer le score de valeur IA à l'étape 2</p>
 
         <div style={{ marginBottom: '14px' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: POS_COLORS.F, marginBottom: '8px' }}>Attaquants</div>
@@ -366,19 +366,19 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
       {(config.salaryCapActif || typeInfo.salaryCap) && (
         <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '14px', padding: '18px', marginBottom: '14px' }}>
           <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Salary Cap</div>
-          <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#888', lineHeight: '1.6' }}>
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--c-888)', lineHeight: '1.6' }}>
             Aucune API publique ne redistribue légalement les vrais salaires NHL (vérifié : NHL officiel, PuckPedia, CapFriendly, Spotrac, CapWages, marqueur.com — tous interdisent la redistribution ou n'ont pas ces données). Les salaires se saisissent donc manuellement pendant le draft — réfère-toi à PuckPedia ou CapWages pour les vrais chiffres.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#888', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--c-888)', cursor: 'pointer' }}>
               <input type="checkbox" checked={config.salaryCapActif} onChange={e => setConfig(c => ({ ...c, salaryCapActif: e.target.checked }))} />
               Activer le plafond salarial
             </label>
             {config.salaryCapActif && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: '#888' }}>Plafond ($) :</span>
+                <span style={{ fontSize: '12px', color: 'var(--c-888)' }}>Plafond ($) :</span>
                 <input type="number" step="500000" value={config.plafond} onChange={e => setConfig(c => ({ ...c, plafond: parseInt(e.target.value) || 0 }))}
-                  style={{ width: '140px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px', color: '#f97316', fontSize: '13px', fontWeight: '800' }} />
+                  style={{ width: '140px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '6px 10px', color: '#f97316', fontSize: '13px', fontWeight: '800' }} />
               </div>
             )}
           </div>
@@ -386,36 +386,36 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
       )}
 
       {/* Composition roster */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '20px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '20px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Composition du roster</div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px' }}>
           {rosterFields.map(([cle, label]) => (
             <ChampNombre key={cle} label={label} value={config.roster[cle]} onChange={v => setRoster(cle, v)} min={0} max={cle === 'bench' ? 15 : cle === 'F' ? 20 : 12} />
           ))}
         </div>
-        <div style={{ marginTop: '12px', fontSize: '12px', color: '#555' }}>Total : <strong style={{ color: 'white' }}>{totalSlots}</strong> joueurs + <strong style={{ color: 'white' }}>1</strong> équipe par participant · <strong style={{ color: 'white' }}>{totalSlots + 1}</strong> rondes de draft</div>
+        <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--c-555)' }}>Total : <strong style={{ color: 'var(--c-white)' }}>{totalSlots}</strong> joueurs + <strong style={{ color: 'var(--c-white)' }}>1</strong> équipe par participant · <strong style={{ color: 'var(--c-white)' }}>{totalSlots + 1}</strong> rondes de draft</div>
       </div>
 
       {/* Ordre du draft */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '18px', marginBottom: '20px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '18px', marginBottom: '20px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '12px' }}>Ordre du draft</div>
 
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Type d'ordre</div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)', marginBottom: '8px' }}>Type d'ordre</div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px' }}>
             {ORDRE_TYPES.map(o => (
               <button key={o.id} onClick={() => setConfig(c => ({ ...c, ordreType: o.id }))}
-                style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.ordreType === o.id ? '1px solid #f97316' : '1px solid #222', backgroundColor: config.ordreType === o.id ? 'rgba(249,115,22,0.08)' : '#111' }}>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: config.ordreType === o.id ? 'white' : '#ccc', marginBottom: '4px' }}>{o.label}</div>
-                <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.5' }}>{o.desc}</div>
+                style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '12px', cursor: 'pointer', border: config.ordreType === o.id ? '1px solid #f97316' : '1px solid var(--c-222)', backgroundColor: config.ordreType === o.id ? 'rgba(249,115,22,0.08)' : 'var(--c-111)' }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: config.ordreType === o.id ? 'white' : 'var(--c-ccc)', marginBottom: '4px' }}>{o.label}</div>
+                <div style={{ fontSize: '11px', color: 'var(--c-666)', lineHeight: '1.5' }}>{o.desc}</div>
               </button>
             ))}
           </div>
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Ordre des participants</div>
-          <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>Glisse les participants (icône ≡) pour réorganiser l'ordre de la 1ʳᵉ ronde.</p>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)', marginBottom: '8px' }}>Ordre des participants</div>
+          <p style={{ margin: '0 0 8px', fontSize: '11px', color: 'var(--c-555)' }}>Glisse les participants (icône ≡) pour réorganiser l'ordre de la 1ʳᵉ ronde.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {config.participants.map((p, i) => (
               <div
@@ -425,21 +425,21 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
                 onDragOver={e => e.preventDefault()}
                 onDrop={() => { reordonnerParticipants(dragIndex, i); setDragIndex(null); }}
                 onDragEnd={() => setDragIndex(null)}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: dragIndex === i ? 'rgba(249,115,22,0.08)' : '#111', border: dragIndex === i ? '1px solid #f97316' : '1px solid #222', borderRadius: '10px', padding: '9px 12px', cursor: 'grab' }}>
-                <span style={{ color: '#555', fontSize: '16px', fontWeight: '700', lineHeight: 1 }}>≡</span>
-                <span style={{ fontSize: '11px', color: '#444', minWidth: '18px' }}>#{i + 1}</span>
-                <span style={{ flex: 1, fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', color: 'white' }}>{p.estMoi ? '★ ' : ''}{p.nom}</span>
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: dragIndex === i ? 'rgba(249,115,22,0.08)' : 'var(--c-111)', border: dragIndex === i ? '1px solid #f97316' : '1px solid var(--c-222)', borderRadius: '10px', padding: '9px 12px', cursor: 'grab' }}>
+                <span style={{ color: 'var(--c-555)', fontSize: '16px', fontWeight: '700', lineHeight: 1 }}>≡</span>
+                <span style={{ fontSize: '11px', color: 'var(--c-444)', minWidth: '18px' }}>#{i + 1}</span>
+                <span style={{ flex: 1, fontSize: '13px', fontWeight: p.estMoi ? '700' : '500', color: 'var(--c-white)' }}>{p.estMoi ? '★ ' : ''}{p.nom}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc', marginBottom: '8px' }}>Aperçu complet</div>
-          <p style={{ margin: '0 0 8px', fontSize: '11px', color: '#555' }}>Le choix de l'équipe NHL compte comme une ronde complète, comme un joueur.</p>
-          <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px', maxHeight: '260px', overflowY: 'auto' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)', marginBottom: '8px' }}>Aperçu complet</div>
+          <p style={{ margin: '0 0 8px', fontSize: '11px', color: 'var(--c-555)' }}>Le choix de l'équipe NHL compte comme une ronde complète, comme un joueur.</p>
+          <div style={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 12px', maxHeight: '260px', overflowY: 'auto' }}>
             {totalSlots === 0 ? (
-              <div style={{ fontSize: '12px', color: '#444' }}>Ajoute des joueurs au roster pour voir l'aperçu.</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-444)' }}>Ajoute des joueurs au roster pour voir l'aperçu.</div>
             ) : (() => {
               const nbParticipants = config.participants.length;
               const totalRondes = totalSlots + 1;
@@ -448,8 +448,8 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
                 const debut = r * nbParticipants;
                 const joueursRonde = ordreComplet.slice(debut, debut + nbParticipants);
                 return (
-                  <div key={r} style={{ fontSize: '12px', color: '#888', padding: '3px 0' }}>
-                    <strong style={{ color: 'white' }}>Ronde {r + 1}</strong> : {joueursRonde.map(p => p.nom).join(' → ')}
+                  <div key={r} style={{ fontSize: '12px', color: 'var(--c-888)', padding: '3px 0' }}>
+                    <strong style={{ color: 'var(--c-white)' }}>Ronde {r + 1}</strong> : {joueursRonde.map(p => p.nom).join(' → ')}
                   </div>
                 );
               });
@@ -461,7 +461,7 @@ function EtapeConfig({ config, setConfig, onSuivant }) {
       <button
         onClick={onSuivant}
         disabled={totalSlots === 0 || config.participants.length < 2}
-        style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', cursor: totalSlots === 0 ? 'not-allowed' : 'pointer', background: totalSlots === 0 ? '#222' : 'linear-gradient(135deg, #f97316, #ea580c)', color: totalSlots === 0 ? '#555' : 'white', fontSize: '15px', fontWeight: '700' }}>
+        style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', cursor: totalSlots === 0 ? 'not-allowed' : 'pointer', background: totalSlots === 0 ? 'var(--c-222)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: totalSlots === 0 ? 'var(--c-555)' : 'white', fontSize: '15px', fontWeight: '700' }}>
         Commencer le draft assisté →
       </button>
     </div>
@@ -477,8 +477,8 @@ function SelecteurEquipe({ participant, onChoisir }) {
 
   if (participant.equipe) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px' }}>
-        <span style={{ fontSize: '10px', color: '#666' }}>Équipe :</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '6px 10px' }}>
+        <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>Équipe :</span>
         <span style={{ fontSize: '12px', fontWeight: '800', color: '#f97316' }}>{participant.equipe}</span>
       </div>
     );
@@ -491,7 +491,7 @@ function SelecteurEquipe({ participant, onChoisir }) {
         defaultValue=""
         onChange={e => { if (e.target.value) { onChoisir(participant.id, e.target.value); setOuvert(false); } }}
         onBlur={() => setOuvert(false)}
-        style={{ backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '8px', padding: '6px 10px', color: 'white', fontSize: '12px', fontWeight: '700' }}>
+        style={{ backgroundColor: 'var(--c-111)', border: '1px solid #f97316', borderRadius: '8px', padding: '6px 10px', color: 'var(--c-white)', fontSize: '12px', fontWeight: '700' }}>
         <option value="">Choisir...</option>
         {Object.keys(LOGOS_NHL).sort().map(abbrev => (
           <option key={abbrev} value={abbrev}>{abbrev}</option>
@@ -759,11 +759,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
 
   return (
     <div style={{ padding, maxWidth: '1200px', margin: '0 auto' }}>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Configuration</button>
+      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Configuration</button>
 
       <div style={{ marginBottom: '14px' }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Draft assisté</h2>
-        <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {typeInfo.label} · {draftPicks.length} choix effectués</p>
+        <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'var(--c-white)' }}>Draft assisté</h2>
+        <p style={{ margin: 0, color: 'var(--c-666)', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {typeInfo.label} · {draftPicks.length} choix effectués</p>
       </div>
 
       {/* Bandeau tour actuel */}
@@ -776,20 +776,20 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           <div style={{ background: participantCourant?.estMoi ? 'linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.08))' : 'rgba(249,115,22,0.04)', border: participantCourant?.estMoi ? '1px solid #f97316' : '1px solid rgba(249,115,22,0.2)', borderRadius: '14px', padding: '16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <div style={{ fontSize: '10px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '4px' }}>C'est au tour de</div>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{participantCourant?.estMoi ? '🎯 ' : ''}{participantCourant?.nom}</div>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--c-white)' }}>{participantCourant?.estMoi ? '🎯 ' : ''}{participantCourant?.nom}</div>
             </div>
             <SelecteurEquipe participant={participantCourant} onChoisir={choisirEquipeParticipant} />
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#888' }}>Ronde {rondeCourante}/{totalRondes}</div>
-              <div style={{ fontSize: '12px', color: '#888' }}>Choix global #{pickIndex + 1}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-888)' }}>Ronde {rondeCourante}/{totalRondes}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-888)' }}>Choix global #{pickIndex + 1}</div>
             </div>
           </div>
         )
       ) : (
         <div style={{ backgroundColor: 'rgba(249,115,22,0.04)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '14px', padding: '14px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: '#888' }}>Choix multiples permis · Piocher pour :</span>
+          <span style={{ fontSize: '12px', color: 'var(--c-888)' }}>Choix multiples permis · Piocher pour :</span>
           <select value={participantActifBox} onChange={e => setParticipantActifBox(parseInt(e.target.value))}
-            style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '6px 10px', color: 'white', fontSize: '13px', fontWeight: '700' }}>
+            style={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '6px 10px', color: 'var(--c-white)', fontSize: '13px', fontWeight: '700' }}>
             {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''}</option>)}
           </select>
           <SelecteurEquipe participant={participantCourant} onChoisir={choisirEquipeParticipant} />
@@ -804,13 +804,13 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '8px' }}>
             {suggestions.map((j, i) => (
-              <div key={j.id} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 12px' }}>
+              <div key={j.id} style={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel] }}>#{i + 1} · {j.posReel}</span>
                   <span style={{ fontSize: '13px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</span>
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: 'white', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
-                <div style={{ fontSize: '11px', color: '#666', marginBottom: '8px' }}>{j.equipe}</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+                <div style={{ fontSize: '11px', color: 'var(--c-666)', marginBottom: '8px' }}>{j.equipe}</div>
                 <button onClick={() => demanderChoix(j)} style={{ width: '100%', padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', fontSize: '11px', fontWeight: '700' }}>Choisir</button>
               </div>
             ))}
@@ -825,14 +825,14 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
             value={recherche}
             onChange={e => { setRecherche(e.target.value); setFiltrePos('ALL'); setNbAffiches(50); rechercherJoueur(e.target.value); }}
             placeholder="Rechercher un joueur (dès 2 lettres)..."
-            style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }}
+            style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 14px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box' }}
           />
           {dropdownRechercheOuvert && recherche.trim().length >= 2 && (() => {
             const nomRechercheNorm = recherche.trim().toLowerCase();
             const manuelExistant = joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === nomRechercheNorm);
             const pickManuelExistant = manuelExistant && draftPicks.find(p => p.joueurId === manuelExistant.id);
             return (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', border: '1px solid var(--c-333)', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
                 {resultatsRecherche.map((r, i) => {
                   const trouve = joueursAvecValeur.find(j => j.id === Number(r.playerId))
                     || joueursAvecValeur.find(j => j.manuel && j.nom.toLowerCase() === r.name.toLowerCase());
@@ -855,17 +855,17 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                         setDropdownRechercheOuvert(false);
                         demanderChoix(joueur);
                       }}
-                      style={{ all: 'unset', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', width: '100%', cursor: dejaPris ? 'not-allowed' : 'pointer', borderBottom: '1px solid #222', opacity: dejaPris ? 0.5 : 1 }}
-                      onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = '#222'; }}
+                      style={{ all: 'unset', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', width: '100%', cursor: dejaPris ? 'not-allowed' : 'pointer', borderBottom: '1px solid var(--c-222)', opacity: dejaPris ? 0.5 : 1 }}
+                      onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = 'var(--c-222)'; }}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0, pointerEvents: 'none' }}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0, pointerEvents: 'none' }}
                         onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
                       <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0, pointerEvents: 'none' }} onError={e => { e.target.style.display = 'none'; }} />
                       <div style={{ flex: 1, textAlign: 'left' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{r.name}</div>
-                        <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : '#666' }}>
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{r.name}</div>
+                        <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : 'var(--c-666)' }}>
                           {dejaPris
                             ? `Pris par ${participantNomDe(pickExistant.participantId)} (ronde ${pickExistant.ronde})`
                             : `${r.teamAbbrev} · ${r.positionCode}${!trouve ? ' · pas de stats NHL' : ''}`}
@@ -884,7 +884,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     type="button"
                     onClick={() => { setAjoutManuel({ nom: recherche, positionCode: 'C', equipe: '', idConnu: null }); setDropdownRechercheOuvert(false); }}
                     style={{ all: 'unset', boxSizing: 'border-box', display: 'block', width: '100%', padding: '10px 14px', cursor: 'pointer', color: '#f97316', fontSize: '12px', fontWeight: '700' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-222)'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     + Ajouter manuellement : {recherche}
@@ -897,36 +897,36 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {['ALL', ...POS_REEL_ORDER].map(p => (
             <button key={p} onClick={() => { setFiltrePos(p); setRecherche(''); setResultatsRecherche([]); setDropdownRechercheOuvert(false); setNbAffiches(50); }} title={p === 'ALL' ? 'Tous' : POS_REEL_LABELS[p]}
-              style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtrePos === p ? (POS_REEL_COLORS[p] || '#f97316') : '#111', color: filtrePos === p ? 'white' : '#555', fontSize: '11px', fontWeight: '700' }}>{p === 'ALL' ? 'Tous' : p}</button>
+              style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtrePos === p ? (POS_REEL_COLORS[p] || '#f97316') : 'var(--c-111)', color: filtrePos === p ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '700' }}>{p === 'ALL' ? 'Tous' : p}</button>
           ))}
         </div>
       </div>
 
       {/* Ajout manuel d'un joueur non present dans les stats NHL (ex. recrue jamais jouee en LNH) */}
       {ajoutManuel && (
-        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid rgba(167,139,250,0.35)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid rgba(167,139,250,0.35)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
             <img src={ajoutManuel.equipe ? LOGOS_NHL[ajoutManuel.equipe] : undefined} alt={ajoutManuel.equipe || 'logo'}
-              style={{ width: '36px', height: '36px', objectFit: 'contain', backgroundColor: '#111', borderRadius: '8px', visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }} />
+              style={{ width: '36px', height: '36px', objectFit: 'contain', backgroundColor: 'var(--c-111)', borderRadius: '8px', visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }} />
             <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ajouter un joueur manuellement</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}>
             <div>
-              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Nom</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>Nom</div>
               <input value={ajoutManuel.nom} onChange={e => setAjoutManuel(a => ({ ...a, nom: e.target.value }))}
-                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '8px 10px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box' }} />
             </div>
             <div>
-              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Position</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>Position</div>
               <select value={ajoutManuel.positionCode} onChange={e => setAjoutManuel(a => ({ ...a, positionCode: e.target.value }))}
-                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px' }}>
+                style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '8px 10px', color: 'var(--c-white)', fontSize: '13px' }}>
                 {POSITION_FORM_OPTIONS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
               </select>
             </div>
             <div>
-              <div style={{ fontSize: '10px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Équipe</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>Équipe</div>
               <select value={ajoutManuel.equipe} onChange={e => setAjoutManuel(a => ({ ...a, equipe: e.target.value }))}
-                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px' }}>
+                style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '8px 10px', color: 'var(--c-white)', fontSize: '13px' }}>
                 <option value="">Choisir...</option>
                 {Object.keys(LOGOS_NHL).sort().map(abbrev => <option key={abbrev} value={abbrev}>{abbrev}</option>)}
               </select>
@@ -934,11 +934,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={ajouterJoueurManuel} disabled={!ajoutManuel.nom.trim() || !ajoutManuel.equipe}
-              style={{ padding: '9px 16px', borderRadius: '8px', border: 'none', cursor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'not-allowed' : 'pointer', backgroundColor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#222' : EQUIPE_COLOR, color: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? '#555' : 'white', fontSize: '12px', fontWeight: '700' }}>
+              style={{ padding: '9px 16px', borderRadius: '8px', border: 'none', cursor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'not-allowed' : 'pointer', backgroundColor: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'var(--c-222)' : EQUIPE_COLOR, color: (!ajoutManuel.nom.trim() || !ajoutManuel.equipe) ? 'var(--c-555)' : 'white', fontSize: '12px', fontWeight: '700' }}>
               Ajouter
             </button>
             <button onClick={() => setAjoutManuel(null)}
-              style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer', backgroundColor: 'transparent', color: '#888', fontSize: '12px', fontWeight: '700' }}>
+              style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid var(--c-333)', cursor: 'pointer', backgroundColor: 'transparent', color: 'var(--c-888)', fontSize: '12px', fontWeight: '700' }}>
               Annuler
             </button>
           </div>
@@ -949,27 +949,27 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
       {choixEnAttente && (
         <div onClick={() => setChoixEnAttente(null)}
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
+          <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
               <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${choixEnAttente.equipe}/${choixEnAttente.id}.png`} alt={choixEnAttente.nom}
-                style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
                 onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[choixEnAttente.equipe]; }} />
               <div>
-                <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>{choixEnAttente.nom}</div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{choixEnAttente.nom}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                   <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[choixEnAttente.posReel] }}>{choixEnAttente.posReel}</span>
-                  <span style={{ fontSize: '12px', color: '#888' }}>· {choixEnAttente.equipe}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--c-888)' }}>· {choixEnAttente.equipe}</span>
                 </div>
               </div>
             </div>
             <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '11px', color: '#777', marginBottom: '6px', fontWeight: '600' }}>Salaire ($)</div>
+              <div style={{ fontSize: '11px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>Salaire ($)</div>
               <input
                 type="number"
                 autoFocus
                 value={salairePopup}
                 onChange={e => setSalairePopup(e.target.value.replace(/[^0-9]/g, ''))}
-                style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '10px 12px', color: 'white', fontSize: '14px', fontWeight: '700', boxSizing: 'border-box' }} />
+                style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '10px 12px', color: 'var(--c-white)', fontSize: '14px', fontWeight: '700', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={confirmerChoix}
@@ -977,7 +977,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 Confirmer le choix
               </button>
               <button onClick={() => setChoixEnAttente(null)}
-                style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #333', cursor: 'pointer', backgroundColor: 'transparent', color: '#888', fontSize: '13px', fontWeight: '700' }}>
+                style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--c-333)', cursor: 'pointer', backgroundColor: 'transparent', color: 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
                 Annuler
               </button>
             </div>
@@ -989,30 +989,30 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
         <div>
           {chargement ? (
             <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <div style={{ width: '32px', height: '32px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+              <div style={{ width: '32px', height: '32px', border: '3px solid var(--c-1a1a1a)', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
               <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
-              <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>Chargement des joueurs NHL ({seasonId})...</p>
+              <p style={{ color: 'var(--c-444)', fontSize: '13px', margin: 0 }}>Chargement des joueurs NHL ({seasonId})...</p>
             </div>
           ) : erreur ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#ef4444', fontSize: '13px' }}>Impossible de charger les joueurs NHL pour l'instant.</div>
           ) : joueursFiltres.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '13px' }}>Aucun joueur trouvé</div>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--c-333)', fontSize: '13px' }}>Aucun joueur trouvé</div>
           ) : (
             <>
               {joueursFiltres.slice(0, nbAffiches).map(j => {
                 const disponible = estDisponible(j.id);
                 return (
-                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                  <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
                     <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${j.equipe}/${j.id}.png`} alt={j.nom}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }}
+                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
                       onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[j.equipe]; }} />
-                    <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: '#111', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
+                    <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
                     <div style={{ flex: 1, minWidth: '100px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: '700', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '14px', height: '14px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
                         {j.nom}
                       </div>
-                      <div style={{ fontSize: '10px', color: '#555' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>
                         {j.equipe} · {j.posGroupe === 'G'
                           ? `${j.wins}V · ${(j.savePct * 100).toFixed(1)}% arrêts`
                           : `${j.points} PTS (${j.goals}B-${j.assists}P) · ${j.gamesPlayed} PJ`}
@@ -1020,22 +1020,22 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     </div>
                     <div style={{ textAlign: 'center', flexShrink: 0 }}>
                       <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{j.valeurIA}</div>
-                      <div style={{ fontSize: '8px', color: '#555', letterSpacing: '0.3px' }}>PROJECTION</div>
+                      <div style={{ fontSize: '8px', color: 'var(--c-555)', letterSpacing: '0.3px' }}>PROJECTION</div>
                     </div>
                     {config.salaryCapActif && salaires[j.id] > 0 && (
-                      <div style={{ fontSize: '11px', color: '#888', flexShrink: 0 }}>{salaires[j.id].toLocaleString('fr-CA')} $</div>
+                      <div style={{ fontSize: '11px', color: 'var(--c-888)', flexShrink: 0 }}>{salaires[j.id].toLocaleString('fr-CA')} $</div>
                     )}
                     <button
                       onClick={() => demanderChoix(j)}
                       disabled={!disponible}
-                      style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: disponible ? 'pointer' : 'not-allowed', backgroundColor: disponible ? 'rgba(249,115,22,0.15)' : '#1a1a1a', color: disponible ? '#f97316' : '#444', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
+                      style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: disponible ? 'pointer' : 'not-allowed', backgroundColor: disponible ? 'rgba(249,115,22,0.15)' : 'var(--c-1a1a1a)', color: disponible ? '#f97316' : 'var(--c-444)', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
                       {disponible ? 'Marquer comme choisi' : 'Déjà pris'}
                     </button>
                   </div>
                 );
               })}
               {nbAffiches < joueursFiltres.length && (
-                <button onClick={() => setNbAffiches(n => n + 50)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #222', backgroundColor: '#111', color: '#888', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginTop: '4px' }}>
+                <button onClick={() => setNbAffiches(n => n + 50)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', color: 'var(--c-888)', cursor: 'pointer', fontSize: '12px', fontWeight: '600', marginTop: '4px' }}>
                   Voir plus ({joueursFiltres.length - nbAffiches} restants)
                 </button>
               )}
@@ -1045,24 +1045,24 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
 
         {/* Roster en construction */}
         <div>
-          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '14px', padding: '14px', position: isMobile ? 'static' : 'sticky', top: '16px' }}>
+          <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '14px', padding: '14px', position: isMobile ? 'static' : 'sticky', top: '16px' }}>
             <select value={participantVu} onChange={e => setParticipantVu(parseInt(e.target.value))}
-              style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '8px 10px', color: 'white', fontSize: '13px', fontWeight: '700', marginBottom: '10px' }}>
+              style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '8px 10px', color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', marginBottom: '10px' }}>
               {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''}</option>)}
             </select>
 
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
               {besoinsVu.map(b => (
-                <div key={b.pos} style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', padding: '5px 8px', textAlign: 'center', flex: 1, minWidth: '48px' }}>
+                <div key={b.pos} style={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', padding: '5px 8px', textAlign: 'center', flex: 1, minWidth: '48px' }}>
                   <div style={{ fontSize: '9px', color: POS_COLORS[b.pos], fontWeight: '700' }}>{b.pos}</div>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'white' }}>{b.pris}/{b.total}</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--c-white)' }}>{b.pris}/{b.total}</div>
                 </div>
               ))}
             </div>
 
             {config.salaryCapActif && (
-              <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
-                <div style={{ fontSize: '9px', color: '#666' }}>BUDGET RESTANT</div>
+              <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>BUDGET RESTANT</div>
                 <div style={{ fontSize: '14px', fontWeight: '900', color: (budgetRestant(participantVu) || 0) < 0 ? '#ef4444' : '#22c55e' }}>
                   {(budgetRestant(participantVu) || 0).toLocaleString('fr-CA')} $
                 </div>
@@ -1070,27 +1070,27 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
             )}
 
             {rosterVu.length === 0 ? (
-              <div style={{ color: '#333', fontSize: '12px', padding: '10px 0' }}>Aucun joueur sélectionné pour l'instant.</div>
+              <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>Aucun joueur sélectionné pour l'instant.</div>
             ) : (
               <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
                 {rosterVu.map((j) => {
                   const idxGlobal = draftPicks.indexOf(j);
                   if (j.type === 'equipe') {
                     return (
-                      <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
-                        <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>{j.pick}</span>
+                      <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid var(--c-161616)' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '18px' }}>{j.pick}</span>
                         <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
-                        <span style={{ flex: 1, fontSize: '12px', color: 'white', fontWeight: '700' }}>Équipe : {j.equipe}</span>
-                        <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                        <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', fontWeight: '700' }}>Équipe : {j.equipe}</span>
+                        <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: 'var(--c-444)', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                       </div>
                     );
                   }
                   return (
-                    <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid #161616' }}>
-                      <span style={{ fontSize: '10px', color: '#444', minWidth: '18px' }}>{j.pick}</span>
+                    <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid var(--c-161616)' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '18px' }}>{j.pick}</span>
                       <span style={{ fontSize: '9px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel] }}>{j.posReel}</span>
-                      <span style={{ flex: 1, fontSize: '12px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
-                      <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                      <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                      <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: 'var(--c-444)', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                     </div>
                   );
                 })}
@@ -1100,7 +1100,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
             <button
               onClick={onSuivant}
               disabled={draftPicks.length === 0}
-              style={{ width: '100%', marginTop: '14px', padding: '12px', borderRadius: '10px', border: 'none', cursor: draftPicks.length === 0 ? 'not-allowed' : 'pointer', background: draftPicks.length === 0 ? '#222' : 'linear-gradient(135deg, #f97316, #ea580c)', color: draftPicks.length === 0 ? '#555' : 'white', fontSize: '13px', fontWeight: '700' }}>
+              style={{ width: '100%', marginTop: '14px', padding: '12px', borderRadius: '10px', border: 'none', cursor: draftPicks.length === 0 ? 'not-allowed' : 'pointer', background: draftPicks.length === 0 ? 'var(--c-222)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: draftPicks.length === 0 ? 'var(--c-555)' : 'white', fontSize: '13px', fontWeight: '700' }}>
               {draftTermine ? 'Voir le résumé →' : 'Voir le résumé (draft en cours) →'}
             </button>
           </div>
@@ -1145,46 +1145,46 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
   const STATUT_STYLE = {
     force: { color: '#22c55e', label: 'Force' },
     faiblesse: { color: '#ef4444', label: 'Faiblesse' },
-    neutre: { color: '#666', label: 'Neutre' },
+    neutre: { color: 'var(--c-666)', label: 'Neutre' },
   };
 
   return (
     <div style={{ padding, maxWidth: '1000px', margin: '0 auto' }}>
-      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Draft</button>
+      <button onClick={onRetour} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>← Draft</button>
 
-      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>Résumé du roster</h2>
-      <p style={{ margin: '0 0 16px', color: '#666', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {getTypeInfo(config.typePool).label} · {config.participants.length} participants</p>
+      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'var(--c-white)' }}>Résumé du roster</h2>
+      <p style={{ margin: '0 0 16px', color: 'var(--c-666)', fontSize: '13px' }}>{config.nomPool || 'Mon pool'} · {getTypeInfo(config.typePool).label} · {config.participants.length} participants</p>
 
       <select value={participantVu} onChange={e => setParticipantVu(parseInt(e.target.value))}
-        style={{ width: '100%', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', padding: '10px 14px', color: 'white', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
+        style={{ width: '100%', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 14px', color: 'var(--c-white)', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
         {config.participants.map(p => <option key={p.id} value={p.id}>{p.estMoi ? '★ ' : ''}{p.nom}{p.equipe ? ` (${p.equipe})` : ''} — {rosterDe(p.id).length}/{totalRondes}</option>)}
       </select>
 
       <div style={{ display: 'grid', gridTemplateColumns: config.salaryCapActif ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
-        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{roster.length}/{totalRondes}</div>
-          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rondes complétées</div>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--c-white)' }}>{roster.length}/{totalRondes}</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-555)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rondes complétées</div>
         </div>
-        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{projection}</div>
-          <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Projection de points</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-555)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Projection de points</div>
         </div>
         {config.salaryCapActif && (
-          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
             <div style={{ fontSize: '16px', fontWeight: '900', color: budgetUtilise > config.plafond ? '#ef4444' : '#22c55e' }}>{budgetUtilise.toLocaleString('fr-CA')} $</div>
-            <div style={{ fontSize: '10px', color: '#555', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>sur {config.plafond.toLocaleString('fr-CA')} $</div>
+            <div style={{ fontSize: '10px', color: 'var(--c-555)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>sur {config.plafond.toLocaleString('fr-CA')} $</div>
           </div>
         )}
       </div>
 
       {/* Forces / faiblesses */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '16px', marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Analyse forces / faiblesses</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {analyse.map(a => (
-            <div key={a.pos} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
+            <div key={a.pos} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px' }}>
               <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[a.pos], minWidth: '28px' }}>{a.pos}</span>
-              <span style={{ flex: 1, fontSize: '12px', color: '#888' }}>{POS_LABELS[a.pos]} · {a.pris}/{a.total} · valeur moy. {a.valeurMoyenneMoi}</span>
+              <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-888)' }}>{POS_LABELS[a.pos]} · {a.pris}/{a.total} · valeur moy. {a.valeurMoyenneMoi}</span>
               <span style={{ fontSize: '11px', fontWeight: '700', color: STATUT_STYLE[a.statut].color }}>{STATUT_STYLE[a.statut].label}</span>
             </div>
           ))}
@@ -1192,12 +1192,12 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
       </div>
 
       {roster.filter(j => j.type === 'equipe').map(j => (
-        <div key={j.pick} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '12px' }}>
+        <div key={j.pick} style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '16px', marginBottom: '12px' }}>
           <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Équipe favorite</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
-            <span style={{ fontSize: '10px', color: '#444', minWidth: '20px' }}>#{j.pick}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '20px' }}>#{j.pick}</span>
             <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-            <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'white' }}>{j.equipe}</span>
+            <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{j.equipe}</span>
           </div>
         </div>
       ))}
@@ -1206,15 +1206,15 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
         const joueursPos = roster.filter(j => j.posGroupe === pos).sort((a, b) => a.pick - b.pick);
         if (joueursPos.length === 0) return null;
         return (
-          <div key={pos} style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '16px', marginBottom: '12px' }}>
+          <div key={pos} style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '16px', marginBottom: '12px' }}>
             <div style={{ fontSize: '11px', color: POS_COLORS[pos], fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>{POS_LABELS[pos]} · {joueursPos.length}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {joueursPos.map(j => (
-                <div key={j.joueurId} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px' }}>
-                  <span style={{ fontSize: '10px', color: '#444', minWidth: '20px' }}>#{j.pick}</span>
-                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '600', color: 'white' }}>{j.nom}</span>
-                  <span style={{ fontSize: '11px', color: '#555' }}>{j.equipe}</span>
-                  {config.salaryCapActif && <span style={{ fontSize: '11px', color: '#888' }}>{(salaires[j.joueurId] || 0).toLocaleString('fr-CA')} $</span>}
+                <div key={j.joueurId} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '20px' }}>#{j.pick}</span>
+                  <span style={{ flex: 1, fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{j.nom}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--c-555)' }}>{j.equipe}</span>
+                  {config.salaryCapActif && <span style={{ fontSize: '11px', color: 'var(--c-888)' }}>{(salaires[j.joueurId] || 0).toLocaleString('fr-CA')} $</span>}
                   <span style={{ fontSize: '12px', fontWeight: '800', color: '#f97316' }}>{j.valeurIA}</span>
                 </div>
               ))}
@@ -1224,10 +1224,10 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
       })}
 
       {roster.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '13px' }}>{participant?.nom} n'a encore aucun joueur drafté.</div>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--c-333)', fontSize: '13px' }}>{participant?.nom} n'a encore aucun joueur drafté.</div>
       )}
 
-      <button onClick={onRecommencer} style={{ width: '100%', marginTop: '10px', padding: '14px', borderRadius: '12px', border: '1px solid #222', cursor: 'pointer', backgroundColor: '#111', color: '#888', fontSize: '13px', fontWeight: '700' }}>
+      <button onClick={onRecommencer} style={{ width: '100%', marginTop: '10px', padding: '14px', borderRadius: '12px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: 'var(--c-111)', color: 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
         ↺ Recommencer un nouveau pool
       </button>
     </div>

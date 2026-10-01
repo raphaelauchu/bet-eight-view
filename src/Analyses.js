@@ -155,7 +155,7 @@ function SelecteurSaisonDiscret({ saison, onChange }) {
         <button
           key={s.gameType}
           onClick={() => onChange(s)}
-          style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: saison.gameType === s.gameType ? '#f97316' : '#1a1a1a', color: saison.gameType === s.gameType ? 'white' : '#888', fontSize: '11px', fontWeight: saison.gameType === s.gameType ? 'bold' : 'normal' }}
+          style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: saison.gameType === s.gameType ? '#f97316' : 'var(--c-1a1a1a)', color: saison.gameType === s.gameType ? 'white' : 'var(--c-888)', fontSize: '11px', fontWeight: saison.gameType === s.gameType ? 'bold' : 'normal' }}
         >
           {s.label}
         </button>
@@ -182,7 +182,7 @@ function PointsIndicateur({ total, actif }) {
   return (
     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginTop: '16px' }}>
       {Array(total).fill(null).map((_, i) => (
-        <div key={i} style={{ width: i === actif ? '24px' : '8px', height: '8px', borderRadius: '4px', backgroundColor: i === actif ? '#f97316' : '#333', transition: 'all 0.3s' }} />
+        <div key={i} style={{ width: i === actif ? '24px' : '8px', height: '8px', borderRadius: '4px', backgroundColor: i === actif ? '#f97316' : 'var(--c-333)', transition: 'all 0.3s' }} />
       ))}
     </div>
   );
@@ -206,19 +206,19 @@ function CarrouselDivisions({ classement }) {
     }, 5000);
     return () => clearInterval(interval);
   }, [listeDivisions.length]);
-  if (listeDivisions.length === 0) return <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#666' }}>Chargement...</p></div>;
+  if (listeDivisions.length === 0) return <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--c-666)' }}>Chargement...</p></div>;
   const [nomDiv, equipes] = listeDivisions[indexActif];
   return (
     <div>
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>Division {nomDiv}</h3>
-          <span style={{ color: '#666', fontSize: '12px' }}>{indexActif + 1} / {listeDivisions.length}</span>
+          <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{indexActif + 1} / {listeDivisions.length}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
           {equipes.slice(0, 10).map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
-              <span style={{ color: i < 3 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : 'var(--c-1a1a1a)', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
+              <span style={{ color: i < 3 ? '#f97316' : 'var(--c-555)', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
               <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
               <span style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}>{e.teamAbbrev?.default}</span>
               <span style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{e.points} pts</span>
@@ -252,17 +252,17 @@ function CarrouselMeneurs({ meneurs }) {
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{cat.label}</h3>
-          <span style={{ color: '#666', fontSize: '12px' }}>{indexActif + 1} / 3</span>
+          <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{indexActif + 1} / 3</span>
         </div>
-        {cat.data.length === 0 ? <p style={{ color: '#666' }}>Chargement...</p> : (
+        {cat.data.length === 0 ? <p style={{ color: 'var(--c-666)' }}>Chargement...</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             {cat.data.map((j, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : '#1a1a1a', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
-                <span style={{ color: i === 0 ? '#f97316' : '#555', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : 'var(--c-1a1a1a)', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
+                <span style={{ color: i === 0 ? '#f97316' : 'var(--c-555)', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
                 <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{j.nom}</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{j.equipe} · {j.position}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{j.equipe} · {j.position}</div>
                 </div>
                 <span style={{ fontSize: '14px', fontWeight: '900', color: '#f97316' }}>{j.valeur}</span>
               </div>
@@ -280,28 +280,28 @@ function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
   return (
     <div
       onClick={() => onSelect(joueur)}
-      style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', border: estChaud ? '1px solid #f97316' : '1px solid #222', padding: isMobile ? '8px 4px' : '10px 8px', textAlign: 'center', cursor: 'pointer', position: 'relative', flex: 1, minWidth: isMobile ? '60px' : '80px' }}
+      style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', border: estChaud ? '1px solid #f97316' : '1px solid var(--c-222)', padding: isMobile ? '8px 4px' : '10px 8px', textAlign: 'center', cursor: 'pointer', position: 'relative', flex: 1, minWidth: isMobile ? '60px' : '80px' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = estChaud ? '#f97316' : '#222'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = estChaud ? '#f97316' : 'var(--c-222)'}
     >
       {estChaud && (
         <div style={{ position: 'absolute', top: '-7px', right: '-3px', backgroundColor: '#f97316', borderRadius: '8px', padding: '1px 5px', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>HOT</div>
       )}
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
-      <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'white', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
-      <div style={{ fontSize: '9px', color: '#666', marginBottom: '4px' }}>#{joueur.numero}</div>
+      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'var(--c-white)', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
+      <div style={{ fontSize: '9px', color: 'var(--c-666)', marginBottom: '4px' }}>#{joueur.numero}</div>
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
         <div>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.goals != null ? '#f97316' : '#444' }}>{joueur.goals ?? '-'}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>B</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.goals != null ? '#f97316' : 'var(--c-444)' }}>{joueur.goals ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>B</div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.assists != null ? 'white' : '#444' }}>{joueur.assists ?? '-'}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>A</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.assists != null ? 'white' : 'var(--c-444)' }}>{joueur.assists ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>A</div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.points != null ? 'white' : '#444' }}>{joueur.points ?? '-'}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>PTS</div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.points != null ? 'white' : 'var(--c-444)' }}>{joueur.points ?? '-'}</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>PTS</div>
         </div>
       </div>
     </div>
@@ -312,20 +312,20 @@ function SectionGardien({ gardien, onSelect }) {
   if (!gardien) return null;
   return (
     <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${gardien.equipe}/${gardien.id}.png`} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#111' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
+      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${gardien.equipe}/${gardien.id}.png`} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
-        <div style={{ fontSize: '15px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{gardien.nom}</div>
-        <div style={{ fontSize: '11px', color: '#666' }}>#{gardien.numero}</div>
+        <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '2px' }}>{gardien.nom}</div>
+        <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>#{gardien.numero}</div>
       </div>
       <div style={{ display: 'flex', gap: '16px' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{gardien.gaa ?? '-'}</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>GAA</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>GAA</div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{gardien.svp ?? '-'}</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>SV%</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--c-white)' }}>{gardien.svp ?? '-'}</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>SV%</div>
         </div>
       </div>
       <span style={{ color: '#f97316', fontSize: '12px' }}>→</span>
@@ -387,54 +387,54 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
 
   if (dejaJoue) {
     return (
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
-        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '18px', marginBottom: '18px' }}>
+        <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '16px 0' }}>Ce match a déjà été joué</div>
       </div>
     );
   }
 
   if (!aDesCotes) {
     return (
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
-        <div style={{ textAlign: 'center', color: '#555', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match <span style={{ color: '#444' }}>(souvent le cas hors saison régulière ou en match préparatoire)</span></div>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '18px', marginBottom: '18px' }}>
+        <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '16px 0' }}>Cotes non disponibles pour ce match <span style={{ color: 'var(--c-444)' }}>(souvent le cas hors saison régulière ou en match préparatoire)</span></div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', border: '1px solid #222', padding: '18px', marginBottom: '18px' }}>
+    <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '18px', marginBottom: '18px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', border: '1px solid var(--c-222)', padding: '12px', textAlign: 'center' }}>
           <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
-          <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom1}</div>
+          <div style={{ fontSize: '11px', color: 'var(--c-white)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom1}</div>
           <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(ml1?.price)}</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)' }}>{formatCote(ml1?.price)}</div>
           </div>
           <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Spread</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp1)}</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Spread</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)' }}>{formatSpread(sp1)}</div>
           </div>
         </div>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', border: '1px solid #f97316', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Total</div>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
-          <div style={{ fontSize: '9px', color: '#555', fontWeight: 'bold', letterSpacing: '1px' }}>O/U</div>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '2px' }}>{over?.point ?? under?.point ?? '-'}</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-555)', fontWeight: 'bold', letterSpacing: '1px' }}>O/U</div>
         </div>
-        <div style={{ backgroundColor: '#111', borderRadius: '12px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', border: '1px solid var(--c-222)', padding: '12px', textAlign: 'center' }}>
           <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
-          <div style={{ fontSize: '11px', color: 'white', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom2}</div>
+          <div style={{ fontSize: '11px', color: 'var(--c-white)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom2}</div>
           <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Moneyline</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatCote(ml2?.price)}</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Moneyline</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)' }}>{formatCote(ml2?.price)}</div>
           </div>
           <div>
-            <div style={{ fontSize: '9px', color: '#555', marginBottom: '2px' }}>Spread</div>
-            <div style={{ fontSize: '12px', fontWeight: '700', color: '#ccc' }}>{formatSpread(sp2)}</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Spread</div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-ccc)' }}>{formatSpread(sp2)}</div>
           </div>
         </div>
       </div>
-      {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: '#444', marginTop: '10px' }}>Cotes : {donnees.bookmaker}</div>}
+      {donnees.bookmaker && <div style={{ textAlign: 'center', fontSize: '10px', color: 'var(--c-444)', marginTop: '10px' }}>Cotes : {donnees.bookmaker}</div>}
     </div>
   );
 }
@@ -503,29 +503,29 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
   return (
     <div
       onClick={() => onSelect(joueur)}
-      style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '6px' }}
+      style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', border: '1px solid var(--c-222)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '6px' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.4)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <span style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '999px', padding: '3px 7px', fontSize: '10px', fontWeight: '900', flexShrink: 0 }}>o{ligneMaison.ligne}</span>
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
-        <div style={{ fontSize: '10px', color: '#666' }}>#{joueur.numero}</div>
+        <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+        <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>#{joueur.numero}</div>
       </div>
       <MiniSparkline valeurs={ligneMaison.historique} couleur={couleurCategorie} />
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <div style={{ textAlign: 'center', width: '22px' }}>
           <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneL5, ligneMaison.ligne) }}>{ligneMaison.moyenneL5.toFixed(1)}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>L5</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>L5</div>
         </div>
         <div style={{ textAlign: 'center', width: '22px' }}>
           <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneL10, ligneMaison.ligne) }}>{ligneMaison.moyenneL10.toFixed(1)}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>L10</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>L10</div>
         </div>
         <div style={{ textAlign: 'center', width: '22px' }}>
           <div style={{ fontSize: '11px', fontWeight: '900', color: couleurVsLigne(ligneMaison.moyenneSzn, ligneMaison.ligne) }}>{ligneMaison.moyenneSzn.toFixed(1)}</div>
-          <div style={{ fontSize: '8px', color: '#555' }}>Szn</div>
+          <div style={{ fontSize: '8px', color: 'var(--c-555)' }}>Szn</div>
         </div>
       </div>
     </div>
@@ -581,10 +581,10 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
           <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h3>
         </div>
         {avecLigne.length === 0 ? (
-          <p style={{ color: '#555', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>Aucune donnée disponible.</p>
+          <p style={{ color: 'var(--c-555)', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>Aucune donnée disponible.</p>
         ) : avecLigne.map(j => <CarteLigneMaison key={j.id} joueur={j} ligneMaison={lignesCategorie[j.id]} couleurCategorie={couleurCategorieActive} onSelect={onSelect} isMobile={isMobile} />)}
       </div>
     );
@@ -594,12 +594,12 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
     <div>
       <div style={{ display: 'flex', gap: '4px', marginBottom: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
         {CATEGORIES_LIGNES_MAISON.map(cat => (
-          <button key={cat.cle} onClick={() => setCategorieActive(cat.cle)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieActive === cat.cle ? cat.couleur : '#0d0d0d', color: categorieActive === cat.cle ? 'white' : '#666', fontSize: '11px', fontWeight: '700' }}>{cat.label}</button>
+          <button key={cat.cle} onClick={() => setCategorieActive(cat.cle)} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieActive === cat.cle ? cat.couleur : 'var(--c-0d0d0d)', color: categorieActive === cat.cle ? 'white' : 'var(--c-666)', fontSize: '11px', fontWeight: '700' }}>{cat.label}</button>
         ))}
       </div>
-      <div style={{ fontSize: '10px', color: '#555', marginBottom: '14px' }}>Lignes maison calculées à partir de la moyenne des 10 derniers matchs (données réelles, pas des cotes de bookmaker).</div>
+      <div style={{ fontSize: '10px', color: 'var(--c-555)', marginBottom: '14px' }}>Lignes maison calculées à partir de la moyenne des 10 derniers matchs (données réelles, pas des cotes de bookmaker).</div>
       {chargementCategorie ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Calcul des tendances...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Calcul des tendances...</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
           {colonneEquipe(patineurs1, abbrev1, nom1)}
@@ -707,7 +707,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
       <BlocCotesSportsbook donnees={cotes} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} dejaJoue={dejaJoue} />
 
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Gardiens partants</div>
+        <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Gardiens partants</div>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
           <SectionGardien gardien={gardien1} onSelect={onSelectJoueur} />
           <SectionGardien gardien={gardien2} onSelect={onSelectJoueur} />
@@ -715,7 +715,7 @@ function ApercuMatchup({ match, lineupDF, onSelectJoueur, onBack }) {
       </div>
 
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Chargement des alignements...</p>
       ) : (
         <SectionLignesMaison roster1={roster1} roster2={roster2} abbrev1={abbrev1} abbrev2={abbrev2} nom1={nom1} nom2={nom2} onSelect={onSelectJoueur} isMobile={isMobile} />
       )}
@@ -800,17 +800,17 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
     <div style={{ marginBottom: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f97316' }}>
         <img src={logo} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'white' }}>{nom}</h3>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h3>
       </div>
       <div style={{ marginBottom: '14px' }}>
         <SectionGardien gardien={gardienDF} onSelect={onSelect} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
         <div>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Attaquants</div>
           {(lignesDF || lignes).map((ligne, li) => (
             <div key={li} style={{ marginBottom: '8px' }}>
-              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Line {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '4px' }}>Line {li + 1} · {ligne.reduce((s, j) => s + (j.points || 0), 0)} pts</div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 {ligne.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={joueurChaud?.id === j.id && (j.points || 0) > 0} isMobile={isMobile} />)}
               </div>
@@ -818,10 +818,10 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
           ))}
         </div>
         <div>
-          <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Defenseurs</div>
+          <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Defenseurs</div>
           {(pairesDF || paires).map((paire, pi) => (
             <div key={pi} style={{ marginBottom: '8px' }}>
-              <div style={{ fontSize: '9px', color: '#555', marginBottom: '4px' }}>Paire {pi + 1}</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '4px' }}>Paire {pi + 1}</div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 {paire.map((j, i) => <CarteJoueurLigne key={i} joueur={j} onSelect={onSelect} estChaud={false} isMobile={isMobile} />)}
               </div>
@@ -829,7 +829,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
           ))}
           {forwards.length > 0 && (
             <div style={{ marginTop: '12px' }}>
-              <div style={{ fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Power Play</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Power Play</div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ fontSize: '9px', color: '#f97316', marginBottom: '4px' }}>PP1</div>
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
@@ -868,16 +868,16 @@ function CarteMatchJoueurs({ match, onOpenMatchup }) {
   return (
     <div
       onClick={() => onOpenMatchup(match)}
-      style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px', padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}
+      style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', overflow: 'hidden', marginBottom: '10px', padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px', flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</span>
         </div>
-        <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>@</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</span>
           <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
@@ -886,8 +886,8 @@ function CarteMatchJoueurs({ match, onOpenMatchup }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         {etat === 'LIVE' || etat === 'CRIT'
           ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
-          : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
-        <span style={{ color: '#444', fontSize: '11px' }}>→</span>
+          : <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{heure}</span>}
+        <span style={{ color: 'var(--c-444)', fontSize: '11px' }}>→</span>
       </div>
     </div>
   );
@@ -896,12 +896,12 @@ function CarteMatchJoueurs({ match, onOpenMatchup }) {
 function FiltreSelect({ label, value, onChange, options, disabled }) {
   return (
     <div>
-      <label style={{ display: 'block', fontSize: '10px', color: '#666', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
       <select
         value={value}
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
-        style={{ padding: '8px 10px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: 'white', fontSize: '12px', outline: 'none', minWidth: '140px' }}
+        style={{ padding: '8px 10px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '12px', outline: 'none', minWidth: '140px' }}
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -914,10 +914,10 @@ const OPTIONS_TYPE = [{ value: 'reg', label: 'Saison régulière' }, { value: 'p
 const OPTIONS_POSITION = [{ value: 'ALL', label: 'Tous' }, { value: 'C', label: 'Centre' }, { value: 'L', label: 'Ailier gauche' }, { value: 'R', label: 'Ailier droit' }, { value: 'D', label: 'Défenseur' }];
 
 function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
-  if (!joueurs || joueurs.length === 0) return <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>;
+  if (!joueurs || joueurs.length === 0) return <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>;
   const [premier, ...reste] = joueurs;
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '14px' }}>
+    <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px', marginBottom: '14px' }}>
       <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: '#f97316' }}>{titre}</h3>
       <div
         onClick={() => onSelectJoueur({ id: premier.id, nom: premier.nom, position: premier.position, equipe: premier.equipe, numero: '' })}
@@ -927,8 +927,8 @@ function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
       >
         <img src={LOGOS_NHL[premier.equipe]} alt={premier.equipe} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: '900', fontSize: '15px', color: 'white' }}>{premier.nom}</div>
-          <div style={{ color: '#666', fontSize: '12px' }}>{premier.equipe}</div>
+          <div style={{ fontWeight: '900', fontSize: '15px', color: 'var(--c-white)' }}>{premier.nom}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '12px' }}>{premier.equipe}</div>
         </div>
         <div style={{ fontSize: '24px', fontWeight: '900', color: '#f97316' }}>{premier[statKey]}</div>
       </div>
@@ -938,11 +938,11 @@ function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
             key={j.id}
             onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: j.position, equipe: j.equipe, numero: '' })}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <span style={{ width: '18px', color: '#555', fontSize: '12px', fontWeight: 'bold' }}>{j.rang}</span>
-            <span style={{ flex: 1, fontSize: '13px', color: 'white' }}>{j.nom} <span style={{ color: '#666' }}>· {j.equipe}</span></span>
+            <span style={{ width: '18px', color: 'var(--c-555)', fontSize: '12px', fontWeight: 'bold' }}>{j.rang}</span>
+            <span style={{ flex: 1, fontSize: '13px', color: 'var(--c-white)' }}>{j.nom} <span style={{ color: 'var(--c-666)' }}>· {j.equipe}</span></span>
             <span style={{ fontWeight: '900', fontSize: '13px', color: '#f97316' }}>{j[statKey]}</span>
           </div>
         ))}
@@ -981,7 +981,7 @@ function OngletHomeStats({ onSelectJoueur }) {
         <button onClick={chargerMeneurs} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
       </div>
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
           <ListeMeneurs titre="Points" joueurs={meneurs.points} statKey="points" onSelectJoueur={onSelectJoueur} />
@@ -1032,38 +1032,38 @@ function OngletSkatersStats({ onSelectJoueur }) {
         <button onClick={() => chargerSkaters(0)} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
       </div>
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
-          <div style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: '#0d0d0d', borderBottom: '1px solid #222', fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', border: '1px solid var(--c-222)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: 'var(--c-0d0d0d)', borderBottom: '1px solid var(--c-222)', fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase' }}>
               <span>#</span><span></span><span>Nom</span><span>Équipe</span>{!isMobile && <span>Pos</span>}<span>PJ</span><span>B</span><span>A</span><span>PTS</span>
             </div>
             {joueurs.map(j => (
               <div
                 key={j.id}
                 onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: j.position, equipe: j.equipe, numero: '' })}
-                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', fontSize: '12px' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid var(--c-1a1a1a)', cursor: 'pointer', fontSize: '12px' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <span style={{ color: '#555' }}>{j.rang}</span>
+                <span style={{ color: 'var(--c-555)' }}>{j.rang}</span>
                 <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-                <span style={{ color: 'white', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
-                <span style={{ color: '#888' }}>{j.equipe}</span>
-                {!isMobile && <span style={{ color: '#888' }}>{j.position}</span>}
-                <span style={{ color: '#888' }}>{j.gp}</span>
-                <span style={{ color: '#888' }}>{j.goals}</span>
-                <span style={{ color: '#888' }}>{j.assists}</span>
+                <span style={{ color: 'var(--c-white)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.equipe}</span>
+                {!isMobile && <span style={{ color: 'var(--c-888)' }}>{j.position}</span>}
+                <span style={{ color: 'var(--c-888)' }}>{j.gp}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.goals}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.assists}</span>
                 <span style={{ color: '#f97316', fontWeight: '900' }}>{j.points}</span>
               </div>
             ))}
-            {joueurs.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
+            {joueurs.length === 0 && <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
-            <button onClick={() => page > 0 && chargerSkaters(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: page === 0 ? '#444' : 'white', fontSize: '12px' }}>Page précédente</button>
-            <span style={{ color: '#666', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
-            <button onClick={() => (page + 1) * 50 < total && chargerSkaters(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: (page + 1) * 50 >= total ? '#444' : 'white', fontSize: '12px' }}>Page suivante</button>
+            <button onClick={() => page > 0 && chargerSkaters(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: 'var(--c-1a1a1a)', color: page === 0 ? 'var(--c-444)' : 'white', fontSize: '12px' }}>Page précédente</button>
+            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
+            <button onClick={() => (page + 1) * 50 < total && chargerSkaters(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: 'var(--c-1a1a1a)', color: (page + 1) * 50 >= total ? 'var(--c-444)' : 'white', fontSize: '12px' }}>Page suivante</button>
           </div>
         </>
       )}
@@ -1107,36 +1107,36 @@ function OngletGoaliesStats({ onSelectJoueur }) {
         <button onClick={() => chargerGoalies(0)} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
       </div>
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
-          <div style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: '#0d0d0d', borderBottom: '1px solid #222', fontSize: '10px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', border: '1px solid var(--c-222)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '10px 12px', backgroundColor: 'var(--c-0d0d0d)', borderBottom: '1px solid var(--c-222)', fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', textTransform: 'uppercase' }}>
               <span>#</span><span></span><span>Nom</span><span>Équipe</span><span>PJ</span><span>GAA</span><span>SV%</span>
             </div>
             {gardiens.map(j => (
               <div
                 key={j.id}
                 onClick={() => onSelectJoueur({ id: j.id, nom: j.nom, position: 'G', equipe: j.equipe, numero: '' })}
-                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', fontSize: '12px' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+                style={{ display: 'grid', gridTemplateColumns: colonnes, gap: '6px', padding: '8px 12px', alignItems: 'center', borderBottom: '1px solid var(--c-1a1a1a)', cursor: 'pointer', fontSize: '12px' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <span style={{ color: '#555' }}>{j.rang}</span>
+                <span style={{ color: 'var(--c-555)' }}>{j.rang}</span>
                 <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-                <span style={{ color: 'white', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
-                <span style={{ color: '#888' }}>{j.equipe}</span>
-                <span style={{ color: '#888' }}>{j.gp}</span>
+                <span style={{ color: 'var(--c-white)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.equipe}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.gp}</span>
                 <span style={{ color: '#f97316', fontWeight: '900' }}>{j.gaa}</span>
-                <span style={{ color: '#888' }}>{j.svp}</span>
+                <span style={{ color: 'var(--c-888)' }}>{j.svp}</span>
               </div>
             ))}
-            {gardiens.length === 0 && <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
+            {gardiens.length === 0 && <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Aucune donnee.</p>}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
-            <button onClick={() => page > 0 && chargerGoalies(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: page === 0 ? '#444' : 'white', fontSize: '12px' }}>Page précédente</button>
-            <span style={{ color: '#666', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
-            <button onClick={() => (page + 1) * 50 < total && chargerGoalies(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: '#1a1a1a', color: (page + 1) * 50 >= total ? '#444' : 'white', fontSize: '12px' }}>Page suivante</button>
+            <button onClick={() => page > 0 && chargerGoalies(page - 1)} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: page === 0 ? 'default' : 'pointer', backgroundColor: 'var(--c-1a1a1a)', color: page === 0 ? 'var(--c-444)' : 'white', fontSize: '12px' }}>Page précédente</button>
+            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{total > 0 ? `${page * 50 + 1}-${Math.min((page + 1) * 50, total)} / ${total}` : ''}</span>
+            <button onClick={() => (page + 1) * 50 < total && chargerGoalies(page + 1)} disabled={(page + 1) * 50 >= total} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: (page + 1) * 50 >= total ? 'default' : 'pointer', backgroundColor: 'var(--c-1a1a1a)', color: (page + 1) * 50 >= total ? 'var(--c-444)' : 'white', fontSize: '12px' }}>Page suivante</button>
           </div>
         </>
       )}
@@ -1260,24 +1260,24 @@ function PageStatsJoueurs({ onSelectJoueur }) {
     <div>
       <div style={{ marginBottom: '14px', position: 'relative' }}>
         <input
-          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Search players..."
           value={filtre}
           onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
         {recherchJoueurs.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', border: '1px solid var(--c-333)', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
             {recherchJoueurs.map((j, i) => (
               <div key={i}
                 onClick={() => { onSelectJoueur({ id: j.playerId, nom: j.name, position: j.positionCode, equipe: j.teamAbbrev || '', numero: j.sweaterNumber || '' }); setRechercheJoueurs([]); setFiltre(''); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid #222' : 'none' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid var(--c-222)' : 'none' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-222)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <img src={LOGOS_NHL[j.teamAbbrev]} alt={j.teamAbbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{j.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{j.teamAbbrev} · {j.positionCode}</div>
                 </div>
               </div>
             ))}
@@ -1286,13 +1286,13 @@ function PageStatsJoueurs({ onSelectJoueur }) {
       </div>
 
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : aucunMatch ? (
         <>
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-            <button onClick={() => setOngletSaisonMorte('home')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'home' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'home' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'home' ? '600' : 'normal' }}>Home</button>
-            <button onClick={() => setOngletSaisonMorte('skaters')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'skaters' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'skaters' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'skaters' ? '600' : 'normal' }}>Skaters</button>
-            <button onClick={() => setOngletSaisonMorte('goalies')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'goalies' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'goalies' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletSaisonMorte === 'goalies' ? '600' : 'normal' }}>Goalies</button>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '10px', padding: '4px', border: '1px solid var(--c-161616)', width: 'fit-content' }}>
+            <button onClick={() => setOngletSaisonMorte('home')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'home' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'home' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletSaisonMorte === 'home' ? '600' : 'normal' }}>Home</button>
+            <button onClick={() => setOngletSaisonMorte('skaters')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'skaters' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'skaters' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletSaisonMorte === 'skaters' ? '600' : 'normal' }}>Skaters</button>
+            <button onClick={() => setOngletSaisonMorte('goalies')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletSaisonMorte === 'goalies' ? '#f97316' : 'transparent', color: ongletSaisonMorte === 'goalies' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletSaisonMorte === 'goalies' ? '600' : 'normal' }}>Goalies</button>
           </div>
           {ongletSaisonMorte === 'home' && <OngletHomeStats onSelectJoueur={onSelectJoueur} />}
           {ongletSaisonMorte === 'skaters' && <OngletSkatersStats onSelectJoueur={onSelectJoueur} />}
@@ -1300,33 +1300,33 @@ function PageStatsJoueurs({ onSelectJoueur }) {
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-            <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
-            <button onClick={() => setOngletJoueurs('lineups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'lineups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'lineups' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletJoueurs === 'lineups' ? '600' : 'normal' }}>Lineups</button>
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '10px', padding: '4px', border: '1px solid var(--c-161616)', width: 'fit-content' }}>
+            <button onClick={() => setOngletJoueurs('props')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'props' ? '#f97316' : 'transparent', color: ongletJoueurs === 'props' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletJoueurs === 'props' ? '600' : 'normal' }}>Props</button>
+            <button onClick={() => setOngletJoueurs('lineups')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletJoueurs === 'lineups' ? '#f97316' : 'transparent', color: ongletJoueurs === 'lineups' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletJoueurs === 'lineups' ? '600' : 'normal' }}>Lineups</button>
           </div>
 
           {ongletJoueurs === 'props' && (
             <div>
               {chargementProps ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
+                <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Calculating props...</p>
               ) : props.length === 0 ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
+                <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>No props available for today.</p>
               ) : props.map((p, i) => (
                 <div key={p.id} onClick={() => onSelectJoueur({ id: p.id, nom: p.nom, position: p.position, equipe: p.equipe, numero: '' })}
-                  style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px 16px', border: '1px solid #161616', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
+                  style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '12px', padding: '14px 16px', border: '1px solid var(--c-161616)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#161616'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-161616)'}
                 >
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#555', minWidth: '28px' }}>#{i+1}</div>
-                  <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display='none'} />
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--c-555)', minWidth: '28px' }}>#{i+1}</div>
+                  <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display='none'} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px' }}>{p.nom}</div>
-                    <div style={{ fontSize: '12px', color: '#555' }}>{p.equipe} · {p.position}</div>
+                    <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', marginBottom: '2px' }}>{p.nom}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{p.equipe} · {p.position}</div>
                   </div>
-                  <div style={{ textAlign: 'center', backgroundColor: '#111', borderRadius: '8px', padding: '8px 14px' }}>
-                    <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
-                    <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : '#888', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
-                    <div style={{ fontSize: '10px', color: '#444', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
+                  <div style={{ textAlign: 'center', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 14px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '2px' }}>Over {p.line} {p.stat}</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: p.prob >= 0.75 ? '#22c55e' : p.prob >= 0.65 ? '#f97316' : 'var(--c-888)', letterSpacing: '-0.5px' }}>{Math.round(p.prob * 100)}%</div>
+                    <div style={{ fontSize: '10px', color: 'var(--c-444)', marginTop: '2px' }}>L5:{Math.round(p.r5*100)}% L10:{Math.round(p.r10*100)}% L20:{Math.round(p.r20*100)}%</div>
                   </div>
                 </div>
               ))}
@@ -1342,9 +1342,9 @@ function PageStatsJoueurs({ onSelectJoueur }) {
                   const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
                   const nb = matchsParJour[jour]?.length || 0;
                   return (
-                    <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                    <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : 'var(--c-1a1a1a)', color: jourActif === jour ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                       {label}
-                      <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                      <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : 'var(--c-555)' }}>{nb}G</span>
                     </button>
                   );
                 })}
@@ -1449,24 +1449,24 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
     <div>
       <div style={{ marginBottom: '14px', position: 'relative' }}>
         <input
-          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Search players..."
           value={filtre}
           onChange={e => { setFiltre(e.target.value); rechercherJoueur(e.target.value); }}
         />
         {recherchJoueurs.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#1a1a1a', borderRadius: '10px', border: '1px solid #333', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', border: '1px solid var(--c-333)', marginTop: '4px', overflow: 'hidden', zIndex: 100 }}>
             {recherchJoueurs.map((j, i) => (
               <div key={i}
                 onClick={() => { onSelectJoueur({ id: j.playerId, nom: j.name, position: j.positionCode, equipe: j.teamAbbrev || '', numero: j.sweaterNumber || '' }); setRechercheJoueurs([]); setFiltre(''); }}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid #222' : 'none' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#222'}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: i < recherchJoueurs.length - 1 ? '1px solid var(--c-222)' : 'none' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-222)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <img src={LOGOS_NHL[j.teamAbbrev]} alt={j.teamAbbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'white' }}>{j.name}</div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>{j.teamAbbrev} · {j.positionCode}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{j.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{j.teamAbbrev} · {j.positionCode}</div>
                 </div>
               </div>
             ))}
@@ -1475,12 +1475,12 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
       </div>
 
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : Object.keys(matchsParJour).length === 0 ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
       ) : (
         <>
-          <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(Object.keys(matchsParJour).sort()[0])}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(Object.keys(matchsParJour).sort()[0])}</div>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {Object.keys(matchsParJour).sort().map(jour => {
               const d = new Date(jour + 'T12:00:00');
@@ -1488,9 +1488,9 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
               const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
-                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : 'var(--c-1a1a1a)', color: jourActif === jour ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : 'var(--c-555)' }}>{nb}G</span>
                 </button>
               );
             })}
@@ -1519,9 +1519,9 @@ function EquipesParDivision({ classement, onSelectEquipe }) {
               <div
                 key={i}
                 onClick={() => onSelectEquipe(e)}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px', border: '1px solid #222', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--c-222)', cursor: 'pointer' }}
                 onMouseEnter={ev => ev.currentTarget.style.borderColor = '#f97316'}
-                onMouseLeave={ev => ev.currentTarget.style.borderColor = '#222'}
+                onMouseLeave={ev => ev.currentTarget.style.borderColor = 'var(--c-222)'}
               >
                 <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={ev => ev.target.style.display = 'none'} />
                 <span style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}>{e.teamAbbrev?.default}</span>
@@ -1611,13 +1611,13 @@ async function rechercherJoueur(query) {
     <div>
       <div style={{ marginBottom: '14px' }}>
         <input
-          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Search a team..."
           value={filtre}
           onChange={e => setFiltre(e.target.value)}
         />
       </div>
-      {chargement ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : aucunMatch ? (
+      {chargement ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p> : aucunMatch ? (
         <>
           <SelecteurSaisonDiscret saison={saisonEquipes} onChange={s => setGameTypeEquipes(s.gameType)} />
           <EquipesParDivision classement={classement} onSelectEquipe={setEquipeSelectionnee} />
@@ -1631,16 +1631,16 @@ async function rechercherJoueur(query) {
               const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
-                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : 'var(--c-1a1a1a)', color: jourActif === jour ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : 'var(--c-555)' }}>{nb}G</span>
                 </button>
               );
             })}
           </div>
           {matchsFiltres.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: '#111', borderRadius: '16px' }}>
-              <p style={{ color: '#666' }}>Aucun match trouve.</p>
+            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: 'var(--c-111)', borderRadius: '16px' }}>
+              <p style={{ color: 'var(--c-666)' }}>Aucun match trouve.</p>
             </div>
           ) : matchsFiltres.map((match, i) => (
             <CarteMatchEquipesDetaille key={i} match={match} classement={classement} onSelectEquipe={setEquipeSelectionnee} />
@@ -1699,19 +1699,19 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
     <div>
       <div style={{ marginBottom: '14px' }}>
         <input
-          style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
+          style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none' }}
           placeholder="Search a team..."
           value={filtre}
           onChange={e => setFiltre(e.target.value)}
         />
       </div>
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : jours.length === 0 ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Aucun match à venir pour le moment</p>
       ) : (
         <>
-          <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(jours[0])}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(jours[0])}</div>
           <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
             {jours.map(jour => {
               const d = new Date(jour + 'T12:00:00');
@@ -1719,16 +1719,16 @@ function PageStatsEquipesAnalyses({ classement, onSelectJoueur, lineupDF }) {
               const label = estAujourdhui ? "Today" : d.toLocaleDateString('en-CA', { weekday: 'short', day: 'numeric' });
               const nb = matchsParJour[jour]?.length || 0;
               return (
-                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : '#1a1a1a', color: jourActif === jour ? 'white' : '#888', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : 'var(--c-1a1a1a)', color: jourActif === jour ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
                   {label}
-                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : '#555' }}>{nb}G</span>
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : 'var(--c-555)' }}>{nb}G</span>
                 </button>
               );
             })}
           </div>
           {matchsFiltres.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: '#111', borderRadius: '16px' }}>
-              <p style={{ color: '#666' }}>Aucun match trouve.</p>
+            <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: 'var(--c-111)', borderRadius: '16px' }}>
+              <p style={{ color: 'var(--c-666)' }}>Aucun match trouve.</p>
             </div>
           ) : matchsFiltres.map((match, i) => (
             <CarteMatchEquipesDetaille key={i} match={match} classement={classement} onSelectEquipe={setEquipeSelectionnee} />
@@ -1789,21 +1789,21 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
   const win2 = Math.round((wins2 / (wins2 + losses2 + otl2 || 1)) * 100);
  
   return (
-    <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', overflow: 'hidden', marginBottom: '10px' }}>
+    <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', overflow: 'hidden', marginBottom: '10px' }}>
       <div onClick={() => setOuvert(!ouvert)} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e1); }} />
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</div>
-              <div style={{ color: '#666', fontSize: '10px' }}>{wins1}W-{losses1}L-{otl1}OT</div>
+              <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{wins1}W-{losses1}L-{otl1}OT</div>
             </div>
           </div>
-          <span style={{ color: '#444', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+          <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>@</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</div>
-              <div style={{ color: '#666', fontSize: '10px' }}>{wins2}W-{losses2}L-{otl2}OT</div>
+              <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{wins2}W-{losses2}L-{otl2}OT</div>
             </div>
             <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e2); }} />
           </div>
@@ -1812,89 +1812,89 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {etat === 'LIVE' || etat === 'CRIT'
               ? <span style={{ backgroundColor: '#1a0000', color: '#ef4444', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>LIVE</span>
-              : <span style={{ color: '#666', fontSize: '12px' }}>{heure}</span>}
+              : <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{heure}</span>}
           </div>
           <div style={{ color: '#f97316', fontSize: '11px' }}>{favori} {Math.max(prob1, prob2)}% · {overUnder}</div>
-          <span style={{ color: ouvert ? '#f97316' : '#444', fontSize: '11px' }}>{ouvert ? '▲' : '▼'}</span>
+          <span style={{ color: ouvert ? '#f97316' : 'var(--c-444)', fontSize: '11px' }}>{ouvert ? '▲' : '▼'}</span>
         </div>
       </div>
  
       <div style={{ padding: '0 14px 8px' }}>
-        <span style={{ fontSize: '10px', color: '#444' }}>Click on a logo to view the team stats</span>
+        <span style={{ fontSize: '10px', color: 'var(--c-444)' }}>Click on a logo to view the team stats</span>
       </div>
  
       {ouvert && (
-        <div style={{ borderTop: '1px solid #222' }}>
+        <div style={{ borderTop: '1px solid var(--c-222)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr' }}>
-            <div onClick={e => { e.stopPropagation(); if (e1) onSelectEquipe(e1); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: '#111' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#111'}>
+            <div onClick={e => { e.stopPropagation(); if (e1) onSelectEquipe(e1); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: 'var(--c-111)' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--c-111)'}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'white' }}>{isMobile ? abbrev1 : nom1}</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{wins1}V · {losses1}D · {otl1}DP</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--c-white)' }}>{isMobile ? abbrev1 : nom1}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{wins1}V · {losses1}D · {otl1}DP</div>
                 </div>
               </div>
               {[['Points', pts1, '#f97316'], ['Win%', `${win1}%`, 'white'], ['Goals/G', gf1.toFixed(2), 'white'], ['GA/G', ga1.toFixed(2), 'white']].map(([l, v, c], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                  <span style={{ color: '#666', fontSize: '11px' }}>{l}</span>
+                  <span style={{ color: 'var(--c-666)', fontSize: '11px' }}>{l}</span>
                   <span style={{ fontWeight: 'bold', color: c, fontSize: '12px' }}>{v}</span>
                 </div>
               ))}
               <div style={{ marginTop: '10px' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Form</div>
+                <div style={{ color: 'var(--c-666)', fontSize: '9px', marginBottom: '4px' }}>Form</div>
                 <div style={{ display: 'flex', gap: '3px' }}>
-                  {genT(win1).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
+                  {genT(win1).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : 'var(--c-333)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'var(--c-white)' }}>{r}</div>)}
                 </div>
               </div>
               <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>View stats →</span></div>
             </div>
  
-            <div style={{ backgroundColor: '#222', width: '1px' }} />
+            <div style={{ backgroundColor: 'var(--c-222)', width: '1px' }} />
  
-            <div onClick={e => { e.stopPropagation(); if (e2) onSelectEquipe(e2); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: '#111' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#111'}>
+            <div onClick={e => { e.stopPropagation(); if (e2) onSelectEquipe(e2); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: 'var(--c-111)' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--c-111)'}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'white' }}>{isMobile ? abbrev2 : nom2}</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{wins2}V · {losses2}D · {otl2}DP</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--c-white)' }}>{isMobile ? abbrev2 : nom2}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{wins2}V · {losses2}D · {otl2}DP</div>
                 </div>
               </div>
               {[['Points', pts2, '#f97316'], ['Win%', `${win2}%`, 'white'], ['Goals/G', gf2.toFixed(2), 'white'], ['GA/G', ga2.toFixed(2), 'white']].map(([l, v, c], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                  <span style={{ color: '#666', fontSize: '11px' }}>{l}</span>
+                  <span style={{ color: 'var(--c-666)', fontSize: '11px' }}>{l}</span>
                   <span style={{ fontWeight: 'bold', color: c, fontSize: '12px' }}>{v}</span>
                 </div>
               ))}
               <div style={{ marginTop: '10px' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '4px' }}>Form</div>
+                <div style={{ color: 'var(--c-666)', fontSize: '9px', marginBottom: '4px' }}>Form</div>
                 <div style={{ display: 'flex', gap: '3px' }}>
-                  {genT(win2).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{r}</div>)}
+                  {genT(win2).map((r, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: r === 'W' ? '#f97316' : 'var(--c-333)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'var(--c-white)' }}>{r}</div>)}
                 </div>
               </div>
               <div style={{ marginTop: '12px', textAlign: 'center' }}><span style={{ fontSize: '10px', color: '#f97316' }}>View stats →</span></div>
             </div>
           </div>
  
-          <div style={{ padding: isMobile ? '10px 14px' : '12px 20px', borderTop: '1px solid #222' }}>
+          <div style={{ padding: isMobile ? '10px 14px' : '12px 20px', borderTop: '1px solid var(--c-222)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
               <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '11px' }}>{abbrev1} {prob1}%</span>
-              <span style={{ color: 'white', fontWeight: 'bold', fontSize: '11px' }}>{prob2}% {abbrev2}</span>
+              <span style={{ color: 'var(--c-white)', fontWeight: 'bold', fontSize: '11px' }}>{prob2}% {abbrev2}</span>
             </div>
             <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', height: '22px' }}>
-              <div style={{ width: `${prob1}%`, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob1}%</div>
-              <div style={{ width: `${prob2}%`, background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'white' }}>{prob2}%</div>
+              <div style={{ width: `${prob1}%`, background: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'var(--c-white)' }}>{prob1}%</div>
+              <div style={{ width: `${prob2}%`, background: 'var(--c-333)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'var(--c-white)' }}>{prob2}%</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '10px' }}>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Favorite</div>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--c-666)', fontSize: '9px', marginBottom: '2px' }}>Favorite</div>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f97316' }}>{favori} {Math.max(prob1, prob2)}%</div>
               </div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Predicted Total</div>
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>{total_buts} buts</div>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--c-666)', fontSize: '9px', marginBottom: '2px' }}>Predicted Total</div>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--c-white)' }}>{total_buts} buts</div>
               </div>
-              <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid #222', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
-                <div style={{ color: '#666', fontSize: '9px', marginBottom: '2px' }}>Rec.</div>
+              <div style={{ backgroundColor: overUnder === 'OVER' ? 'rgba(249,115,22,0.15)' : 'var(--c-1a1a1a)', border: overUnder === 'OVER' ? '1px solid rgba(249,115,22,0.4)' : '1px solid var(--c-222)', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--c-666)', fontSize: '9px', marginBottom: '2px' }}>Rec.</div>
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: overUnder === 'OVER' ? '#f97316' : 'white' }}>{overUnder}</div>
               </div>
             </div>
@@ -2177,65 +2177,65 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
  
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '4px', border: '1px solid #161616', width: 'fit-content' }}>
-        <button onClick={() => setOngletFiche('stats')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'stats' ? '#f97316' : 'transparent', color: ongletFiche === 'stats' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletFiche === 'stats' ? '600' : 'normal' }}>Stats</button>
-        <button onClick={() => setOngletFiche('lineup')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'lineup' ? '#f97316' : 'transparent', color: ongletFiche === 'lineup' ? 'white' : '#555', fontSize: '13px', fontWeight: ongletFiche === 'lineup' ? '600' : 'normal' }}>Lineup</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '10px', padding: '4px', border: '1px solid var(--c-161616)', width: 'fit-content' }}>
+        <button onClick={() => setOngletFiche('stats')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'stats' ? '#f97316' : 'transparent', color: ongletFiche === 'stats' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletFiche === 'stats' ? '600' : 'normal' }}>Stats</button>
+        <button onClick={() => setOngletFiche('lineup')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'lineup' ? '#f97316' : 'transparent', color: ongletFiche === 'lineup' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletFiche === 'lineup' ? '600' : 'normal' }}>Lineup</button>
       </div>
  
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px' }}>
         <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
         <div style={{ flex: 1 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white' }}>{nom}</h2>
-          <div style={{ color: '#666', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
+          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h2>
+          <div style={{ color: 'var(--c-666)', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '14px' }}>{pts} pts</span>
-            <span style={{ color: '#888', fontSize: '13px' }}>{wins}W · {losses}L · {otl}OT</span>
+            <span style={{ color: 'var(--c-888)', fontSize: '13px' }}>{wins}W · {losses}L · {otl}OT</span>
             <span style={{ backgroundColor: equipe?.streakCode === 'W' ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)', color: equipe?.streakCode === 'W' ? '#f97316' : '#ef4444', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', fontWeight: 'bold' }}>{streak}</span>
           </div>
         </div>
-        <div style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 14px', border: '1px solid #222' }}>
-          <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANK</div>
+        <div style={{ textAlign: 'center', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--c-222)' }}>
+          <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANK</div>
           <div style={{ color: '#f97316', fontSize: '22px', fontWeight: '900' }}>#{rang}</div>
-          <div style={{ color: '#555', fontSize: '9px' }}>classement</div>
+          <div style={{ color: 'var(--c-555)', fontSize: '9px' }}>classement</div>
         </div>
       </div>
  
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', marginBottom: '16px' }}>
         {['SZN', 'L5', 'L10', 'L20'].map(p => (
-          <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '9px', borderRadius: '8px', border: '1px solid #222', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#111', color: ongletPeriode === p ? 'white' : '#666', fontSize: '13px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
+          <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '9px', borderRadius: '8px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : 'var(--c-111)', color: ongletPeriode === p ? 'white' : 'var(--c-666)', fontSize: '13px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
         ))}
       </div>
  
       {ongletFiche === 'lineup' ? (
-        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px' }}>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '20px' }}>
           {chargementRoster ? (
-            <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Loading lineup...</p>
+            <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Loading lineup...</p>
           ) : (
             <AlignementEquipe abbrev={abbrev} nom={nom} logo={LOGOS_NHL[abbrev]} joueurs={rosterEquipe} onSelect={onSelectJoueur || (() => {})} isMobile={isMobile} lineupDF={lineupDF} />
           )}
         </div>
       ) : chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>SOMMAIRE {ongletPeriode}</div>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
+            <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>SOMMAIRE {ongletPeriode}</div>
             {ongletPeriode === 'SZN' ? (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '8px' }}>
                   {[['Pts%', `${ptsPct}%`, '#f97316'], ['Goals/G', (gf / gp).toFixed(2), 'white'], ['GA/G', (ga / gp).toFixed(2), 'white'], ['Diff.', gf - ga > 0 ? `+${gf - ga}` : `${gf - ga}`, gf - ga >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
-                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px' }}>
                       <div style={{ fontSize: '16px', fontWeight: '900', color: c }}>{v}</div>
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                   {[['Face-off%', `${faceoffPct}%`, 'white'], ['Home', `${equipe?.homeWins || 0}W-${equipe?.homeLosses || 0}L`, 'white'], ['Away', `${equipe?.roadWins || 0}W-${equipe?.roadLosses || 0}L`, 'white']].map(([l, v, c], i) => (
-                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                    <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px' }}>
                       <div style={{ fontSize: '14px', fontWeight: '900', color: c }}>{v}</div>
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                     </div>
                   ))}
                 </div>
@@ -2243,18 +2243,18 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
             ) : ongletPeriode === 'L10' ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                 {[[`${l10Wins}V-${l10Losses}D`, 'L10 Record', '#f97316'], [(l10Gf / 10).toFixed(2), 'Goals/G', 'white'], [(l10Ga / 10).toFixed(2), 'GA/G', 'white'], [l10Gf - l10Ga > 0 ? `+${l10Gf - l10Ga}` : `${l10Gf - l10Ga}`, 'Diff', l10Gf - l10Ga >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
             ) : statsPeriode ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                 {[[`${statsPeriode.victoires}/${statsPeriode.nb}`, 'Wins', '#f97316'], [statsPeriode.bpMoy, 'Goals/G', 'white'], [statsPeriode.bcMoy, 'GA/G', 'white'], [statsPeriode.bp - statsPeriode.bc > 0 ? `+${statsPeriode.bp - statsPeriode.bc}` : `${statsPeriode.bp - statsPeriode.bc}`, 'Diff', statsPeriode.bp - statsPeriode.bc >= 0 ? '#f97316' : '#ef4444']].map(([v, l, c], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: '#1a1a1a', borderRadius: '8px' }}>
+                  <div key={i} style={{ textAlign: 'center', padding: '10px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: c }}>{v}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -2262,38 +2262,38 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
           </div>
  
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>POWER PLAY</div>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+              <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>POWER PLAY</div>
               <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316', marginBottom: '4px' }}>{ppPct}%</div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
                 <div style={{ width: `${ppPct !== '-' ? Math.min(parseFloat(ppPct), 30) / 30 * 100 : 0}%`, height: '100%', backgroundColor: '#f97316', borderRadius: '6px' }} />
               </div>
             </div>
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>PENALTY KILL</div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{pkPct}%</div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-                <div style={{ width: `${pkPct !== '-' ? Math.min(parseFloat(pkPct), 100) / 100 * 100 : 0}%`, height: '100%', backgroundColor: '#888', borderRadius: '6px' }} />
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+              <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>PENALTY KILL</div>
+              <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '4px' }}>{pkPct}%</div>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                <div style={{ width: `${pkPct !== '-' ? Math.min(parseFloat(pkPct), 100) / 100 * 100 : 0}%`, height: '100%', backgroundColor: 'var(--c-888)', borderRadius: '6px' }} />
               </div>
             </div>
           </div>
  
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>OFFENSIVE RANK</div>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, textAlign: 'center' }}>
+              <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>OFFENSIVE RANK</div>
               <div style={{ fontSize: '36px', fontWeight: '900', color: '#f97316' }}>#{rangOff}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} goals/G</div>
+              <div style={{ color: 'var(--c-666)', fontSize: '11px', marginTop: '4px' }}>{(gf / gp).toFixed(2)} goals/G</div>
             </div>
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, textAlign: 'center' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>DEFENSIVE RANK</div>
-              <div style={{ fontSize: '36px', fontWeight: '900', color: 'white' }}>#{rangDef}</div>
-              <div style={{ color: '#666', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} GA/G</div>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, textAlign: 'center' }}>
+              <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>DEFENSIVE RANK</div>
+              <div style={{ fontSize: '36px', fontWeight: '900', color: 'var(--c-white)' }}>#{rangDef}</div>
+              <div style={{ color: 'var(--c-666)', fontSize: '11px', marginTop: '4px' }}>{(ga / gp).toFixed(2)} GA/G</div>
             </div>
           </div>
  
           {matchsGraphe.length > 0 && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-              <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>RECENT RESULTS</div>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
+              <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>RECENT RESULTS</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '90px', marginBottom: '4px' }}>
                 {matchsGraphe.map((m, i) => {
                   const dom = m.homeTeam?.abbrev === abbrev;
@@ -2305,7 +2305,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', height: '90px', justifyContent: 'flex-end' }}>
                       <span style={{ fontSize: '8px', color: v ? '#f97316' : '#ef4444', fontWeight: 'bold' }}>{bp}-{bc}</span>
                       <div style={{ width: '100%', height: `${h}px`, backgroundColor: v ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
-                      <div style={{ fontSize: '7px', color: '#555', marginTop: '2px' }}>{m.homeTeam?.abbrev === abbrev ? m.awayTeam?.abbrev : m.homeTeam?.abbrev}</div>
+                      <div style={{ fontSize: '7px', color: 'var(--c-555)', marginTop: '2px' }}>{m.homeTeam?.abbrev === abbrev ? m.awayTeam?.abbrev : m.homeTeam?.abbrev}</div>
                     </div>
                   );
                 })}
@@ -2316,36 +2316,36 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
                   const bp = dom ? (m.homeTeam?.score || 0) : (m.awayTeam?.score || 0);
                   const bc = dom ? (m.awayTeam?.score || 0) : (m.homeTeam?.score || 0);
                   const v = bp > bc;
-                  return <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: v ? '#f97316' : '#333', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>{v ? 'W' : 'L'}</div>;
+                  return <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: v ? '#f97316' : 'var(--c-333)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 'bold', color: 'var(--c-white)' }}>{v ? 'W' : 'L'}</div>;
                 })}
               </div>
             </div>
           )}
  
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Shots on Goal</h3>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Shots on Goal</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS FOR / GAME</div>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--c-555)', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS FOR / GAME</div>
                 <div style={{ fontSize: '28px', fontWeight: '900', color: '#f97316' }}>{sogPourPeriode}</div>
-                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
+                <div style={{ color: 'var(--c-666)', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
               </div>
-              <div style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                <div style={{ color: '#555', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS AGAINST / GAME</div>
-                <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{sogContrePeriode}</div>
-                <div style={{ color: '#666', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
+              <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--c-555)', fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SHOTS AGAINST / GAME</div>
+                <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-white)' }}>{sogContrePeriode}</div>
+                <div style={{ color: 'var(--c-666)', fontSize: '10px', marginTop: '2px' }}>{ongletShot !== 'SZN' ? ongletShot : 'Season'}</div>
               </div>
             </div>
  
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '8px' }}>
               {['SZN', 'L5', 'L10', 'L20'].map(p => (
-                <button key={p} onClick={() => setOngletShot(p)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletShot === p ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: ongletShot === p ? 'bold' : 'normal' }}>{p}</button>
+                <button key={p} onClick={() => setOngletShot(p)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletShot === p ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '11px', fontWeight: ongletShot === p ? 'bold' : 'normal' }}>{p}</button>
               ))}
             </div>
  
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '14px' }}>
               {[['POUR', 'Shots For'], ['CONTRE', 'Shots Against']].map(([t, label]) => (
-                <button key={t} onClick={() => setTypeShot(t)} style={{ padding: '8px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeShot === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: typeShot === t ? 'bold' : 'normal' }}>{label}</button>
+                <button key={t} onClick={() => setTypeShot(t)} style={{ padding: '8px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeShot === t ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: typeShot === t ? 'bold' : 'normal' }}>{label}</button>
               ))}
             </div>
  
@@ -2353,7 +2353,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
               <svg viewBox="0 0 204 214" style={{ width: '100%', display: 'block' }}>
                 <defs>
                   <radialGradient id="iceGradientEq" cx="50%" cy="8%" r="95%">
-                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="0%" stopColor="var(--c-white)" />
                     <stop offset="100%" stopColor="#e9f1f8" />
                   </radialGradient>
                 </defs>
@@ -2385,24 +2385,24 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: analyseMatchup.favorable ? '#f97316' : '#ef4444', flexShrink: 0 }} />
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: analyseMatchup.favorable ? '#f97316' : '#ef4444', textTransform: 'uppercase' }}>Matchup Analysis vs {abbrevAdv}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#666' }}>{abbrev} {analyseMatchup.scoreEq} — {analyseMatchup.scoreAdv} {abbrevAdv}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--c-666)' }}>{abbrev} {analyseMatchup.scoreEq} — {analyseMatchup.scoreAdv} {abbrevAdv}</span>
                 </div>
-                <p style={{ margin: 0, fontSize: '12px', color: '#ccc', lineHeight: '1.6' }}>{analyseMatchup.conclusion}</p>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--c-ccc)', lineHeight: '1.6' }}>{analyseMatchup.conclusion}</p>
               </div>
             )}
           </div>
  
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-            <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>HOME VS AWAY</div>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+            <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>HOME VS AWAY</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {[
                 { label: 'Home', w: equipe?.homeWins || 0, l: (equipe?.homeLosses || 0) + (equipe?.homeOtLosses || 0), gf: equipe?.homeGoalsFor || 0, ga: equipe?.homeGoalsAgainst || 0 },
                 { label: 'Away', w: equipe?.roadWins || 0, l: (equipe?.roadLosses || 0) + (equipe?.roadOtLosses || 0), gf: equipe?.roadGoalsFor || 0, ga: equipe?.roadGoalsAgainst || 0 },
               ].map((eq, i) => (
-                <div key={i} style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', padding: '12px' }}>
-                  <div style={{ color: '#666', fontSize: '10px', marginBottom: '8px', fontWeight: 'bold' }}>{eq.label}</div>
-                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{eq.w}V · {eq.l}D</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{eq.gf} BP · {eq.ga} BC</div>
+                <div key={i} style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '8px', padding: '12px' }}>
+                  <div style={{ color: 'var(--c-666)', fontSize: '10px', marginBottom: '8px', fontWeight: 'bold' }}>{eq.label}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '4px' }}>{eq.w}V · {eq.l}D</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{eq.gf} BP · {eq.ga} BC</div>
                 </div>
               ))}
             </div>
@@ -2724,7 +2724,7 @@ const getMatchsChart = () => {
   return (
     <div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
         {!isGardien && (
           <button
             onClick={() => prochainAdversaire && setAnalyseAvanceeOuverte(true)}
@@ -2734,68 +2734,68 @@ const getMatchsChart = () => {
         )}
       </div>
  <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-  <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Saison régulière</button>
-  <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
+  <button onClick={() => setModeStats('regular')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'regular' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: modeStats === 'regular' ? 'bold' : 'normal' }}>Saison régulière</button>
+  <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
 </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
         <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
+          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
             <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-            <span style={{ color: '#666', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
+            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
           </div>
         </div>
         {!isGardien && (
           <div
             onClick={() => prochainAdversaire && setMatchupOuvert(true)}
-            style={{ textAlign: 'center', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '8px 12px', border: '1px solid #222', flexShrink: 0, cursor: prochainAdversaire ? 'pointer' : 'default', minWidth: '64px', transition: 'border-color 0.15s' }}
+            style={{ textAlign: 'center', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '8px 12px', border: '1px solid var(--c-222)', flexShrink: 0, cursor: prochainAdversaire ? 'pointer' : 'default', minWidth: '64px', transition: 'border-color 0.15s' }}
             onMouseEnter={e => { if (prochainAdversaire) e.currentTarget.style.borderColor = '#f97316'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#222'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--c-222)'; }}
           >
-            <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>MATCHUP</div>
+            <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>MATCHUP</div>
             {prochainAdversaire ? (
               <>
                 <img src={LOGOS_NHL[prochainAdversaire.abbrev]} alt={prochainAdversaire.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain', margin: '2px 0' }} onError={e => e.target.style.display = 'none'} />
                 <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{prochainAdversaire.domicile ? 'vs' : '@'} {prochainAdversaire.abbrev}</div>
-                <div style={{ color: '#555', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainAdversaire.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
+                <div style={{ color: 'var(--c-555)', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainAdversaire.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
               </>
             ) : (
-              <div style={{ color: '#555', fontSize: '11px', padding: '10px 0' }}>-</div>
+              <div style={{ color: 'var(--c-555)', fontSize: '11px', padding: '10px 0' }}>-</div>
             )}
           </div>
         )}
       </div>
  
       {chargement ? (
-        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
           {/* 1. STATS SAISON COMPLÈTE EN PREMIER */}
           {!isGardien && statsAvancees && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
-             <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>{modeStats === 'playoffs' ? 'PLAYOFFS' : 'REGULAR SEASON'}</div>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
+             <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>{modeStats === 'playoffs' ? 'PLAYOFFS' : 'REGULAR SEASON'}</div>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['GOALS', statsAvancees.goals, '#f97316'], ['AST', statsAvancees.assists, 'white'], ['PTS', statsAvancees.points, 'white'], ['+/-', (statsAvancees.plusMinus ?? 0) >= 0 ? `+${statsAvancees.plusMinus}` : statsAvancees.plusMinus, (statsAvancees.plusMinus ?? 0) >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['PPP', statsAvancees.ppp], ['SOG', statsAvancees.sog], ['HITS', statsAvancees.hits], ['BLK', statsAvancees.blocks]].map(([l, v], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--c-white)' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                 {[['TOI/G', statsAvancees.toi], ['GAMES', statsAvancees.gp]].map(([l, v], i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{v ?? '-'}</div>
-                    <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>{l}</div>
+                  <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--c-white)' }}>{v ?? '-'}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
                   </div>
                 ))}
               </div>
@@ -2804,10 +2804,10 @@ const getMatchsChart = () => {
  
           {isGardien && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-              {[['GAA', statsAvancees?.gaa, '#f97316'], ['SV%', statsAvancees?.svp, '#f97316'], ['Wins', statsAvancees?.wins, 'white'], ['Losses', statsAvancees?.losses, 'white'], ['Shutouts', statsAvancees?.shutouts, 'white'], ['GP', statsAvancees?.gamesStarted, '#666']].map(([l, v, c], i) => (
-                <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', border: '1px solid #222', padding: '12px', textAlign: 'center' }}>
+              {[['GAA', statsAvancees?.gaa, '#f97316'], ['SV%', statsAvancees?.svp, '#f97316'], ['Wins', statsAvancees?.wins, 'white'], ['Losses', statsAvancees?.losses, 'white'], ['Shutouts', statsAvancees?.shutouts, 'white'], ['GP', statsAvancees?.gamesStarted, 'var(--c-666)']].map(([l, v, c], i) => (
+                <div key={i} style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', border: '1px solid var(--c-222)', padding: '12px', textAlign: 'center' }}>
                   <div style={{ fontSize: '20px', fontWeight: '900', color: c }}>{v ?? '-'}</div>
-                  <div style={{ fontSize: '10px', color: '#666', marginTop: '3px' }}>{l}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--c-666)', marginTop: '3px' }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -2817,40 +2817,40 @@ const getMatchsChart = () => {
           {!isGardien && (
             <div style={{ display: 'flex', gap: '3px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
               {ongletsDef.map(o => (
-                <button key={o.id} onClick={() => setOngletStat(o.id)} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletStat === o.id ? '#f97316' : '#111', color: ongletStat === o.id ? 'white' : '#666', fontSize: '12px', fontWeight: ongletStat === o.id ? 'bold' : 'normal' }}>{o.label}</button>
+                <button key={o.id} onClick={() => setOngletStat(o.id)} style={{ padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletStat === o.id ? '#f97316' : 'var(--c-111)', color: ongletStat === o.id ? 'white' : 'var(--c-666)', fontSize: '12px', fontWeight: ongletStat === o.id ? 'bold' : 'normal' }}>{o.label}</button>
               ))}
             </div>
           )}
  
           {/* 3. GRAPHIQUE DERNIERS MATCHS */}
           {!isGardien && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '14px' }}>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   {['L5', 'L10', 'L20'].map(p => (
-                    <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : '#1a1a1a', color: ongletPeriode === p ? 'white' : '#666', fontSize: '11px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
+                    <button key={p} onClick={() => setOngletPeriode(p)} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: ongletPeriode === p ? '#f97316' : 'var(--c-1a1a1a)', color: ongletPeriode === p ? 'white' : 'var(--c-666)', fontSize: '11px', fontWeight: ongletPeriode === p ? 'bold' : 'normal' }}>{p}</button>
                   ))}
                 </div>
-                <div style={{ backgroundColor: '#1a1a1a', borderRadius: '6px', padding: '3px 8px' }}>
+                <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '6px', padding: '3px 8px' }}>
                   <span style={{ color: '#f97316', fontSize: '12px', fontWeight: 'bold' }}>{getPctAuDessus()}%</span>
-                  <span style={{ color: '#555', fontSize: '10px' }}> over avg. season</span>
+                  <span style={{ color: 'var(--c-555)', fontSize: '10px' }}> over avg. season</span>
                 </div>
               </div>
  
               {matchsFiltres.length === 0 ? (
-                <p style={{ color: '#555', textAlign: 'center', fontSize: '12px' }}>Donnees non disponibles</p>
+                <p style={{ color: 'var(--c-555)', textAlign: 'center', fontSize: '12px' }}>Donnees non disponibles</p>
               ) : (
                 <div style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '22px' }}>
-                    <span style={{ color: '#555', fontSize: '9px' }}>{Math.ceil(maxVal)}</span>
-                    <span style={{ color: '#888', fontSize: '9px' }}>
+                    <span style={{ color: 'var(--c-555)', fontSize: '9px' }}>{Math.ceil(maxVal)}</span>
+                    <span style={{ color: 'var(--c-888)', fontSize: '9px' }}>
   {ongletStat === 'TOI' ? (() => {
     const min = Math.floor(moyenne);
     const sec = String(Math.round((moyenne - min) * 60)).padStart(2, '0');
     return `${min}:${sec}`;
   })() : moyenne}
 </span>
-                    <span style={{ color: '#555', fontSize: '9px' }}>0</span>
+                    <span style={{ color: 'var(--c-555)', fontSize: '9px' }}>0</span>
                   </div>
                   <div style={{ marginLeft: '26px', position: 'relative' }}>
                     <div style={{ position: 'absolute', left: 0, right: 0, bottom: `${24 + (moyenne / maxVal) * 110}px`, height: '1px', backgroundColor: 'rgba(255,255,255,0.2)', zIndex: 1 }} />
@@ -2870,8 +2870,8 @@ const getMatchsChart = () => {
 </span>
                             <div style={{ width: '100%', height: `${h}px`, backgroundColor: estAuDessus ? '#f97316' : '#ef4444', borderRadius: '2px 2px 0 0', opacity: 0.85 }} />
                             <div style={{ width: '100%', height: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontSize: '7px', color: '#555' }}>{m.gameDate ? m.gameDate.slice(5) : ''}</span>
-                              <span style={{ fontSize: '7px', color: '#444' }}>{m.opponentAbbrev || ''}</span>
+                              <span style={{ fontSize: '7px', color: 'var(--c-555)' }}>{m.gameDate ? m.gameDate.slice(5) : ''}</span>
+                              <span style={{ fontSize: '7px', color: 'var(--c-444)' }}>{m.opponentAbbrev || ''}</span>
                             </div>
                           </div>
                         );
@@ -2881,40 +2881,40 @@ const getMatchsChart = () => {
                 </div>
               )}
  
-             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1a1a1a' }}>
+             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--c-1a1a1a)' }}>
                 {ongletStat === 'TOI' ? (
-  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
-    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>TOI AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
-    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (() => {
+  <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+    <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>TOI AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+    <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-white)' }}>{valeurs.length > 0 ? (() => {
       const avgMin = valeurs.reduce((a, b) => a + b, 0) / valeurs.length;
       const minutes = Math.floor(avgMin);
       const secondes = String(Math.round((avgMin - minutes) * 60)).padStart(2, '0');
       return `${minutes}:${secondes}`;
     })() : '-'}</div>
-    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
+    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '4px' }}>per game</div>
   </div>
 ) : ongletStat === 'HITS' ? (
-  <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
-    <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>HITS AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
-    <div style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{valeurs.length > 0 ? (valeurs.reduce((a, b) => a + b, 0) / valeurs.length).toFixed(1) : '-'}</div>
-    <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>per game</div>
+  <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+    <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>HITS AVG. · {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+    <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-white)' }}>{valeurs.length > 0 ? (valeurs.reduce((a, b) => a + b, 0) / valeurs.length).toFixed(1) : '-'}</div>
+    <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '4px' }}>per game</div>
   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                    <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
                       <div style={{ fontSize: '9px', color: '#f97316', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>EDGE ({ongletStat})</div>
-                      <input type="number" step="0.5" placeholder="ex: 1.5" value={edgeValue} onChange={e => setEdgeValue(e.target.value)} style={{ width: '80px', backgroundColor: '#111', border: '1px solid #f97316', borderRadius: '6px', color: 'white', fontSize: '16px', fontWeight: '900', textAlign: 'center', padding: '4px', outline: 'none' }} />
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>Betting line</div>
+                      <input type="number" step="0.5" placeholder="ex: 1.5" value={edgeValue} onChange={e => setEdgeValue(e.target.value)} style={{ width: '80px', backgroundColor: 'var(--c-111)', border: '1px solid #f97316', borderRadius: '6px', color: 'var(--c-white)', fontSize: '16px', fontWeight: '900', textAlign: 'center', padding: '4px', outline: 'none' }} />
+                      <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '4px' }}>Betting line</div>
                     </div>
-                    <div style={{ backgroundColor: edgeValue && getPctAuDessusEdge() >= 70 ? 'rgba(249,115,22,0.15)' : '#1a1a1a', border: edgeValue && getPctAuDessusEdge() >= 70 ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>OVER EDGE</div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : '#444' }}>{edgeValue ? `${getPctAuDessusEdge()}%` : '-'}</div>
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+                    <div style={{ backgroundColor: edgeValue && getPctAuDessusEdge() >= 70 ? 'rgba(249,115,22,0.15)' : 'var(--c-1a1a1a)', border: edgeValue && getPctAuDessusEdge() >= 70 ? '1px solid rgba(249,115,22,0.4)' : '1px solid transparent', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>OVER EDGE</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: edgeValue ? (getPctAuDessusEdge() >= 70 ? '#f97316' : getPctAuDessusEdge() >= 50 ? 'white' : '#ef4444') : 'var(--c-444)' }}>{edgeValue ? `${getPctAuDessusEdge()}%` : '-'}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '4px' }}>{ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
                     </div>
-                    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMUL. {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
-                      <div style={{ fontSize: '9px', color: '#555', marginTop: '4px' }}>{ongletStat} total</div>
+                    <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '6px' }}>CUMUL. {ongletPeriode === 'L5' ? 'LAST 5' : ongletPeriode === 'L10' ? 'LAST 10' : 'LAST 20'}</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--c-white)' }}>{valeurs.reduce((a, b) => a + b, 0)}</div>
+                      <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '4px' }}>{ongletStat} total</div>
                     </div>
                   </div>
                 )}
@@ -2924,18 +2924,18 @@ const getMatchsChart = () => {
  
           {/* 4. SHOT CHART */}
           {!isGardien && (
-            <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-              <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Shot Chart</h3>
+            <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Shot Chart</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginBottom: '10px' }}>
                 {[['SOG', 'Shots on Goal'], ['Goals', 'Goals']].map(([t, label]) => (
-                  <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
+                  <button key={t} onClick={() => setTypeChart(t)} style={{ padding: '7px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: typeChart === t ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '11px', fontWeight: typeChart === t ? 'bold' : 'normal' }}>{label}</button>
                 ))}
               </div>
               <div style={{ backgroundColor: '#0a0f1a', borderRadius: '10px', overflow: 'hidden' }}>
                 <svg viewBox="0 0 204 214" style={{ width: '100%', display: 'block' }}>
                   <defs>
                     <radialGradient id="iceGradientP" cx="50%" cy="8%" r="95%">
-                      <stop offset="0%" stopColor="#ffffff" />
+                      <stop offset="0%" stopColor="var(--c-white)" />
                       <stop offset="100%" stopColor="#e9f1f8" />
                     </radialGradient>
                   </defs>
@@ -3318,19 +3318,19 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
 
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
-          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
-          <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
+          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
-        <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
         <div style={{ textAlign: 'center', cursor: gardienPartant ? 'pointer' : 'default' }} onClick={selectionnerGardien}>
           <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
-          <div style={{ color: '#666', fontSize: '10px' }}>
+          <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>
             {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
           </div>
         </div>
@@ -3360,57 +3360,57 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
 
       <div
         onClick={selectionnerGardien}
-        style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px', cursor: gardienPartant ? 'pointer' : 'default', transition: 'border-color 0.2s ease' }}
+        style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '12px', cursor: gardienPartant ? 'pointer' : 'default', transition: 'border-color 0.2s ease' }}
         onMouseEnter={e => gardienPartant && (e.currentTarget.style.borderColor = '#f97316')}
-        onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
       >
-        <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>GARDIEN PARTANT PROBABLE</div>
+        <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>GARDIEN PARTANT PROBABLE</div>
         {chargementGardien ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+          <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Chargement...</p>
         ) : !gardienPartant ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Gardien partant indisponible.</p>
+          <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Gardien partant indisponible.</p>
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
+              <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ color: 'white', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
-                <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
+                <div style={{ color: 'var(--c-white)', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
+                <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
               </div>
               <span style={{ color: '#f97316', fontSize: '14px' }}>→</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '10px' }}>
-              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.gaa}</div>
-                <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>GAA</div>
+                <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>GAA</div>
               </div>
-              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+              <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{gardienPartant.svp}</div>
-                <div style={{ fontSize: '9px', color: '#555', marginTop: '2px' }}>SV%</div>
+                <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '2px' }}>SV%</div>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '10px' }}>
-              <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '8px' }}>HISTORIQUE FACE À CE GARDIEN</div>
+            <div style={{ borderTop: '1px solid var(--c-1a1a1a)', paddingTop: '10px' }}>
+              <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '8px' }}>HISTORIQUE FACE À CE GARDIEN</div>
               {chargementGoalieH2H ? (
-                <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Analyse de l'historique...</p>
+                <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Analyse de l'historique...</p>
               ) : statsVsGardien.nb === 0 ? (
                 <div style={{ textAlign: 'center', padding: '10px 0' }}>
                   <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
-                  <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
+                  <div style={{ color: 'var(--c-white)', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.goals}</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsGardien.nb} MJ</div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{statsVsGardien.moy.goals}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>B/MATCH · {statsVsGardien.nb} MJ</div>
                   </div>
-                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
                     <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsGardien.moy.points}</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>PTS/MATCH</div>
                   </div>
-                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsGardien.moy.shots}</div>
-                    <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
+                  <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{statsVsGardien.moy.shots}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>TIRS/MATCH</div>
                   </div>
                 </div>
               )}
@@ -3419,44 +3419,44 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         )}
       </div>
 
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
-        <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>HISTORIQUE FACE À {adversaireAbbrev}</div>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '12px' }}>
+        <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>HISTORIQUE FACE À {adversaireAbbrev}</div>
         {chargement ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+          <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Chargement...</p>
         ) : statsVsEquipe.nb === 0 ? (
           <div style={{ textAlign: 'center', padding: '10px 0' }}>
             <div style={{ fontSize: '22px', marginBottom: '4px' }}>🆕</div>
-            <div style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
+            <div style={{ color: 'var(--c-white)', fontWeight: '700', fontSize: '13px' }}>Premier affrontement</div>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-              <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsEquipe.moy.goals}</div>
-              <div style={{ fontSize: '9px', color: '#555' }}>B/MATCH · {statsVsEquipe.nb} MJ</div>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{statsVsEquipe.moy.goals}</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>B/MATCH · {statsVsEquipe.nb} MJ</div>
             </div>
-            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
               <div style={{ fontSize: '15px', fontWeight: '900', color: '#f97316' }}>{statsVsEquipe.moy.points}</div>
-              <div style={{ fontSize: '9px', color: '#555' }}>PTS/MATCH</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>PTS/MATCH</div>
             </div>
-            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#1a1a1a', borderRadius: '7px' }}>
-              <div style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>{statsVsEquipe.moy.shots}</div>
-              <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH</div>
+            <div style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{statsVsEquipe.moy.shots}</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>TIRS/MATCH</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Historique detaille : liste des matchs, filtrable vs cette equipe / vs ce gardien, par categorie */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', padding: pad }}>
         <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
           {[['equipe', 'vs Cette Équipe'], ['gardien', 'vs Ce Gardien']].map(([id, label]) => (
-            <button key={id} onClick={() => changerOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : '#161616', color: ongletHistorique === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+            <button key={id} onClick={() => changerOngletHistorique(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistorique === id ? '#3b82f6' : 'var(--c-161616)', color: ongletHistorique === id ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: ongletHistorique === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
           {categoriesDisponibles.map(cat => (
-            <button key={cat.cle} onClick={() => setCategorieHistorique(cat.cle)} style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieHistorique === cat.cle ? '#f97316' : '#161616', color: categorieHistorique === cat.cle ? 'white' : '#777', fontSize: '11px', fontWeight: categorieHistorique === cat.cle ? '700' : '500', transition: 'background-color 0.2s ease' }}>{cat.label}</button>
+            <button key={cat.cle} onClick={() => setCategorieHistorique(cat.cle)} style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: categorieHistorique === cat.cle ? '#f97316' : 'var(--c-161616)', color: categorieHistorique === cat.cle ? 'white' : 'var(--c-777)', fontSize: '11px', fontWeight: categorieHistorique === cat.cle ? '700' : '500', transition: 'background-color 0.2s ease' }}>{cat.label}</button>
           ))}
         </div>
 
@@ -3577,76 +3577,76 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
 
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
-          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
-          <div style={{ color: '#666', fontSize: '10px' }}>{joueur.equipe}</div>
+          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
-        <div style={{ color: '#444', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
         <div style={{ textAlign: 'center' }}>
           <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-          <div style={{ color: 'white', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
-          <div style={{ color: '#666', fontSize: '10px' }}>
+          <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
+          <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>
             {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '4px', border: '1px solid #1a1a1a' }}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '12px', padding: '4px', border: '1px solid var(--c-1a1a1a)' }}>
         {[['defense', 'Défense Adverse'], ['projection', 'Projections']].map(([id, label]) => (
-          <button key={id} onClick={() => setOngletPrincipal(id)} style={{ flex: 1, padding: '10px 6px', borderRadius: '9px', border: 'none', cursor: 'pointer', backgroundColor: ongletPrincipal === id ? '#f97316' : 'transparent', color: ongletPrincipal === id ? 'white' : '#888', fontSize: '13px', fontWeight: ongletPrincipal === id ? '700' : '500', transition: 'background-color 0.2s ease, color 0.2s ease' }}>{label}</button>
+          <button key={id} onClick={() => setOngletPrincipal(id)} style={{ flex: 1, padding: '10px 6px', borderRadius: '9px', border: 'none', cursor: 'pointer', backgroundColor: ongletPrincipal === id ? '#f97316' : 'transparent', color: ongletPrincipal === id ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: ongletPrincipal === id ? '700' : '500', transition: 'background-color 0.2s ease, color 0.2s ease' }}>{label}</button>
         ))}
       </div>
 
-      {/* ================= SECTION 1 : DÉFENSE ADVERSE (fond #111, accents orange) ================= */}
+      {/* ================= SECTION 1 : DÉFENSE ADVERSE (fond var(--c-111), accents orange) ================= */}
       {ongletPrincipal === 'defense' && (
         <div>
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
-            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>STYLE DÉFENSIF ADVERSE</div>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '12px' }}>
+            <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>STYLE DÉFENSIF ADVERSE</div>
             {chargementDefense ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+              <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Chargement...</p>
             ) : !styleActif ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
+              <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
             ) : (
               <>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', backgroundColor: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.4)', marginBottom: '10px' }}>
                   <span style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{styleActif.label}</span>
                 </div>
-                <div style={{ color: '#888', fontSize: '12px', lineHeight: '1.5' }}>{styleActif.detail}</div>
-                <div style={{ marginTop: '10px', fontSize: '11px', color: styleActif.favorable === true ? '#f97316' : '#888' }}>
+                <div style={{ color: 'var(--c-888)', fontSize: '12px', lineHeight: '1.5' }}>{styleActif.detail}</div>
+                <div style={{ marginTop: '10px', fontSize: '11px', color: styleActif.favorable === true ? '#f97316' : 'var(--c-888)' }}>
                   {styleActif.favorable === true ? '↑ Favorable au joueur' : styleActif.favorable === false ? '↓ Plutôt défavorable au joueur' : 'Impact neutre'}
                 </div>
               </>
             )}
           </div>
 
-          <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '12px' }}>
-            <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>TIRS ACCORDÉS</div>
+          <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '12px' }}>
+            <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>TIRS ACCORDÉS</div>
             {chargementDefense ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Chargement...</p>
+              <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Chargement...</p>
             ) : !statsAdversaire ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
+              <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Statistiques indisponibles.</p>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{ textAlign: 'center', flexShrink: 0 }}>
                   <div style={{ fontSize: '26px', fontWeight: '900', color: '#f97316' }}>{statsAdversaire.shotsAgainstPerGame.toFixed(1)}</div>
-                  <div style={{ fontSize: '9px', color: '#555' }}>TIRS/MATCH ACCORDÉS</div>
+                  <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>TIRS/MATCH ACCORDÉS</div>
                 </div>
                 <div>
-                  <div style={{ color: 'white', fontWeight: '700', fontSize: '13px', marginBottom: '2px' }}>{categorieAdversaireTirs?.label}</div>
-                  <div style={{ color: '#666', fontSize: '11px' }}>{adversaireAbbrev} classée parmi les équipes « {categorieAdversaireTirs?.label.toLowerCase()} »</div>
+                  <div style={{ color: 'var(--c-white)', fontWeight: '700', fontSize: '13px', marginBottom: '2px' }}>{categorieAdversaireTirs?.label}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{adversaireAbbrev} classée parmi les équipes « {categorieAdversaireTirs?.label.toLowerCase()} »</div>
                 </div>
               </div>
             )}
           </div>
 
-          <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #1a1a1a', padding: pad }}>
+          <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', padding: pad }}>
             <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px' }}>
               {[['style', 'vs Ce Style Défensif'], ['tirs', 'vs Ces Tirs Accordés']].map(([id, label]) => (
-                <button key={id} onClick={() => setOngletHistoriqueDef(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistoriqueDef === id ? '#3b82f6' : '#161616', color: ongletHistoriqueDef === id ? 'white' : '#888', fontSize: '12px', fontWeight: ongletHistoriqueDef === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
+                <button key={id} onClick={() => setOngletHistoriqueDef(id)} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: ongletHistoriqueDef === id ? '#3b82f6' : 'var(--c-161616)', color: ongletHistoriqueDef === id ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: ongletHistoriqueDef === id ? 'bold' : 'normal', transition: 'background-color 0.2s ease' }}>{label}</button>
               ))}
             </div>
 
@@ -3676,15 +3676,15 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
         </div>
       )}
 
-      {/* ================= SECTION 2 : PROJECTION & PROBABILITÉ (fond #111, vert/rouge) ================= */}
+      {/* ================= SECTION 2 : PROJECTION & PROBABILITÉ (fond var(--c-111), vert/rouge) ================= */}
       {ongletPrincipal === 'projection' && (
-        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-          <div style={{ color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>MODÈLE DE PROJECTION</div>
-          <p style={{ color: '#555', fontSize: '11px', margin: '0 0 16px', lineHeight: '1.5' }}>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+          <div style={{ color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>MODÈLE DE PROJECTION</div>
+          <p style={{ color: 'var(--c-555)', fontSize: '11px', margin: '0 0 16px', lineHeight: '1.5' }}>
             Moyenne pondérée : forme récente L5/L10/L20 (40%) · style défensif (25%) · vs ce gardien (15%) · domicile/extérieur (10%) · tendance L5 (10%).
           </p>
           {chargementComplet ? (
-            <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Calcul de la projection...</p>
+            <p style={{ color: 'var(--c-666)', textAlign: 'center', fontSize: '12px', padding: '20px 0' }}>Calcul de la projection...</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {['shots', 'goals', 'points'].map(cle => (
@@ -3712,13 +3712,13 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
 function CategorieHistorique({ chargement, matchs, categorie, moyennePtsSaison, titre, messageVide, onSelectMatch }) {
   const isMobile = useIsMobile();
   if (chargement) {
-    return <p style={{ color: '#666', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Chargement...</p>;
+    return <p style={{ color: 'var(--c-666)', textAlign: 'center', fontSize: '12px', padding: '30px 0' }}>Chargement...</p>;
   }
   if (!matchs || matchs.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '30px 0' }}>
         <div style={{ fontSize: '26px', marginBottom: '6px' }}>🆕</div>
-        <div style={{ color: '#888', fontSize: '12px' }}>{messageVide}</div>
+        <div style={{ color: 'var(--c-888)', fontSize: '12px' }}>{messageVide}</div>
       </div>
     );
   }
@@ -3734,53 +3734,53 @@ function CategorieHistorique({ chargement, matchs, categorie, moyennePtsSaison, 
     : { l: categorie.label.toUpperCase(), champ: categorie.champ, v: m => valeurCategorieMatch(m, categorie) };
   return (
     <>
-      <div style={{ color: 'white', fontWeight: '700', fontSize: '13px', marginBottom: '10px' }}>{titre}</div>
+      <div style={{ color: 'var(--c-white)', fontWeight: '700', fontSize: '13px', marginBottom: '10px' }}>{titre}</div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '6px', marginBottom: '14px' }}>
         {[['PJ', stats.nb], [`${categorie.label.toUpperCase()}/M`, stats.moyenne], [`TOTAL ${categorie.label.toUpperCase()}`, stats.total], ['%>MOY', stats.pctAuDessus + '%']].map(([l, v], i) => (
-          <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: '#161616', borderRadius: '8px', border: '1px solid #1f1f1f' }}>
+          <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-161616)', borderRadius: '8px', border: '1px solid var(--c-1f1f1f)' }}>
             <div style={{ fontSize: '14px', fontWeight: '900', color: '#3b82f6' }}>{v}</div>
-            <div style={{ fontSize: '8px', color: '#555', marginTop: '2px' }}>{l}</div>
+            <div style={{ fontSize: '8px', color: 'var(--c-555)', marginTop: '2px' }}>{l}</div>
           </div>
         ))}
       </div>
       <div style={{ width: '100%', height: 150, marginBottom: '14px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={derniers10.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', valeur: valeurCategorieMatch(m, categorie) }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 9 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-            <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={26} allowDecimals={false} />
-            <RechartsTooltip contentStyle={{ backgroundColor: '#161616', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} formatter={v => [`${v} ${categorie.label.toLowerCase()}`, '']} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--c-1a1a1a)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: 'var(--c-555)', fontSize: 9 }} axisLine={{ stroke: 'var(--c-222)' }} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--c-555)', fontSize: 10 }} axisLine={false} tickLine={false} width={26} allowDecimals={false} />
+            <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-161616)', border: '1px solid var(--c-333)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: 'var(--c-888)' }} formatter={v => [`${v} ${categorie.label.toLowerCase()}`, '']} />
             <Bar dataKey="valeur" fill="#f97316" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {matchs.slice(0, 10).map((m, i) => (
-          <div key={i} onClick={() => onSelectMatch(m)} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#161616', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+          <div key={i} onClick={() => onSelectMatch(m)} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-161616)', borderRadius: '10px', padding: '10px 12px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1c1c1c'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#161616'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--c-161616)'}
           >
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>
+              <div style={{ fontSize: '12px', color: 'var(--c-white)', fontWeight: '600' }}>
                 {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
                 {m.resultatMatch && (
-                  <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : '#888', fontWeight: '900', marginLeft: '6px' }}>
+                  <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : 'var(--c-888)', fontWeight: '900', marginLeft: '6px' }}>
                     {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '10px', color: '#555' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--c-aaa)', textAlign: 'center' }}>
               {colonnesBase.map(c => (
                 <div key={c.champ}>
-                  <div style={{ color: '#666', fontSize: '9px' }}>{c.l}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '9px' }}>{c.l}</div>
                   <div style={{ color: c.champ === categorie.champ ? '#f97316' : (c.champ === 'points' ? '#3b82f6' : 'white'), fontWeight: 'bold' }}>{c.v(m)}</div>
                 </div>
               ))}
               {colonneCategorie && (
                 <div>
-                  <div style={{ color: '#666', fontSize: '9px' }}>{colonneCategorie.l}</div>
+                  <div style={{ color: 'var(--c-666)', fontSize: '9px' }}>{colonneCategorie.l}</div>
                   <div style={{ color: '#f97316', fontWeight: 'bold' }}>{colonneCategorie.v(m)}</div>
                 </div>
               )}
@@ -3798,36 +3798,36 @@ function DetailMatchHistorique({ match, joueurNom, onBack }) {
   const dateStr = match.gameDate ? new Date(match.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '';
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px', marginBottom: '14px', textAlign: 'center' }}>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '20px', marginBottom: '14px', textAlign: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '10px' }}>
           <img src={LOGOS_NHL[match.opponentAbbrev]} alt={match.opponentAbbrev} style={{ width: '48px', height: '48px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
           <div>
-            <div style={{ color: 'white', fontSize: '16px', fontWeight: '900' }}>{match.homeRoadFlag === 'H' ? 'vs' : '@'} {match.opponentAbbrev}</div>
-            <div style={{ color: '#666', fontSize: '11px', textTransform: 'capitalize' }}>{dateStr}</div>
+            <div style={{ color: 'var(--c-white)', fontSize: '16px', fontWeight: '900' }}>{match.homeRoadFlag === 'H' ? 'vs' : '@'} {match.opponentAbbrev}</div>
+            <div style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'capitalize' }}>{dateStr}</div>
           </div>
         </div>
         {match.resultatMatch && (
-          <div style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '20px', backgroundColor: match.resultatMatch === 'V' ? 'rgba(34,197,94,0.12)' : match.resultatMatch === 'D' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.06)', color: match.resultatMatch === 'V' ? '#22c55e' : match.resultatMatch === 'D' ? '#ef4444' : '#888', fontSize: '13px', fontWeight: '900' }}>
+          <div style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '20px', backgroundColor: match.resultatMatch === 'V' ? 'rgba(34,197,94,0.12)' : match.resultatMatch === 'D' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.06)', color: match.resultatMatch === 'V' ? '#22c55e' : match.resultatMatch === 'D' ? '#ef4444' : 'var(--c-888)', fontSize: '13px', fontWeight: '900' }}>
             {match.resultatMatch === 'V' ? 'Victoire' : match.resultatMatch === 'D' ? 'Défaite' : 'Nul'} {match.scoreEquipe}-{match.scoreAdverse}
           </div>
         )}
       </div>
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px', marginBottom: '14px' }}>
-        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>PERFORMANCE DE {(joueurNom || '').toUpperCase()}</div>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '20px', marginBottom: '14px' }}>
+        <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>PERFORMANCE DE {(joueurNom || '').toUpperCase()}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {[['BUTS', match.goals, '#f97316'], ['PASSES', match.assists, 'white'], ['POINTS', match.points, '#f97316'], ['TIRS', match.shots, 'white'], ['MISES EN ÉCHEC', match.hits ?? '-', 'white'], ['BLOQUÉS', match.blockedShots ?? '-', 'white']].map(([l, v, c], i) => (
-            <div key={i} style={{ textAlign: 'center', padding: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px' }}>
+            <div key={i} style={{ textAlign: 'center', padding: '10px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px' }}>
               <div style={{ fontSize: '18px', fontWeight: '900', color: c }}>{v}</div>
-              <div style={{ fontSize: '9px', color: '#555', marginTop: '3px' }}>{l}</div>
+              <div style={{ fontSize: '9px', color: 'var(--c-555)', marginTop: '3px' }}>{l}</div>
             </div>
           ))}
         </div>
       </div>
       {match.gardienAdversaireNom && (
-        <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '20px' }}>
-          <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>GARDIEN ADVERSE</div>
-          <div style={{ color: 'white', fontSize: '14px', fontWeight: '700' }}>{match.gardienAdversaireNom}</div>
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '20px' }}>
+          <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>GARDIEN ADVERSE</div>
+          <div style={{ color: 'var(--c-white)', fontSize: '14px', fontWeight: '700' }}>{match.gardienAdversaireNom}</div>
         </div>
       )}
     </div>
@@ -3842,8 +3842,8 @@ function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, 
 
   if (!projection) {
     return (
-      <div style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
-        <div style={{ color: '#666', fontSize: '12px' }}>Données insuffisantes pour projeter les {label}.</div>
+      <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
+        <div style={{ color: 'var(--c-666)', fontSize: '12px' }}>Données insuffisantes pour projeter les {label}.</div>
       </div>
     );
   }
@@ -3851,24 +3851,24 @@ function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, 
   const ligneActive = ligneEdge !== '' && ligneEdge != null ? parseFloat(ligneEdge) : projection.ligneDefaut;
   const probabilite = probabiliteDepassement(projection.valeur, projection.ecartType, ligneActive);
   const couleurFiabilite = projection.fiabilite === 'Élevée' ? '#22c55e' : projection.fiabilite === 'Moyenne' ? '#f97316' : '#ef4444';
-  const couleurProb = probabilite >= 55 ? '#22c55e' : probabilite <= 45 ? '#ef4444' : '#888';
+  const couleurProb = probabilite >= 55 ? '#22c55e' : probabilite <= 45 ? '#ef4444' : 'var(--c-888)';
 
   return (
-    <div style={{ backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '16px' }}>
+    <div style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '12px', padding: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '10px' }}>
         <div>
-          <div style={{ color: 'white', fontSize: '14px', fontWeight: '900', textTransform: 'capitalize' }}>{label}</div>
+          <div style={{ color: 'var(--c-white)', fontSize: '14px', fontWeight: '900', textTransform: 'capitalize' }}>{label}</div>
           <div style={{ fontSize: '9px', fontWeight: 'bold', color: couleurFiabilite, marginTop: '2px' }}>FIABILITÉ {projection.fiabilite.toUpperCase()} · {projection.totalDonnees} MATCHS</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '22px', fontWeight: '900', color: '#f97316' }}>{projection.valeur}</div>
-          <div style={{ fontSize: '9px', color: '#666' }}>PROJECTION</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>PROJECTION</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#111', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ fontSize: '11px', color: '#888' }}>
-          Ligne {ligneEdge ? 'Edge' : 'suggérée'} : <span style={{ color: 'white', fontWeight: 'bold' }}>{ligneActive}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>
+          Ligne {ligneEdge ? 'Edge' : 'suggérée'} : <span style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{ligneActive}</span>
         </div>
         {enEdition ? (
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -3876,12 +3876,12 @@ function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, 
               type="number" step="0.5" autoFocus value={valeurSaisie}
               onChange={e => setValeurSaisie(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && valeurSaisie !== '') onValiderLigne(valeurSaisie); if (e.key === 'Escape') onAnnulerEdition(); }}
-              style={{ width: '70px', padding: '6px 8px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '6px', color: 'white', fontSize: '12px' }}
+              style={{ width: '70px', padding: '6px 8px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '6px', color: 'var(--c-white)', fontSize: '12px' }}
             />
             <button onClick={() => valeurSaisie !== '' && onValiderLigne(valeurSaisie)} style={{ padding: '6px 10px', borderRadius: '6px', border: 'none', backgroundColor: '#f97316', color: 'white', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>OK</button>
           </div>
         ) : (
-          <button onClick={onEditer} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: 'transparent', color: '#888', fontSize: '11px', cursor: 'pointer' }}>
+          <button onClick={onEditer} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--c-333)', backgroundColor: 'transparent', color: 'var(--c-888)', fontSize: '11px', cursor: 'pointer' }}>
             {ligneEdge ? 'Modifier la ligne Edge' : 'Entrer la ligne Edge'}
           </button>
         )}
@@ -3890,23 +3890,23 @@ function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
         <div style={{ textAlign: 'center', padding: '10px', backgroundColor: probabilite >= 50 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${couleurProb}55`, borderRadius: '8px' }}>
           <div style={{ fontSize: '20px', fontWeight: '900', color: couleurProb }}>{probabilite}%</div>
-          <div style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>DE DÉPASSER {ligneActive} {label.toUpperCase()}</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-888)', marginTop: '2px' }}>DE DÉPASSER {ligneActive} {label.toUpperCase()}</div>
         </div>
-        <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#111', borderRadius: '8px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{projection.intervalleBas} – {projection.intervalleHaut}</div>
-          <div style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>INTERVALLE DE CONFIANCE</div>
+        <div style={{ textAlign: 'center', padding: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>{projection.intervalleBas} – {projection.intervalleHaut}</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-888)', marginTop: '2px' }}>INTERVALLE DE CONFIANCE</div>
         </div>
       </div>
 
       <GraphiqueProjection matchs={projection.matchsGraph} cle={cle} projection={projection} />
 
       <div style={{ marginTop: '10px' }}>
-        <div style={{ color: '#666', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '6px' }}>COMPOSANTES DU MODÈLE</div>
+        <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '6px' }}>COMPOSANTES DU MODÈLE</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {projection.composantes.map(c => (
             <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', opacity: c.valeur != null ? 1 : 0.35 }}>
-              <span style={{ color: '#888' }}>{c.label}</span>
-              <span style={{ color: 'white' }}>{c.valeur != null ? `${c.valeur} (${c.poidsEffectif}%)` : 'Non disponible'}</span>
+              <span style={{ color: 'var(--c-888)' }}>{c.label}</span>
+              <span style={{ color: 'var(--c-white)' }}>{c.valeur != null ? `${c.valeur} (${c.poidsEffectif}%)` : 'Non disponible'}</span>
             </div>
           ))}
         </div>
@@ -3918,19 +3918,19 @@ function LigneProjectionStat({ cle, projection, ligneEdge, enEdition, onEditer, 
 // Graphique de regression : derniers matchs (barres) + ligne de tendance (projection) + intervalle de confiance.
 function GraphiqueProjection({ matchs, cle, projection }) {
   if (!matchs || matchs.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '16px 0', color: '#555', fontSize: '11px' }}>Pas assez de matchs récents pour un graphique.</div>;
+    return <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--c-555)', fontSize: '11px' }}>Pas assez de matchs récents pour un graphique.</div>;
   }
   const data = matchs.map(m => ({ label: m.gameDate ? m.gameDate.slice(5) : '', valeur: m[cle] || 0 }));
   return (
     <div style={{ width: '100%', height: 130 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
-          <XAxis dataKey="label" tick={{ fill: '#555', fontSize: 8 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-          <YAxis tick={{ fill: '#555', fontSize: 9 }} axisLine={false} tickLine={false} width={22} allowDecimals={false} />
-          <RechartsTooltip contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: '#888' }} />
-          <ReferenceLine y={projection.intervalleHaut} stroke="#444" strokeDasharray="4 4" />
-          <ReferenceLine y={projection.intervalleBas} stroke="#444" strokeDasharray="4 4" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--c-222)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fill: 'var(--c-555)', fontSize: 8 }} axisLine={{ stroke: 'var(--c-222)' }} tickLine={false} />
+          <YAxis tick={{ fill: 'var(--c-555)', fontSize: 9 }} axisLine={false} tickLine={false} width={22} allowDecimals={false} />
+          <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-333)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: 'var(--c-888)' }} />
+          <ReferenceLine y={projection.intervalleHaut} stroke="var(--c-444)" strokeDasharray="4 4" />
+          <ReferenceLine y={projection.intervalleBas} stroke="var(--c-444)" strokeDasharray="4 4" />
           <ReferenceLine y={projection.valeur} stroke="#f97316" strokeWidth={2} label={{ value: 'Projection', position: 'insideTopRight', fill: '#f97316', fontSize: 9 }} />
           <Bar dataKey="valeur" fill="#3a3a3a" radius={[2, 2, 0, 0]} />
         </BarChart>
@@ -4108,8 +4108,8 @@ function FicheJoueurStats({ joueur, onBack }) {
   if (chargement && !infos) {
     return (
       <div>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
-        <p style={{ color: '#666', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '60px 0' }}>Chargement...</p>
       </div>
     );
   }
@@ -4118,23 +4118,23 @@ function FicheJoueurStats({ joueur, onBack }) {
 
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '14px' }}>
-        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '70px' : '86px', height: isMobile ? '70px' : '86px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a' }} onError={e => e.target.style.display = 'none'} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
+        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '70px' : '86px', height: isMobile ? '70px' : '86px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display = 'none'} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
+          <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: '#666', fontSize: '12px' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}</span>
+            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}</span>
           </div>
         </div>
       </div>
 
       {/* Infos biographiques */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Bio</h3>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Bio</h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '10px' }}>
           {[
             ['Taille', formatTaille(infos?.taille)],
@@ -4144,53 +4144,53 @@ function FicheJoueurStats({ joueur, onBack }) {
             ['Lieu', [infos?.villeNaissance, infos?.paysNaissance].filter(Boolean).join(', ') || '-'],
             ['Repêchage', formatDraft(infos?.repechage)],
           ].map(([label, valeur]) => (
-            <div key={label} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
-              <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '3px', textTransform: 'uppercase' }}>{label}</div>
-              <div style={{ fontSize: '13px', color: 'white', fontWeight: '600' }}>{valeur}</div>
+            <div key={label} style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '3px', textTransform: 'uppercase' }}>{label}</div>
+              <div style={{ fontSize: '13px', color: 'var(--c-white)', fontWeight: '600' }}>{valeur}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Stats saison complete */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Saison régulière</h3>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Saison régulière</h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px' }}>
           {(statsAvancees?.gardien
             ? [['GP', statsAvancees?.gp], ['W', statsAvancees?.wins], ['L', statsAvancees?.losses], ['GAA', statsAvancees?.gaa], ['SV%', statsAvancees?.svp], ['SO', statsAvancees?.shutouts]]
             : [['G', statsAvancees?.goals], ['A', statsAvancees?.assists], ['PTS', statsAvancees?.points], ['+/-', statsAvancees?.plusMinus], ['PPP', statsAvancees?.ppp], ['SOG', statsAvancees?.sog], ['HITS', statsAvancees?.hits], ['BLK', statsAvancees?.blocks], ['FOW%', statsAvancees?.fowPct], ['TOI', statsAvancees?.toi]]
           ).map(([label, valeur]) => (
-            <div key={label} style={{ backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
-              <div style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '4px' }}>{label}</div>
-              <div style={{ fontSize: '18px', color: 'white', fontWeight: '900' }}>{valeur ?? '-'}</div>
+            <div key={label} style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+              <div style={{ fontSize: '9px', color: 'var(--c-666)', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '4px' }}>{label}</div>
+              <div style={{ fontSize: '18px', color: 'var(--c-white)', fontWeight: '900' }}>{valeur ?? '-'}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Stats de carriere */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad, marginBottom: '16px' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Statistiques de carrière</h3>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Statistiques de carrière</h3>
         {carriere.length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucune donnée disponible.</p>
+          <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Aucune donnée disponible.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #222' }}>
+                <tr style={{ borderBottom: '1px solid var(--c-222)' }}>
                   {['Saison', 'Équipe', 'PJ', 'B', 'A', 'PTS'].map(h => (
-                    <th key={h} style={{ textAlign: h === 'Équipe' ? 'left' : 'center', padding: '8px 6px', color: '#666', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ textAlign: h === 'Équipe' ? 'left' : 'center', padding: '8px 6px', color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {carriere.map((s, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #191919' }}>
-                    <td style={{ padding: '8px 6px', color: 'white', fontWeight: '600', whiteSpace: 'nowrap' }}>{formatSaison(s.season)}</td>
-                    <td style={{ padding: '8px 6px', color: '#aaa', whiteSpace: 'nowrap' }}>{s.teamCommonName?.default || s.teamName?.default || '-'}</td>
-                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.gamesPlayed ?? 0}</td>
-                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.goals ?? 0}</td>
-                    <td style={{ padding: '8px 6px', color: '#aaa', textAlign: 'center' }}>{s.assists ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>{formatSaison(s.season)}</td>
+                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', whiteSpace: 'nowrap' }}>{s.teamCommonName?.default || s.teamName?.default || '-'}</td>
+                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.gamesPlayed ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.goals ?? 0}</td>
+                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.assists ?? 0}</td>
                     <td style={{ padding: '8px 6px', color: '#f97316', fontWeight: '900', textAlign: 'center' }}>{s.points ?? 0}</td>
                   </tr>
                 ))}
@@ -4201,39 +4201,39 @@ function FicheJoueurStats({ joueur, onBack }) {
       </div>
 
       {/* Derniers matchs */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: pad }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'white' }}>Derniers matchs</h3>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Derniers matchs</h3>
         {dernierMatchs.length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '20px 0' }}>Aucun match disponible.</p>
+          <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px 0' }}>Aucun match disponible.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {dernierMatchs.map((m, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1a1a1a', borderRadius: '10px', padding: '10px 12px' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px 12px' }}>
                 <img src={LOGOS_NHL[m.opponentAbbrev]} alt={m.opponentAbbrev} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--c-white)', fontWeight: '600' }}>
                     {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
                     {m.scoreEquipe != null && (
-                      <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : '#888', fontWeight: '900', marginLeft: '6px' }}>
+                      <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : 'var(--c-888)', fontWeight: '900', marginLeft: '6px' }}>
                         {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#555' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : ''}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : ''}</div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: '#aaa', textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--c-aaa)', textAlign: 'center' }}>
                   {statsAvancees?.gardien ? (
                     <>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>SA</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shotsAgainst}</div></div>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>GA</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goalsAgainst}</div></div>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>SV%</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.savePctg != null ? (m.savePctg * 100).toFixed(1) : '-'}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>SA</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.shotsAgainst}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>GA</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.goalsAgainst}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>SV%</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.savePctg != null ? (m.savePctg * 100).toFixed(1) : '-'}</div></div>
                     </>
                   ) : (
                     <>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>G</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.goals}</div></div>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>A</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.assists}</div></div>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>PTS</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.points}</div></div>
-                      <div><div style={{ color: '#666', fontSize: '9px' }}>SOG</div><div style={{ color: 'white', fontWeight: 'bold' }}>{m.shots}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>G</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.goals}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>A</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.assists}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>PTS</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.points}</div></div>
+                      <div><div style={{ color: 'var(--c-666)', fontSize: '9px' }}>SOG</div><div style={{ color: 'var(--c-white)', fontWeight: 'bold' }}>{m.shots}</div></div>
                     </>
                   )}
                 </div>
@@ -4259,7 +4259,7 @@ function BracketPlayoffs({ bracket }) {
     return () => clearInterval(interval);
   }, []);
 
-  if (!bracket) return <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
+  if (!bracket) return <div style={{ color: 'var(--c-666)', textAlign: 'center', padding: '20px' }}>Chargement...</div>;
   
   const rounds = bracket.rounds || [];
   const r1 = rounds.find(r => r.roundNumber === 1)?.series || [];
@@ -4285,7 +4285,7 @@ function BracketPlayoffs({ bracket }) {
     const bot = serie.bottomSeed;
     const gagne = serie.winningTeamId;
     return (
-      <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '8px 12px', border: '1px solid #333', marginBottom: '5px' }}>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--c-333)', marginBottom: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <img src={top?.logo} alt={top?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
@@ -4293,7 +4293,7 @@ function BracketPlayoffs({ bracket }) {
           </div>
           <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.wins}</span>
         </div>
-        <div style={{ height: '1px', backgroundColor: '#222', marginBottom: '4px' }} />
+        <div style={{ height: '1px', backgroundColor: 'var(--c-222)', marginBottom: '4px' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <img src={bot?.logo} alt={bot?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
@@ -4310,7 +4310,7 @@ function BracketPlayoffs({ bracket }) {
     <div>
       <div style={{ display: 'flex', gap: '5px', marginBottom: '12px' }}>
         {rondes.map((r, i) => (
-          <button key={i} onClick={() => { setRondeActive(i); setIndexConf(0); }} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: rondeActive === i ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '11px', fontWeight: rondeActive === i ? 'bold' : 'normal' }}>{r.label}</button>
+          <button key={i} onClick={() => { setRondeActive(i); setIndexConf(0); }} style={{ padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: rondeActive === i ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '11px', fontWeight: rondeActive === i ? 'bold' : 'normal' }}>{r.label}</button>
         ))}
       </div>
       <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.3s' }}>
@@ -4318,7 +4318,7 @@ function BracketPlayoffs({ bracket }) {
           <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: '#f97316' }}>
             {ronde?.label === 'SCF' ? '🏆 Stanley Cup Final' : indexConf === 0 ? 'Eastern Conference' : 'Western Conference'}
           </h3>
-          {ronde?.label !== 'SCF' && <span style={{ color: '#666', fontSize: '12px' }}>{indexConf + 1} / 2</span>}
+          {ronde?.label !== 'SCF' && <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{indexConf + 1} / 2</span>}
         </div>
         {(series || []).map((s, i) => <SerieItem key={i} serie={s} />)}
       </div>
@@ -5096,21 +5096,21 @@ function AnalysesFlux({ onLigueChange }) {
   if (!vue) {
     return (
       <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: padding, maxWidth: '900px', margin: '0 auto' }}>
-        <h2 style={{ margin: '0 0 24px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'white' }}>Analyses</h2>
+        <h2 style={{ margin: '0 0 24px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'var(--c-white)' }}>Analyses</h2>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
-          <div onClick={() => setVue('equipes')} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
+          <div onClick={() => setVue('equipes')} style={{ backgroundColor: 'var(--c-111)', borderRadius: '16px', border: '2px solid var(--c-222)', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
           >
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏒</div>
-            <div style={{ fontWeight: '900', fontSize: '18px', color: 'white' }}>Analyser une Équipe</div>
+            <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--c-white)' }}>Analyser une Équipe</div>
           </div>
-          <div onClick={() => setVue('joueurs')} style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
+          <div onClick={() => setVue('joueurs')} style={{ backgroundColor: 'var(--c-111)', borderRadius: '16px', border: '2px solid var(--c-222)', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
           >
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏃</div>
-            <div style={{ fontWeight: '900', fontSize: '18px', color: 'white' }}>Analyser un Joueur</div>
+            <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--c-white)' }}>Analyser un Joueur</div>
           </div>
         </div>
       </div>
@@ -5119,7 +5119,7 @@ function AnalysesFlux({ onLigueChange }) {
 
   return (
     <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-      <button onClick={() => setVue(null)} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <button onClick={() => setVue(null)} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
       {vue === 'equipes' && <PageStatsEquipesAnalyses classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
       {vue === 'joueurs' && <PageStatsJoueursAnalyses onSelectJoueur={setJoueurSelectionne} />}
     </div>
@@ -5146,20 +5146,26 @@ function AnalysesRecherche() {
 // Overlay de recherche global (style Wealthsimple) : barre de recherche + pills de filtres
 // (Attaquants/Défenseurs/Gardiens/Équipes) + sous-filtre équipe. Sans recherche/filtre actif,
 // affiche le hub Stats existant (StatsHub, via <Analyses/>) tel quel — code non supprimé, déplacé ici.
+const ORDRE_DIVISIONS = ['Metropolitan', 'Atlantic', 'Central', 'Pacific'];
+
 function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   const isMobile = useIsMobile();
   const [query, setQuery] = useState('');
-  const [categorie, setCategorie] = useState(null); // null | 'attaquants' | 'defenseurs' | 'gardiens' | 'equipes'
+  const [categorie, setCategorie] = useState(null); // null (= Attaquants par defaut) | 'attaquants' | 'defenseurs' | 'gardiens' | 'equipes'
   const [equipeFiltre, setEquipeFiltre] = useState('ALL');
   const [resultatsRecherche, setResultatsRecherche] = useState([]);
   const [chargementRecherche, setChargementRecherche] = useState(false);
-  const [resultatsCategorie, setResultatsCategorie] = useState([]);
-  const [chargementCategorie, setChargementCategorie] = useState(false);
+  const [top10, setTop10] = useState([]);
+  const [chargementTop10, setChargementTop10] = useState(false);
   const [standings, setStandings] = useState([]);
+  const [chargementStandings, setChargementStandings] = useState(false);
   const [skatersFull, setSkatersFull] = useState([]);
   const [chargementEquipe, setChargementEquipe] = useState(false);
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
+
+  const rechercheActive = query.trim().length >= 2;
+  const categorieEffective = categorie || 'attaquants';
 
   useEffect(() => {
     function onKeyDown(e) { if (e.key === 'Escape') onClose(); }
@@ -5185,72 +5191,97 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
+  // Top 10 attaquants/defenseurs/gardiens, selon la categorie active (ou attaquants par defaut).
   useEffect(() => {
-    if (!categorie || categorie === 'equipes') { setResultatsCategorie([]); return; }
+    if (rechercheActive || categorieEffective === 'equipes') return;
     let annule = false;
     (async () => {
-      setChargementCategorie(true);
+      setChargementTop10(true);
       try {
         const teamAbbrev = equipeFiltre === 'ALL' ? null : equipeFiltre;
-        if (categorie === 'gardiens') {
+        if (categorieEffective === 'gardiens') {
           const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
           const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=gamesPlayed&dir=DESC&start=0&limit=50`));
           const data = await res.json();
-          if (!annule) setResultatsCategorie((data.data || []).map(g => ({ id: g.playerId, nom: g.goalieFullName, equipe: (g.teamAbbrevs || '').split(',')[0].trim(), position: 'G', numero: '' })));
+          const admissibles = (data.data || []).filter(g => (g.gamesPlayed || 0) >= 3);
+          const tries = admissibles.sort((a, b) => (a.goalsAgainstAverage || 99) - (b.goalsAgainstAverage || 99)).slice(0, 10);
+          if (!annule) setTop10(tries.map(g => {
+            const eq = (g.teamAbbrevs || '').split(',')[0].trim();
+            return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/20252026/${eq}/${g.playerId}.png`, statLabel: 'GAA', statValeur: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-' };
+          }));
         } else {
           const cayenneExp = buildCayenneExp({ gameType: 2, teamAbbrev });
-          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=100`));
+          const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=0&limit=50`));
           const data = await res.json();
-          const tous = (data.data || []).map(j => ({ id: j.playerId, nom: j.skaterFullName, equipe: (j.teamAbbrevs || '').split(',')[0].trim(), position: j.positionCode, numero: '' }));
-          if (!annule) setResultatsCategorie(categorie === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D'));
+          const tous = (data.data || []).map(j => {
+            const eq = (j.teamAbbrevs || '').split(',')[0].trim();
+            return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/20252026/${eq}/${j.playerId}.png`, statLabel: 'PTS', statValeur: j.points };
+          });
+          const filtres = (categorieEffective === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D')).slice(0, 10);
+          if (!annule) setTop10(filtres);
         }
-      } catch { if (!annule) setResultatsCategorie([]); }
-      if (!annule) setChargementCategorie(false);
+      } catch { if (!annule) setTop10([]); }
+      if (!annule) setChargementTop10(false);
     })();
     return () => { annule = true; };
-  }, [categorie, equipeFiltre]);
+  }, [categorieEffective, equipeFiltre, rechercheActive]);
 
-  async function handleTeamClick(abbrev) {
-    setChargementEquipe(true);
-    try {
-      let stand = standings;
-      if (stand.length === 0) {
+  // Classement par division pour le filtre Equipes.
+  useEffect(() => {
+    if (categorie !== 'equipes' || standings.length > 0) return;
+    let annule = false;
+    (async () => {
+      setChargementStandings(true);
+      try {
         const res = await fetch(getUrl('standings/now'));
         const data = await res.json();
-        stand = data.standings || [];
-        setStandings(stand);
-      }
-      let sk = skatersFull;
-      if (sk.length === 0) {
-        const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
-        const pages = await Promise.all([0, 100, 200].map(start =>
-          fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=${start}&limit=100`)).then(r => r.json())
-        ));
-        sk = pages.flatMap(p => p.data || []);
-        setSkatersFull(sk);
-      }
-      const entry = stand.find(s => s.teamAbbrev?.default === abbrev) || { teamAbbrev: { default: abbrev } };
+        if (!annule) setStandings(data.standings || []);
+      } catch { if (!annule) setStandings([]); }
+      if (!annule) setChargementStandings(false);
+    })();
+    return () => { annule = true; };
+  }, [categorie, standings.length]);
+
+  async function assurerSkatersFull() {
+    if (skatersFull.length > 0) return skatersFull;
+    const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+    const pages = await Promise.all([0, 100, 200].map(start =>
+      fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=${start}&limit=100`)).then(r => r.json())
+    ));
+    const sk = pages.flatMap(p => p.data || []);
+    setSkatersFull(sk);
+    return sk;
+  }
+
+  async function handleTeamClick(entry) {
+    setChargementEquipe(true);
+    try {
+      const sk = await assurerSkatersFull();
       onSelectTeam({ equipe: entry, skaters: sk });
     } catch {
-      onSelectTeam({ equipe: { teamAbbrev: { default: abbrev } }, skaters: [] });
+      onSelectTeam({ equipe: entry, skaters: [] });
     }
     setChargementEquipe(false);
   }
 
-  function photoJoueur(id) { return `https://assets.nhle.com/mugs/${id}.png`; }
-
-  const rechercheActive = query.trim().length >= 2;
-  const resultatsAffiches = rechercheActive ? resultatsRecherche.filter(j => {
+  const resultatsRechercheFiltres = rechercheActive ? resultatsRecherche.filter(j => {
     const posOk = !categorie || categorie === 'equipes' ? true
       : categorie === 'gardiens' ? j.positionCode === 'G'
       : categorie === 'defenseurs' ? j.positionCode === 'D'
       : j.positionCode !== 'D' && j.positionCode !== 'G';
     const eqOk = equipeFiltre === 'ALL' || j.teamAbbrev === equipeFiltre;
     return posOk && eqOk;
-  }).map(j => ({ id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '' })) : [];
+  }).map(j => ({ id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '', photo: `https://assets.nhle.com/mugs/${j.playerId}.png` })) : [];
 
-  const equipesAffichees = categorie === 'equipes'
-    ? Object.keys(LOGOS_NHL).sort().filter(a => !query.trim() || a.toLowerCase().includes(query.trim().toLowerCase()))
+  const q = query.trim().toLowerCase();
+  const equipesParDivision = categorie === 'equipes'
+    ? ORDRE_DIVISIONS.map(div => ({
+        division: div,
+        equipes: standings
+          .filter(s => s.divisionName === div)
+          .filter(s => !q || (s.teamAbbrev?.default || '').toLowerCase().includes(q) || (s.teamName?.default || '').toLowerCase().includes(q) || (s.teamCommonName?.default || '').toLowerCase().includes(q))
+          .sort((a, b) => (b.points || 0) - (a.points || 0)),
+      })).filter(d => d.equipes.length > 0)
     : [];
 
   const pills = [
@@ -5260,26 +5291,52 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
     { id: 'equipes', label: 'Équipes' },
   ];
 
-  const ligneJoueur = (j) => (
+  const ligneJoueur = (j, rang) => (
     <div key={j.id} onClick={() => onSelectPlayer(j)}
       style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
     >
-      <img src={photoJoueur(j.id)} alt={j.nom} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
-        <div style={{ fontSize: '12px', color: '#666' }}>{j.equipe} · {j.position}</div>
+      {rang != null && <div style={{ width: '20px', textAlign: 'center', color: 'var(--c-555)', fontWeight: '700', fontSize: '13px', flexShrink: 0 }}>{rang}</div>}
+      <img src={j.photo} alt={j.nom} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
+        <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{j.equipe}{j.position ? ` · ${j.position}` : ''}</div>
       </div>
+      {j.statValeur != null && (
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ color: '#f97316', fontWeight: '900', fontSize: '16px' }}>{j.statValeur}</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-555)', fontWeight: '700', letterSpacing: '0.3px' }}>{j.statLabel}</div>
+        </div>
+      )}
     </div>
   );
 
+  const ligneEquipe = (s) => {
+    const abbrev = s.teamAbbrev?.default || '';
+    const nom = s.teamName?.default || s.teamCommonName?.default || abbrev;
+    return (
+      <div key={abbrev} onClick={() => handleTeamClick(s)}
+        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+      >
+        <img src={s.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nom}</div>
+          <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{s.wins ?? 0}-{s.losses ?? 0}-{s.otLosses ?? 0}</div>
+        </div>
+        <div style={{ color: '#f97316', fontWeight: '900', fontSize: '16px', flexShrink: 0 }}>{s.points ?? '-'}</div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: isMobile ? 'stretch' : 'flex-start', padding: isMobile ? 0 : '60px 20px' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: '#111', border: isMobile ? 'none' : '1px solid #222', borderRadius: isMobile ? 0 : '16px', width: '100%', maxWidth: '760px', maxHeight: isMobile ? '100vh' : '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-111)', border: isMobile ? 'none' : '1px solid var(--c-222)', borderRadius: isMobile ? 0 : '16px', width: '100%', maxWidth: '760px', maxHeight: isMobile ? '100vh' : '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
         {/* Barre de recherche */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 20px', borderBottom: '1px solid #222' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 20px', borderBottom: '1px solid var(--c-222)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-666)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
           </svg>
           <input
@@ -5287,27 +5344,27 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher un joueur, une équipe..."
-            style={{ flex: 1, backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 14px', color: 'white', fontSize: '15px', outline: 'none' }}
+            style={{ flex: 1, backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-2a2a2a)', borderRadius: '10px', padding: '12px 14px', color: 'var(--c-white)', fontSize: '15px', outline: 'none' }}
           />
-          <button onClick={onClose} style={{ backgroundColor: 'transparent', border: 'none', color: '#888', fontSize: '20px', cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} style={{ backgroundColor: 'transparent', border: 'none', color: 'var(--c-888)', fontSize: '20px', cursor: 'pointer', padding: '4px 8px', lineHeight: 1 }}>✕</button>
         </div>
 
         {/* Pills filtres */}
         <div style={{ display: 'flex', gap: '8px', padding: '14px 20px 0', flexWrap: 'wrap' }}>
           {pills.map(p => (
             <button key={p.id} onClick={() => setCategorie(categorie === p.id ? null : p.id)}
-              style={{ padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: categorie === p.id ? '#f97316' : '#1a1a1a', color: categorie === p.id ? 'white' : '#999', fontSize: '13px', fontWeight: categorie === p.id ? '700' : '500' }}
+              style={{ padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: categorie === p.id ? '#f97316' : 'var(--c-1a1a1a)', color: categorie === p.id ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: categorie === p.id ? '700' : '500' }}
             >
               {p.label}
             </button>
           ))}
         </div>
 
-        {/* Sous-filtre equipe (32 equipes NHL) */}
+        {/* Sous-filtre equipe (32 equipes NHL), seulement pour Attaquants/Defenseurs/Gardiens */}
         {categorie && categorie !== 'equipes' && (
           <div style={{ padding: '10px 20px 0' }}>
             <select value={equipeFiltre} onChange={e => setEquipeFiltre(e.target.value)}
-              style={{ padding: '8px 12px', backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', color: 'white', fontSize: '13px', outline: 'none' }}
+              style={{ padding: '8px 12px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-2a2a2a)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '13px', outline: 'none' }}
             >
               <option value="ALL">Toutes les équipes</option>
               {Object.keys(LOGOS_NHL).sort().map(a => <option key={a} value={a}>{a}</option>)}
@@ -5318,27 +5375,22 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
         {/* Contenu */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 24px' }}>
           {rechercheActive ? (
-            chargementRecherche ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Recherche...</p>
-            : resultatsAffiches.length === 0 ? <p style={{ color: '#444', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
-            : resultatsAffiches.map(ligneJoueur)
+            chargementRecherche ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Recherche...</p>
+            : resultatsRechercheFiltres.length === 0 ? <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
+            : resultatsRechercheFiltres.map(j => ligneJoueur(j, null))
           ) : categorie === 'equipes' ? (
-            chargementEquipe ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-            : equipesAffichees.map(a => (
-              <div key={a} onClick={() => handleTeamClick(a)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <img src={LOGOS_NHL[a]} alt={a} style={{ width: '32px', height: '32px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
-                <div style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{a}</div>
+            chargementStandings || chargementEquipe ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+            : equipesParDivision.length === 0 ? <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
+            : equipesParDivision.map(d => (
+              <div key={d.division} style={{ marginBottom: '18px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', padding: '0 12px 8px' }}>{d.division}</div>
+                {d.equipes.map(ligneEquipe)}
               </div>
             ))
-          ) : categorie ? (
-            chargementCategorie ? <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-            : resultatsCategorie.length === 0 ? <p style={{ color: '#444', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
-            : resultatsCategorie.map(ligneJoueur)
           ) : (
-            <Analyses onLigueChange={() => {}} />
+            chargementTop10 ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
+            : top10.length === 0 ? <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
+            : top10.map((j, i) => ligneJoueur(j, i + 1))
           )}
         </div>
       </div>

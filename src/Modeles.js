@@ -8,19 +8,19 @@ function CarteAccueil({ icone, titre, onClick }) {
   return (
     <div
       onClick={onClick}
-      style={{ backgroundColor: '#111', borderRadius: '16px', border: '2px solid #222', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
+      style={{ backgroundColor: 'var(--c-111)', borderRadius: '16px', border: '2px solid var(--c-222)', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
       onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <div style={{ fontSize: '40px', marginBottom: '12px' }}>{icone}</div>
-      <div style={{ fontWeight: '900', fontSize: '18px', color: 'white' }}>{titre}</div>
+      <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--c-white)' }}>{titre}</div>
     </div>
   );
 }
 
 function BoutonBack({ onClick }) {
   return (
-    <button onClick={onClick} style={{ backgroundColor: 'transparent', color: '#666', border: '1px solid #333', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+    <button onClick={onClick} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
   );
 }
 
@@ -30,8 +30,8 @@ function AccueilModeles({ onSelect }) {
   const padding = isMobile ? '16px' : '32px';
   return (
     <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding, maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ margin: '0 0 6px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'white' }}>Modèles</h2>
-      <p style={{ margin: '0 0 24px', textAlign: 'center', color: '#666', fontSize: '13px' }}>Analyses automatisées basées sur des critères statistiques précis</p>
+      <h2 style={{ margin: '0 0 6px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'var(--c-white)' }}>Modèles</h2>
+      <p style={{ margin: '0 0 24px', textAlign: 'center', color: 'var(--c-666)', fontSize: '13px' }}>Analyses automatisées basées sur des critères statistiques précis</p>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
         <CarteAccueil icone="🏒" titre="Analyser une Équipe" onClick={() => onSelect('equipe')} />
         <CarteAccueil icone="🏃" titre="Analyser un Joueur" onClick={() => onSelect('joueur')} />
@@ -49,10 +49,10 @@ function ListeModeles({ type, onBack, onSelect }) {
   return (
     <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
       <BoutonBack onClick={onBack} />
-      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'white' }}>
+      <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'var(--c-white)' }}>
         {type === 'equipe' ? 'Modèles Équipe' : 'Modèles Joueur'}
       </h2>
-      <p style={{ margin: '0 0 18px', color: '#666', fontSize: '12px' }}>{modeles.length} modèles disponibles · triés par ROI</p>
+      <p style={{ margin: '0 0 18px', color: 'var(--c-666)', fontSize: '12px' }}>{modeles.length} modèles disponibles · triés par ROI</p>
       <div>
         {modeles.map(m => {
           const positif = m.roi >= 0;
@@ -60,17 +60,17 @@ function ListeModeles({ type, onBack, onSelect }) {
             <div
               key={m.id}
               onClick={() => onSelect(m)}
-              style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: '16px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', cursor: 'pointer' }}
+              style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = '#222'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '15px', fontWeight: '900', color: 'white', marginBottom: '4px' }}>{m.nom}</div>
-                <div style={{ fontSize: '12px', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.description}</div>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '4px' }}>{m.nom}</div>
+                <div style={{ fontSize: '12px', color: 'var(--c-666)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.description}</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: '20px', fontWeight: '900', color: positif ? '#f97316' : '#ef4444' }}>{positif ? '+' : ''}{m.roi.toFixed(1)}%</div>
-                <div style={{ fontSize: '9px', color: '#555', letterSpacing: '0.3px' }}>ROI SAISON</div>
+                <div style={{ fontSize: '9px', color: 'var(--c-555)', letterSpacing: '0.3px' }}>ROI SAISON</div>
               </div>
             </div>
           );
@@ -171,37 +171,37 @@ function DetailModele({ modele, onBack }) {
           <span style={{ backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '900', letterSpacing: '0.5px', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>TOP PICK</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
             <img src={LOGOS_NHL[topPick.abbrevAway]} alt={topPick.abbrevAway} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: '#666', fontSize: '13px', fontWeight: 'bold' }}>@</span>
+            <span style={{ color: 'var(--c-666)', fontSize: '13px', fontWeight: 'bold' }}>@</span>
             <img src={LOGOS_NHL[topPick.abbrevHome]} alt={topPick.abbrevHome} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: 'white', fontSize: '13px', fontWeight: '700', marginLeft: '4px' }}>{topPick.abbrevAway} @ {topPick.abbrevHome}</span>
+            <span style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', marginLeft: '4px' }}>{topPick.abbrevAway} @ {topPick.abbrevHome}</span>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{topPick.favoriAbbrev} · {topPick.probFavori}%</div>
-            <div style={{ fontSize: '9px', color: '#666' }}>PROBABILITÉ DE VICTOIRE</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>PROBABILITÉ DE VICTOIRE</div>
           </div>
         </div>
       )}
 
       {/* En-tete : nom, ROI, graphique */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
           <div>
-            <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'white' }}>{modele.nom}</div>
-            <div style={{ fontSize: '11px', color: '#555', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{modele.type === 'equipe' ? 'Modèle Équipe' : 'Modèle Joueur'}</div>
+            <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)' }}>{modele.nom}</div>
+            <div style={{ fontSize: '11px', color: 'var(--c-555)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{modele.type === 'equipe' ? 'Modèle Équipe' : 'Modèle Joueur'}</div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: '24px', fontWeight: '900', color: positif ? '#f97316' : '#ef4444' }}>{positif ? '+' : ''}{roiAffiche.toFixed(1)}%</div>
-            <div style={{ fontSize: '9px', color: '#555' }}>{labelRoi}</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>{labelRoi}</div>
           </div>
         </div>
         <div style={{ width: '100%', height: 140 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={modele.historique} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
-              <XAxis dataKey="semaine" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: '#222' }} tickLine={false} />
-              <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+              <XAxis dataKey="semaine" tick={{ fill: 'var(--c-555)', fontSize: 10 }} axisLine={{ stroke: 'var(--c-222)' }} tickLine={false} />
+              <YAxis tick={{ fill: 'var(--c-555)', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', fontSize: '11px' }}
-                labelStyle={{ color: '#888' }}
+                contentStyle={{ backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '8px', fontSize: '11px' }}
+                labelStyle={{ color: 'var(--c-888)' }}
                 formatter={v => [`${v}%`, 'ROI']}
               />
               <Line type="monotone" dataKey="roi" stroke="#f97316" strokeWidth={2} dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 5 }} />
@@ -211,28 +211,28 @@ function DetailModele({ modele, onBack }) {
       </div>
 
       {/* Explication */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
-        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>PRINCIPE DU MODÈLE</div>
-        <p style={{ margin: 0, color: '#ccc', fontSize: '13px', lineHeight: '1.6' }}>{modele.explication}</p>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
+        <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>PRINCIPE DU MODÈLE</div>
+        <p style={{ margin: 0, color: 'var(--c-ccc)', fontSize: '13px', lineHeight: '1.6' }}>{modele.explication}</p>
       </div>
 
       {/* Selecteur de matchs eligibles */}
-      <div style={{ backgroundColor: '#111', borderRadius: '14px', border: '1px solid #222', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
-        <div style={{ color: '#555', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>MATCHS ÉLIGIBLES</div>
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: isMobile ? '14px' : '20px', marginBottom: '14px' }}>
+        <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px' }}>MATCHS ÉLIGIBLES</div>
         {chargement ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Recherche des matchs éligibles...</p>
+          <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Recherche des matchs éligibles...</p>
         ) : matchsSemaine.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Aucun match à venir pour le moment</p>
+          <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Aucun match à venir pour le moment</p>
         ) : (
           <>
-            <div style={{ color: '#666', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(semaineDate)}</div>
+            <div style={{ color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(semaineDate)}</div>
             {matchsEligibles.length === 0 ? (
-              <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>Aucun match ne correspond aux critères de ce modèle pour l'instant.</p>
+              <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Aucun match ne correspond aux critères de ce modèle pour l'instant.</p>
             ) : (
               <select
                 value={matchSelectionneId}
                 onChange={e => { setMatchSelectionneId(e.target.value); setChoixUtilisateur(true); }}
-                style={{ width: '100%', padding: '11px 14px', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', color: 'white', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
               >
                 {matchsEligibles.map(m => {
                   const date = m.startTimeUTC ? new Date(m.startTimeUTC) : null;
@@ -258,18 +258,18 @@ function DetailModele({ modele, onBack }) {
               <>
                 <img src={LOGOS_NHL[recommandation.abbrev]} alt={recommandation.abbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
-                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>{recommandation.nom}</div>
-                  <div style={{ fontSize: '11px', color: '#888' }}>{recommandation.domicile ? 'À domicile' : 'À l\'étranger'} · {matchSelectionne.awayTeam?.abbrev} @ {matchSelectionne.homeTeam?.abbrev}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>{recommandation.nom}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>{recommandation.domicile ? 'À domicile' : 'À l\'étranger'} · {matchSelectionne.awayTeam?.abbrev} @ {matchSelectionne.homeTeam?.abbrev}</div>
                 </div>
               </>
             ) : (
               <>
                 <img src={LOGOS_NHL[recommandation.equipeCibleAbbrev]} alt={recommandation.equipeCibleAbbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
-                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>
                     {chargementJoueur ? 'Chargement...' : (joueurRecommande?.nom || 'Joueur indisponible')}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#888' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>
                     {joueurRecommande?.numero ? `#${joueurRecommande.numero} · ` : ''}{recommandation.equipeCibleAbbrev} · {matchSelectionne.awayTeam?.abbrev} @ {matchSelectionne.homeTeam?.abbrev}
                   </div>
                 </div>
@@ -277,12 +277,12 @@ function DetailModele({ modele, onBack }) {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ flex: 1, height: '8px', borderRadius: '4px', backgroundColor: '#1a1a1a', overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: '8px', borderRadius: '4px', backgroundColor: 'var(--c-1a1a1a)', overflow: 'hidden' }}>
               <div style={{ width: `${recommandation.confiance}%`, height: '100%', backgroundColor: '#f97316' }} />
             </div>
             <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316', flexShrink: 0 }}>{recommandation.confiance}%</div>
           </div>
-          <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>CONFIANCE DU MODÈLE</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-666)', marginTop: '4px' }}>CONFIANCE DU MODÈLE</div>
         </div>
       )}
     </div>

@@ -119,7 +119,7 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
   }, [ouvert]);
 
   const initiale = (utilisateur?.email || '?').charAt(0).toUpperCase();
-  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'block' };
+  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'block' };
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -130,31 +130,31 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
         <div style={{
           position: 'absolute', [popupPosition === 'up' ? 'bottom' : 'top']: '46px',
           left: popupPosition === 'up' ? '0' : 'auto', right: popupPosition === 'up' ? 'auto' : '0',
-          backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', padding: '8px', minWidth: '200px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400,
+          backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '8px', minWidth: '200px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400,
         }}>
-          <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid #1e1e1e', marginBottom: '4px' }}>
-            <div style={{ color: '#888', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{utilisateur?.email}</div>
+          <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
+            <div style={{ color: 'var(--c-888)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{utilisateur?.email}</div>
           </div>
           <button onClick={() => { onGoToProfile(); setOuvert(false); }} style={itemStyle}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
             {t('menu_settings')}
           </button>
           <div style={{ padding: '10px 12px' }}>
-            <div style={{ fontSize: '10px', color: '#666', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_appearance')}</div>
+            <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_appearance')}</div>
             <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => { if (mode !== 'dark') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'dark' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: mode === 'dark' ? '700' : '400' }}>Dark</button>
-              <button onClick={() => { if (mode !== 'light') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'light' ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: mode === 'light' ? '700' : '400' }}>Light</button>
+              <button onClick={() => { if (mode !== 'dark') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'dark' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: mode === 'dark' ? '700' : '400' }}>Dark</button>
+              <button onClick={() => { if (mode !== 'light') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'light' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: mode === 'light' ? '700' : '400' }}>Light</button>
             </div>
           </div>
           <div style={{ padding: '4px 12px 10px' }}>
-            <div style={{ fontSize: '10px', color: '#666', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_language')}</div>
+            <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_language')}</div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {['fr', 'en'].map(l => (
-                <button key={l} onClick={() => setLang(l)} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : '#1a1a1a', color: 'white', fontSize: '12px', fontWeight: lang === l ? '700' : '400' }}>{l.toUpperCase()}</button>
+                <button key={l} onClick={() => setLang(l)} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: lang === l ? '700' : '400' }}>{l.toUpperCase()}</button>
               ))}
             </div>
           </div>
-          <div style={{ height: '1px', backgroundColor: '#1e1e1e', margin: '4px 0' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '4px 0' }} />
           <button onClick={onLogout} style={{ ...itemStyle, color: '#ef4444' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
             {t('menu_signout')}
@@ -168,10 +168,10 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
 // Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : icones + tooltips au survol.
 function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t }) {
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '60px', backgroundColor: '#111', borderRight: '1px solid #1e1e1e', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 14px', zIndex: 300 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '60px', backgroundColor: 'var(--c-111)', borderRight: '1px solid var(--c-1e1e1e)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 14px', zIndex: 300 }}>
       <style>{`
         .sb-item { position: relative; }
-        .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: #1a1a1a; border: 1px solid #2a2a2a; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
+        .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
         .sb-item:hover .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
       `}</style>
       <div style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px' }}>B</div>
@@ -179,16 +179,16 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
         {tabsPrincipaux.map(tab => (
           <div key={tab.id} className="sb-item">
             <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : '#777'} size={20} />
+              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={20} />
             </button>
             <span className="sb-tooltip">{tab.label}</span>
           </div>
         ))}
-        {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: '#1e1e1e', margin: '8px 0' }} />}
+        {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '8px 0' }} />}
         {tabsSecondaires.map(tab => (
           <div key={tab.id} className="sb-item">
             <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : '#777'} size={18} />
+              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={18} />
             </button>
             <span className="sb-tooltip">{tab.label}</span>
           </div>
@@ -205,11 +205,11 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
 function BottomNav({ tabs, activeId, onSelectTab }) {
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
-      <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid #1a1a1a', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+      <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => onSelectTab(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
-            <tab.Icon color={activeId === tab.id ? '#f97316' : '#444'} size={20} />
-            <span style={{ fontSize: '10px', fontWeight: activeId === tab.id ? '600' : '400', color: activeId === tab.id ? '#f97316' : '#444', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
+            <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={20} />
+            <span style={{ fontSize: '10px', fontWeight: activeId === tab.id ? '600' : '400', color: activeId === tab.id ? '#f97316' : 'var(--c-444)', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
             {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
           </button>
         ))}
@@ -231,22 +231,22 @@ function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, mo
   }, [menuOuvert]);
 
   return (
-    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid #161616' }}>
+    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
       <h1 style={{ color: '#f97316', margin: 0, fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {tabsSecondaires.length > 0 && (
           <div ref={ref} style={{ position: 'relative' }}>
-            <button onClick={() => setMenuOuvert(o => !o)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #222', backgroundColor: '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IconMore color="#888" size={16} />
+            <button onClick={() => setMenuOuvert(o => !o)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconMore color="var(--c-888)" size={16} />
             </button>
             {menuOuvert && (
-              <div style={{ position: 'absolute', top: '40px', right: 0, backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', padding: '6px', minWidth: '170px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400 }}>
+              <div style={{ position: 'absolute', top: '40px', right: 0, backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '6px', minWidth: '170px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400 }}>
                 {tabsSecondaires.map(tab => (
                   <button key={tab.id} onClick={() => { onSelectTab(tab); setMenuOuvert(false); }}
                     style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                    <tab.Icon color="#888" size={16} />
-                    <span style={{ fontSize: '13px', color: 'white' }}>{tab.label}</span>
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <tab.Icon color="var(--c-888)" size={16} />
+                    <span style={{ fontSize: '13px', color: 'var(--c-white)' }}>{tab.label}</span>
                   </button>
                 ))}
               </div>
@@ -530,30 +530,30 @@ function AdminPage() {
         <div style={{ backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '8px', padding: '4px 12px' }}>
           <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600', letterSpacing: '1px' }}>INTERNAL</span>
         </div>
-        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', color: 'white' }}>Betrics · Parameters & Methodology</h1>
+        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--c-white)' }}>Betrics · Parameters & Methodology</h1>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '24px', marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>01 · Prop Probability Weighting</div>
-        <div style={{ fontSize: '14px', color: '#888', lineHeight: '1.7', marginBottom: '16px' }}>
+        <div style={{ fontSize: '14px', color: 'var(--c-888)', lineHeight: '1.7', marginBottom: '16px' }}>
           Based on backtesting of 93 simulated NHL players across 5,766 observations (2024-25 season distributions). L5 is the strongest predictor in 9/10 cases.
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
           {[['L5', '45%', 'Most recent form — strongest predictor'], ['L10', '33%', 'Medium-term trend'], ['L20', '22%', 'Season consistency']].map(([label, weight, desc], i) => (
-            <div key={i} style={{ backgroundColor: '#111', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+            <div key={i} style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
               <div style={{ fontSize: '28px', fontWeight: '800', color: '#f97316', letterSpacing: '-1px' }}>{weight}</div>
-              <div style={{ fontSize: '12px', color: '#555', marginTop: '4px' }}>{desc}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-555)', marginTop: '4px' }}>{desc}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.6', borderTop: '1px solid #1a1a1a', paddingTop: '12px' }}>
-          <strong style={{ color: '#888' }}>Formula:</strong> P = (L5_rate x 0.45) + (L10_rate x 0.33) + (L20_rate x 0.22)<br/>
-          <strong style={{ color: '#888' }}>Exception:</strong> Offensive defensemen use L10/L20 split (36%/35%).
+        <div style={{ fontSize: '13px', color: 'var(--c-555)', lineHeight: '1.6', borderTop: '1px solid var(--c-1a1a1a)', paddingTop: '12px' }}>
+          <strong style={{ color: 'var(--c-888)' }}>Formula:</strong> P = (L5_rate x 0.45) + (L10_rate x 0.33) + (L20_rate x 0.22)<br/>
+          <strong style={{ color: 'var(--c-888)' }}>Exception:</strong> Offensive defensemen use L10/L20 split (36%/35%).
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '24px', marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>02 · Props Analyzed</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
@@ -563,16 +563,16 @@ function AdminPage() {
             ['Points', 'Goals + Assists', '0.5, 1.5'],
             ['PPP', 'Power Play Points', '0.5'],
           ].map(([stat, desc, lines], i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#111', borderRadius: '8px', padding: '10px 14px' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '10px 14px' }}>
               <div style={{ minWidth: '60px', fontWeight: '700', color: '#f97316', fontSize: '13px' }}>{stat}</div>
-              <div style={{ flex: 1, fontSize: '13px', color: '#888' }}>{desc}</div>
-              <div style={{ fontSize: '12px', color: '#555', fontFamily: 'monospace' }}>Lines: {lines}</div>
+              <div style={{ flex: 1, fontSize: '13px', color: 'var(--c-888)' }}>{desc}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-555)', fontFamily: 'monospace' }}>Lines: {lines}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '24px', marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>03 · Data Sources</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
@@ -581,32 +581,32 @@ function AdminPage() {
             ['DailyFaceoff', 'GitHub raw JSON (scraped)', 'Line combinations, PP units'],
             ['Supabase', 'supabase.io', 'User data, bets, bankroll'],
           ].map(([name, url, usage], i) => (
-            <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '12px 14px' }}>
+            <div key={i} style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '12px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontWeight: '600', fontSize: '13px', color: 'white' }}>{name}</span>
-                <span style={{ fontSize: '11px', color: '#555', fontFamily: 'monospace' }}>{url}</span>
+                <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--c-white)' }}>{name}</span>
+                <span style={{ fontSize: '11px', color: 'var(--c-555)', fontFamily: 'monospace' }}>{url}</span>
               </div>
-              <div style={{ fontSize: '12px', color: '#555' }}>{usage}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{usage}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '24px', marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>04 · Backtesting Results</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
           {[['MAE', 'L5: 0.420 · L10: 0.433 · L20: 0.441', 'Lower is better'], ['Correlation', 'L5: 0.272 · L10: 0.271 · L20: 0.279', 'Higher is better'], ['Brier Score', 'L5: 0.254 · L10: 0.242 · L20: 0.234', 'Lower is better']].map(([metric, values, note], i) => (
-            <div key={i} style={{ backgroundColor: '#111', borderRadius: '8px', padding: '12px' }}>
-              <div style={{ fontSize: '11px', color: '#555', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{metric}</div>
-              <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>{values}</div>
-              <div style={{ fontSize: '11px', color: '#444' }}>{note}</div>
+            <div key={i} style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{metric}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-888)', marginBottom: '4px' }}>{values}</div>
+              <div style={{ fontSize: '11px', color: 'var(--c-444)' }}>{note}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: '12px', color: '#555', fontStyle: 'italic' }}>93 players · 5,766 observations · NHL 2024-25 distributions</div>
+        <div style={{ fontSize: '12px', color: 'var(--c-555)', fontStyle: 'italic' }}>93 players · 5,766 observations · NHL 2024-25 distributions</div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', border: '1px solid #161616', padding: '24px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '24px' }}>
         <div style={{ fontSize: '11px', color: '#f97316', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>05 · Changelog</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
@@ -618,8 +618,8 @@ function AdminPage() {
             ['2026-04-19', 'Initial launch — NHL player/team analytics'],
           ].map(([date, change], i) => (
             <div key={i} style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
-              <span style={{ color: '#444', fontFamily: 'monospace', minWidth: '90px' }}>{date}</span>
-              <span style={{ color: '#666' }}>{change}</span>
+              <span style={{ color: 'var(--c-444)', fontFamily: 'monospace', minWidth: '90px' }}>{date}</span>
+              <span style={{ color: 'var(--c-666)' }}>{change}</span>
             </div>
           ))}
         </div>
@@ -732,9 +732,9 @@ function PropsPage({ lang = 'en' }) {
     return catOk && matchOk;
   });
 
-  const getColor = (prob) => prob >= 0.75 ? '#22c55e' : prob >= 0.65 ? '#f97316' : '#888';
+  const getColor = (prob) => prob >= 0.75 ? '#22c55e' : prob >= 0.65 ? '#f97316' : 'var(--c-888)';
   const getBg = (prob) => prob >= 0.75 ? 'rgba(34,197,94,0.08)' : prob >= 0.65 ? 'rgba(249,115,22,0.08)' : 'rgba(100,100,100,0.05)';
-  const getBorder = (prob) => prob >= 0.75 ? 'rgba(34,197,94,0.2)' : prob >= 0.65 ? 'rgba(249,115,22,0.2)' : '#161616';
+  const getBorder = (prob) => prob >= 0.75 ? 'rgba(34,197,94,0.2)' : prob >= 0.65 ? 'rgba(249,115,22,0.2)' : 'var(--c-161616)';
 
   return (
     <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
@@ -743,18 +743,18 @@ function PropsPage({ lang = 'en' }) {
       {/* Header */}
       <div style={{ padding: '20px 20px 12px' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px' }}>Props</h2>
-        <p style={{ margin: 0, color: '#555', fontSize: '13px' }}>{t('props_subtitle')} · {propsFiltres.length} {t('props_unit')}</p>
+        <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '13px' }}>{t('props_subtitle')} · {propsFiltres.length} {t('props_unit')}</p>
       </div>
 
       {/* Match filter */}
       {matches.length > 0 && (
         <div style={{ padding: '0 20px 12px', overflowX: 'auto', display: 'flex', gap: '6px', scrollbarWidth: 'none' }}>
-          <button onClick={() => setFiltreMatch('ALL')} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: filtreMatch === 'ALL' ? '#f97316' : '#0d0d0d', color: filtreMatch === 'ALL' ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>{t('props_all_games')}</button>
+          <button onClick={() => setFiltreMatch('ALL')} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: filtreMatch === 'ALL' ? '#f97316' : 'var(--c-0d0d0d)', color: filtreMatch === 'ALL' ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>{t('props_all_games')}</button>
           {matches.map((m, i) => {
             const label = (m.awayTeam?.abbrev || '') + ' vs ' + (m.homeTeam?.abbrev || '');
             const isActive = filtreMatch === m.awayTeam?.abbrev || filtreMatch === m.homeTeam?.abbrev;
             return (
-              <button key={i} onClick={() => setFiltreMatch(isActive ? 'ALL' : m.awayTeam?.abbrev)} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: isActive ? '#f97316' : '#0d0d0d', color: isActive ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>{label}</button>
+              <button key={i} onClick={() => setFiltreMatch(isActive ? 'ALL' : m.awayTeam?.abbrev)} style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: isActive ? '#f97316' : 'var(--c-0d0d0d)', color: isActive ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>{label}</button>
             );
           })}
         </div>
@@ -763,7 +763,7 @@ function PropsPage({ lang = 'en' }) {
       {/* Stat categories */}
       <div style={{ padding: '0 20px 16px', display: 'flex', gap: '6px' }}>
         {categories.map(cat => (
-          <button key={cat} onClick={() => setFiltre(cat)} style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtre === cat ? catColors[cat] : '#0d0d0d', color: filtre === cat ? 'white' : '#555', fontSize: '12px', fontWeight: '700', transition: 'all 0.15s' }}>{cat}</button>
+          <button key={cat} onClick={() => setFiltre(cat)} style={{ flex: 1, padding: '8px 4px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: filtre === cat ? catColors[cat] : 'var(--c-0d0d0d)', color: filtre === cat ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '700', transition: 'all 0.15s' }}>{cat}</button>
         ))}
       </div>
 
@@ -771,41 +771,41 @@ function PropsPage({ lang = 'en' }) {
       <div style={{ padding: '0 20px' }}>
         {chargement ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ width: '36px', height: '36px', border: '3px solid #1a1a1a', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
-            <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>{t('props_loading')}</p>
+            <div style={{ width: '36px', height: '36px', border: '3px solid var(--c-1a1a1a)', borderTop: '3px solid #f97316', borderRadius: '50%', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: 'var(--c-444)', fontSize: '13px', margin: 0 }}>{t('props_loading')}</p>
           </div>
         ) : propsFiltres.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#333', fontSize: '13px' }}>{t('props_none')}</div>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('props_none')}</div>
         ) : propsFiltres.map((p, i) => (
           <div key={p.id + p.stat + p.line + i} style={{ backgroundColor: getBg(p.prob), borderRadius: '16px', padding: '14px 16px', border: '1px solid ' + getBorder(p.prob), marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Rank */}
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#333', minWidth: '24px', textAlign: 'center' }}>#{i+1}</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-333)', minWidth: '24px', textAlign: 'center' }}>#{i+1}</div>
 
             {/* Photo */}
             <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom}
-              style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: '#1a1a1a', border: '2px solid #222', flexShrink: 0 }}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', border: '2px solid var(--c-222)', flexShrink: 0 }}
               onError={e => { e.target.style.display='none'; }} />
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '700', fontSize: '14px', color: 'white', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</div>
-              <div style={{ fontSize: '11px', color: '#555', marginBottom: '6px' }}>{p.equipe} · {p.away} vs {p.home}</div>
+              <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</div>
+              <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '6px' }}>{p.equipe} · {p.away} vs {p.home}</div>
               {/* L5 L10 L20 bars */}
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                 {[['L5', p.r5], ['L10', p.r10], ['L20', p.r20]].map(([label, val]) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ fontSize: '9px', color: '#444', fontWeight: '600' }}>{label}</span>
-                    <div style={{ width: '28px', height: '4px', backgroundColor: '#1a1a1a', borderRadius: '2px', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--c-444)', fontWeight: '600' }}>{label}</span>
+                    <div style={{ width: '28px', height: '4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: Math.round(val*100) + '%', height: '100%', backgroundColor: getColor(val), borderRadius: '2px' }} />
                     </div>
-                    <span style={{ fontSize: '9px', color: '#444' }}>{Math.round(val*100)}%</span>
+                    <span style={{ fontSize: '9px', color: 'var(--c-444)' }}>{Math.round(val*100)}%</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Prop badge */}
-            <div style={{ textAlign: 'center', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '8px 12px', flexShrink: 0 }}>
+            <div style={{ textAlign: 'center', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '12px', padding: '8px 12px', flexShrink: 0 }}>
               <div style={{ fontSize: '10px', color: catColors[p.stat] || '#f97316', fontWeight: '700', marginBottom: '2px', letterSpacing: '0.5px' }}>{p.stat} {p.line}+</div>
               <div style={{ fontSize: '22px', fontWeight: '900', color: getColor(p.prob), letterSpacing: '-0.5px', lineHeight: 1 }}>{Math.round(p.prob * 100)}%</div>
             </div>
@@ -929,25 +929,25 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
     <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
       {/* Greeting */}
       <div style={{ marginBottom: '20px' }}>
-        <p style={{ margin: '0 0 2px', color: '#444', fontSize: '13px' }}>{t('home_welcome')}</p>
-        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'white' }}>{displayName}</h2>
+        <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t('home_welcome')}</p>
+        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
       </div>
 
       {/* Bankroll card */}
-      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
+      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <p style={{ margin: 0, color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
+          <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
           <div style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '20px', padding: '3px 10px' }}>
             <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{t('home_live')}</span>
           </div>
         </div>
-        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span></h1>
+        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span></h1>
 
         {/* Stats 30 derniers jours */}
-        <div style={{ marginBottom: '12px', backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
+        <div style={{ marginBottom: '12px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_last30')}</span>
+            <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_last30')}</span>
             <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>{t('home_live')}</span>
           </div>
           <div style={{ display: 'flex' }}>
@@ -956,8 +956,8 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
               [t('home_win_rate'), winRate30 + '%', 'white'],
               [t('home_roi'), (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
             ].map(([label, val, color], i) => (
-              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
-                <p style={{ margin: '0 0 2px', color: '#444', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
+                <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color }}>{val}</p>
               </div>
             ))}
@@ -965,21 +965,21 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
         </div>
 
         {/* Profit Curve avec filtres */}
-        <div style={{ marginBottom: '16px', backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '12px', border: '1px solid #1a1a1a' }}>
+        <div style={{ marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: '#555', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
+              <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
               <span style={{ fontSize: '11px', fontWeight: '700', color: profitFiltre >= 0 ? '#22c55e' : '#ef4444' }}>{profitFiltre >= 0 ? '+' : ''}${profitFiltre.toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', gap: '3px' }}>
               {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
                 <button key={val} onClick={() => { setFiltreGraph(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '2px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraph === val && !filtreCustomDebut ? '#f97316' : '#1a1a1a', color: filtreGraph === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '10px', fontWeight: '600' }}>
+                  style={{ padding: '2px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraph === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtreGraph === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '10px', fontWeight: '600' }}>
                   {label}
                 </button>
               ))}
               <button onClick={() => setShowAdvanced(!showAdvanced)}
-                style={{ padding: '2px 6px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showAdvanced || filtreCustomDebut ? '#f97316' : 'transparent', color: showAdvanced || filtreCustomDebut ? 'white' : '#555', fontSize: '11px' }}>
+                style={{ padding: '2px 6px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showAdvanced || filtreCustomDebut ? '#f97316' : 'transparent', color: showAdvanced || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px' }}>
                 ⚙
               </button>
             </div>
@@ -987,13 +987,13 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
           {showAdvanced && (
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
               <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', color: 'white', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
-              <span style={{ color: '#444', fontSize: '10px' }}>→</span>
+                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
+              <span style={{ color: 'var(--c-444)', fontSize: '10px' }}>→</span>
               <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '8px', color: 'white', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
               {(filtreCustomDebut || filtreCustomFin) && (
                 <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '6px 8px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '8px', color: '#555', cursor: 'pointer', fontSize: '10px' }}>✕</button>
+                  style={{ padding: '6px 8px', backgroundColor: 'transparent', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-555)', cursor: 'pointer', fontSize: '10px' }}>✕</button>
               )}
             </div>
           )}
@@ -1006,17 +1006,17 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
                 </linearGradient>
               </defs>
               <polyline points={points} fill="none" stroke={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="#333" strokeWidth="0.5" strokeDasharray="4,4" />
+              <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="var(--c-333)" strokeWidth="0.5" strokeDasharray="4,4" />
             </svg>
           ) : (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: '#333', fontSize: '11px' }}>{t('home_no_bets_period')}</div>
+            <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--c-333)', fontSize: '11px' }}>{t('home_no_bets_period')}</div>
           )}
         </div>
 
-        <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
           {[[t('home_roi'), `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], [t('home_win_rate'), `${winRate}%`, 'white'], [t('home_active'), `${parisActifs.length} ${t('home_bets_unit')}`, '#f97316']].map(([label, val, color], i) => (
-            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
-              <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
+              <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
               <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color }}>{val}</p>
             </div>
           ))}
@@ -1027,7 +1027,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
 
       {/* Matchs du soir */}
       {matchsSoir.length > 0 && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_tonight')}</h3>
             <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} {t('home_games_unit')}</span>
@@ -1039,18 +1039,18 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
               const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
               const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
                     <img src={LOGOS[away]} alt={away} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{away}</span>
-                    <span style={{ fontSize: '11px', color: '#444' }}>@</span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{home}</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>@</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{home}</span>
                     <img src={LOGOS[home]} alt={home} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
                   </div>
                   {isLive ? (
                     <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
                   ) : (
-                    <span style={{ color: '#555', fontSize: '12px' }}>{heure}</span>
+                    <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{heure}</span>
                   )}
                 </div>
               );
@@ -1060,7 +1060,7 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
       )}
 
       {/* Recent Bets */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid #161616', marginBottom: '16px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_recent_bets')}</h3>
           <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>{t('home_see_all')}</span>
@@ -1068,14 +1068,14 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
         {recentCombines.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
             <span style={{ fontSize: '28px' }}>🏒</span>
-            <p style={{ margin: 0, color: '#333', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
-            <p style={{ margin: 0, color: '#222', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
+            <p style={{ margin: 0, color: 'var(--c-333)', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
+            <p style={{ margin: 0, color: 'var(--c-222)', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
           </div>
         ) : recentCombines.map((p, i) => (
-          <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+          <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
             <div>
-              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white' }}>{p.titre}</p>
-              <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
+              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'var(--c-white)' }}>{p.titre}</p>
+              <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               {p.statut === 'actif' ? (
@@ -1091,10 +1091,10 @@ function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, 
       </div>
 
       {/* Kelly */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: '0 0 3px', color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('home_kelly')}</p>
+            <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('home_kelly')}</p>
             <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>${kellyStake.split('.')[0]}<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.{kellyStake.split('.')[1] || '00'}</span></p>
           </div>
           <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: '14px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.15)' }}>
@@ -1322,8 +1322,8 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
             .crop-img { position: absolute; cursor: grab; user-select: none; }
             .crop-img:active { cursor: grabbing; }
           `}</style>
-          <h3 style={{ color: 'white', margin: '0 0 8px', fontWeight: '700', fontSize: '18px' }}>{t('profile_crop_title')}</h3>
-          <p style={{ color: '#555', fontSize: '13px', margin: '0 0 20px' }}>{t('profile_crop_sub')}</p>
+          <h3 style={{ color: 'var(--c-white)', margin: '0 0 8px', fontWeight: '700', fontSize: '18px' }}>{t('profile_crop_title')}</h3>
+          <p style={{ color: 'var(--c-555)', fontSize: '13px', margin: '0 0 20px' }}>{t('profile_crop_sub')}</p>
 
           {imgSrc && (() => {
             const SIZE = Math.min(window.innerWidth - 40, 320);
@@ -1337,14 +1337,14 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           })()}
 
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setCropModal(false)} style={{ padding: '13px 28px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '12px', cursor: 'pointer', fontSize: '15px' }}>{t('profile_crop_cancel')}</button>
+            <button onClick={() => setCropModal(false)} style={{ padding: '13px 28px', backgroundColor: 'transparent', color: 'var(--c-888)', border: '1px solid var(--c-333)', borderRadius: '12px', cursor: 'pointer', fontSize: '15px' }}>{t('profile_crop_cancel')}</button>
             <button onClick={uploadCropped} style={{ padding: '13px 28px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>{t('profile_crop_use')}</button>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('profile_title')}</h2>
       </div>
 
@@ -1354,41 +1354,41 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           {avatarUrl ? (
             <img src={avatarUrl} alt="avatar" style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #f97316' }} />
           ) : (
-            <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#1a1a1a', border: '3px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', color: '#f97316' }}>{initials}</div>
+            <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'var(--c-1a1a1a)', border: '3px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', fontWeight: '900', color: '#f97316' }}>{initials}</div>
           )}
-          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid #080808' }}>
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', border: '2px solid var(--c-080808)' }}>
             {uploading ? '⟳' : '✎'}
           </div>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={onSelectFile} style={{ display: 'none' }} />
-        <p style={{ margin: 0, color: '#444', fontSize: '12px' }}>{uploading ? t('profile_uploading') : t('profile_tap_photo')}</p>
+        <p style={{ margin: 0, color: 'var(--c-444)', fontSize: '12px' }}>{uploading ? t('profile_uploading') : t('profile_tap_photo')}</p>
       </div>
 
       {/* Fields */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <div>
-            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_first_name')}</label>
+            <label style={{ display: 'block', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_first_name')}</label>
             <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder={t('profile_first_name_ph')}
-              style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+              style={{ width: '100%', padding: '12px 14px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
-              onBlur={e => e.target.style.borderColor = '#222'} />
+              onBlur={e => e.target.style.borderColor = 'var(--c-222)'} />
           </div>
           <div>
-            <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_last_name')}</label>
+            <label style={{ display: 'block', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_last_name')}</label>
             <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder={t('profile_last_name_ph')}
-              style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+              style={{ width: '100%', padding: '12px 14px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
               onFocus={e => e.target.style.borderColor = '#f97316'}
-              onBlur={e => e.target.style.borderColor = '#222'} />
+              onBlur={e => e.target.style.borderColor = 'var(--c-222)'} />
           </div>
         </div>
         <div>
-          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_username')}</label>
+          <label style={{ display: 'block', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('profile_username')}</label>
           <input value={username} onChange={e => setUsername(e.target.value)} placeholder={t('profile_username_ph')}
-            style={{ width: '100%', padding: '12px 14px', backgroundColor: '#0d0d0d', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : '#222'), borderRadius: '12px', color: 'white', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
+            style={{ width: '100%', padding: '12px 14px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid ' + (usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : 'var(--c-222)'), borderRadius: '12px', color: 'var(--c-white)', fontSize: '15px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' }}
           />
           {username.length > 0 && (
-            <div style={{ marginTop: '6px', fontSize: '12px', color: usernameStatus === 'taken' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : usernameStatus === 'invalid' ? '#ef4444' : '#555' }}>
+            <div style={{ marginTop: '6px', fontSize: '12px', color: usernameStatus === 'taken' ? '#ef4444' : usernameStatus === 'available' ? '#22c55e' : usernameStatus === 'invalid' ? '#ef4444' : 'var(--c-555)' }}>
               {usernameStatus === 'checking' && t('profile_checking')}
               {usernameStatus === 'available' && t('profile_available')}
               {usernameStatus === 'taken' && t('profile_taken')}
@@ -1397,23 +1397,23 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           )}
         </div>
         <div>
-          <label style={{ display: 'block', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
-          <div style={{ padding: '12px 14px', backgroundColor: '#080808', border: '1px solid #161616', borderRadius: '12px', color: '#444', fontSize: '15px' }}>{utilisateur?.email}</div>
+          <label style={{ display: 'block', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
+          <div style={{ padding: '12px 14px', backgroundColor: 'var(--c-080808)', border: '1px solid var(--c-161616)', borderRadius: '12px', color: 'var(--c-444)', fontSize: '15px' }}>{utilisateur?.email}</div>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
-        <p style={{ margin: '0 0 12px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('profile_account')}</p>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid var(--c-161616)', marginBottom: '24px' }}>
+        <p style={{ margin: '0 0 12px', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('profile_account')}</p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#666', fontSize: '13px' }}>{t('profile_member_since')}</span>
-          <span style={{ color: 'white', fontSize: '13px', fontWeight: '600' }}>{new Date(utilisateur?.created_at || Date.now()).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}</span>
+          <span style={{ color: 'var(--c-666)', fontSize: '13px' }}>{t('profile_member_since')}</span>
+          <span style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '600' }}>{new Date(utilisateur?.created_at || Date.now()).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}</span>
         </div>
       </div>
 
       {/* Mes Bookmakers — connexion Gmail/Outlook + parsing automatique des paris */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '16px', border: '1px solid #161616', marginBottom: '24px' }}>
-        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bookmakers_title')}</p>
-        <p style={{ margin: '0 0 16px', color: '#444', fontSize: '12px', lineHeight: '1.5' }}>{t('bookmakers_sub')}</p>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid var(--c-161616)', marginBottom: '24px' }}>
+        <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bookmakers_title')}</p>
+        <p style={{ margin: '0 0 16px', color: 'var(--c-444)', fontSize: '12px', lineHeight: '1.5' }}>{t('bookmakers_sub')}</p>
 
         {[
           { provider: 'gmail', connexion: connexionGmail, statusLabel: t('bookmakers_gmail_status'), connecter: connecterGmail, connectLabel: t('bookmakers_connect_btn') },
@@ -1421,7 +1421,7 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
         ].map(({ provider, connexion, statusLabel, connecter, connectLabel }) => (
           <div key={provider} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <div>
-              <div style={{ color: '#888', fontSize: '12px', marginBottom: '4px' }}>{statusLabel}</div>
+              <div style={{ color: 'var(--c-888)', fontSize: '12px', marginBottom: '4px' }}>{statusLabel}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: connexion?.access_token ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
                 <span style={{ color: connexion?.access_token ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '600' }}>
@@ -1430,7 +1430,7 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
               </div>
             </div>
             {connexion?.access_token ? (
-              <button onClick={() => deconnecterProvider(provider)} style={{ padding: '9px 16px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+              <button onClick={() => deconnecterProvider(provider)} style={{ padding: '9px 16px', backgroundColor: 'transparent', color: 'var(--c-888)', border: '1px solid var(--c-333)', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
                 {t('bookmakers_disconnect_btn')}
               </button>
             ) : (
@@ -1441,24 +1441,24 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           </div>
         ))}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #161616', marginBottom: '14px', opacity: emailConnections.length === 0 ? 0.4 : 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid var(--c-161616)', marginBottom: '14px', opacity: emailConnections.length === 0 ? 0.4 : 1 }}>
           <div>
-            <div style={{ color: 'white', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>{t('bookmakers_auto_parsing')}</div>
-            <div style={{ color: '#444', fontSize: '11px' }}>{t('bookmakers_auto_parsing_sub')}</div>
+            <div style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '600', marginBottom: '2px' }}>{t('bookmakers_auto_parsing')}</div>
+            <div style={{ color: 'var(--c-444)', fontSize: '11px' }}>{t('bookmakers_auto_parsing_sub')}</div>
           </div>
-          <div onClick={toggleParsingActif} style={{ width: '42px', height: '24px', borderRadius: '12px', backgroundColor: connexionPrincipale?.actif ? '#f97316' : '#222', cursor: emailConnections.length === 0 ? 'default' : 'pointer', position: 'relative', transition: 'background-color 0.2s', flexShrink: 0 }}>
+          <div onClick={toggleParsingActif} style={{ width: '42px', height: '24px', borderRadius: '12px', backgroundColor: connexionPrincipale?.actif ? '#f97316' : 'var(--c-222)', cursor: emailConnections.length === 0 ? 'default' : 'pointer', position: 'relative', transition: 'background-color 0.2s', flexShrink: 0 }}>
             <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'white', position: 'absolute', top: '3px', left: connexionPrincipale?.actif ? '21px' : '3px', transition: 'left 0.2s' }} />
           </div>
         </div>
 
         <div style={{ opacity: emailConnections.length === 0 ? 0.4 : 1 }}>
-          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>{t('bookmakers_select_title')}</div>
+          <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '10px' }}>{t('bookmakers_select_title')}</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {BOOKMAKERS_SUPPORTES.map(bm => {
               const actif = (connexionPrincipale?.bookmakers || []).includes(bm);
               return (
                 <button key={bm} onClick={() => toggleBookmaker(bm)} disabled={savingBookmakers || emailConnections.length === 0}
-                  style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: actif ? '#f97316' : '#1a1a1a', color: actif ? 'white' : '#666', fontSize: '12px', fontWeight: '600' }}>
+                  style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: actif ? '#f97316' : 'var(--c-1a1a1a)', color: actif ? 'white' : 'var(--c-666)', fontSize: '12px', fontWeight: '600' }}>
                   {bm}
                 </button>
               );
@@ -1586,27 +1586,27 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
     return x + ',' + y;
   }).join(' ');
 
-  const inp = { width: '100%', padding: '11px 14px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', color: 'white', fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' };
+  const inp = { width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' };
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#666', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
         <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('home_bankroll')}</h2>
       </div>
 
       {/* Bankroll card */}
-      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #1a1a1a 0%, #111 100%)', border: '1px solid #222' }}>
+      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <p style={{ margin: '0 0 4px', color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('bank_current')}</p>
-        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'white', letterSpacing: '-2px', lineHeight: 1 }}>
-          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: '#555' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
+        <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('bank_current')}</p>
+        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
+          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
         </h1>
 
         {/* Stats 30 derniers jours */}
-        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
+        <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_last30')}</span>
+            <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_last30')}</span>
             <span style={{ color: '#f97316', fontSize: '10px', fontWeight: '600' }}>● Live</span>
           </div>
           <div style={{ display: 'flex' }}>
@@ -1625,8 +1625,8 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
                 [t('bank_win_rate'), wr30 + '%', 'white'],
                 [t('bank_net_pnl'), (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
               ].map(([label, val, color], i) => (
-                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1a1a1a' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
-                  <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+                  <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
                   <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
                 </div>
               ));
@@ -1635,18 +1635,18 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
         </div>
 
         {/* Graphique avec filtre */}
-        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid #1a1a1a' }}>
+        <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: '#444', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
+            <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
             <div style={{ display: 'flex', gap: '4px' }}>
               {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
                 <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : '#1a1a1a', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '11px', fontWeight: '600' }}>
+                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
                   {label}
                 </button>
               ))}
               <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
-                style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+                style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
                 ⚙
               </button>
             </div>
@@ -1662,18 +1662,18 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
               <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: '#333', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
           )}
         </div>
 
-        <div style={{ display: 'flex', borderTop: '1px solid #1f1f1f', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
           {[
-            [t('bank_total_deposited'), '$' + totalDepose.toFixed(2), '#888'],
-            [t('bank_total_withdrawn'), '$' + totalRetire.toFixed(2), '#888'],
+            [t('bank_total_deposited'), '$' + totalDepose.toFixed(2), 'var(--c-888)'],
+            [t('bank_total_withdrawn'), '$' + totalRetire.toFixed(2), 'var(--c-888)'],
             [t('bank_alltime'), (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
           ].map(([label, val, color], i) => (
-            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid #1f1f1f' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
-              <p style={{ margin: '0 0 3px', color: '#444', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+              <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
               <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
             </div>
           ))}
@@ -1682,31 +1682,31 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
 
       {/* Bouton + New Transaction */}
       <button onClick={() => setShowForm(!showForm)}
-        style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? '#555' : 'white', border: showForm ? '1px solid #333' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
+        style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? 'var(--c-555)' : 'white', border: showForm ? '1px solid var(--c-333)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
         {showForm ? t('cancel_btn') : t('bank_new_tx')}
       </button>
 
       {/* Formulaire */}
       {showForm && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #1a1a1a', marginBottom: '16px' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-1a1a1a)', marginBottom: '16px' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             {[['deposit', t('deposit_btn')], ['withdrawal', t('withdrawal_btn')]].map(([val, label]) => (
               <button key={val} onClick={() => setType(val)}
-                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: type === val ? (val === 'deposit' ? '#22c55e' : '#ef4444') : '#1a1a1a', color: 'white', fontSize: '13px', fontWeight: '700' }}>
+                style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: type === val ? (val === 'deposit' ? '#22c55e' : '#ef4444') : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '13px', fontWeight: '700' }}>
                 {label}
               </button>
             ))}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_amount')}</div>
+              <div style={{ color: 'var(--c-555)', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_amount')}</div>
               <input style={inp} type="number" placeholder="500.00" value={montant} onChange={e => setMontant(e.target.value)}
-                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
+                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'var(--c-222)'} />
             </div>
             <div>
-              <div style={{ color: '#555', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_note')}</div>
+              <div style={{ color: 'var(--c-555)', fontSize: '12px', marginBottom: '6px', fontWeight: '500' }}>{t('bank_note')}</div>
               <input style={inp} placeholder={t('bank_note_placeholder')} value={note} onChange={e => setNote(e.target.value)}
-                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = '#222'} />
+                onFocus={e => e.target.style.borderColor = '#f97316'} onBlur={e => e.target.style.borderColor = 'var(--c-222)'} />
             </div>
             <button onClick={ajouterTransaction} disabled={saving}
               style={{ padding: '12px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', opacity: saving ? 0.7 : 1 }}>
@@ -1720,57 +1720,57 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
       <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
         {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
           <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-            style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : '#0d0d0d', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : '#555', fontSize: '12px', fontWeight: '600' }}>
+            style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-0d0d0d)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
             {label}
           </button>
         ))}
         <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
-          style={{ padding: '6px 10px', borderRadius: '20px', border: '1px solid #222', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : '#555', fontSize: '13px', fontWeight: '600' }}>
+          style={{ padding: '6px 10px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: '600' }}>
           ⚙
         </button>
       </div>
 
       {/* Filtres avancés */}
       {showFiltresAvances && (
-        <div style={{ backgroundColor: '#0d0d0d', borderRadius: '14px', padding: '16px', border: '1px solid #1a1a1a', marginBottom: '12px' }}>
-          <div style={{ color: '#555', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('bank_custom_range')}</div>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '16px', border: '1px solid var(--c-1a1a1a)', marginBottom: '12px' }}>
+          <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('bank_custom_range')}</div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
             <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
-              style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-            <span style={{ color: '#444' }}>→</span>
+              style={{ flex: 1, padding: '9px 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+            <span style={{ color: 'var(--c-444)' }}>→</span>
             <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltrePeriode('all'); }}
-              style={{ flex: 1, padding: '9px 12px', backgroundColor: '#111', border: '1px solid #222', borderRadius: '10px', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+              style={{ flex: 1, padding: '9px 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
             {(filtreCustomDebut || filtreCustomFin) && (
               <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                style={{ padding: '9px 12px', backgroundColor: 'transparent', border: '1px solid #333', borderRadius: '10px', color: '#555', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                style={{ padding: '9px 12px', backgroundColor: 'transparent', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-555)', cursor: 'pointer', fontSize: '12px' }}>✕</button>
             )}
           </div>
-          <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '12px', display: 'flex', gap: '16px' }}>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_transactions')} </span><span style={{ color: 'white', fontSize: '13px', fontWeight: '700' }}>{txFiltrees.length}</span></div>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_deposited_label')} </span><span style={{ color: '#22c55e', fontSize: '13px', fontWeight: '700' }}>${totalDepose.toFixed(2)}</span></div>
-            <div><span style={{ color: '#444', fontSize: '11px' }}>{t('bank_net_pnl')} </span><span style={{ color: profitReel >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{profitReel >= 0 ? '+' : ''}${profitReel.toFixed(2)}</span></div>
+          <div style={{ borderTop: '1px solid var(--c-1a1a1a)', paddingTop: '12px', display: 'flex', gap: '16px' }}>
+            <div><span style={{ color: 'var(--c-444)', fontSize: '11px' }}>{t('bank_transactions')} </span><span style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700' }}>{txFiltrees.length}</span></div>
+            <div><span style={{ color: 'var(--c-444)', fontSize: '11px' }}>{t('bank_deposited_label')} </span><span style={{ color: '#22c55e', fontSize: '13px', fontWeight: '700' }}>${totalDepose.toFixed(2)}</span></div>
+            <div><span style={{ color: 'var(--c-444)', fontSize: '11px' }}>{t('bank_net_pnl')} </span><span style={{ color: profitReel >= 0 ? '#22c55e' : '#ef4444', fontSize: '13px', fontWeight: '700' }}>{profitReel >= 0 ? '+' : ''}${profitReel.toFixed(2)}</span></div>
           </div>
         </div>
       )}
 
       {/* Liste transactions */}
-      <div style={{ backgroundColor: '#0d0d0d', borderRadius: '16px', padding: '20px', border: '1px solid #161616' }}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-161616)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>{t('bank_transactions')}</h3>
-          <span style={{ color: '#555', fontSize: '12px' }}>{txFiltrees.length} transactions</span>
+          <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{txFiltrees.length} transactions</span>
         </div>
         {txFiltrees.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: '#333', fontSize: '13px' }}>{t('bank_no_tx')}</div>
+          <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('bank_no_tx')}</div>
         ) : txFiltrees.map((tx, i) => (
-          <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: i > 0 ? '1px solid #111' : 'none' }}>
+          <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: tx.type === 'deposit' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                 {tx.type === 'deposit' ? '↓' : '↑'}
               </div>
               <div>
-                <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'white', textTransform: 'capitalize' }}>{tx.type}</p>
-                {tx.note && <p style={{ margin: '0 0 2px', color: '#555', fontSize: '11px' }}>{tx.note}</p>}
-                <p style={{ margin: 0, color: '#333', fontSize: '11px' }}>{new Date(tx.date_transaction).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'var(--c-white)', textTransform: 'capitalize' }}>{tx.type}</p>
+                {tx.note && <p style={{ margin: '0 0 2px', color: 'var(--c-555)', fontSize: '11px' }}>{tx.note}</p>}
+                <p style={{ margin: 0, color: 'var(--c-333)', fontSize: '11px' }}>{new Date(tx.date_transaction).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1778,9 +1778,9 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
                 {tx.type === 'deposit' ? '+' : '-'}${tx.montant.toFixed(2)}
               </span>
               <button onClick={() => supprimerTransaction(tx)}
-                style={{ backgroundColor: 'transparent', border: '1px solid #222', color: '#444', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' }}
+                style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-444)', borderRadius: '8px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' }}
                 onMouseEnter={e => { e.target.style.borderColor = '#ef4444'; e.target.style.color = '#ef4444'; }}
-                onMouseLeave={e => { e.target.style.borderColor = '#222'; e.target.style.color = '#444'; }}>
+                onMouseLeave={e => { e.target.style.borderColor = 'var(--c-222)'; e.target.style.color = 'var(--c-444)'; }}>
                 ✕
               </button>
             </div>
@@ -1805,6 +1805,7 @@ function App() {
   const [lang, setLang] = useState('en');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [mode, toggleTheme] = useWSTheme();
+  useEffect(() => { document.documentElement.setAttribute('data-theme', mode); }, [mode]);
   const [showRecherche, setShowRecherche] = useState(false);
   const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
   const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
@@ -1902,7 +1903,7 @@ function App() {
     );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#080808', minHeight: '100vh', color: 'white', paddingLeft: isMobile ? 0 : '60px', paddingBottom: isMobile ? '80px' : 0 }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : '60px', paddingBottom: isMobile ? '80px' : 0 }}>
 
         {!isMobile && (
           <AppSidebar
@@ -1930,9 +1931,9 @@ function App() {
 
         {/* Selecteur de ligue - visible sur l'onglet Analyses */}
         {page === 'stats' && !joueurFicheGlobal && !equipeFicheGlobal && (
-          <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid #161616' }}>
+          <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid var(--c-161616)' }}>
             <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
-            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#1a1a1a', border: '1px solid #222', color: '#555', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
+            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-222)', color: 'var(--c-555)', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
           </div>
         )}
 

@@ -81,8 +81,8 @@ function HockeyTicker({ onMatchsCharge }) {
 
   return (
     <div style={{
-      backgroundColor: '#111',
-      borderBottom: '1px solid #222',
+      backgroundColor: 'var(--c-111)',
+      borderBottom: '1px solid var(--c-222)',
       overflow: 'hidden',
       height: '52px',
       display: 'flex',
@@ -112,12 +112,12 @@ function HockeyTicker({ onMatchsCharge }) {
               alignItems: 'center',
               gap: '8px',
               padding: '0 32px',
-              borderRight: '1px solid #222',
+              borderRight: '1px solid var(--c-222)',
               height: '52px',
               cursor: 'pointer',
             }}>
               <img src={LOGOS_NHL[visiteur]} alt={visiteur} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-              <span style={{ fontSize: '13px', color: '#ccc' }}>{visiteur}</span>
+              <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{visiteur}</span>
               {etat === 'LIVE' || etat === 'CRIT' ? (
                 <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: 'bold' }}>
                   {scoreVis} - {scoreDom}
@@ -125,7 +125,7 @@ function HockeyTicker({ onMatchsCharge }) {
               ) : (
                 <span style={{ fontSize: '12px', color: '#6366f1' }}>{heure}</span>
               )}
-              <span style={{ fontSize: '13px', color: '#ccc' }}>{domicile}</span>
+              <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{domicile}</span>
               <img src={LOGOS_NHL[domicile]} alt={domicile} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             </div>
           );
