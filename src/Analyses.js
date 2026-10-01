@@ -5154,14 +5154,15 @@ const ORDRE_DIVISIONS = ['Metropolitan', 'Atlantic', 'Central', 'Pacific'];
 async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
   if (categorie === 'gardiens') {
     const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
-    const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=gamesPlayed&dir=DESC&start=0&limit=100`));
+    const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=wins&dir=DESC&start=0&limit=100`));
     const data = await res.json();
     let pool = data.data || [];
     if (!teamAbbrev) pool = pool.filter(g => (g.gamesPlayed || 0) >= 3);
-    const tries = [...pool].sort((a, b) => (a.goalsAgainstAverage ?? 99) - (b.goalsAgainstAverage ?? 99));
+    const tries = [...pool].sort((a, b) => (b.wins ?? 0) - (a.wins ?? 0));
     return tries.map(g => {
       const eq = (g.teamAbbrevs || '').split(',')[0].trim();
-      return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${g.playerId}.png`, statLabel: 'GAA', statValeur: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-' };
+      const svp = g.savePct != null ? (g.savePct * 100).toFixed(1) : '-';
+      return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${g.playerId}.png`, statText: `${g.wins ?? 0}V · ${g.losses ?? 0}D · ${g.shutouts ?? 0}BL · ${svp}%` };
     });
   }
   const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
@@ -5169,7 +5170,7 @@ async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
   const data = await res.json();
   const tous = (data.data || []).map(j => {
     const eq = (j.teamAbbrevs || '').split(',')[0].trim();
-    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${j.playerId}.png`, statLabel: 'PTS', statValeur: j.points };
+    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${j.playerId}.png`, statText: `${j.goals ?? 0}B · ${j.assists ?? 0}P · ${j.points ?? 0}PTS` };
   });
   return categorie === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D');
 }
@@ -5183,7 +5184,6 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   const [resultatsRecherche, setResultatsRecherche] = useState([]);
   const [chargementRecherche, setChargementRecherche] = useState(false);
   const [top10, setTop10] = useState([]);
-  const [sectionsDefaut, setSectionsDefaut] = useState({ attaquants: [], defenseurs: [], gardiens: [] });
   const [chargementTop10, setChargementTop10] = useState(false);
   const [standings, setStandings] = useState([]);
   const [chargementStandings, setChargementStandings] = useState(false);
@@ -5194,6 +5194,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
 
   const rechercheActive = query.trim().length >= 2;
   const equipeChoisie = equipeFiltre !== 'ALL' ? equipeFiltre : null;
+  const categorieEffective = categorie || 'attaquants'; // sans filtre actif : top 10 attaquants par defaut
 
   useEffect(() => {
     function onKeyDown(e) { if (e.key === 'Escape') onClose(); }
@@ -5219,40 +5220,22 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
-  // Vue par defaut (aucun pill actif) : 3 sections top 10 (attaquants/defenseurs/gardiens), ligue entiere.
+  // Aucun filtre actif = top 10 Attaquants par defaut. Pill Attaquants/Defenseurs/Gardiens actif :
+  // top 10 ligue si aucune equipe choisie, ou effectif complet (tous les joueurs de la position pour
+  // cette equipe) trie, si une equipe est choisie.
   useEffect(() => {
-    if (rechercheActive || categorie !== null) return;
+    if (rechercheActive || categorie === 'equipes') return;
     let annule = false;
     (async () => {
       setChargementTop10(true);
       try {
-        const [att, def, gar] = await Promise.all([
-          fetchClassementPosition('attaquants', null, seasonId),
-          fetchClassementPosition('defenseurs', null, seasonId),
-          fetchClassementPosition('gardiens', null, seasonId),
-        ]);
-        if (!annule) setSectionsDefaut({ attaquants: att.slice(0, 10), defenseurs: def.slice(0, 10), gardiens: gar.slice(0, 10) });
-      } catch { if (!annule) setSectionsDefaut({ attaquants: [], defenseurs: [], gardiens: [] }); }
-      if (!annule) setChargementTop10(false);
-    })();
-    return () => { annule = true; };
-  }, [categorie, rechercheActive, seasonId]);
-
-  // Pill Attaquants/Defenseurs/Gardiens actif : top 10 ligue si aucune equipe choisie,
-  // ou effectif complet (tous les joueurs de la position) trie, si une equipe est choisie.
-  useEffect(() => {
-    if (rechercheActive || categorie === null || categorie === 'equipes') return;
-    let annule = false;
-    (async () => {
-      setChargementTop10(true);
-      try {
-        const liste = await fetchClassementPosition(categorie, equipeChoisie, seasonId);
+        const liste = await fetchClassementPosition(categorieEffective, equipeChoisie, seasonId);
         if (!annule) setTop10(equipeChoisie ? liste : liste.slice(0, 10));
       } catch { if (!annule) setTop10([]); }
       if (!annule) setChargementTop10(false);
     })();
     return () => { annule = true; };
-  }, [categorie, equipeChoisie, rechercheActive, seasonId]);
+  }, [categorieEffective, categorie, equipeChoisie, rechercheActive, seasonId]);
 
   // Classement par division pour le filtre Equipes.
   useEffect(() => {
@@ -5331,11 +5314,8 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
         <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
         <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{j.equipe}{j.position ? ` · ${j.position}` : ''}</div>
       </div>
-      {j.statValeur != null && (
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ color: '#f97316', fontWeight: '900', fontSize: '16px' }}>{j.statValeur}</div>
-          <div style={{ fontSize: '9px', color: 'var(--c-555)', fontWeight: '700', letterSpacing: '0.3px' }}>{j.statLabel}</div>
-        </div>
+      {j.statText && (
+        <div style={{ color: '#f97316', fontWeight: '700', fontSize: '12.5px', flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right' }}>{j.statText}</div>
       )}
     </div>
   );
@@ -5415,24 +5395,6 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
                 {d.equipes.map(ligneEquipe)}
               </div>
             ))
-          ) : categorie === null ? (
-            chargementTop10 ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
-            : (
-              <>
-                {[
-                  { titre: 'Top 10 Attaquants', liste: sectionsDefaut.attaquants },
-                  { titre: 'Top 10 Défenseurs', liste: sectionsDefaut.defenseurs },
-                  { titre: 'Top 10 Gardiens (GAA)', liste: sectionsDefaut.gardiens },
-                ].map(section => (
-                  <div key={section.titre} style={{ marginBottom: '20px' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', padding: '0 12px 8px' }}>{section.titre}</div>
-                    {section.liste.length === 0 ? (
-                      <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '12px 0' }}>Aucun résultat.</p>
-                    ) : section.liste.map((j, i) => ligneJoueur(j, i + 1))}
-                  </div>
-                ))}
-              </>
-            )
           ) : (
             chargementTop10 ? <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
             : top10.length === 0 ? <p style={{ color: 'var(--c-444)', textAlign: 'center', padding: '40px 0' }}>Aucun résultat.</p>
