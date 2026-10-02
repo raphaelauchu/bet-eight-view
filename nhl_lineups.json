@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-01 22:31",
+  "last_updated": "2026-10-02 22:01",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
@@ -10,9 +10,9 @@
           "RW": "Cutter Gauthier"
         },
         "L2": {
-          "LW": "Alex Killorn",
+          "LW": "Beckett Sennecke",
           "C": "Mikael Granlund",
-          "RW": "Beckett Sennecke"
+          "RW": "Alex Killorn"
         },
         "L3": {
           "LW": "Nikita Nesterenko",
@@ -150,11 +150,11 @@
         },
         "D2": {
           "LD": "Owen Power",
-          "RD": "Louis Crevier"
+          "RD": "Olen Zellweger"
         },
         "D3": {
           "LD": "Matt Grzelcyk",
-          "RD": "Zach Metsa"
+          "RD": "Louis Crevier"
         }
       },
       "pp_units": {
@@ -175,7 +175,7 @@
       },
       "goalies": [
         "Ukko-Pekka Luukkonen",
-        "Alex Lyon"
+        "Colten Ellis"
       ]
     },
     "calgary-flames": {
@@ -205,15 +205,15 @@
       "defence": {
         "D1": {
           "LD": "Kevin Bahl",
-          "RD": "Simon Nemec"
+          "RD": "Zach Whitecloud"
         },
         "D2": {
-          "LD": "Jacob Middleton",
-          "RD": "Zayne Parekh"
+          "LD": "Joel Hanley",
+          "RD": "Simon Nemec"
         },
         "D3": {
-          "LD": "Yan Kuznetsov",
-          "RD": "Zach Whitecloud"
+          "LD": "Jacob Middleton",
+          "RD": "Zayne Parekh"
         }
       },
       "pp_units": {
@@ -292,8 +292,8 @@
         ]
       },
       "goalies": [
-        "Pyotr Kochetkov",
-        "Brandon Bussi"
+        "Brandon Bussi",
+        "Pyotr Kochetkov"
       ]
     },
     "chicago-blackhawks": {
@@ -306,12 +306,12 @@
         },
         "L2": {
           "LW": "Teuvo Teravainen",
-          "C": "Roman Kantserov",
-          "RW": "Nick Lardis"
+          "C": "Frank Nazar",
+          "RW": "Roman Kantserov"
         },
         "L3": {
-          "LW": "Ryan Donato",
-          "C": "Frank Nazar",
+          "LW": "Nick Lardis",
+          "C": "Ryan Donato",
           "RW": "Oliver Moore"
         },
         "L4": {
@@ -420,7 +420,7 @@
         "L2": {
           "LW": "Valeri Nichushkin",
           "C": "Sean Monahan",
-          "RW": "Conor Garland"
+          "RW": "Dmitri Voronkov"
         },
         "L3": {
           "LW": "Cole Sillinger",
@@ -428,9 +428,9 @@
           "RW": "Mathieu Olivier"
         },
         "L4": {
-          "LW": "Ryan Lomberg",
-          "C": "Dmitri Voronkov",
-          "RW": "Danton Heinen"
+          "LW": "Conor Garland",
+          "C": "Danton Heinen",
+          "RW": "Ryan Lomberg"
         }
       },
       "defence": {
@@ -450,8 +450,8 @@
       "pp_units": {
         "PP1": [
           "Matthew Knies",
-          "Adam Fantilli",
           "Charlie Coyle",
+          "Adam Fantilli",
           "Kent Johnson",
           "Zach Werenski"
         ],
@@ -482,14 +482,14 @@
           "RW": "Tyler Seguin"
         },
         "L3": {
-          "LW": "Joel Kiviranta",
+          "LW": "Sam Steel",
           "C": "Arttu Hyry",
           "RW": "Jamie Benn"
         },
         "L4": {
           "LW": "Oskar Back",
           "C": "Radek Faksa",
-          "RW": "Sam Steel"
+          "RW": "Joel Kiviranta"
         }
       },
       "defence": {
@@ -516,9 +516,9 @@
         ],
         "PP2": [
           "Jamie Benn",
-          "Sam Steel",
           "Justin Hryckowian",
           "Tyler Seguin",
+          "Esa Lindell",
           "Thomas Harley"
         ]
       },
@@ -557,12 +557,12 @@
           "RD": "Moritz Seider"
         },
         "D2": {
-          "LD": "Anton Johansson",
-          "RD": "Justin Faulk"
-        },
-        "D3": {
           "LD": "Ben Chiarot",
           "RD": "Axel Sandin-Pellikka"
+        },
+        "D3": {
+          "LD": "Justin Faulk",
+          "RD": "Anton Johansson"
         }
       },
       "pp_units": {
@@ -627,15 +627,15 @@
       "pp_units": {
         "PP1": [
           "Vasily Podkolzin",
-          "Isaac Howard",
           "Leon Draisaitl",
+          "Kasperi Kapanen",
           "Evan Bouchard",
           "Connor McDavid"
         ],
         "PP2": [
           "Trent Frederic",
           "Colton Dach",
-          "Kasperi Kapanen",
+          "Isaac Howard",
           "Ryan Shea",
           "Jake Walman"
         ]
@@ -664,9 +664,9 @@
           "RW": "Sandis Vilmanis"
         },
         "L4": {
-          "LW": "Garnet Hathaway",
+          "LW": "Bokondji Imama",
           "C": "Lars Eller",
-          "RW": "Bokondji Imama"
+          "RW": "Garnet Hathaway"
         }
       },
       "defence": {
@@ -803,11 +803,11 @@
       },
       "pp_units": {
         "PP1": [
-          "Matt Boldy",
-          "Joel Eriksson Ek",
           "Maxim Shabanov",
+          "Joel Eriksson Ek",
+          "Kirill Kaprizov",
           "Quinn Hughes",
-          "Kirill Kaprizov"
+          "Matt Boldy"
         ],
         "PP2": [
           "Blake Coleman",
@@ -908,14 +908,14 @@
       "defence": {
         "D1": {
           "LD": "Roman Josi",
-          "RD": "Ryan Ufko"
+          "RD": "Nicolas Hague"
         },
         "D2": {
           "LD": "Brady Skjei",
           "RD": "Nick Perbix"
         },
         "D3": {
-          "LD": "Nicolas Hague",
+          "LD": "William Trudeau",
           "RD": "Adam Wilsby"
         }
       },
@@ -931,7 +931,7 @@
           "Ross Colton",
           "Alex Kerfoot",
           "Mavrik Bourque",
-          "Ryan Ufko",
+          "Brady Skjei",
           "Jonathan Marchessault"
         ]
       },
@@ -1003,24 +1003,24 @@
       "name": "New York Islanders",
       "forwards": {
         "L1": {
-          "LW": "Simon Holmstrom",
+          "LW": "Emil Heineman",
           "C": "Bo Horvat",
           "RW": "Kyle Palmieri"
         },
         "L2": {
-          "LW": "Matias Maccelli",
+          "LW": "Victor Eklund",
           "C": "Calum Ritchie",
           "RW": "Brayden Schenn"
         },
         "L3": {
-          "LW": "Victor Eklund",
+          "LW": "Simon Holmstrom",
           "C": "Jean-Gabriel Pageau",
-          "RW": "Emil Heineman"
+          "RW": "Anthony Duclair"
         },
         "L4": {
           "LW": "Ondrej Palat",
           "C": "Casey Cizikas",
-          "RW": "Anthony Duclair"
+          "RW": "Matias Maccelli"
         }
       },
       "defence": {
@@ -1079,7 +1079,7 @@
         "L4": {
           "LW": "Tye Kartye",
           "C": "Joe Veleno",
-          "RW": "Matt Rempe"
+          "RW": "Jaroslav Chmelar"
         }
       },
       "defence": {
@@ -1113,8 +1113,8 @@
         ]
       },
       "goalies": [
-        "Igor Shesterkin",
-        "Dylan Garand"
+        "Dylan Garand",
+        "Igor Shesterkin"
       ]
     },
     "ottawa-senators": {
@@ -1143,16 +1143,16 @@
       },
       "defence": {
         "D1": {
+          "LD": "Jake Sanderson",
+          "RD": "Nikolas Matinpalo"
+        },
+        "D2": {
           "LD": "Thomas Chabot",
           "RD": "Jordan Spence"
         },
-        "D2": {
+        "D3": {
           "LD": "Tyler Kleven",
           "RD": "Carter Yakemchuk"
-        },
-        "D3": {
-          "LD": "Nikolas Matinpalo",
-          "RD": "Cameron Crotty"
         }
       },
       "pp_units": {
@@ -1161,14 +1161,14 @@
           "Tim Stützle",
           "Dylan Cozens",
           "Drake Batherson",
-          "Thomas Chabot"
+          "Jake Sanderson"
         ],
         "PP2": [
-          "Stephen Halliday",
-          "Shane Pinto",
           "Claude Giroux",
+          "Shane Pinto",
+          "Fabian Zetterlund",
           "Carter Yakemchuk",
-          "Fabian Zetterlund"
+          "Thomas Chabot"
         ]
       },
       "goalies": [
@@ -1180,17 +1180,17 @@
       "name": "Philadelphia Flyers",
       "forwards": {
         "L1": {
-          "LW": "Owen Tippett",
-          "C": "Trevor Zegras",
+          "LW": "Travis Konecny",
+          "C": "Christian Dvorak",
           "RW": "Porter Martone"
         },
         "L2": {
-          "LW": "Tyson Foerster",
-          "C": "Christian Dvorak",
-          "RW": "Travis Konecny"
+          "LW": "Alex Bump",
+          "C": "Trevor Zegras",
+          "RW": "Owen Tippett"
         },
         "L3": {
-          "LW": "Alex Bump",
+          "LW": "Tyson Foerster",
           "C": "Noah Cates",
           "RW": "Matvei Michkov"
         },
@@ -1224,7 +1224,7 @@
         ],
         "PP2": [
           "Travis Konecny",
-          "Noah Cates",
+          "Christian Dvorak",
           "Alex Bump",
           "Owen Tippett",
           "Cam York"
@@ -1249,14 +1249,14 @@
           "RW": "Evgeni Malkin"
         },
         "L3": {
-          "LW": "Filip Hallander",
+          "LW": "Ville Koivunen",
           "C": "Hendrix Lapierre",
-          "RW": "Ville Koivunen"
+          "RW": "Filip Hallander"
         },
         "L4": {
           "LW": "Connor Dewar",
           "C": "Ben Kindel",
-          "RW": "Elmer Soderblom"
+          "RW": "Andrei Kuzmenko"
         }
       },
       "defence": {
@@ -1275,18 +1275,18 @@
       },
       "pp_units": {
         "PP1": [
-          "Egor Chinakhov",
+          "Ben Kindel",
           "Tommy Novak",
           "Rickard Rakell",
           "Erik Karlsson",
           "Sidney Crosby"
         ],
         "PP2": [
-          "Ville Koivunen",
+          "Andrei Kuzmenko",
           "Hendrix Lapierre",
-          "Evgeni Malkin",
+          "Egor Chinakhov",
           "Kris Letang",
-          "Samuel Girard"
+          "Evgeni Malkin"
         ]
       },
       "goalies": [
@@ -1303,14 +1303,14 @@
           "RW": "Will Smith"
         },
         "L2": {
-          "LW": "Igor Chernyshov",
-          "C": "Michael Misa",
-          "RW": "Tyler Toffoli"
-        },
-        "L3": {
           "LW": "Ivar Stenberg",
           "C": "Alexander Wennberg",
           "RW": "Collin Graf"
+        },
+        "L3": {
+          "LW": "Igor Chernyshov",
+          "C": "Michael Misa",
+          "RW": "Tyler Toffoli"
         },
         "L4": {
           "LW": "Barclay Goodrow",
@@ -1421,9 +1421,9 @@
           "RW": "Jimmy Snuggerud"
         },
         "L2": {
-          "LW": "Connor McMichael",
+          "LW": "Pavel Buchnevich",
           "C": "Mason McTavish",
-          "RW": "Pavel Buchnevich"
+          "RW": "Connor McMichael"
         },
         "L3": {
           "LW": "Jake Neighbours",
@@ -1433,17 +1433,17 @@
         "L4": {
           "LW": "Alexey Toropchenko",
           "C": "Pius Suter",
-          "RW": "Dillon Dube"
+          "RW": "Ross Johnston"
         }
       },
       "defence": {
         "D1": {
-          "LD": "Theo Lindstein",
-          "RD": "Colton Parayko"
+          "LD": "Philip Broberg",
+          "RD": "Adam  Jiříček"
         },
         "D2": {
-          "LD": "Philip Broberg",
-          "RD": "Justin Barron"
+          "LD": "Theo Lindstein",
+          "RD": "Colton Parayko"
         },
         "D3": {
           "LD": "Cam Fowler",
@@ -1455,7 +1455,7 @@
           "Jimmy Snuggerud",
           "Robert Thomas",
           "Dylan Holloway",
-          "Philip Broberg",
+          "Cam Fowler",
           "Mason McTavish"
         ],
         "PP2": [
@@ -1463,7 +1463,7 @@
           "Pavel Buchnevich",
           "Dalibor Dvorsky",
           "Connor McMichael",
-          "Cam Fowler"
+          "Adam  Jiříček"
         ]
       },
       "goalies": [
@@ -1654,22 +1654,22 @@
         "L1": {
           "LW": "Jake DeBrusk",
           "C": "Elias Pettersson",
-          "RW": "Jonathan Lekkerimaki"
+          "RW": "Linus Karlsson"
         },
         "L2": {
           "LW": "Liam Ohgren",
-          "C": "Marco Rossi",
+          "C": "Paul Cotter",
           "RW": "Brock Boeser"
         },
         "L3": {
           "LW": "Drew O'Connor",
           "C": "Max Sasson",
-          "RW": "Linus Karlsson"
+          "RW": "Brendan Gallagher"
         },
         "L4": {
           "LW": "Arshdeep Bains",
-          "C": "Paul Cotter",
-          "RW": "Brendan Gallagher"
+          "C": "Marco Rossi",
+          "RW": "Jonathan Lekkerimaki"
         }
       },
       "defence": {
@@ -1692,13 +1692,13 @@
           "Elias Pettersson",
           "Brock Boeser",
           "Filip Hronek",
-          "Zeev Buium"
+          "Marco Rossi"
         ],
         "PP2": [
           "Jonathan Lekkerimaki",
           "Linus Karlsson",
           "Liam Ohgren",
-          "Marco Rossi",
+          "Zeev Buium",
           "Tom Willander"
         ]
       },
