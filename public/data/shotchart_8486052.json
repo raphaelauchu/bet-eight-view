@@ -1,39 +1,39 @@
 {
-  "playerId": 8478474,
-  "playerName": "Lawson Crouse",
-  "team": "UTA",
-  "position": "L",
+  "playerId": 8486052,
+  "playerName": "Nikita Klepov",
+  "team": "ANA",
+  "position": "R",
   "season": 2027,
-  "lastUpdated": "2026-10-08T17:15:31.809697",
+  "lastUpdated": "2026-10-08T17:27:25.716098",
   "reg": {
-    "totalGames": 4,
+    "totalGames": 1,
     "szn": {
       "lowSlot": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.7614,
+        "sogPercentile": 0.2699,
         "goalsPercentile": 0.7253
       },
       "crease": {
-        "shotsOnGoal": 1,
-        "goals": 1,
-        "shootingPctg": 1.0,
-        "sogPercentile": 0.959,
-        "goalsPercentile": 0.9952
-      },
-      "highSlot": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8747,
+        "sogPercentile": 0.8265,
+        "goalsPercentile": 0.9446
+      },
+      "highSlot": {
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0,
+        "sogPercentile": 0.588,
         "goalsPercentile": 0.9229
       },
       "lCircle": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8964,
+        "sogPercentile": 0.6241,
         "goalsPercentile": 0.9349
       },
       "rCircle": {
@@ -58,10 +58,10 @@
         "goalsPercentile": 0.9952
       },
       "rNetSide": {
-        "shotsOnGoal": 1,
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.9807,
+        "sogPercentile": 0.8506,
         "goalsPercentile": 0.9831
       },
       "rCorner": {
@@ -100,10 +100,10 @@
         "goalsPercentile": 0.9855
       },
       "outsideR": {
-        "shotsOnGoal": 3,
+        "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 1.0,
+        "sogPercentile": 0.8048,
         "goalsPercentile": 0.9855
       },
       "offNeutralZone": {
@@ -121,26 +121,26 @@
         "goalsPercentile": 0.9952
       },
       "total": {
-        "shotsOnGoal": 9,
-        "goals": 1,
-        "shootingPctg": 0.1111
+        "shotsOnGoal": 0,
+        "goals": 0,
+        "shootingPctg": 0.0
       },
       "totals": {
         "all": {
-          "shotsOnGoal": 9,
-          "goals": 1,
-          "shootingPctg": 0.1111,
-          "sogPercentile": 0.8892,
-          "goalsPercentile": 0.841,
+          "shotsOnGoal": 0,
+          "goals": 0,
+          "shootingPctg": 0.0,
+          "sogPercentile": 0.053,
+          "goalsPercentile": 0.5325,
           "sogLeagueAvg": 5.2723,
           "goalsLeagueAvg": 0.706
         },
         "high": {
-          "shotsOnGoal": 3,
-          "goals": 1,
-          "shootingPctg": 0.3333,
-          "sogPercentile": 0.8169,
-          "goalsPercentile": 0.9494,
+          "shotsOnGoal": 0,
+          "goals": 0,
+          "shootingPctg": 0.0,
+          "sogPercentile": 0.2506,
+          "goalsPercentile": 0.6892,
           "sogLeagueAvg": 1.8988,
           "goalsLeagueAvg": 0.388
         },
@@ -154,10 +154,10 @@
           "goalsLeagueAvg": 0.012
         },
         "mid": {
-          "shotsOnGoal": 2,
+          "shotsOnGoal": 0,
           "goals": 0,
           "shootingPctg": 0.0,
-          "sogPercentile": 0.7783,
+          "sogPercentile": 0.2723,
           "goalsPercentile": 0.8217,
           "sogLeagueAvg": 1.6795,
           "goalsLeagueAvg": 0.2072
