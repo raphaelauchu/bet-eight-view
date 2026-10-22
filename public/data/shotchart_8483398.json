@@ -4,7 +4,7 @@
   "team": "PIT",
   "position": "D",
   "season": 2027,
-  "lastUpdated": "2026-10-21T14:55:48.087240",
+  "lastUpdated": "2026-10-22T14:56:14.188755",
   "reg": {
     "totalGames": 10,
     "szn": {
@@ -26,7 +26,7 @@
         "shotsOnGoal": 1,
         "goals": 1,
         "shootingPctg": 1.0,
-        "sogPercentile": 0.8502,
+        "sogPercentile": 0.8421,
         "goalsPercentile": 0.9879
       },
       "lCircle": {
@@ -103,14 +103,14 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8785,
+        "sogPercentile": 0.8745,
         "goalsPercentile": 0.9879
       },
       "offNeutralZone": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.9028,
+        "sogPercentile": 0.8988,
         "goalsPercentile": 1.0
       },
       "behindNet": {
@@ -130,9 +130,9 @@
           "shotsOnGoal": 15,
           "goals": 3,
           "shootingPctg": 0.2,
-          "sogPercentile": 0.8421,
+          "sogPercentile": 0.8381,
           "goalsPercentile": 0.996,
-          "sogLeagueAvg": 8.996,
+          "sogLeagueAvg": 9.0972,
           "goalsLeagueAvg": 0.5385
         },
         "high": {
@@ -141,16 +141,16 @@
           "shootingPctg": 0.5,
           "sogPercentile": 0.9717,
           "goalsPercentile": 0.996,
-          "sogLeagueAvg": 0.5061,
+          "sogLeagueAvg": 0.5142,
           "goalsLeagueAvg": 0.0972
         },
         "long": {
           "shotsOnGoal": 3,
           "goals": 0,
           "shootingPctg": 0.0,
-          "sogPercentile": 0.5182,
+          "sogPercentile": 0.5142,
           "goalsPercentile": 0.8381,
-          "sogLeagueAvg": 4.413,
+          "sogLeagueAvg": 4.4413,
           "goalsLeagueAvg": 0.1822
         },
         "mid": {
@@ -159,7 +159,7 @@
           "shootingPctg": 0.4,
           "sogPercentile": 0.9069,
           "goalsPercentile": 1.0,
-          "sogLeagueAvg": 2.1255,
+          "sogLeagueAvg": 2.1741,
           "goalsLeagueAvg": 0.2146
         }
       }
