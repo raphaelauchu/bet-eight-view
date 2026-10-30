@@ -1,38 +1,78 @@
-// Schema des regles d'un pool (stocke dans pools.rules en jsonb) + presets.
-// Toutes les valeurs de pointage sont a 0 par defaut : un pool "vide" doit explicitement
-// recevoir au moins un point attribue avant de pouvoir etre cree (voir validateRules).
+// Schema des regles d'un pool (stocke dans pools.rules en jsonb).
+// Deux types de pool (rules.poolType) avec des etapes de wizard differentes :
+// - classic  : draft unique, joueurs exclusifs toute la saison, pas d'alignement a gerer.
+// - fantasy  : alignement actif/banc/reserve, gestion hebdomadaire ou quotidienne, ballotage.
+// Le pointage est toujours 100% personnalisable (tout a 0 par defaut) et separe par
+// position (attaquants / defenseurs / gardiens).
 
-export const SKATER_STAT_KEYS = [
+export const POOL_TYPES = ['classic', 'fantasy'];
+
+export const POOL_TYPE_INFO = [
+  { id: 'classic', labelKey: 'pool_type_classic', descKey: 'pool_type_classic_desc' },
+  { id: 'fantasy', labelKey: 'pool_type_fantasy', descKey: 'pool_type_fantasy_desc' },
+];
+
+// Stats de pointage : memes categories pour attaquants et defenseurs (values independantes),
+// categories dediees pour les gardiens.
+export const POSITION_STAT_KEYS = [
   'goals', 'assists', 'powerPlayPoints', 'shortHandedPoints', 'shotsOnGoal',
   'hits', 'blockedShots', 'pim', 'plusMinus', 'gameWinningGoals',
 ];
-
 export const GOALIE_STAT_KEYS = ['wins', 'shutouts', 'saves', 'goalsAgainst', 'otLosses'];
 
-export const ROSTER_SLOT_KEYS = ['C', 'LW', 'RW', 'D', 'G', 'UTIL', 'bench', 'ir'];
+// Alignement : pool classique = simples compteurs par groupe de position (nombre a repecher).
+// Fantasy = postes actifs detailles + banc + reserve blesses.
+export const CLASSIC_ROSTER_KEYS = ['forwards', 'defense', 'goalies'];
+export const FANTASY_ROSTER_KEYS = ['C', 'LW', 'RW', 'D', 'G', 'UTIL', 'bench', 'ir'];
 
 export const DRAFT_TYPES = ['snake', 'linear'];
 export const LINEUP_MODES = ['fixed', 'weekly', 'daily'];
+export const TRADE_APPROVAL_TYPES = ['none', 'commissioner', 'vote'];
+export const WAIVER_CLAIM_ORDERS = ['reverse_standings', 'first_come'];
+export const DISPLAY_MODES = ['player', 'team'];
+
+export const DEFAULT_SALARY_CAP_AMOUNT = 88000000;
 
 function zeroMap(keys) {
   return Object.fromEntries(keys.map(k => [k, 0]));
 }
 
-export function defaultScoringSkater() { return zeroMap(SKATER_STAT_KEYS); }
+export function defaultScoringGroup() { return zeroMap(POSITION_STAT_KEYS); }
 export function defaultScoringGoalie() { return zeroMap(GOALIE_STAT_KEYS); }
 
-export function defaultRoster() {
+export function defaultRosterForType(poolType) {
+  if (poolType === 'classic') return { forwards: 9, defense: 5, goalies: 2 };
   return { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 };
 }
 
-export function defaultRules() {
+export function defaultTradesForType(poolType) {
+  return poolType === 'classic'
+    ? { enabled: false, maxPerSeason: null, noReacquire: true, approval: 'commissioner', deadline: null }
+    : { enabled: true, maxPerSeason: null, noReacquire: true, approval: 'commissioner', deadline: null };
+}
+
+export function defaultWaiversForType(poolType) {
+  return poolType === 'classic'
+    ? { enabled: false, maxAddsPerSeason: null, noReacquireDropped: false, claimOrder: 'first_come', waiverDays: 0 }
+    : { enabled: true, maxAddsPerSeason: null, noReacquireDropped: false, claimOrder: 'first_come', waiverDays: 0 };
+}
+
+export function defaultRules(poolType = 'classic') {
   return {
-    scoring: { skater: defaultScoringSkater(), goalie: defaultScoringGoalie() },
-    roster: defaultRoster(),
-    salaryCap: { enabled: false, amount: 0, source: 'manual', mustSpendMin: null },
+    poolType,
+    display: 'player',
+    scoring: {
+      forward: defaultScoringGroup(),
+      defense: defaultScoringGroup(),
+      goalie: defaultScoringGoalie(),
+    },
+    sameForwardDefenseScoring: true,
+    roster: defaultRosterForType(poolType),
+    salaryCap: { enabled: false, amount: DEFAULT_SALARY_CAP_AMOUNT, source: 'manual' },
     draft: { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false },
-    lineup: 'weekly',
-    transactions: { trades: true, waivers: true },
+    lineup: poolType === 'classic' ? 'fixed' : 'weekly',
+    trades: defaultTradesForType(poolType),
+    waivers: defaultWaiversForType(poolType),
   };
 }
 
@@ -40,89 +80,37 @@ export function cloneRules(rules) {
   return JSON.parse(JSON.stringify(rules));
 }
 
-// Fusion superficielle par section (suffisant ici : chaque section de rules est un objet plat
-// ou un objet a un seul niveau d'imbrication connu — scoring.skater / scoring.goalie).
-export function mergeRules(base, partial) {
-  const merged = cloneRules(base);
-  if (!partial) return merged;
-  if (partial.scoring) {
-    merged.scoring = merged.scoring || {};
-    if (partial.scoring.skater) merged.scoring.skater = { ...merged.scoring.skater, ...partial.scoring.skater };
-    if (partial.scoring.goalie) merged.scoring.goalie = { ...merged.scoring.goalie, ...partial.scoring.goalie };
-  }
-  if (partial.roster) merged.roster = { ...merged.roster, ...partial.roster };
-  if (partial.salaryCap) merged.salaryCap = { ...merged.salaryCap, ...partial.salaryCap };
-  if (partial.draft) merged.draft = { ...merged.draft, ...partial.draft };
-  if (partial.lineup) merged.lineup = partial.lineup;
-  if (partial.transactions) merged.transactions = { ...merged.transactions, ...partial.transactions };
-  return merged;
+// Applique un changement de type en conservant ce qui est commun (nom/saison vivent hors
+// de rules ; pointage, plafond, affichage, draft restent intacts) et en reinitialisant
+// uniquement l'alignement / la gestion / les transactions propres a l'autre type.
+export function applyPoolType(rules, poolType) {
+  const next = cloneRules(rules);
+  next.poolType = poolType;
+  next.roster = defaultRosterForType(poolType);
+  next.lineup = poolType === 'classic' ? 'fixed' : 'weekly';
+  next.trades = defaultTradesForType(poolType);
+  next.waivers = defaultWaiversForType(poolType);
+  return next;
 }
 
-export const RULE_PRESETS = [
-  {
-    id: 'classic',
-    labelKey: 'pool_preset_classic',
-    descKey: 'pool_preset_classic_desc',
-    buildRules: () => mergeRules(defaultRules(), {
-      scoring: {
-        skater: { goals: 2, assists: 1, powerPlayPoints: 0.5 },
-        goalie: { wins: 2, shutouts: 3, otLosses: 1 },
-      },
-    }),
-  },
-  {
-    id: 'fantasy',
-    labelKey: 'pool_preset_fantasy',
-    descKey: 'pool_preset_fantasy_desc',
-    buildRules: () => mergeRules(defaultRules(), {
-      scoring: {
-        skater: {
-          goals: 3, assists: 2, powerPlayPoints: 1, shortHandedPoints: 2,
-          shotsOnGoal: 0.1, hits: 0.1, blockedShots: 0.1, plusMinus: 0.2, gameWinningGoals: 1,
-        },
-        goalie: { wins: 4, shutouts: 5, saves: 0.2, otLosses: 1 },
-      },
-    }),
-  },
-  {
-    id: 'salarycap',
-    labelKey: 'pool_preset_salarycap',
-    descKey: 'pool_preset_salarycap_desc',
-    buildRules: () => mergeRules(defaultRules(), {
-      scoring: {
-        skater: { goals: 2, assists: 1, powerPlayPoints: 0.5 },
-        goalie: { wins: 2, shutouts: 3, otLosses: 1 },
-      },
-      salaryCap: { enabled: true, amount: 95500000, source: 'nhl', mustSpendMin: null },
-    }),
-  },
-  {
-    id: 'custom',
-    labelKey: 'pool_preset_custom',
-    descKey: 'pool_preset_custom_desc',
-    buildRules: () => defaultRules(),
-  },
-];
-
-export function getPreset(id) {
-  return RULE_PRESETS.find(p => p.id === id) || RULE_PRESETS[RULE_PRESETS.length - 1];
+export function totalRosterSlots(rules) {
+  const keys = rules?.poolType === 'classic' ? CLASSIC_ROSTER_KEYS : FANTASY_ROSTER_KEYS;
+  return keys.reduce((sum, k) => sum + (Number(rules?.roster?.[k]) || 0), 0);
 }
 
-export function totalRosterSlots(roster) {
-  return ROSTER_SLOT_KEYS.reduce((sum, k) => sum + (Number(roster?.[k]) || 0), 0);
+function sumAbs(obj) {
+  return Object.values(obj || {}).reduce((s, v) => s + Math.abs(Number(v) || 0), 0);
 }
 
 export function hasAnyScoring(rules) {
-  const skaterSum = Object.values(rules?.scoring?.skater || {}).reduce((s, v) => s + Math.abs(Number(v) || 0), 0);
-  const goalieSum = Object.values(rules?.scoring?.goalie || {}).reduce((s, v) => s + Math.abs(Number(v) || 0), 0);
-  return (skaterSum + goalieSum) > 0;
+  return sumAbs(rules?.scoring?.forward) + sumAbs(rules?.scoring?.defense) + sumAbs(rules?.scoring?.goalie) > 0;
 }
 
 // Retourne un tableau de cles d'erreur i18n (vide si tout est valide).
 export function validateRules(rules) {
   const errors = [];
   if (!hasAnyScoring(rules)) errors.push('pool_error_no_points');
-  if (totalRosterSlots(rules?.roster) <= 0) errors.push('pool_error_empty_roster');
+  if (totalRosterSlots(rules) <= 0) errors.push('pool_error_empty_roster');
   if (rules?.salaryCap?.enabled && (!rules.salaryCap.amount || rules.salaryCap.amount <= 0)) errors.push('pool_error_salary_cap_amount');
   return errors;
 }
@@ -134,4 +122,79 @@ export function currentSeasonLabelFromSeasonId(seasonId) {
     return `${startYear}-${startYear + 1}`;
   }
   return `${seasonId.slice(0, 4)}-${seasonId.slice(4, 8)}`;
+}
+
+// Normalise les regles d'un pool deja cree pour les rendre compatibles avec le schema
+// courant (ancien schema Phase 1 : scoring.skater unique, roster C/LW/RW/D/G/..., plafond
+// avec mustSpendMin, transactions.trades/waivers booleens). Toujours appeler cette fonction
+// sur rules avant de les afficher/editer.
+export function normalizeRules(rawRules) {
+  const rules = rawRules && typeof rawRules === 'object' ? cloneRules(rawRules) : {};
+
+  if (!POOL_TYPES.includes(rules.poolType)) {
+    const legacyRoster = rules.roster || {};
+    const looksFantasy = ['UTIL', 'bench', 'ir'].some(k => Number(legacyRoster[k]) > 0);
+    rules.poolType = looksFantasy ? 'fantasy' : 'classic';
+  }
+  const poolType = rules.poolType;
+
+  const legacyScoring = rules.scoring || {};
+  const legacySkater = legacyScoring.skater || null;
+  const forward = legacyScoring.forward || legacySkater || {};
+  const defense = legacyScoring.defense || legacySkater || {};
+  const goalie = legacyScoring.goalie || {};
+  rules.scoring = {
+    forward: { ...defaultScoringGroup(), ...forward },
+    defense: { ...defaultScoringGroup(), ...defense },
+    goalie: { ...defaultScoringGoalie(), ...goalie },
+  };
+  if (typeof rules.sameForwardDefenseScoring !== 'boolean') {
+    rules.sameForwardDefenseScoring = !!legacySkater;
+  }
+
+  if (poolType === 'classic') {
+    const legacy = rules.roster || {};
+    if (legacy.forwards === undefined && legacy.defense === undefined && legacy.goalies === undefined) {
+      const forwards = (Number(legacy.C) || 0) + (Number(legacy.LW) || 0) + (Number(legacy.RW) || 0);
+      const defenseN = Number(legacy.D) || 0;
+      const goalies = Number(legacy.G) || 0;
+      rules.roster = {
+        forwards: forwards || defaultRosterForType('classic').forwards,
+        defense: defenseN || defaultRosterForType('classic').defense,
+        goalies: goalies || defaultRosterForType('classic').goalies,
+      };
+    } else {
+      rules.roster = { forwards: Number(legacy.forwards) || 0, defense: Number(legacy.defense) || 0, goalies: Number(legacy.goalies) || 0 };
+    }
+  } else {
+    rules.roster = { ...defaultRosterForType('fantasy'), ...(rules.roster || {}) };
+  }
+
+  const legacyCap = rules.salaryCap || {};
+  rules.salaryCap = {
+    enabled: !!legacyCap.enabled,
+    amount: legacyCap.amount || DEFAULT_SALARY_CAP_AMOUNT,
+    source: legacyCap.source === 'nhl' ? 'nhl' : 'manual',
+  };
+
+  if (!rules.trades || typeof rules.trades.enabled !== 'boolean') {
+    const legacyTx = rules.transactions;
+    rules.trades = legacyTx
+      ? { ...defaultTradesForType(poolType), enabled: !!legacyTx.trades }
+      : defaultTradesForType(poolType);
+  }
+  if (!rules.waivers || typeof rules.waivers.enabled !== 'boolean') {
+    const legacyTx = rules.transactions;
+    rules.waivers = legacyTx
+      ? { ...defaultWaiversForType(poolType), enabled: !!legacyTx.waivers }
+      : defaultWaiversForType(poolType);
+  }
+  delete rules.transactions;
+
+  if (!rules.draft) rules.draft = { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false };
+  if (!rules.lineup) rules.lineup = poolType === 'classic' ? 'fixed' : 'weekly';
+  if (poolType === 'classic') rules.lineup = 'fixed';
+  if (!DISPLAY_MODES.includes(rules.display)) rules.display = 'player';
+
+  return rules;
 }
