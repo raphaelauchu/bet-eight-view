@@ -5,7 +5,7 @@ import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile } from './Analyses';
 import ModelesFlux from './Modeles';
-import PoolDraft from './PoolDraft';
+import PoolHub from './Pool';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { supabase } from './supabase';
@@ -1792,14 +1792,20 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
 }
 
 function App() {
+  // Lien d'invitation /pool/join/:code — detecte une fois, utilise pour forcer l'auth
+  // et atterrir directement sur l'onglet Pool (en mode "rejoindre") apres connexion.
+  const poolJoinCode = /^\/pool\/join\/[A-Za-z0-9]+/i.test(window.location.pathname)
+    ? window.location.pathname.match(/^\/pool\/join\/([A-Za-z0-9]+)/i)[1]
+    : null;
   const [page, setPage] = useState(() => {
     if (window.location.search.includes('admin=betrics2026')) return 'admin';
     if (new URLSearchParams(window.location.search).get('page') === 'profile') return 'profile';
+    if (poolJoinCode) return 'pooldraft';
     return 'home';
   });
   const [utilisateur, setUtilisateur] = useState(null);
   const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
-  const [showAuth, setShowAuth] = useState(false);
+  const [showAuth, setShowAuth] = useState(() => !!poolJoinCode);
   const [nombreMatchs, setNombreMatchs] = useState(0);
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
   const [lang, setLang] = useState('en');
@@ -1843,7 +1849,7 @@ function App() {
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
-        <Auth onConnexion={() => { setShowAuth(false); setPage('home'); }} lang={lang} />
+        <Auth onConnexion={() => { setShowAuth(false); setPage(poolJoinCode ? 'pooldraft' : 'home'); }} lang={lang} />
       </div>
     );
   }
@@ -1891,7 +1897,7 @@ function App() {
     ) : page === 'bankroll' ? (
       <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
     ) : page === 'pooldraft' ? (
-      <PoolDraft />
+      <PoolHub utilisateur={utilisateur} lang={lang} />
     ) : page === 'admin' ? (
       <AdminPage />
     ) : page === 'stats' ? (
