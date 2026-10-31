@@ -17,7 +17,7 @@ const sectionTitle = (color) => ({ fontSize: '11px', fontWeight: '700', color, t
 const POS_COLORS = { F: '#f97316', D: '#3b82f6', G: '#22c55e', TEAM: '#a78bfa' };
 const PLACEHOLDER_HEADSHOT = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#333"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>');
 
-function round1(n) { return Math.round(n * 10) / 10; }
+export function round1(n) { return Math.round(n * 10) / 10; }
 
 function mapPosGroup(code) {
   if (code === 'D') return 'defense';
@@ -32,7 +32,7 @@ function mapPosReel(code) {
   return 'C';
 }
 // Position coarse ('F'|'D'|'G'|'TEAM') utilisee dans pool_picks / les quotas de roster.
-function posReelToPickPosition(posReel) {
+export function posReelToPickPosition(posReel) {
   if (posReel === 'D') return 'D';
   if (posReel === 'G') return 'G';
   return 'F';
@@ -43,7 +43,7 @@ function getStatsUrl(fullUrl) {
   return estEnProduction ? `/api/nhl?path=${encodeURIComponent(fullUrl)}` : fullUrl;
 }
 
-function headshotUrl(playerId, seasonId, team) {
+export function headshotUrl(playerId, seasonId, team) {
   return `https://assets.nhle.com/mugs/nhl/${seasonId}/${team || 'current'}/${playerId}.png`;
 }
 
@@ -68,7 +68,7 @@ function calcAge(birthDate) {
 // cours avec la saison precedente tant que l'echantillon de la saison en cours est petit, pour
 // que le classement ne soit pas domine par le hasard des premiers matchs. Les joueurs ajoutes
 // manuellement n'ont pas ces champs et retombent sur leurs valeurs brutes (toutes a 0).
-function calculerValeurIA(player, rules) {
+export function calculerValeurIA(player, rules) {
   if (!rules) return 0;
   if (player.posGroup === 'goalie') {
     const p = rules.scoring.goalie;
@@ -170,7 +170,7 @@ function construirJoueurManuel(nom, positionCode, equipe, idConnu) {
   };
 }
 
-function useNhlPlayers(seasonId) {
+export function useNhlPlayers(seasonId) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -246,7 +246,7 @@ function useNhlPlayers(seasonId) {
 // Classement NHL en direct (rang + logo + nom complet) pour le filtre "Equipes NHL" de la
 // recherche. En cas d'echec, retombe sur la simple liste des 32 abbreviations connues
 // (sans rang) pour que le pick d'equipe reste toujours possible.
-function useNhlTeams() {
+export function useNhlTeams() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -284,7 +284,7 @@ function mapPickError(code, t) {
   return translated !== key ? translated : t('pool_draft_error_generic');
 }
 
-function PlayerAvatar({ src, fallback, size = 32 }) {
+export function PlayerAvatar({ src, fallback, size = 32 }) {
   const [failed, setFailed] = useState(false);
   return (
     <img src={failed || !src ? (fallback || PLACEHOLDER_HEADSHOT) : src} alt=""
@@ -293,7 +293,7 @@ function PlayerAvatar({ src, fallback, size = 32 }) {
   );
 }
 
-function TeamLogo({ abbrev, size = 20 }) {
+export function TeamLogo({ abbrev, size = 20 }) {
   return (
     <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: size, height: size, objectFit: 'contain', flexShrink: 0 }}
       onError={e => { e.target.style.display = 'none'; }} />
@@ -302,7 +302,7 @@ function TeamLogo({ abbrev, size = 20 }) {
 
 // ===================== Fiche joueur / equipe (modal) =====================
 
-function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, canPick, onPick, onClose }) {
+export function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, canPick, onPick, onClose }) {
   const t = getT(lang);
   const isTeam = target.kind === 'team';
   const isManualPlayer = !isTeam && (target.manual || String(target.id).startsWith('manual-'));
@@ -544,7 +544,7 @@ function PickRow({ pick, capEnabled, onClick, highlight, seasonId, points }) {
 
 // ===================== Classement : panorama (Phase 3 refonte) =====================
 
-function memberLabel(m, rules) {
+export function memberLabel(m, rules) {
   if (rules?.display === 'team' && m?.team_name) return m.team_name;
   return m?.display_name || m?.team_name || '?';
 }

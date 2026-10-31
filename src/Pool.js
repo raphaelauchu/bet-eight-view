@@ -4,6 +4,7 @@ import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
 import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel, PoolStandings } from './PoolDraftRoom';
+import { PoolTradesTab, PoolWaiversTab } from './PoolTrades';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
@@ -840,7 +841,8 @@ function LeavePoolButton({ pool, t, onLeft }) {
   );
 }
 
-const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'rules'];
+const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'trades', 'waivers', 'rules'];
+const ACTIVE_ONLY_TABS = ['standings', 'trades', 'waivers'];
 
 function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
   const t = getT(lang);
@@ -897,6 +899,31 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
   const inviteLink = `${window.location.origin}/pool/join/${pool.invite_code}`;
   const myMember = members.find(m => m.user_id === utilisateur.id);
 
+  const [pendingTradesForMe, setPendingTradesForMe] = useState(0);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+
+  useEffect(() => {
+    if (!myMember?.id) return;
+    async function chargerBadges() {
+      const [{ count: recv }, { count: approvals }] = await Promise.all([
+        supabase.from('pool_trades').select('id', { count: 'exact', head: true })
+          .eq('pool_id', pool.id).eq('recipient_member_id', myMember.id).eq('status', 'pending'),
+        isCommissioner
+          ? supabase.from('pool_trades').select('id', { count: 'exact', head: true }).eq('pool_id', pool.id).eq('status', 'pending_commissioner')
+          : Promise.resolve({ count: 0 }),
+      ]);
+      setPendingTradesForMe(recv || 0);
+      setPendingApprovals(approvals || 0);
+    }
+    chargerBadges();
+    const channel = supabase.channel(`pool_trades_badges_${pool.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pool_trades', filter: `pool_id=eq.${pool.id}` }, chargerBadges)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [pool.id, myMember?.id, isCommissioner]);
+
+  const tradesBadge = pendingTradesForMe + pendingApprovals;
+
   function copyLink() {
     if (!navigator.clipboard) return;
     navigator.clipboard.writeText(inviteLink).then(() => {
@@ -932,10 +959,15 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto' }}>
-        {LOBBY_TABS.filter(tab => tab !== 'standings' || pool.status === 'active').map(tab => (
+        {LOBBY_TABS.filter(tab => !ACTIVE_ONLY_TABS.includes(tab) || pool.status === 'active').map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            style={{ padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
+            style={{ position: 'relative', padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
             {t(`pool_tab_${tab}`)}
+            {tab === 'trades' && tradesBadge > 0 && (
+              <span style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: '#ef4444', color: 'white', borderRadius: '10px', fontSize: '10px', fontWeight: '800', padding: '1px 5px', minWidth: '16px', lineHeight: '14px' }}>
+                {tradesBadge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -1015,6 +1047,14 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       {activeTab === 'team' && (
         <TeamRosterPanel pool={pool} members={members} lang={lang}
           viewedMemberId={myMember?.id || members[0]?.id} />
+      )}
+
+      {activeTab === 'trades' && pool.status === 'active' && (
+        <PoolTradesTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} isCommissioner={isCommissioner} />
+      )}
+
+      {activeTab === 'waivers' && pool.status === 'active' && (
+        <PoolWaiversTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} />
       )}
 
       {activeTab === 'rules' && <RulesSummary rules={pool.rules} t={t} />}

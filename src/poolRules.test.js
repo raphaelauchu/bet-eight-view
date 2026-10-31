@@ -68,6 +68,37 @@ test('refuse un echange au-dela du nombre maximum par saison', () => {
   expect(result.errors).toContain('pool_trade_error_max_per_season_a');
 });
 
+// ===================== Scenarios miroirs des tests SQL (execute_trade/pool_trade_check) =====================
+// Memes verdicts attendus que les scenarios Postgres de la migration Phase 4A
+// (supabase/migrations/20261108_pool_trades_waivers.sql), exerces ici cote JS pour garantir
+// que l'apercu d'interface et la validation serveur ne divergent jamais.
+
+test('valide un echange 2 attaquants contre 2 attaquants (equilibre)', () => {
+  const rosterA = [player('a1', 'forward', 500000), player('a2', 'forward', 400000), player('a3', 'defense', 600000)];
+  const rosterB = [player('b1', 'forward', 450000), player('b2', 'forward', 400000), player('b3', 'defense', 550000)];
+  const result = validateTrade(
+    baseRules({ salaryCap: { enabled: true, amount: 3000000 } }),
+    rosterA, rosterB,
+    [player('a1', 'forward', 500000), player('a2', 'forward', 400000)],
+    [player('b1', 'forward', 450000), player('b2', 'forward', 400000)]
+  );
+  expect(result.ok).toBe(true);
+  expect(result.errors).toEqual([]);
+});
+
+test('refuse un echange 2 attaquants contre 1 attaquant + 1 defenseur (meme total, mauvais postes)', () => {
+  const rosterA = [player('a1', 'forward'), player('a2', 'forward')];
+  const rosterB = [player('b1', 'forward'), player('b2', 'defense')];
+  const result = validateTrade(
+    baseRules(),
+    rosterA, rosterB,
+    [player('a1', 'forward'), player('a2', 'forward')],
+    [player('b1', 'forward'), player('b2', 'defense')]
+  );
+  expect(result.ok).toBe(false);
+  expect(result.errors).toContain('pool_trade_error_position_imbalance');
+});
+
 test('refuse un echange si les echanges sont desactives', () => {
   const rules = baseRules({ trades: { enabled: false } });
   const result = validateTrade(rules, [], [], [], []);

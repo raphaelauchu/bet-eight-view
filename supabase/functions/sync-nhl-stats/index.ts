@@ -18,6 +18,11 @@
 // Corps JSON optionnel : { start_date?, end_date?, pool_id? } (dates au format YYYY-MM-DD) ;
 // pool_id present => mode commissaire, absent => mode planifie.
 //
+// Phase 4A (echanges/ballotage) : en mode planifie seulement, une fois la synchro NHL
+// terminee, appelle aussi process_all_pools_waivers() pour resoudre les reclamations de
+// ballotage echues de tous les pools actifs -- meme authentification, meme client
+// service_role, aucun changement au mecanisme existant.
+//
 // PPP (power play points), SHP (short handed points) et les buts gagnants (GWG) ne sont pas
 // dans le boxscore NHL : on les derive du detail but-par-but fourni par /v1/score/{date}
 // (chaque but a deja "strength" ['ev'|'pp'|'sh'] et le score courant home/away a ce moment),
@@ -345,7 +350,18 @@ Deno.serve(async (req) => {
       datesSynced.push(d);
     }
 
-    return jsonResponse({ success: true, datesSynced, ...summary });
+    // Mode planifie uniquement (Phase 4A) : une fois les stats synchronisees, traite les
+    // reclamations de ballotage echues de tous les pools actifs (pool_waiver_claims.process_at
+    // <= now()). Ne concerne pas le mode commissaire (recalcul cible d'un seul pool) -- le
+    // ballotage reste un processus global, independant de la synchro NHL d'un pool precis.
+    // Meme client service_role, meme authentification (x-sync-secret) : aucun changement.
+    let waiversError: string | null = null;
+    if (!body.pool_id) {
+      const { error: waiversErr } = await supabase.rpc('process_all_pools_waivers');
+      if (waiversErr) waiversError = waiversErr.message;
+    }
+
+    return jsonResponse({ success: true, datesSynced, ...summary, waiversError });
   } catch (err) {
     return jsonResponse({ error: String((err as Error)?.message || err) }, 500);
   }
