@@ -853,7 +853,6 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
   const [picks, setPicks] = useState([]);
   const [startBusy, setStartBusy] = useState(false);
   const [startError, setStartError] = useState('');
-  const [viewedMemberId, setViewedMemberId] = useState(null);
   const prevStatusRef = React.useRef(pool.status);
 
   useEffect(() => { chargerMembres(); }, [pool.id]);
@@ -1015,7 +1014,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
 
       {activeTab === 'team' && (
         <TeamRosterPanel pool={pool} members={members} lang={lang}
-          viewedMemberId={viewedMemberId || myMember?.id || members[0]?.id} setViewedMemberId={setViewedMemberId} />
+          viewedMemberId={myMember?.id || members[0]?.id} />
       )}
 
       {activeTab === 'rules' && <RulesSummary rules={pool.rules} t={t} />}

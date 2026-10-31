@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
@@ -115,6 +114,47 @@ function blendStat(currentTotal, currentGp, prevTotal, prevGp) {
 function previousSeasonId(seasonId) {
   const n = Number(seasonId);
   return n ? String(n - 10001) : null;
+}
+
+// ===================== Dates/periodes (heure de l'Est) pour la page d'un participant =====================
+
+function easternDateStr(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+
+// Minuit (heure de l'Est) d'une date 'YYYY-MM-DD', exprime en instant UTC -- robuste au
+// changement EST/EDT (pas un decalage fixe) : on lit l'heure locale ET a midi UTC pour en
+// deduire le decalage reel ce jour-la.
+function easternMidnightUtc(dateStr) {
+  const noonUtc = new Date(`${dateStr}T12:00:00Z`);
+  const hourEt = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(noonUtc));
+  const offsetHours = 12 - hourEt;
+  return new Date(new Date(`${dateStr}T00:00:00Z`).getTime() + offsetHours * 3600000);
+}
+
+function addDaysToDateStr(dateStr, days) {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// { from, to } (Date UTC, bornes [from, to) ) pour le selecteur de periode Aujourd'hui / Jour
+// / Mois / Total -- null,null pour Total (non borne, cote RPC).
+function periodToRange(period, selectedDay, selectedMonth) {
+  if (period === 'today') {
+    const today = easternDateStr();
+    return { from: easternMidnightUtc(today), to: easternMidnightUtc(addDaysToDateStr(today, 1)) };
+  }
+  if (period === 'day') {
+    return { from: easternMidnightUtc(selectedDay), to: easternMidnightUtc(addDaysToDateStr(selectedDay, 1)) };
+  }
+  if (period === 'month') {
+    const from = `${selectedMonth}-01`;
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const nextMonth = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+    return { from: easternMidnightUtc(from), to: easternMidnightUtc(`${nextMonth}-01`) };
+  }
+  return { from: null, to: null };
 }
 
 function construirJoueurManuel(nom, positionCode, equipe, idConnu) {
@@ -448,20 +488,12 @@ export function DraftWaitingRoom({ pool, members, lang, isCommissioner, onStartD
 // ===================== Panneau "Mon equipe" statique (onglet dedie + resume de fin) =====================
 
 // "Mon equipe" : meme rendu detaille que le clic sur un participant dans le Classement (voir
-// MemberDetailPanel plus bas), avec un selecteur de membre en plus. Fonctionne a tout moment
-// (setup/draft/active) : get_member_breakdown part du roster (pool_picks), pas des matchs,
-// donc la liste des choix s'affiche avec 0 point tant que le pointage n'a pas commence.
-export function TeamRosterPanel({ pool, members, lang, viewedMemberId, setViewedMemberId }) {
-  const member = members.find(m => m.id === viewedMemberId) || members[0];
-  return (
-    <div>
-      <select value={member?.id || ''} onChange={e => setViewedMemberId(e.target.value)}
-        style={{ ...inputStyle, fontWeight: '700', marginBottom: '10px' }}>
-        {members.map(m => <option key={m.id} value={m.id}>{m.display_name || m.team_name}</option>)}
-      </select>
-      <MemberDetailPanel pool={pool} member={member} lang={lang} />
-    </div>
-  );
+// MemberDetailPanel plus bas, qui gere lui-meme son selecteur de participant). Fonctionne a
+// tout moment (setup/draft/active) : get_member_breakdown part du roster (pool_picks), pas
+// des matchs, donc la liste des choix s'affiche avec 0 point tant que le pointage n'a pas
+// commence.
+export function TeamRosterPanel({ pool, members, lang, viewedMemberId }) {
+  return <MemberDetailPanel pool={pool} members={members} initialMemberId={viewedMemberId} lang={lang} />;
 }
 
 function buildQuotaRows(rules, memberPicks) {
@@ -510,44 +542,37 @@ function PickRow({ pick, capEnabled, onClick, highlight, seasonId, points }) {
   );
 }
 
-// ===================== Classement (Phase 3 : moteur de pointage) =====================
-
-const CHART_COLORS = ['#f97316', '#3b82f6', '#22c55e', '#a78bfa', '#ef4444', '#eab308', '#06b6d4', '#ec4899', '#84cc16', '#f472b6'];
+// ===================== Classement : panorama (Phase 3 refonte) =====================
 
 function memberLabel(m, rules) {
   if (rules?.display === 'team' && m?.team_name) return m.team_name;
   return m?.display_name || m?.team_name || '?';
 }
 
-// Transforme les lignes (member_id, display_name, day, points) renvoyees par
-// get_pool_daily_points en une serie cumulative, une ligne par jour, une colonne par membre
-// (format attendu par recharts). Les jours sans match pour un membre reprennent son dernier
-// total connu (ligne plate, pas de trou dans le graphique).
-function buildCumulativeSeries(daily, members, rules) {
-  const days = Array.from(new Set(daily.map(r => r.day))).sort();
-  const labelByMember = Object.fromEntries(members.map(m => [m.id, memberLabel(m, rules)]));
-  const pointsByMemberDay = {};
-  daily.forEach(r => { pointsByMemberDay[`${r.member_id}:${r.day}`] = Number(r.points) || 0; });
+const PODIUM_STYLES = {
+  1: { background: 'rgba(249,115,22,0.14)', color: '#f97316' },
+  2: { background: 'rgba(203,213,225,0.12)', color: '#cbd5e1' },
+  3: { background: 'rgba(217,119,6,0.12)', color: '#d97706' },
+};
 
-  const running = Object.fromEntries(members.map(m => [m.id, 0]));
-  return days.map(day => {
-    const row = { day };
-    members.forEach(m => {
-      running[m.id] += pointsByMemberDay[`${m.id}:${day}`] || 0;
-      row[labelByMember[m.id]] = round1(running[m.id]);
-    });
-    return row;
-  });
+// Cellule sticky (premiere colonne) pour que rang+nom restent visibles pendant le defilement
+// horizontal d'un tableau large sur mobile -- le fond doit etre opaque et identique a celui
+// de la ligne pour ne pas laisser voir les colonnes qui defilent dessous.
+function stickyFirstCellStyle(bg) {
+  return { position: 'sticky', left: 0, zIndex: 1, backgroundColor: bg, padding: '8px' };
 }
 
 export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner }) {
   const t = getT(lang);
+  const isMobile = useIsMobile();
   const [standings, setStandings] = useState(null);
-  const [daily, setDaily] = useState([]);
+  const [topScorers, setTopScorers] = useState(null);
+  const [showAllTop, setShowAllTop] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [detailMemberId, setDetailMemberId] = useState(null);
+  const [mobileGroup, setMobileGroup] = useState('today');
   const [recalcBusy, setRecalcBusy] = useState(false);
   const [recalcMsg, setRecalcMsg] = useState('');
 
@@ -555,14 +580,14 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 
   async function loadStandings() {
     setLoading(true); setError('');
-    const [standingsRes, dailyRes, lastGameRes] = await Promise.all([
+    const [standingsRes, topRes, lastGameRes] = await Promise.all([
       supabase.rpc('get_pool_standings', { p_pool_id: pool.id }),
-      supabase.rpc('get_pool_daily_points', { p_pool_id: pool.id }),
+      supabase.rpc('get_pool_top_scorers_today', { p_pool_id: pool.id, p_limit: 25 }),
       supabase.from('nhl_games').select('updated_at').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (standingsRes.error) setError(standingsRes.error.message);
     setStandings(standingsRes.data || []);
-    setDaily(dailyRes.data || []);
+    setTopScorers(topRes.data || []);
     setLastSync(lastGameRes.data?.updated_at || null);
     setLoading(false);
   }
@@ -586,7 +611,6 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
     setRecalcBusy(false);
   }
 
-  const chartData = useMemo(() => buildCumulativeSeries(daily, members, pool.rules), [daily, members, pool.rules]);
   const detailMember = members.find(m => m.id === detailMemberId);
 
   if (loading && !standings) {
@@ -595,13 +619,13 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 
   if (detailMember) {
     return (
-      <MemberDetailPanel pool={pool} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
+      <MemberDetailPanel pool={pool} members={members} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
     );
   }
 
-  const noGamesYet = (standings || []).every(row => Number(row.total_points) === 0) && daily.length === 0;
-  const capEnabled = !!pool.rules?.salaryCap?.enabled;
-  const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
+  const noGamesYet = (standings || []).every(row => Number(row.total_games_played) === 0);
+  const showToday = !isMobile || mobileGroup === 'today';
+  const showCumul = !isMobile || mobileGroup === 'cumul';
 
   return (
     <div>
@@ -630,38 +654,67 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
         </div>
       )}
 
-      <div style={{ ...card, marginBottom: '16px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: capEnabled ? '520px' : '420px' }}>
+      {isMobile && (
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+          {['today', 'cumul'].map(g => (
+            <button key={g} onClick={() => setMobileGroup(g)}
+              style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700',
+                backgroundColor: mobileGroup === g ? '#f97316' : 'var(--c-111)', color: mobileGroup === g ? 'white' : 'var(--c-888)' }}>
+              {g === 'today' ? t('pool_standings_group_today') : t('pool_standings_group_total')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ ...card, marginBottom: '16px', overflowX: 'auto', padding: 0 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
-            <tr style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'uppercase' }}>
-              <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_rank')}</th>
-              <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_member')}</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_total')}</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_today')}</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_last7')}</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_gap')}</th>
-              {capEnabled && <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_salary')}</th>}
+            <tr style={{ color: 'var(--c-666)', fontSize: '10px', textTransform: 'uppercase' }}>
+              <th rowSpan={2} style={stickyFirstCellStyle('var(--c-0d0d0d)')}></th>
+              {showToday && <th colSpan={3} style={{ padding: '6px 8px', textAlign: 'center', borderLeft: '1px solid var(--c-161616)' }}>{t('pool_standings_group_today')}</th>}
+              {showCumul && <th colSpan={4} style={{ padding: '6px 8px', textAlign: 'center', borderLeft: '1px solid var(--c-161616)' }}>{t('pool_standings_group_total')}</th>}
+              <th rowSpan={2} style={{ padding: '6px 8px', textAlign: 'right', borderLeft: '1px solid var(--c-161616)' }}>{t('pool_standings_col_yesterday')}</th>
+            </tr>
+            <tr style={{ color: 'var(--c-666)', fontSize: '10px', textTransform: 'uppercase' }}>
+              {showToday && <>
+                <th style={{ padding: '4px 6px', textAlign: 'right', borderLeft: '1px solid var(--c-161616)' }}>{t('pool_standings_col_gp')}</th>
+                <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('pool_standings_col_pts')}</th>
+                <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('pool_standings_col_avg')}</th>
+              </>}
+              {showCumul && <>
+                <th style={{ padding: '4px 6px', textAlign: 'right', borderLeft: '1px solid var(--c-161616)' }}>{t('pool_standings_col_gp')}</th>
+                <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('pool_standings_col_pts')}</th>
+                <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('pool_standings_col_avg')}</th>
+                <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('pool_standings_col_diff')}</th>
+              </>}
             </tr>
           </thead>
           <tbody>
-            {(standings || []).map((row, i) => {
+            {(standings || []).map(row => {
               const isMe = row.member_id === myMember?.id;
-              const gap = i === 0 ? 0 : Number(standings[0].total_points) - Number(row.total_points);
-              const salaryUsed = Number(row.salary_used) || 0;
+              const podium = PODIUM_STYLES[row.rank];
+              const rowBg = isMe ? 'rgba(249,115,22,0.12)' : (podium?.background || 'transparent');
               return (
                 <tr key={row.member_id} onClick={() => setDetailMemberId(row.member_id)}
-                  style={{ cursor: 'pointer', backgroundColor: isMe ? 'rgba(249,115,22,0.12)' : 'transparent', borderTop: '1px solid var(--c-161616)' }}>
-                  <td style={{ padding: '8px', fontWeight: '800', color: row.rank === 1 ? '#f97316' : 'var(--c-white)' }}>{row.rank}</td>
-                  <td style={{ padding: '8px', color: 'var(--c-white)', fontWeight: isMe ? '800' : '500' }}>{row.display_name || row.team_name}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.today_points)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.last7_points)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{i === 0 ? '—' : `-${round1(gap)}`}</td>
-                  {capEnabled && (
-                    <td style={{ padding: '8px', textAlign: 'right', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-666)' }}>
-                      {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $
-                    </td>
-                  )}
+                  style={{ cursor: 'pointer', backgroundColor: rowBg, borderTop: '1px solid var(--c-161616)' }}>
+                  <td style={stickyFirstCellStyle(rowBg === 'transparent' ? 'var(--c-0d0d0d)' : rowBg)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: '800', fontSize: '12px', color: podium?.color || 'var(--c-white)', minWidth: '16px' }}>{row.rank}</span>
+                      <span style={{ color: 'var(--c-white)', fontWeight: isMe ? '800' : '500', whiteSpace: 'nowrap' }}>{row.display_name || row.team_name}</span>
+                    </div>
+                  </td>
+                  {showToday && <>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)', borderLeft: '1px solid var(--c-161616)' }}>{row.today_games_played}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '700', color: 'var(--c-white)' }}>{round1(row.today_points)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.today_avg)}</td>
+                  </>}
+                  {showCumul && <>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)', borderLeft: '1px solid var(--c-161616)' }}>{row.total_games_played}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.total_avg)}</td>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{row.rank === 1 ? '—' : `-${round1(row.total_diff)}`}</td>
+                  </>}
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)', borderLeft: '1px solid var(--c-161616)' }}>{round1(row.yesterday_points)}</td>
                 </tr>
               );
             })}
@@ -669,22 +722,55 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
         </table>
       </div>
 
-      {chartData.length > 1 && (
-        <div style={{ ...card, height: '280px' }}>
-          <div style={sectionTitle('var(--c-666)')}>{t('pool_standings_chart_title')}</div>
-          <ResponsiveContainer width="100%" height="88%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--c-222)" />
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
-              <YAxis tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
-              <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', fontSize: '12px' }} />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
-              {members.map((m, i) => (
-                <Line key={m.id} type="monotone" dataKey={memberLabel(m, pool.rules)} stroke={CHART_COLORS[i % CHART_COLORS.length]} dot={false} strokeWidth={2} />
+      <TopScorersBlock pool={pool} lang={lang} rows={topScorers} showAll={showAllTop} setShowAll={setShowAllTop} />
+    </div>
+  );
+}
+
+function TopScorersBlock({ pool, lang, rows, showAll, setShowAll }) {
+  const t = getT(lang);
+  const seasonId = useSaisonCourante();
+  const list = (rows || []).slice(0, showAll ? 25 : 10);
+
+  return (
+    <div style={{ ...card, overflowX: 'auto' }}>
+      <div style={sectionTitle('var(--c-666)')}>{t('pool_standings_top_scorers_title')}</div>
+      {rows === null ? (
+        <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
+      ) : list.length === 0 ? (
+        <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_standings_top_scorers_empty')}</div>
+      ) : (
+        <>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '420px' }}>
+            <thead>
+              <tr style={{ color: 'var(--c-666)', fontSize: '10px', textTransform: 'uppercase' }}>
+                <th style={{ textAlign: 'left', padding: '4px 6px' }}></th>
+                <th style={{ textAlign: 'right', padding: '4px 6px' }}>B</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px' }}>P</th>
+                <th style={{ textAlign: 'right', padding: '4px 6px' }}>{t('pool_standings_col_pts')}</th>
+                <th style={{ textAlign: 'left', padding: '4px 6px' }}>{t('pool_standings_top_scorers_owner')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(r => (
+                <tr key={r.ref_id} style={{ borderTop: '1px solid var(--c-161616)' }}>
+                  <td style={{ padding: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={26} />
+                    <TeamLogo abbrev={r.team_abbrev} size={16} />
+                    <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>{r.label}</span>
+                  </td>
+                  <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-888)' }}>{r.stats?.goals ?? 0}</td>
+                  <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-888)' }}>{r.stats?.assists ?? 0}</td>
+                  <td style={{ padding: '6px', textAlign: 'right', fontWeight: '800', color: '#f97316' }}>{round1(r.points)}</td>
+                  <td style={{ padding: '6px', color: 'var(--c-666)', whiteSpace: 'nowrap' }}>{r.display_name || r.team_name}</td>
+                </tr>
               ))}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+            </tbody>
+          </table>
+          {!showAll && (rows || []).length > 10 && (
+            <button onClick={() => setShowAll(true)} style={{ ...btnSecondary, width: '100%', marginTop: '10px' }}>{t('pool_standings_top_scorers_more')}</button>
+          )}
+        </>
       )}
     </div>
   );
@@ -695,104 +781,259 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 // pool_picks.position, toujours renseigne meme sans aucun match joue) et est deja triee par
 // points decroissants puis pick_no croissant par la RPC : un simple filtre par section suffit.
 const MEMBER_DETAIL_SECTIONS = [
-  { pos: 'F', titleKey: 'pool_slot_forwards', statKeys: POSITION_STAT_KEYS },
-  { pos: 'D', titleKey: 'pool_slot_defense', statKeys: POSITION_STAT_KEYS },
-  { pos: 'G', titleKey: 'pool_slot_goalies', statKeys: GOALIE_STAT_KEYS },
-  { pos: 'TEAM', titleKey: 'pool_recap_team_picks', statKeys: TEAM_STAT_KEYS },
+  { pos: 'F', titleKey: 'pool_slot_forwards', group: 'forward' },
+  { pos: 'D', titleKey: 'pool_slot_defense', group: 'defense' },
+  { pos: 'G', titleKey: 'pool_slot_goalies', group: 'goalie' },
+  { pos: 'TEAM', titleKey: 'pool_recap_team_picks', group: 'team' },
 ];
 
+const PERIOD_OPTIONS = ['total', 'today', 'day', 'month'];
+
+// Colonnes de stats a afficher pour une section : fixes pour gardiens/equipes (filtrees aux
+// categories dont le bareme n'est pas nul), et but/passe + colonnes DYNAMIQUES pour
+// attaquants/defenseurs (une colonne par categorie de POSITION_STAT_KEYS dont le bareme de la
+// section n'est pas nul -- les autres sont masquees).
+function sectionColumns(rules, pos, group) {
+  const scoring = rules?.scoring?.[group] || {};
+  if (pos === 'F' || pos === 'D') {
+    const extra = POSITION_STAT_KEYS.filter(k => k !== 'goals' && k !== 'assists' && Number(scoring[k]) !== 0);
+    return ['goals', 'assists', ...extra];
+  }
+  if (pos === 'G') {
+    return ['wins', 'otLosses', 'shutouts', 'goals', 'assists'].filter(k => Number(scoring[k]) !== 0);
+  }
+  return ['wins', 'overtimeLosses', 'shootoutLosses'].filter(k => Number(scoring[k]) !== 0);
+}
+
 // Detail d'un participant : utilise a la fois pour le clic sur une ligne du Classement
-// (onBack fourni) et pour l'onglet "Mon equipe" (onBack absent, voir TeamRosterPanel). Appele
-// a tout moment post-draft -- get_member_breakdown part du roster, pas des matchs.
-function MemberDetailPanel({ pool, member, lang, onBack }) {
+// (onBack fourni) et pour l'onglet "Mon equipe" (onBack absent, voir TeamRosterPanel). Le
+// selecteur de participant vit ici (pas chez l'appelant) pour rester utilisable des deux
+// cotes sans dupliquer l'etat.
+function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
   const t = getT(lang);
-  const seasonId = useSaisonCourante();
+  const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || members[0]?.id);
+  const [period, setPeriod] = useState('total');
+  const [selectedDay, setSelectedDay] = useState(() => easternDateStr());
+  const [selectedMonth, setSelectedMonth] = useState(() => easternDateStr().slice(0, 7));
   const [rows, setRows] = useState(null);
+  const [error, setError] = useState('');
+
+  const member = members.find(m => m.id === selectedMemberId) || members[0];
+  const { from, to } = useMemo(() => periodToRange(period, selectedDay, selectedMonth), [period, selectedDay, selectedMonth]);
 
   useEffect(() => {
     let annule = false;
-    setRows(null);
+    setRows(null); setError('');
     if (!member?.id) return;
-    supabase.rpc('get_member_breakdown', { p_pool_id: pool.id, p_member_id: member.id }).then(({ data }) => {
-      if (!annule) setRows(data || []);
+    supabase.rpc('get_member_breakdown', {
+      p_pool_id: pool.id, p_member_id: member.id,
+      p_from: from ? from.toISOString() : null, p_to: to ? to.toISOString() : null,
+    }).then(({ data, error: err }) => {
+      if (annule) return;
+      if (err) setError(err.message);
+      setRows(data || []);
     });
     return () => { annule = true; };
-  }, [pool.id, member?.id]);
+  }, [pool.id, member?.id, from, to]);
 
   const capEnabled = !!pool.rules?.salaryCap?.enabled;
   const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
   const total = (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
   const salaryUsed = (rows || []).reduce((s, r) => s + (Number(r.salary) || 0), 0);
-  const quotaRows = useMemo(() => buildQuotaRows(pool.rules, (rows || []).map(r => ({ position: r.pos_group }))), [rows, pool.rules]);
 
   return (
     <div style={card}>
       {onBack && <button onClick={onBack} style={{ ...btnSecondary, marginBottom: '12px' }}>{t('pool_lobby_back_btn')}</button>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{memberLabel(member, pool.rules)}</div>
-        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)} {t('pool_standings_total_points').toLowerCase()}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+        {members.length > 1 && (
+          <select value={member?.id || ''} onChange={e => setSelectedMemberId(e.target.value)} style={{ ...inputStyle, fontWeight: '700' }}>
+            {members.map(m => <option key={m.id} value={m.id}>{memberLabel(m, pool.rules)}</option>)}
+          </select>
+        )}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {PERIOD_OPTIONS.map(p => (
+            <button key={p} onClick={() => setPeriod(p)}
+              style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700',
+                backgroundColor: period === p ? '#f97316' : 'var(--c-111)', color: period === p ? 'white' : 'var(--c-888)' }}>
+              {t(`pool_member_period_${p}`)}
+            </button>
+          ))}
+          {period === 'day' && (
+            <input type="date" value={selectedDay} onChange={e => setSelectedDay(e.target.value)} style={{ ...inputStyle, width: 'auto' }} />
+          )}
+          {period === 'month' && (
+            <input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{ ...inputStyle, width: 'auto' }} />
+          )}
+        </div>
       </div>
 
-      <QuotaRowsDisplay rows={quotaRows} t={t} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{memberLabel(member, pool.rules)}</div>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)} {t('pool_standings_col_pts').toLowerCase()}</div>
+      </div>
 
-      {capEnabled && (
-        <div style={{ marginBottom: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--c-666)', marginBottom: '4px', flexWrap: 'wrap', gap: '4px' }}>
-            <span>{t('pool_draft_salary_used')} ({t(`pool_salarycap_source_short_${pool.rules.salaryCap.source}`)})</span>
-            <span style={{ fontWeight: '700', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-ccc)' }}>
-              {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $ — {t('pool_standings_salary_remaining').replace('{montant}', Math.max(0, capAmount - salaryUsed).toLocaleString())}
-            </span>
-          </div>
-          <div style={{ height: '6px', borderRadius: '3px', backgroundColor: 'var(--c-111)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, capAmount ? (salaryUsed / capAmount) * 100 : 0)}%`, backgroundColor: salaryUsed > capAmount ? '#ef4444' : '#22c55e', transition: 'width 0.3s ease' }} />
-          </div>
-        </div>
-      )}
+      {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       {rows === null ? (
         <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
       ) : rows.length === 0 ? (
         <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_draft_no_picks_yet')}</div>
       ) : (
-        MEMBER_DETAIL_SECTIONS.map(section => {
-          const sectionRows = rows.filter(r => r.pos_group === section.pos);
-          if (sectionRows.length === 0) return null;
-          return (
-            <div key={section.pos} style={{ marginBottom: '16px' }}>
-              <div style={sectionTitle(POS_COLORS[section.pos])}>{t(section.titleKey)}</div>
-              {sectionRows.map(r => (
-                <MemberDetailRow key={`${r.kind}:${r.ref_id}`} row={r} statKeys={section.statKeys} capEnabled={capEnabled} seasonId={seasonId} t={t} />
-              ))}
-            </div>
-          );
-        })
+        <>
+          {MEMBER_DETAIL_SECTIONS.map(section => {
+            const sectionRows = rows.filter(r => r.pos_group === section.pos);
+            if (sectionRows.length === 0) return null;
+            return (
+              <MemberStatsSection key={section.pos} section={section} rows={sectionRows} pool={pool} capEnabled={capEnabled} t={t} lang={lang} />
+            );
+          })}
+
+          <MemberSummaryTable rows={rows} pool={pool} capEnabled={capEnabled} capAmount={capAmount} salaryUsed={salaryUsed} t={t} />
+        </>
       )}
     </div>
   );
 }
 
-function MemberDetailRow({ row, statKeys, capEnabled, seasonId, t }) {
-  const isTeam = row.kind === 'team';
+function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
+  const seasonId = useSaisonCourante();
+  const cols = sectionColumns(pool.rules, section.pos, section.group);
+  const isTeamSection = section.pos === 'TEAM';
+  const totalGp = rows.reduce((s, r) => s + (Number(r.games_played) || 0), 0);
+  const totalPts = rows.reduce((s, r) => s + (Number(r.total_points) || 0), 0);
+  const totalSalary = rows.reduce((s, r) => s + (Number(r.salary) || 0), 0);
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderTop: '1px solid var(--c-161616)', flexWrap: 'wrap' }}>
-      {isTeam ? <TeamLogo abbrev={row.ref_id} size={28} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={28} />}
-      <div style={{ flex: 1, minWidth: '130px' }}>
-        <div style={{ fontSize: '13px', color: 'var(--c-white)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.label}</div>
-        <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>
-          {!isTeam && row.team_abbrev ? `${row.team_abbrev} · ` : ''}{t('pool_standings_games_played').replace('{n}', row.games_played)}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '10px', color: 'var(--c-555)' }}>
-        {statKeys.map(k => (
-          <span key={k}>{t(`pool_stat_${k}`)} <strong style={{ color: 'var(--c-ccc)' }}>{row.stats?.[k] ?? 0}</strong></span>
-        ))}
-      </div>
-      {capEnabled && !isTeam && row.salary > 0 && <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>{Number(row.salary).toLocaleString()} $</span>}
-      <div style={{ textAlign: 'right', minWidth: '50px' }}>
-        <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</div>
-        {Number(row.today_points) !== 0 && <div style={{ fontSize: '10px', color: '#22c55e' }}>+{round1(row.today_points)} {t('pool_standings_today_suffix')}</div>}
-      </div>
+    <div style={{ ...card, marginBottom: '16px', overflowX: 'auto', padding: 0 }}>
+      <div style={{ ...sectionTitle(POS_COLORS[section.pos]), padding: '12px 12px 0' }}>{t(section.titleKey)}</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '480px' }}>
+        <thead>
+          <tr style={{ color: 'var(--c-666)', fontSize: '10px', textTransform: 'uppercase' }}>
+            <th style={stickyFirstCellStyle('var(--c-0d0d0d)')}></th>
+            <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_standings_col_gp')}</th>
+            {cols.map(k => <th key={k} style={{ padding: '6px', textAlign: 'right' }}>{t(`pool_stat_short_${k}`)}</th>)}
+            <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_standings_col_pts')}</th>
+            <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_standings_col_avg')}</th>
+            {capEnabled && !isTeamSection && <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_draft_salary_used')}</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => {
+            const isTeam = r.kind === 'team';
+            const gp = Number(r.games_played) || 0;
+            const avg = gp > 0 ? round1(Number(r.total_points) / gp) : 0;
+            // Phase 4 (echanges) : un pick "echange" sera affiche en rouge discret ici, points
+            // conserves mais compte a part des choix actifs -- rien de ca n'existe encore, le
+            // crochet reste toujours faux pour l'instant.
+            const isTraded = false;
+            return (
+              <tr key={`${r.kind}:${r.ref_id}`} style={{ borderTop: '1px solid var(--c-161616)', backgroundColor: isTraded ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
+                <td style={stickyFirstCellStyle('var(--c-0d0d0d)')}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={24} />}
+                    {!isTeam && r.team_abbrev && <TeamLogo abbrev={r.team_abbrev} size={14} />}
+                    <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                      {r.label}{r.pick_no ? <span style={{ color: 'var(--c-555)', fontWeight: '400' }}> (#{r.pick_no})</span> : ''}
+                    </span>
+                    {r.is_hot && <span title={t('pool_member_trend_hot')}>🔥</span>}
+                    {r.is_cold && <span title={t('pool_member_trend_cold')}>❄️</span>}
+                    {r.opponent_abbrev && (
+                      <span style={{ fontSize: '9px', fontWeight: '700', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.12)', borderRadius: '6px', padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                        {t('pool_member_playing_today')} {r.opponent_abbrev}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{gp}</td>
+                {cols.map(k => <td key={k} style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-888)' }}>{r.stats?.[k] ?? 0}</td>)}
+                <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(r.total_points)}</td>
+                <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{avg}</td>
+                {capEnabled && !isTeamSection && (
+                  <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{r.salary > 0 ? Number(r.salary).toLocaleString() + ' $' : '—'}</td>
+                )}
+              </tr>
+            );
+          })}
+          <tr style={{ borderTop: '2px solid var(--c-222)', fontWeight: '800' }}>
+            <td style={stickyFirstCellStyle('var(--c-0d0d0d)')}>{t('pool_member_total_row')}</td>
+            <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{totalGp}</td>
+            {cols.map(k => <td key={k} style={{ padding: '8px 6px' }}></td>)}
+            <td style={{ padding: '8px 6px', textAlign: 'right', color: '#f97316' }}>{round1(totalPts)}</td>
+            <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{totalGp > 0 ? round1(totalPts / totalGp) : 0}</td>
+            {capEnabled && !isTeamSection && <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{totalSalary.toLocaleString()} $</td>}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Sommaire du bas de page : une ligne par position (choix actifs/inactifs, PJ, TOT, MOY,
+// masse salariale par position si le plafond est actif), puis une ligne TOTAL avec la masse
+// salariale globale, le plafond et le montant restant. "Choix inactifs" prepare la Phase 4
+// (echanges) : toujours 0 pour l'instant, aucun pick n'etant jamais inactif tant que les
+// echanges n'existent pas.
+function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }) {
+  const bySection = MEMBER_DETAIL_SECTIONS.map(section => {
+    const sectionRows = rows.filter(r => r.pos_group === section.pos);
+    return {
+      ...section,
+      active: sectionRows.length,
+      inactive: 0,
+      gp: sectionRows.reduce((s, r) => s + (Number(r.games_played) || 0), 0),
+      total: sectionRows.reduce((s, r) => s + (Number(r.total_points) || 0), 0),
+      salary: sectionRows.reduce((s, r) => s + (Number(r.salary) || 0), 0),
+    };
+  });
+  const grandTotalGp = bySection.reduce((s, x) => s + x.gp, 0);
+  const grandTotalPts = bySection.reduce((s, x) => s + x.total, 0);
+
+  return (
+    <div style={{ ...card, overflowX: 'auto' }}>
+      <div style={sectionTitle('var(--c-666)')}>{t('pool_member_summary_title')}</div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '420px' }}>
+        <thead>
+          <tr style={{ color: 'var(--c-666)', fontSize: '10px', textTransform: 'uppercase' }}>
+            <th style={{ textAlign: 'left', padding: '6px' }}></th>
+            <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_member_summary_active')}</th>
+            <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_member_summary_inactive')}</th>
+            <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_gp')}</th>
+            <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_pts')}</th>
+            <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_avg')}</th>
+            {capEnabled && <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_draft_salary_used')}</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {bySection.map(x => (
+            <tr key={x.pos} style={{ borderTop: '1px solid var(--c-161616)' }}>
+              <td style={{ padding: '6px', color: POS_COLORS[x.pos], fontWeight: '700' }}>{t(x.titleKey)}</td>
+              <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{x.active}</td>
+              <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-555)' }}>{x.inactive}</td>
+              <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.gp}</td>
+              <td style={{ padding: '6px', textAlign: 'right', fontWeight: '700', color: 'var(--c-white)' }}>{round1(x.total)}</td>
+              <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.gp > 0 ? round1(x.total / x.gp) : 0}</td>
+              {capEnabled && <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.salary.toLocaleString()} $</td>}
+            </tr>
+          ))}
+          <tr style={{ borderTop: '2px solid var(--c-222)', fontWeight: '800' }}>
+            <td style={{ padding: '6px', color: 'var(--c-white)' }}>{t('pool_member_total_row')}</td>
+            <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{bySection.reduce((s, x) => s + x.active, 0)}</td>
+            <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-555)' }}>{bySection.reduce((s, x) => s + x.inactive, 0)}</td>
+            <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{grandTotalGp}</td>
+            <td style={{ padding: '6px', textAlign: 'right', color: '#f97316' }}>{round1(grandTotalPts)}</td>
+            <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{grandTotalGp > 0 ? round1(grandTotalPts / grandTotalGp) : 0}</td>
+            {capEnabled && <td style={{ padding: '6px', textAlign: 'right', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-white)' }}>{salaryUsed.toLocaleString()} $</td>}
+          </tr>
+          {capEnabled && (
+            <tr>
+              <td colSpan={5} style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)', fontSize: '11px' }}>
+                {t(`pool_salarycap_source_short_${pool.rules.salaryCap.source}`)} — {t('pool_member_cap_label')} {capAmount.toLocaleString()} $ · {t('pool_standings_salary_remaining').replace('{montant}', Math.max(0, capAmount - salaryUsed).toLocaleString())}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
