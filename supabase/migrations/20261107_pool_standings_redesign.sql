@@ -16,6 +16,12 @@
 -- avec une colonne de sortie du RETURNS TABLE.
 
 -- ===================== RPC : panorama du classement =====================
+-- Le type de retour change completement par rapport a la version de 20261105/20261106
+-- (meme signature d'argument get_pool_standings(uuid), mais colonnes de sortie differentes) :
+-- "create or replace" ne peut pas changer le type ligne defini par les colonnes de sortie,
+-- il faut d'abord supprimer explicitement l'ancienne version.
+
+drop function if exists public.get_pool_standings(uuid);
 
 create or replace function public.get_pool_standings(p_pool_id uuid)
 returns table (
@@ -100,8 +106,9 @@ revoke execute on function public.get_pool_standings(uuid) from public;
 grant execute on function public.get_pool_standings(uuid) to authenticated;
 
 -- ===================== RPC : pointeurs du jour (tout le pool) =====================
-
-drop function if exists public.get_pool_top_scorers_today(uuid);
+-- Fonction entierement nouvelle (aucune version precedente dans 20261104/20261105/20261106,
+-- donc aucun drop prealable n'est necessaire -- "create or replace" cree simplement la
+-- fonction la premiere fois, et la remplacerait a l'identique si ce fichier etait rejoue).
 
 create or replace function public.get_pool_top_scorers_today(p_pool_id uuid, p_limit int default 10)
 returns table (
