@@ -4,7 +4,7 @@ import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
 import {
-  POSITION_STAT_KEYS, GOALIE_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
+  POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES,
   POOL_TYPE_INFO, defaultRules, cloneRules, validateRules, hasAnyScoring,
   totalRosterSlots, currentSeasonLabelFromSeasonId, applyPoolType, normalizeRules,
@@ -118,9 +118,12 @@ function summarizeTrades(trades, t) {
     trades.maxPerSeason == null ? t('pool_unlimited') : `${trades.maxPerSeason} ${t('pool_recap_max_suffix')}`,
     trades.noReacquire ? t('pool_trades_no_reacquire') : null,
     `${t('pool_trades_approval')}: ${t(`pool_trades_approval_${trades.approval}`)}`,
-    trades.deadline ? `${t('pool_trades_deadline')}: ${trades.deadline}` : null,
   ].filter(Boolean);
   return parts.join(' · ');
+}
+
+function formatTeamPicks(n, t) {
+  return t('pool_team_picks_value').replace('{n}', n).replace('{s}', n === 1 ? '' : 's');
 }
 
 function summarizeWaivers(waivers, t) {
@@ -176,10 +179,7 @@ function TradesBlock({ trades, onChange, t }) {
               ))}
             </div>
           </div>
-          <div>
-            <label style={labelStyle}>{t('pool_trades_deadline')}</label>
-            <input type="date" style={inputStyle} value={trades.deadline || ''} onChange={e => onChange({ deadline: e.target.value || null })} />
-          </div>
+          <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic' }}>{t('pool_trades_day_points_note')}</div>
         </div>
       )}
     </div>
@@ -353,6 +353,15 @@ function StepScoring({ form, setForm, t, errors }) {
         ))}
       </div>
 
+      {form.rules.roster.teamPicks >= 1 && (
+        <div>
+          <div style={sectionTitleStyle('#a78bfa')}>{t('pool_scoring_team_title')}</div>
+          {TEAM_STAT_KEYS.map(k => (
+            <ScoringRow key={k} label={t(`pool_stat_${k}`)} value={scoring.team[k]} onChange={v => setStat('team', k, v)} />
+          ))}
+        </div>
+      )}
+
       {errors.length > 0 && <ErrorList errors={errors} t={t} />}
     </div>
   );
@@ -375,6 +384,10 @@ function StepRoster({ form, setForm, t, errors }) {
               <input type="number" min={0} max={30} style={inputStyle} value={form.rules.roster[k]} onChange={e => setSlot(k, parseInt(e.target.value, 10) || 0)} />
             </div>
           ))}
+        </div>
+        <div style={{ marginTop: '10px' }}>
+          <label style={labelStyle}>{t('pool_team_picks_label')}</label>
+          <input type="number" min={0} max={5} style={inputStyle} value={form.rules.roster.teamPicks} onChange={e => setSlot('teamPicks', parseInt(e.target.value, 10) || 0)} />
         </div>
       </div>
       <div>
@@ -471,10 +484,13 @@ function StepRecap({ form, setForm, mode, t, errors }) {
       <RecapRow label={t('pool_scoring_defense_title')} value={summarizeStatsGroup(rules.scoring.defense, POSITION_STAT_KEYS, t)} />
       <RecapRow label={t('pool_scoring_goalie_title')} value={summarizeStatsGroup(rules.scoring.goalie, GOALIE_STAT_KEYS, t)} />
       <RecapRow label={t(isClassic ? 'pool_team_title' : 'pool_roster_title')} value={summarizeRoster(rules, t)} />
+      <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
+      {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
       <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
       <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s`} />
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
+      {rules.trades?.enabled && <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic', padding: '6px 0' }}>{t('pool_trades_day_points_note')}</div>}
       {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
 
       <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--c-111)' }}>
@@ -607,11 +623,14 @@ function RulesSummary({ rules, t }) {
       <RecapRow label={t('pool_scoring_defense_title')} value={summarizeStatsGroup(rules.scoring.defense, POSITION_STAT_KEYS, t)} />
       <RecapRow label={t('pool_scoring_goalie_title')} value={summarizeStatsGroup(rules.scoring.goalie, GOALIE_STAT_KEYS, t)} />
       <RecapRow label={t(isClassic ? 'pool_team_title' : 'pool_roster_title')} value={summarizeRoster(rules, t)} />
+      <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
+      {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
       <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
       <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s`} />
       <RecapRow label={t('pool_draft_assistant_title')} value={rules.draftAssistant?.enabled ? t('pool_enabled') : t('pool_disabled')} />
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
+      {rules.trades?.enabled && <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic', padding: '6px 0' }}>{t('pool_trades_day_points_note')}</div>}
       {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
     </div>
   );

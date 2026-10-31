@@ -19,6 +19,7 @@ export const POSITION_STAT_KEYS = [
   'hits', 'blockedShots', 'pim', 'plusMinus', 'gameWinningGoals',
 ];
 export const GOALIE_STAT_KEYS = ['wins', 'shutouts', 'saves', 'goalsAgainst', 'otLosses'];
+export const TEAM_STAT_KEYS = ['wins', 'overtimeLosses', 'shutouts'];
 
 // Alignement : pool classique = simples compteurs par groupe de position (nombre a repecher).
 // Fantasy = postes actifs detailles + banc + reserve blesses.
@@ -39,16 +40,20 @@ function zeroMap(keys) {
 
 export function defaultScoringGroup() { return zeroMap(POSITION_STAT_KEYS); }
 export function defaultScoringGoalie() { return zeroMap(GOALIE_STAT_KEYS); }
+export function defaultScoringTeam() { return zeroMap(TEAM_STAT_KEYS); }
 
 export function defaultRosterForType(poolType) {
-  if (poolType === 'classic') return { forwards: 9, defense: 5, goalies: 2 };
-  return { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 };
+  if (poolType === 'classic') return { forwards: 9, defense: 6, goalies: 2, teamPicks: 1 };
+  return { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1, teamPicks: 1 };
 }
 
+// tradeDayPoints : valeur fixe (non modifiable dans l'UI pour l'instant) - le jour d'un
+// echange, les deux joueurs echanges ne rapportent de points a personne ; ils comptent
+// pour leur nouveau proprietaire a partir du lendemain.
 export function defaultTradesForType(poolType) {
   return poolType === 'classic'
-    ? { enabled: false, maxPerSeason: null, noReacquire: true, approval: 'commissioner', deadline: null }
-    : { enabled: true, maxPerSeason: null, noReacquire: true, approval: 'commissioner', deadline: null };
+    ? { enabled: false, maxPerSeason: null, noReacquire: true, approval: 'commissioner', tradeDayPoints: 'nobody' }
+    : { enabled: true, maxPerSeason: null, noReacquire: true, approval: 'commissioner', tradeDayPoints: 'nobody' };
 }
 
 export function defaultWaiversForType(poolType) {
@@ -65,6 +70,7 @@ export function defaultRules(poolType = 'classic') {
       forward: defaultScoringGroup(),
       defense: defaultScoringGroup(),
       goalie: defaultScoringGoalie(),
+      team: defaultScoringTeam(),
     },
     sameForwardDefenseScoring: true,
     roster: defaultRosterForType(poolType),
@@ -104,7 +110,7 @@ function sumAbs(obj) {
 }
 
 export function hasAnyScoring(rules) {
-  return sumAbs(rules?.scoring?.forward) + sumAbs(rules?.scoring?.defense) + sumAbs(rules?.scoring?.goalie) > 0;
+  return sumAbs(rules?.scoring?.forward) + sumAbs(rules?.scoring?.defense) + sumAbs(rules?.scoring?.goalie) + sumAbs(rules?.scoring?.team) > 0;
 }
 
 // Retourne un tableau de cles d'erreur i18n (vide si tout est valide).
@@ -144,32 +150,37 @@ export function normalizeRules(rawRules) {
   const forward = legacyScoring.forward || legacySkater || {};
   const defense = legacyScoring.defense || legacySkater || {};
   const goalie = legacyScoring.goalie || {};
+  const team = legacyScoring.team || {};
   rules.scoring = {
     forward: { ...defaultScoringGroup(), ...forward },
     defense: { ...defaultScoringGroup(), ...defense },
     goalie: { ...defaultScoringGoalie(), ...goalie },
+    team: { ...defaultScoringTeam(), ...team },
   };
   if (typeof rules.sameForwardDefenseScoring !== 'boolean') {
     rules.sameForwardDefenseScoring = !!legacySkater;
   }
 
+  const rawRoster = rules.roster || {};
+  const existingTeamPicks = Number.isFinite(Number(rawRoster.teamPicks)) ? Math.max(0, Math.floor(Number(rawRoster.teamPicks))) : null;
+
   if (poolType === 'classic') {
-    const legacy = rules.roster || {};
-    if (legacy.forwards === undefined && legacy.defense === undefined && legacy.goalies === undefined) {
-      const forwards = (Number(legacy.C) || 0) + (Number(legacy.LW) || 0) + (Number(legacy.RW) || 0);
-      const defenseN = Number(legacy.D) || 0;
-      const goalies = Number(legacy.G) || 0;
+    if (rawRoster.forwards === undefined && rawRoster.defense === undefined && rawRoster.goalies === undefined) {
+      const forwards = (Number(rawRoster.C) || 0) + (Number(rawRoster.LW) || 0) + (Number(rawRoster.RW) || 0);
+      const defenseN = Number(rawRoster.D) || 0;
+      const goalies = Number(rawRoster.G) || 0;
       rules.roster = {
         forwards: forwards || defaultRosterForType('classic').forwards,
         defense: defenseN || defaultRosterForType('classic').defense,
         goalies: goalies || defaultRosterForType('classic').goalies,
       };
     } else {
-      rules.roster = { forwards: Number(legacy.forwards) || 0, defense: Number(legacy.defense) || 0, goalies: Number(legacy.goalies) || 0 };
+      rules.roster = { forwards: Number(rawRoster.forwards) || 0, defense: Number(rawRoster.defense) || 0, goalies: Number(rawRoster.goalies) || 0 };
     }
   } else {
-    rules.roster = { ...defaultRosterForType('fantasy'), ...(rules.roster || {}) };
+    rules.roster = { ...defaultRosterForType('fantasy'), ...rawRoster };
   }
+  rules.roster.teamPicks = existingTeamPicks ?? 1;
 
   const legacyCap = rules.salaryCap || {};
   rules.salaryCap = {
@@ -184,6 +195,8 @@ export function normalizeRules(rawRules) {
       ? { ...defaultTradesForType(poolType), enabled: !!legacyTx.trades }
       : defaultTradesForType(poolType);
   }
+  delete rules.trades.deadline;
+  rules.trades.tradeDayPoints = 'nobody';
   if (!rules.waivers || typeof rules.waivers.enabled !== 'boolean') {
     const legacyTx = rules.transactions;
     rules.waivers = legacyTx

@@ -276,6 +276,7 @@ const translations = {
     pool_scoring_forward_title: 'Attaquants',
     pool_scoring_defense_title: 'Défenseurs',
     pool_scoring_goalie_title: 'Gardiens',
+    pool_scoring_team_title: 'Équipes',
     pool_stat_goals: 'Buts',
     pool_stat_assists: 'Passes',
     pool_stat_powerPlayPoints: 'Points en avantage numérique',
@@ -291,6 +292,7 @@ const translations = {
     pool_stat_saves: 'Arrêts',
     pool_stat_goalsAgainst: 'Buts alloués',
     pool_stat_otLosses: 'Défaites en prolongation',
+    pool_stat_overtimeLosses: 'Défaites en prolongation',
 
     pool_team_title: 'Équipe',
     pool_roster_title: 'Alignement',
@@ -305,6 +307,9 @@ const translations = {
     pool_slot_UTIL: 'Utilitaire',
     pool_slot_bench: 'Réserve',
     pool_slot_ir: 'Blessés (IR)',
+    pool_team_picks_label: 'Nombre de choix d\'équipe NHL',
+    pool_recap_team_picks: 'Équipe NHL',
+    pool_team_picks_value: '{n} choix',
 
     pool_salarycap_title: 'Plafond salarial',
     pool_salarycap_with: 'Avec plafond salarial',
@@ -334,7 +339,7 @@ const translations = {
     pool_trades_approval_none: 'Aucune',
     pool_trades_approval_commissioner: 'Commissaire',
     pool_trades_approval_vote: 'Vote',
-    pool_trades_deadline: 'Date limite (optionnel)',
+    pool_trades_day_points_note: 'Les points des joueurs échangés ne comptent pas le jour de l\'échange; ils comptent dès le lendemain pour leur nouveau propriétaire.',
 
     pool_waivers_title: 'Ballottage',
     pool_waivers_max_label: 'Ajouts par saison',
@@ -681,6 +686,7 @@ const translations = {
     pool_scoring_forward_title: 'Forwards',
     pool_scoring_defense_title: 'Defensemen',
     pool_scoring_goalie_title: 'Goalies',
+    pool_scoring_team_title: 'Teams',
     pool_stat_goals: 'Goals',
     pool_stat_assists: 'Assists',
     pool_stat_powerPlayPoints: 'Power Play Points',
@@ -696,6 +702,7 @@ const translations = {
     pool_stat_saves: 'Saves',
     pool_stat_goalsAgainst: 'Goals Against',
     pool_stat_otLosses: 'OT Losses',
+    pool_stat_overtimeLosses: 'Overtime Losses',
 
     pool_team_title: 'Team',
     pool_roster_title: 'Roster',
@@ -710,6 +717,9 @@ const translations = {
     pool_slot_UTIL: 'Utility',
     pool_slot_bench: 'Bench',
     pool_slot_ir: 'Injured Reserve (IR)',
+    pool_team_picks_label: 'Number of NHL Team Picks',
+    pool_recap_team_picks: 'NHL Team',
+    pool_team_picks_value: '{n} pick{s}',
 
     pool_salarycap_title: 'Salary Cap',
     pool_salarycap_with: 'With salary cap',
@@ -739,7 +749,7 @@ const translations = {
     pool_trades_approval_none: 'None',
     pool_trades_approval_commissioner: 'Commissioner',
     pool_trades_approval_vote: 'Vote',
-    pool_trades_deadline: 'Deadline (optional)',
+    pool_trades_day_points_note: "Traded players don't score points for anyone on the day of the trade; they start counting for their new owner the next day.",
 
     pool_waivers_title: 'Waivers',
     pool_waivers_max_label: 'Adds per season',
