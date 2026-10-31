@@ -22,15 +22,32 @@ function clearJoinUrl() {
   try { window.history.replaceState(null, '', '/'); } catch { /* noop */ }
 }
 
-// Nom affiche par defaut pour un participant : son propre profil (prenom+nom, sinon
-// username), sinon la partie avant le @ de son courriel. Resolu une seule fois, cote
-// client, a partir de SA PROPRE ligne `profiles` (toujours lisible par son proprietaire).
-async function resolveMyDisplayName(utilisateur) {
-  if (!utilisateur?.id) return '';
-  const { data } = await supabase.from('profiles').select('username, first_name, last_name').eq('id', utilisateur.id).maybeSingle();
-  if (data?.first_name || data?.last_name) return [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
-  if (data?.username) return data.username;
-  return (utilisateur.email || '').split('@')[0] || '';
+function splitFullName(fullName) {
+  const trimmed = (fullName || '').trim();
+  if (!trimmed) return { firstName: '', lastName: '' };
+  const [first, ...rest] = trimmed.split(/\s+/);
+  return { firstName: first, lastName: rest.join(' ') };
+}
+
+// Prenom/nom pre-remplis pour le participant connecte : son profil Supabase
+// (profiles.first_name/last_name) en priorite, sinon user_metadata (full_name/name ou
+// first_name/last_name), sinon vide (l'utilisateur les saisit lui-meme). Resolu une seule
+// fois cote client, a partir de SA PROPRE ligne `profiles` (toujours lisible par son
+// proprietaire) et de son propre objet auth (user_metadata).
+async function resolveMyIdentity(utilisateur) {
+  if (!utilisateur?.id) return { firstName: '', lastName: '' };
+  const { data } = await supabase.from('profiles').select('first_name, last_name').eq('id', utilisateur.id).maybeSingle();
+  if (data?.first_name || data?.last_name) {
+    return { firstName: data.first_name || '', lastName: data.last_name || '' };
+  }
+  const meta = utilisateur.user_metadata || {};
+  if (meta.first_name || meta.last_name) {
+    return { firstName: meta.first_name || '', lastName: meta.last_name || '' };
+  }
+  if (meta.full_name || meta.name) {
+    return splitFullName(meta.full_name || meta.name);
+  }
+  return { firstName: '', lastName: '' };
 }
 
 function memberDisplayName(member, rules, t) {
@@ -218,10 +235,22 @@ function StepBase({ form, setForm, mode, t }) {
         <input style={inputStyle} value={form.season} onChange={e => setForm(f => ({ ...f, season: e.target.value }))} />
       </div>
       {mode === 'create' && (
-        <div>
-          <label style={labelStyle}>{t('pool_field_team_name')}</label>
-          <input style={inputStyle} value={form.teamName} onChange={e => setForm(f => ({ ...f, teamName: e.target.value }))} placeholder={t('pool_field_team_name_ph')} />
-        </div>
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            <div>
+              <label style={labelStyle}>{t('pool_field_first_name')}</label>
+              <input style={inputStyle} value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} placeholder={t('pool_field_first_name_ph')} />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('pool_field_last_name')}</label>
+              <input style={inputStyle} value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} placeholder={t('pool_field_last_name_ph')} />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>{t('pool_field_team_name')}</label>
+            <input style={inputStyle} value={form.teamName} onChange={e => setForm(f => ({ ...f, teamName: e.target.value }))} placeholder={t('pool_field_team_name_ph')} />
+          </div>
+        </>
       )}
       <div>
         <label style={labelStyle}>{t('pool_field_display')}</label>
@@ -423,9 +452,12 @@ function StepDraft({ form, setForm, t }) {
   );
 }
 
-function StepRecap({ form, mode, t, errors }) {
+function StepRecap({ form, setForm, mode, t, errors }) {
   const { rules } = form;
   const isClassic = rules.poolType === 'classic';
+  function toggleDraftAssistant(enabled) {
+    setForm(f => ({ ...f, rules: { ...f.rules, draftAssistant: { enabled } } }));
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <RecapRow label={t('pool_recap_name')} value={form.name} />
@@ -444,6 +476,16 @@ function StepRecap({ form, mode, t, errors }) {
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
       {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
+
+      <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--c-111)' }}>
+        <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_draft_assistant_title')}</div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '8px' }}>
+          <input type="checkbox" checked={rules.draftAssistant.enabled} onChange={e => toggleDraftAssistant(e.target.checked)} />
+          <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-ccc)' }}>{t('pool_draft_assistant_toggle')}</span>
+        </label>
+        <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{t('pool_draft_assistant_desc')}</div>
+      </div>
+
       {errors.length > 0 && <div style={{ marginTop: '14px' }}><ErrorList errors={errors} t={t} /></div>}
     </div>
   );
@@ -459,14 +501,16 @@ function stepTitleKey(stepId, poolType) {
   return `pool_wizard_step_${stepId}`;
 }
 
-function PoolWizard({ lang, mode, initial, defaultTeamName, onCancel, onSubmit, busy, submitError }) {
+function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, onCancel, onSubmit, busy, submitError }) {
   const t = getT(lang);
   const seasonId = useSaisonCourante();
   const [stepIndex, setStepIndex] = useState(0);
   const [form, setForm] = useState(() => ({
     name: initial?.name || '',
     season: initial?.season || currentSeasonLabelFromSeasonId(seasonId),
-    teamName: initial?.teamName ?? (mode === 'create' ? (defaultTeamName || '') : ''),
+    firstName: initial?.firstName ?? (mode === 'create' ? (defaultFirstName || '') : ''),
+    lastName: initial?.lastName ?? (mode === 'create' ? (defaultLastName || '') : ''),
+    teamName: initial?.teamName || '',
     visibility: initial?.visibility || 'private',
     maxMembers: initial?.maxMembers ?? 12,
     rules: initial?.rules ? cloneRules(initial.rules) : defaultRules('classic'),
@@ -477,7 +521,15 @@ function PoolWizard({ lang, mode, initial, defaultTeamName, onCancel, onSubmit, 
   const stepId = steps[stepIndexClamped];
 
   const stepErrors = React.useMemo(() => {
-    if (stepId === 'base') return form.name.trim() ? [] : ['pool_error_name_required'];
+    if (stepId === 'base') {
+      const errs = [];
+      if (!form.name.trim()) errs.push('pool_error_name_required');
+      if (mode === 'create') {
+        if (!form.firstName.trim()) errs.push('pool_error_first_name_required');
+        if (!form.lastName.trim()) errs.push('pool_error_last_name_required');
+      }
+      return errs;
+    }
     if (stepId === 'scoring') return hasAnyScoring(form.rules) ? [] : ['pool_error_no_points'];
     if (stepId === 'roster') {
       const errs = [];
@@ -520,7 +572,7 @@ function PoolWizard({ lang, mode, initial, defaultTeamName, onCancel, onSubmit, 
         {stepId === 'roster' && <StepRoster form={form} setForm={setForm} t={t} errors={stepErrors} />}
         {stepId === 'management' && <StepManagement form={form} setForm={setForm} t={t} />}
         {stepId === 'draft' && <StepDraft form={form} setForm={setForm} t={t} />}
-        {stepId === 'recap' && <StepRecap form={form} mode={mode} t={t} errors={stepErrors} />}
+        {stepId === 'recap' && <StepRecap form={form} setForm={setForm} mode={mode} t={t} errors={stepErrors} />}
       </div>
 
       {submitError && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{submitError}</div>}
@@ -557,6 +609,7 @@ function RulesSummary({ rules, t }) {
       <RecapRow label={t(isClassic ? 'pool_team_title' : 'pool_roster_title')} value={summarizeRoster(rules, t)} />
       <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
       <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s`} />
+      <RecapRow label={t('pool_draft_assistant_title')} value={rules.draftAssistant?.enabled ? t('pool_enabled') : t('pool_disabled')} />
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
       {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
@@ -663,20 +716,27 @@ const JOIN_ERROR_KEYS = {
   pool_closed: 'pool_join_error_pool_closed',
 };
 
-function PoolJoinForm({ lang, initialCode, defaultTeamName, displayName, onJoined, onCancel }) {
+function PoolJoinForm({ lang, initialCode, defaultFirstName, defaultLastName, onJoined, onCancel }) {
   const t = getT(lang);
   const [code, setCode] = useState(initialCode || '');
-  const [teamName, setTeamName] = useState(defaultTeamName || '');
+  const [firstName, setFirstName] = useState(defaultFirstName || '');
+  const [lastName, setLastName] = useState(defaultLastName || '');
+  const [teamName, setTeamName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (defaultTeamName && !teamName) setTeamName(defaultTeamName);
+    if (defaultFirstName && !firstName) setFirstName(defaultFirstName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultTeamName]);
+  }, [defaultFirstName]);
+  useEffect(() => {
+    if (defaultLastName && !lastName) setLastName(defaultLastName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultLastName]);
 
   async function submit() {
     setBusy(true); setError('');
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
     const { data, error: err } = await supabase.rpc('join_pool_by_code', {
       p_invite_code: code.trim(), p_team_name: teamName.trim(), p_display_name: displayName || null,
     });
@@ -692,6 +752,8 @@ function PoolJoinForm({ lang, initialCode, defaultTeamName, displayName, onJoine
     onJoined(poolRow);
   }
 
+  const canSubmit = code.trim() && firstName.trim() && lastName.trim();
+
   return (
     <div style={{ maxWidth: '420px', margin: '0 auto' }}>
       <h2 style={{ margin: '0 0 20px', fontSize: '20px', fontWeight: '800' }}>{t('pool_join_title')}</h2>
@@ -700,6 +762,16 @@ function PoolJoinForm({ lang, initialCode, defaultTeamName, displayName, onJoine
           <label style={labelStyle}>{t('pool_join_code_label')}</label>
           <input style={{ ...inputStyle, textTransform: 'uppercase' }} value={code} onChange={e => setCode(e.target.value)} placeholder={t('pool_join_code_ph')} />
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+          <div>
+            <label style={labelStyle}>{t('pool_field_first_name')}</label>
+            <input style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder={t('pool_field_first_name_ph')} />
+          </div>
+          <div>
+            <label style={labelStyle}>{t('pool_field_last_name')}</label>
+            <input style={inputStyle} value={lastName} onChange={e => setLastName(e.target.value)} placeholder={t('pool_field_last_name_ph')} />
+          </div>
+        </div>
         <div>
           <label style={labelStyle}>{t('pool_join_team_label')}</label>
           <input style={inputStyle} value={teamName} onChange={e => setTeamName(e.target.value)} placeholder={t('pool_join_team_ph')} />
@@ -707,8 +779,8 @@ function PoolJoinForm({ lang, initialCode, defaultTeamName, displayName, onJoine
         {error && <div style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div>}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={onCancel} style={btnSecondary}>{t('pool_join_cancel_btn')}</button>
-          <button onClick={submit} disabled={busy || !code.trim()}
-            style={{ ...btnPrimary, flex: 1, opacity: (busy || !code.trim()) ? 0.6 : 1, cursor: (busy || !code.trim()) ? 'not-allowed' : 'pointer' }}>
+          <button onClick={submit} disabled={busy || !canSubmit}
+            style={{ ...btnPrimary, flex: 1, opacity: (busy || !canSubmit) ? 0.6 : 1, cursor: (busy || !canSubmit) ? 'not-allowed' : 'pointer' }}>
             {busy ? t('pool_join_joining') : t('pool_join_submit')}
           </button>
         </div>
@@ -751,12 +823,13 @@ export default function PoolHub({ utilisateur, lang }) {
   const [selectedPool, setSelectedPool] = useState(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
-  const [myDisplayName, setMyDisplayName] = useState('');
+  const [myFirstName, setMyFirstName] = useState('');
+  const [myLastName, setMyLastName] = useState('');
 
   useEffect(() => { chargerPools(); }, [utilisateur?.id]);
   useEffect(() => {
     if (!utilisateur?.id) return;
-    resolveMyDisplayName(utilisateur).then(setMyDisplayName);
+    resolveMyIdentity(utilisateur).then(({ firstName, lastName }) => { setMyFirstName(firstName); setMyLastName(lastName); });
   }, [utilisateur?.id]);
 
   async function chargerPools() {
@@ -789,11 +862,12 @@ export default function PoolHub({ utilisateur, lang }) {
     }).select().single();
     if (errPool) { setFormError(errPool.message); setBusy(false); return; }
 
+    const displayName = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
     const { error: errMember } = await supabase.from('pool_members').insert({
       pool_id: poolRow.id,
       user_id: utilisateur.id,
       team_name: form.teamName.trim() || null,
-      display_name: myDisplayName || null,
+      display_name: displayName || null,
       role: 'commissioner',
     });
     setBusy(false);
@@ -825,7 +899,7 @@ export default function PoolHub({ utilisateur, lang }) {
   if (view === 'join') {
     return (
       <div style={containerStyle}>
-        <PoolJoinForm lang={lang} initialCode={initialJoinCode} defaultTeamName={myDisplayName} displayName={myDisplayName}
+        <PoolJoinForm lang={lang} initialCode={initialJoinCode} defaultFirstName={myFirstName} defaultLastName={myLastName}
           onJoined={(poolRow) => { clearJoinUrl(); setSelectedPool({ ...poolRow, rules: normalizeRules(poolRow.rules) }); setView('lobby'); chargerPools(); }}
           onCancel={() => { clearJoinUrl(); setView('list'); }} />
       </div>
@@ -835,7 +909,7 @@ export default function PoolHub({ utilisateur, lang }) {
   if (view === 'create') {
     return (
       <div style={containerStyle}>
-        <PoolWizard lang={lang} mode="create" defaultTeamName={myDisplayName}
+        <PoolWizard lang={lang} mode="create" defaultFirstName={myFirstName} defaultLastName={myLastName}
           onCancel={() => { setFormError(''); setView('list'); }}
           onSubmit={handleCreate} busy={busy} submitError={formError} />
       </div>

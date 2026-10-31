@@ -70,6 +70,7 @@ export function defaultRules(poolType = 'classic') {
     roster: defaultRosterForType(poolType),
     salaryCap: { enabled: false, amount: DEFAULT_SALARY_CAP_AMOUNT, source: 'manual' },
     draft: { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false },
+    draftAssistant: { enabled: true },
     lineup: poolType === 'classic' ? 'fixed' : 'weekly',
     trades: defaultTradesForType(poolType),
     waivers: defaultWaiversForType(poolType),
@@ -192,6 +193,7 @@ export function normalizeRules(rawRules) {
   delete rules.transactions;
 
   if (!rules.draft) rules.draft = { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false };
+  if (!rules.draftAssistant || typeof rules.draftAssistant.enabled !== 'boolean') rules.draftAssistant = { enabled: true };
   if (!rules.lineup) rules.lineup = poolType === 'classic' ? 'fixed' : 'weekly';
   if (poolType === 'classic') rules.lineup = 'fixed';
   if (!DISPLAY_MODES.includes(rules.display)) rules.display = 'player';
