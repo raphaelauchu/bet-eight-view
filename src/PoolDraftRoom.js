@@ -679,7 +679,7 @@ function MemberBreakdownPanel({ pool, member, lang, onBack }) {
     return () => { annule = true; };
   }, [pool.id, member.id]);
 
-  const filtered = (rows || []).filter(r => posFilter === 'ALL' || (posFilter === 'TEAM' ? r.kind === 'team' : r.position === posFilter));
+  const filtered = (rows || []).filter(r => posFilter === 'ALL' || (posFilter === 'TEAM' ? r.kind === 'team' : r.pos_group === posFilter));
   const total = (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
 
   return (

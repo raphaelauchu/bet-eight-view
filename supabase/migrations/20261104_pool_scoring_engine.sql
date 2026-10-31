@@ -198,13 +198,19 @@ grant execute on function public.set_scoring_start(uuid, timestamptz) to authent
 -- Usage interne uniquement : les RPC publiques ci-dessous font le controle d'acces et
 -- agregent ce resultat. Pas de grant a authenticated (meme logique que advance_draft_pick).
 
+-- "position" est un mot-clef SQL (lie a la fonction standard POSITION(x IN y)) : invalide
+-- comme nom de colonne dans un RETURNS TABLE / parametre de fonction, meme si Postgres
+-- l'autorise comme nom de colonne dans un CREATE TABLE ordinaire (d'ou nhl_player_game_stats
+-- plus haut, inchangee). On utilise pos_group pour la sortie de cette fonction.
+drop function if exists public.pool_scored_events(uuid);
+
 create or replace function public.pool_scored_events(p_pool_id uuid)
 returns table (
   member_id uuid,
   kind text,
   ref_id text,
   label text,
-  position text,
+  pos_group text,
   game_id bigint,
   start_time_utc timestamptz,
   stats jsonb,
@@ -232,7 +238,7 @@ begin
       'player'::text as kind,
       prp.player_id as ref_id,
       s.player_name as label,
-      s.position,
+      s.position as pos_group,
       s.game_id,
       g.start_time_utc,
       case
@@ -300,7 +306,7 @@ begin
       'team'::text as kind,
       prp.player_id as ref_id,
       prp.player_id as label,
-      'TEAM'::text as position,
+      'TEAM'::text as pos_group,
       r.game_id,
       g.start_time_utc,
       jsonb_build_object(
@@ -326,7 +332,7 @@ begin
     select * from player_events union all select * from team_events
   )
   select
-    e.member_id, e.kind, e.ref_id, e.label, e.position, e.game_id, e.start_time_utc,
+    e.member_id, e.kind, e.ref_id, e.label, e.pos_group, e.game_id, e.start_time_utc,
     e.stats, e.points_by_category,
     coalesce((select sum(v::numeric) from jsonb_each_text(e.points_by_category) kv(k, v)), 0) as points
   from all_events e;
@@ -336,6 +342,8 @@ $$;
 revoke execute on function public.pool_scored_events(uuid) from public;
 
 -- ===================== RPC : classement du pool =====================
+
+drop function if exists public.get_pool_standings(uuid);
 
 create or replace function public.get_pool_standings(p_pool_id uuid)
 returns table (
@@ -388,12 +396,14 @@ grant execute on function public.get_pool_standings(uuid) to authenticated;
 
 -- ===================== RPC : detail d'un membre (joueur par joueur + equipe NHL) =====================
 
+drop function if exists public.get_member_breakdown(uuid, uuid);
+
 create or replace function public.get_member_breakdown(p_pool_id uuid, p_member_id uuid)
 returns table (
   kind text,
   ref_id text,
   label text,
-  position text,
+  pos_group text,
   games_played int,
   stats jsonb,
   points_by_category jsonb,
@@ -418,7 +428,7 @@ begin
     select * from pool_scored_events(p_pool_id) where member_id = p_member_id
   )
   select
-    e.kind, e.ref_id, min(e.label) as label, min(e.position) as position,
+    e.kind, e.ref_id, min(e.label) as label, min(e.pos_group) as pos_group,
     count(*)::int as games_played,
     (select jsonb_object_agg(x.k, x.total) from (
       select kv.key as k, sum((kv.value)::numeric) as total
@@ -444,6 +454,8 @@ revoke execute on function public.get_member_breakdown(uuid, uuid) from public;
 grant execute on function public.get_member_breakdown(uuid, uuid) to authenticated;
 
 -- ===================== RPC : points par jour (graphique d'evolution) =====================
+
+drop function if exists public.get_pool_daily_points(uuid);
 
 create or replace function public.get_pool_daily_points(p_pool_id uuid)
 returns table (
