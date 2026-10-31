@@ -762,16 +762,79 @@ function StartDraftButton({ isCommissioner, onStart, busy, error, t, variant = '
   );
 }
 
+function DeletePoolButton({ pool, t, onDeleted }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [typedName, setTypedName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function doDelete() {
+    setBusy(true); setError('');
+    const { error: err } = await supabase.rpc('delete_pool', { p_pool_id: pool.id });
+    setBusy(false);
+    if (err) { setError(mapPoolErrorCode(err.message, t)); return; }
+    onDeleted();
+  }
+
+  if (!confirmOpen) {
+    return <button onClick={() => setConfirmOpen(true)} style={{ ...btnSecondary, borderColor: '#ef4444', color: '#ef4444' }}>{t('pool_delete_btn')}</button>;
+  }
+  return (
+    <div style={{ ...card, border: '1px solid rgba(239,68,68,0.3)' }}>
+      <div style={{ fontSize: '12px', color: '#ef4444', marginBottom: '10px' }}>{t('pool_delete_confirm_text').replace('{name}', pool.name)}</div>
+      <input value={typedName} onChange={e => setTypedName(e.target.value)} placeholder={pool.name} style={{ ...inputStyle, marginBottom: '10px' }} />
+      {error && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '10px' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={() => { setConfirmOpen(false); setTypedName(''); }} style={btnSecondary}>{t('pool_join_cancel_btn')}</button>
+        <button onClick={doDelete} disabled={busy || typedName !== pool.name}
+          style={{ ...btnPrimary, flex: 1, backgroundColor: '#ef4444', opacity: (busy || typedName !== pool.name) ? 0.5 : 1, cursor: (busy || typedName !== pool.name) ? 'not-allowed' : 'pointer' }}>
+          {busy ? t('pool_wizard_saving') : t('pool_delete_confirm_btn')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LeavePoolButton({ pool, t, onLeft }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function doLeave() {
+    setBusy(true); setError('');
+    const { error: err } = await supabase.rpc('leave_pool', { p_pool_id: pool.id });
+    setBusy(false);
+    if (err) { setError(mapPoolErrorCode(err.message, t)); return; }
+    onLeft();
+  }
+
+  if (!confirmOpen) {
+    return <button onClick={() => setConfirmOpen(true)} style={{ ...btnSecondary, borderColor: '#ef4444', color: '#ef4444' }}>{t('pool_leave_btn')}</button>;
+  }
+  return (
+    <div style={{ ...card, border: '1px solid rgba(239,68,68,0.3)' }}>
+      <div style={{ fontSize: '12px', color: '#ef4444', marginBottom: '10px' }}>{t('pool_leave_confirm_text')}</div>
+      {error && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '10px' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={() => setConfirmOpen(false)} style={btnSecondary}>{t('pool_join_cancel_btn')}</button>
+        <button onClick={doLeave} disabled={busy} style={{ ...btnPrimary, flex: 1, backgroundColor: '#ef4444', opacity: busy ? 0.6 : 1 }}>
+          {busy ? t('pool_wizard_saving') : t('pool_leave_confirm_btn')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const LOBBY_TABS = ['lobby', 'draft', 'team', 'rules'];
 
-function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
+function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
   const t = getT(lang);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [openDraftTool, setOpenDraftTool] = useState(false);
-  const [activeTab, setActiveTab] = useState('lobby');
+  const [activeTab, setActiveTab] = useState(initialTab || 'lobby');
   const [picks, setPicks] = useState([]);
   const [startBusy, setStartBusy] = useState(false);
   const [startError, setStartError] = useState('');
@@ -907,6 +970,17 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
           )}
 
           <button onClick={() => setOpenDraftTool(true)} style={{ ...btnSecondary, width: '100%', marginTop: '12px' }}>{t('pool_lobby_open_draft_btn')}</button>
+
+          <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--c-161616)' }}>
+            <div style={sectionTitleStyle('#ef4444')}>{t('pool_danger_zone_title')}</div>
+            {isCommissioner ? (
+              <DeletePoolButton pool={pool} t={t} onDeleted={onPoolDeleted} />
+            ) : pool.status === 'setup' ? (
+              <LeavePoolButton pool={pool} t={t} onLeft={onPoolLeft} />
+            ) : (
+              <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{t('pool_leave_unavailable_notice')}</div>
+            )}
+          </div>
         </>
       )}
 
@@ -1016,14 +1090,20 @@ function PoolJoinForm({ lang, initialCode, defaultFirstName, defaultLastName, on
 
 function PoolListCard({ pool, membership, t, onOpen }) {
   const name = membership.role === 'commissioner' ? t('pool_lobby_commissioner_badge') : memberDisplayName(membership, pool.rules, t);
+  const isDrafting = pool.status === 'draft';
   return (
-    <button onClick={onOpen} style={{ textAlign: 'left', width: '100%', ...card, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-      <div>
+    <div style={{ ...card, display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <button onClick={() => onOpen()} style={{ all: 'unset', cursor: 'pointer', flex: 1, minWidth: 0, display: 'block' }}>
         <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '4px' }}>{pool.name}</div>
         <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{pool.season} · {name}</div>
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <StatusBadge status={pool.status} t={t} />
+        {isDrafting && (
+          <button onClick={() => onOpen('draft')} style={{ ...btnPrimary, padding: '8px 12px', fontSize: '12px' }}>{t('pool_draft_join_btn')}</button>
+        )}
       </div>
-      <StatusBadge status={pool.status} t={t} />
-    </button>
+    </div>
   );
 }
 
@@ -1048,6 +1128,8 @@ export default function PoolHub({ utilisateur, lang }) {
   const [formError, setFormError] = useState('');
   const [myFirstName, setMyFirstName] = useState('');
   const [myLastName, setMyLastName] = useState('');
+  const [initialLobbyTab, setInitialLobbyTab] = useState('lobby');
+  const [poolDeletedNotice, setPoolDeletedNotice] = useState('');
 
   useEffect(() => { chargerPools(); }, [utilisateur?.id]);
   useEffect(() => {
@@ -1057,14 +1139,23 @@ export default function PoolHub({ utilisateur, lang }) {
 
   // Garde le pool ouvert a jour en temps reel (status, draft_state) pendant que le
   // commissaire demarre/avance le draft, meme pour les membres restes dans le lobby.
+  // Gere aussi la suppression du pool par le commissaire : les autres participants
+  // ouverts sur ce pool recoivent un message clair et retournent a "Mes pools".
   useEffect(() => {
     if (!selectedPool?.id) return;
     const channel = supabase.channel(`pool_row_${selectedPool.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pools', filter: `id=eq.${selectedPool.id}` }, (payload) => {
         setSelectedPool(prev => (prev ? { ...prev, ...payload.new, rules: normalizeRules(payload.new.rules) } : prev));
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pools', filter: `id=eq.${selectedPool.id}` }, () => {
+        setPoolDeletedNotice(t('pool_deleted_notice'));
+        setSelectedPool(null);
+        setView('list');
+        chargerPools();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPool?.id]);
 
   async function chargerPools() {
@@ -1080,9 +1171,22 @@ export default function PoolHub({ utilisateur, lang }) {
     setLoading(false);
   }
 
-  function openPool(poolRow) {
+  function openPool(poolRow, tab) {
     setSelectedPool(poolRow);
+    setInitialLobbyTab(tab || (poolRow.status === 'draft' ? 'draft' : 'lobby'));
     setView('lobby');
+  }
+
+  function handlePoolDeleted() {
+    setSelectedPool(null);
+    setView('list');
+    chargerPools();
+  }
+
+  function handlePoolLeft() {
+    setSelectedPool(null);
+    setView('list');
+    chargerPools();
   }
 
   async function handleCreate(form) {
@@ -1165,8 +1269,9 @@ export default function PoolHub({ utilisateur, lang }) {
   if (view === 'lobby' && selectedPool) {
     return (
       <div style={containerStyle}>
-        <PoolLobby pool={selectedPool} utilisateur={utilisateur} lang={lang} isMobile={isMobile}
-          onBack={() => setView('list')} onEditRules={() => setView('edit')} />
+        <PoolLobby pool={selectedPool} utilisateur={utilisateur} lang={lang} isMobile={isMobile} initialTab={initialLobbyTab}
+          onBack={() => setView('list')} onEditRules={() => setView('edit')}
+          onPoolDeleted={handlePoolDeleted} onPoolLeft={handlePoolLeft} />
       </div>
     );
   }
@@ -1181,6 +1286,13 @@ export default function PoolHub({ utilisateur, lang }) {
         </div>
       </div>
 
+      {poolDeletedNotice && (
+        <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#ef4444', fontSize: '13px' }}>{poolDeletedNotice}</span>
+          <button onClick={() => setPoolDeletedNotice('')} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+        </div>
+      )}
+
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '16px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       {loading ? (
@@ -1193,7 +1305,7 @@ export default function PoolHub({ utilisateur, lang }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {pools.map(({ pool, role, team_name, display_name }) => (
-            <PoolListCard key={pool.id} pool={pool} membership={{ role, team_name, display_name }} t={t} onOpen={() => openPool(pool)} />
+            <PoolListCard key={pool.id} pool={pool} membership={{ role, team_name, display_name }} t={t} onOpen={(tab) => openPool(pool, tab)} />
           ))}
         </div>
       )}
