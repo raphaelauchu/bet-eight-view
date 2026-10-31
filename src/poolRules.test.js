@@ -1,5 +1,5 @@
 import {
-  validateTrade, defaultTradesForType, defaultRules,
+  validateTrade, defaultTradesForType, defaultRules, normalizeRules,
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
 } from './poolRules';
 
@@ -10,7 +10,7 @@ function player(id, positionGroup, salary = 0) {
 function baseRules(overrides = {}) {
   return {
     trades: { ...defaultTradesForType('fantasy'), ...overrides.trades },
-    salaryCap: { enabled: false, amount: 0, source: 'manual', ...overrides.salaryCap },
+    salaryCap: { enabled: false, amount: 0, source: 'capHit', ...overrides.salaryCap },
   };
 }
 
@@ -121,4 +121,39 @@ test('computeCurrentMemberId : ordre snake s\'inverse a la deuxieme ronde', () =
   expect(computeCurrentMemberId(order, 4, 'snake')).toBe('c');
   expect(computeCurrentMemberId(order, 6, 'snake')).toBe('a');
   expect(computeCurrentMemberId(order, 7, 'snake')).toBe('a');
+});
+
+test('defaultRules : pointage des gardiens inclut buts et passes a 0', () => {
+  const rules = defaultRules('fantasy');
+  expect(rules.scoring.goalie.goals).toBe(0);
+  expect(rules.scoring.goalie.assists).toBe(0);
+  expect(rules.scoring.goalie.wins).toBe(0);
+});
+
+test('defaultRules : pointage d\'equipe utilise shootoutLosses (pas shutouts) et source=capHit', () => {
+  const rules = defaultRules('classic');
+  expect(rules.scoring.team).toEqual({ wins: 0, overtimeLosses: 0, shootoutLosses: 0 });
+  expect(rules.salaryCap.source).toBe('capHit');
+});
+
+test('normalizeRules : ajoute goals/assists aux gardiens d\'un ancien pool', () => {
+  const legacy = { poolType: 'classic', scoring: { skater: { goals: 1 }, goalie: { wins: 2, shutouts: 3 } } };
+  const rules = normalizeRules(legacy);
+  expect(rules.scoring.goalie).toEqual({ goals: 0, assists: 0, wins: 2, shutouts: 3, saves: 0, goalsAgainst: 0, otLosses: 0 });
+});
+
+test('normalizeRules : scoring.team.shutouts devient shootoutLosses=0 (pas migre)', () => {
+  const legacy = { poolType: 'classic', scoring: { team: { wins: 5, shutouts: 2 } } };
+  const rules = normalizeRules(legacy);
+  expect(rules.scoring.team).toEqual({ wins: 5, overtimeLosses: 0, shootoutLosses: 0 });
+  expect(rules.scoring.team.shutouts).toBeUndefined();
+});
+
+test('normalizeRules : salaryCap.source nhl/manual migrent vers capHit', () => {
+  const legacyNhl = normalizeRules({ salaryCap: { enabled: true, amount: 1, source: 'nhl' } });
+  const legacyManual = normalizeRules({ salaryCap: { enabled: true, amount: 1, source: 'manual' } });
+  const alreadyNew = normalizeRules({ salaryCap: { enabled: true, amount: 1, source: 'actualSalary' } });
+  expect(legacyNhl.salaryCap.source).toBe('capHit');
+  expect(legacyManual.salaryCap.source).toBe('capHit');
+  expect(alreadyNew.salaryCap.source).toBe('actualSalary');
 });

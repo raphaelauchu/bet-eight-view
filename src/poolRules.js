@@ -18,8 +18,10 @@ export const POSITION_STAT_KEYS = [
   'goals', 'assists', 'powerPlayPoints', 'shortHandedPoints', 'shotsOnGoal',
   'hits', 'blockedShots', 'pim', 'plusMinus', 'gameWinningGoals',
 ];
-export const GOALIE_STAT_KEYS = ['wins', 'shutouts', 'saves', 'goalsAgainst', 'otLosses'];
-export const TEAM_STAT_KEYS = ['wins', 'overtimeLosses', 'shutouts'];
+export const GOALIE_STAT_KEYS = ['goals', 'assists', 'wins', 'shutouts', 'saves', 'goalsAgainst', 'otLosses'];
+export const TEAM_STAT_KEYS = ['wins', 'overtimeLosses', 'shootoutLosses'];
+
+export const SALARY_CAP_SOURCES = ['capHit', 'actualSalary'];
 
 // Alignement : pool classique = simples compteurs par groupe de position (nombre a repecher).
 // Fantasy = postes actifs detailles + banc + reserve blesses.
@@ -77,7 +79,7 @@ export function defaultRules(poolType = 'classic') {
     },
     sameForwardDefenseScoring: true,
     roster: defaultRosterForType(poolType),
-    salaryCap: { enabled: false, amount: DEFAULT_SALARY_CAP_AMOUNT, source: 'manual' },
+    salaryCap: { enabled: false, amount: DEFAULT_SALARY_CAP_AMOUNT, source: 'capHit' },
     draft: { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false, orderMode: 'random' },
     draftAssistant: { enabled: true },
     lineup: poolType === 'classic' ? 'fixed' : 'weekly',
@@ -157,8 +159,11 @@ export function normalizeRules(rawRules) {
   rules.scoring = {
     forward: { ...defaultScoringGroup(), ...forward },
     defense: { ...defaultScoringGroup(), ...defense },
-    goalie: { ...defaultScoringGoalie(), ...goalie },
-    team: { ...defaultScoringTeam(), ...team },
+    // Merge explicite (pas de spread de `goalie`/`team` complet) : une ancienne cle qui
+    // n'existe plus dans le schema courant (ex. scoring.team.shutouts, remplace par
+    // shootoutLosses) ne doit pas trainer dans l'objet normalise.
+    goalie: Object.fromEntries(GOALIE_STAT_KEYS.map(k => [k, Number(goalie[k]) || 0])),
+    team: Object.fromEntries(TEAM_STAT_KEYS.map(k => [k, Number(team[k]) || 0])),
   };
   if (typeof rules.sameForwardDefenseScoring !== 'boolean') {
     rules.sameForwardDefenseScoring = !!legacySkater;
@@ -189,7 +194,8 @@ export function normalizeRules(rawRules) {
   rules.salaryCap = {
     enabled: !!legacyCap.enabled,
     amount: legacyCap.amount || DEFAULT_SALARY_CAP_AMOUNT,
-    source: legacyCap.source === 'nhl' ? 'nhl' : 'manual',
+    // Anciennes valeurs 'nhl'/'manual' (et toute valeur inconnue) migrent vers 'capHit'.
+    source: SALARY_CAP_SOURCES.includes(legacyCap.source) ? legacyCap.source : 'capHit',
   };
 
   if (!rules.trades || typeof rules.trades.enabled !== 'boolean') {

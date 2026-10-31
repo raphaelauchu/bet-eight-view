@@ -6,7 +6,7 @@ import PoolDraft from './PoolDraft';
 import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel } from './PoolDraftRoom';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
-  DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES,
+  DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
   POOL_TYPE_INFO, defaultRules, cloneRules, validateRules, hasAnyScoring,
   totalRosterSlots, currentSeasonLabelFromSeasonId, applyPoolType, normalizeRules,
 } from './poolRules';
@@ -110,7 +110,8 @@ function summarizeRoster(rules, t) {
 function summarizeSalaryCap(rules, t) {
   if (!rules?.salaryCap?.enabled) return t('pool_recap_salarycap_without');
   const millions = Math.round((rules.salaryCap.amount || 0) / 1000000);
-  return t('pool_recap_salarycap_with').replace('{amount}', millions);
+  const sourceLabel = t(`pool_salarycap_source_short_${rules.salaryCap.source}`);
+  return t('pool_recap_salarycap_with').replace('{amount}', millions).replace('{source}', sourceLabel);
 }
 
 function summarizeTrades(trades, t) {
@@ -410,11 +411,12 @@ function StepRoster({ form, setForm, t, errors }) {
             </div>
             <div>
               <label style={labelStyle}>{t('pool_salarycap_source')}</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['nhl', 'manual'].map(s => (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
+                {SALARY_CAP_SOURCES.map(s => (
                   <button key={s} onClick={() => setCap({ source: s })} style={choiceBtn(cap.source === s)}>{t(`pool_salarycap_source_${s}`)}</button>
                 ))}
               </div>
+              <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{t('pool_salarycap_source_desc')}</div>
             </div>
           </div>
         )}

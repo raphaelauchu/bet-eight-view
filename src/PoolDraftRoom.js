@@ -203,7 +203,7 @@ export function TeamRosterPanel({ pool, members, picks, lang, viewedMemberId, se
 
       {capEnabled && (
         <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
-          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>{t('pool_draft_salary_used')}</div>
+          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>{t('pool_draft_salary_used')} ({t(`pool_salarycap_source_short_${pool.rules.salaryCap.source}`)})</div>
           <div style={{ fontSize: '13px', fontWeight: '900', color: salaryUsed > capAmount ? '#ef4444' : '#22c55e' }}>
             {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $
           </div>
@@ -563,8 +563,11 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
             <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)', marginBottom: '14px' }}>{pendingPick.name}</div>
             {pool.rules.salaryCap.enabled && (
               <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '11px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>{t('pool_salarycap_amount')}</div>
+                <div style={{ fontSize: '11px', color: 'var(--c-777)', marginBottom: '6px', fontWeight: '600' }}>
+                  {t(`pool_salarycap_input_label_${pool.rules.salaryCap.source}`)}
+                </div>
                 <input type="number" autoFocus value={salaryInput} onChange={e => setSalaryInput(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} />
+                <div style={{ fontSize: '10px', color: 'var(--c-555)', marginTop: '6px' }}>{t('pool_draft_salary_note')}</div>
               </div>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
