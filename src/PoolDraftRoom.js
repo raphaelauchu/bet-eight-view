@@ -6,6 +6,7 @@ import { getUrl } from './nhlApi';
 import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
 import {
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId, PICK_POSITIONS,
+  currentSeasonLabelFromSeasonId, POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS,
 } from './poolRules';
 
 // ===================== Styles (memes conventions que Pool.js) =====================
@@ -63,19 +64,57 @@ function calcAge(birthDate) {
 // ici. Les categories sans donnee disponible (mises en echec, tirs bloques, penalites, buts
 // vainqueurs, toutes les stats d'equipe) contribuent 0 pour l'instant - aucune source de
 // donnees NHL publique ne les fournit via cet endpoint.
+//
+// Utilise les champs *_ia (voir useNhlPlayers) quand disponibles : ils melangent la saison en
+// cours avec la saison precedente tant que l'echantillon de la saison en cours est petit, pour
+// que le classement ne soit pas domine par le hasard des premiers matchs. Les joueurs ajoutes
+// manuellement n'ont pas ces champs et retombent sur leurs valeurs brutes (toutes a 0).
 function calculerValeurIA(player, rules) {
   if (!rules) return 0;
   if (player.posGroup === 'goalie') {
     const p = rules.scoring.goalie;
-    return round1((player.wins || 0) * (p.wins || 0) + (player.shutouts || 0) * (p.shutouts || 0) + (player.saves || 0) * (p.saves || 0));
+    return round1(
+      (player.winsIA ?? player.wins ?? 0) * (p.wins || 0)
+      + (player.shutoutsIA ?? player.shutouts ?? 0) * (p.shutouts || 0)
+      + (player.savesIA ?? player.saves ?? 0) * (p.saves || 0)
+    );
   }
   if (player.posGroup === 'team') return 0;
   const p = player.posGroup === 'defense' ? rules.scoring.defense : rules.scoring.forward;
   return round1(
-    (player.goals || 0) * (p.goals || 0) + (player.assists || 0) * (p.assists || 0)
-    + (player.ppPoints || 0) * (p.powerPlayPoints || 0) + (player.shots || 0) * (p.shotsOnGoal || 0)
-    + (player.plusMinus || 0) * (p.plusMinus || 0)
+    (player.goalsIA ?? player.goals ?? 0) * (p.goals || 0) + (player.assistsIA ?? player.assists ?? 0) * (p.assists || 0)
+    + (player.ppPointsIA ?? player.ppPoints ?? 0) * (p.powerPlayPoints || 0) + (player.shotsIA ?? player.shots ?? 0) * (p.shotsOnGoal || 0)
+    + (player.plusMinusIA ?? player.plusMinus ?? 0) * (p.plusMinus || 0)
   );
+}
+
+// Un groupe de pointage (forward/defense/goalie) sans aucune ponderation non nulle produit une
+// valeur IA de 0 pour tout le monde : le tri n'est alors pas significatif (ordre arbitraire),
+// il faut le signaler plutot que de laisser croire a un classement reel.
+function groupHasScoring(rules, group) {
+  const map = rules?.scoring?.[group] || {};
+  return Object.values(map).some(v => Number(v) !== 0);
+}
+function posFilterToScoringGroup(posFilter) {
+  if (posFilter === 'D') return 'defense';
+  if (posFilter === 'G') return 'goalie';
+  if (posFilter === 'F') return 'forward';
+  return null;
+}
+
+// Rattrapage de debut de saison : tant que le nombre de matchs joues cette saison est sous ce
+// seuil, on complete avec le taux par match de la saison precedente (pondere par le nombre de
+// matchs manquants) pour stabiliser le classement. Au-dela du seuil, les stats de la saison en
+// cours suffisent et la formule redevient simplement currentTotal (poids supplementaire nul).
+const SEASON_BLEND_GAMES = 15;
+function blendStat(currentTotal, currentGp, prevTotal, prevGp) {
+  const extraWeight = Math.max(0, SEASON_BLEND_GAMES - (currentGp || 0));
+  if (extraWeight <= 0 || !prevGp) return currentTotal || 0;
+  return (currentTotal || 0) + (prevTotal / prevGp) * extraWeight;
+}
+function previousSeasonId(seasonId) {
+  const n = Number(seasonId);
+  return n ? String(n - 10001) : null;
 }
 
 function construirJoueurManuel(nom, positionCode, equipe, idConnu) {
@@ -95,36 +134,73 @@ function useNhlPlayers(seasonId) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [blendInfo, setBlendInfo] = useState({ active: false, prevSeasonId: null });
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true); setError(false);
       try {
-        const [resSum, resGoal] = await Promise.all([
+        const prevId = previousSeasonId(seasonId);
+        const [resSum, resGoal, resSumPrev, resGoalPrev] = await Promise.all([
           fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
           fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=seasonId=${seasonId}&limit=-1`)),
+          prevId ? fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=seasonId=${prevId}&limit=-1`)) : Promise.resolve(null),
+          prevId ? fetch(getStatsUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=seasonId=${prevId}&limit=-1`)) : Promise.resolve(null),
         ]);
-        const [dataSum, dataGoal] = await Promise.all([resSum.json(), resGoal.json()]);
-        const skaters = (dataSum.data || []).map(s => ({
-          id: String(s.playerId), name: s.skaterFullName, team: s.teamAbbrevs,
-          positionCode: s.positionCode, posGroup: mapPosGroup(s.positionCode), posReel: mapPosReel(s.positionCode),
-          gamesPlayed: s.gamesPlayed || 0, goals: s.goals || 0, assists: s.assists || 0, points: s.points || 0,
-          plusMinus: s.plusMinus || 0, shots: s.shots || 0, ppPoints: s.ppPoints || 0,
-        }));
-        const goalies = (dataGoal.data || []).map(g => ({
-          id: String(g.playerId), name: g.goalieFullName, team: g.teamAbbrevs,
-          positionCode: 'G', posGroup: 'goalie', posReel: 'G',
-          gamesPlayed: g.gamesPlayed || 0, wins: g.wins || 0, shutouts: g.shutouts || 0, saves: g.saves || 0, savePct: g.savePct || 0,
-        }));
-        if (!cancelled) { setPlayers([...skaters, ...goalies].sort((a, b) => a.name.localeCompare(b.name))); setLoading(false); }
+        const [dataSum, dataGoal, dataSumPrev, dataGoalPrev] = await Promise.all([
+          resSum.json(), resGoal.json(),
+          resSumPrev ? resSumPrev.json() : null, resGoalPrev ? resGoalPrev.json() : null,
+        ]);
+        const prevSkatersById = new Map((dataSumPrev?.data || []).map(s => [String(s.playerId), s]));
+        const prevGoaliesById = new Map((dataGoalPrev?.data || []).map(g => [String(g.playerId), g]));
+
+        const skaters = (dataSum.data || []).map(s => {
+          const id = String(s.playerId);
+          const prev = prevSkatersById.get(id);
+          const gp = s.gamesPlayed || 0;
+          const prevGp = prev?.gamesPlayed || 0;
+          return {
+            id, name: s.skaterFullName, team: s.teamAbbrevs,
+            positionCode: s.positionCode, posGroup: mapPosGroup(s.positionCode), posReel: mapPosReel(s.positionCode),
+            gamesPlayed: gp, goals: s.goals || 0, assists: s.assists || 0, points: s.points || 0,
+            plusMinus: s.plusMinus || 0, shots: s.shots || 0, ppPoints: s.ppPoints || 0,
+            goalsIA: blendStat(s.goals, gp, prev?.goals, prevGp),
+            assistsIA: blendStat(s.assists, gp, prev?.assists, prevGp),
+            ppPointsIA: blendStat(s.ppPoints, gp, prev?.ppPoints, prevGp),
+            shotsIA: blendStat(s.shots, gp, prev?.shots, prevGp),
+            plusMinusIA: blendStat(s.plusMinus, gp, prev?.plusMinus, prevGp),
+          };
+        });
+        const goalies = (dataGoal.data || []).map(g => {
+          const id = String(g.playerId);
+          const prev = prevGoaliesById.get(id);
+          const gp = g.gamesPlayed || 0;
+          const prevGp = prev?.gamesPlayed || 0;
+          return {
+            id, name: g.goalieFullName, team: g.teamAbbrevs,
+            positionCode: 'G', posGroup: 'goalie', posReel: 'G',
+            gamesPlayed: gp, wins: g.wins || 0, shutouts: g.shutouts || 0, saves: g.saves || 0, savePct: g.savePct || 0,
+            winsIA: blendStat(g.wins, gp, prev?.wins, prevGp),
+            shutoutsIA: blendStat(g.shutouts, gp, prev?.shutouts, prevGp),
+            savesIA: blendStat(g.saves, gp, prev?.saves, prevGp),
+          };
+        });
+
+        const allGp = [...skaters, ...goalies].map(p => p.gamesPlayed);
+        const maxGp = allGp.length ? Math.max(...allGp) : 0;
+        if (!cancelled) {
+          setPlayers([...skaters, ...goalies].sort((a, b) => a.name.localeCompare(b.name)));
+          setBlendInfo({ active: !!prevId && maxGp < SEASON_BLEND_GAMES, prevSeasonId: prevId });
+          setLoading(false);
+        }
       } catch { if (!cancelled) { setError(true); setLoading(false); } }
     }
     load();
     return () => { cancelled = true; };
   }, [seasonId]);
 
-  return { players, setPlayers, loading, error };
+  return { players, setPlayers, loading, error, blendInfo };
 }
 
 // Classement NHL en direct (rang + logo + nom complet) pour le filtre "Equipes NHL" de la
@@ -371,74 +447,19 @@ export function DraftWaitingRoom({ pool, members, lang, isCommissioner, onStartD
 
 // ===================== Panneau "Mon equipe" statique (onglet dedie + resume de fin) =====================
 
-export function TeamRosterPanel({ pool, members, picks, lang, viewedMemberId, setViewedMemberId }) {
-  const t = getT(lang);
-  const seasonId = useSaisonCourante();
+// "Mon equipe" : meme rendu detaille que le clic sur un participant dans le Classement (voir
+// MemberDetailPanel plus bas), avec un selecteur de membre en plus. Fonctionne a tout moment
+// (setup/draft/active) : get_member_breakdown part du roster (pool_picks), pas des matchs,
+// donc la liste des choix s'affiche avec 0 point tant que le pointage n'a pas commence.
+export function TeamRosterPanel({ pool, members, lang, viewedMemberId, setViewedMemberId }) {
   const member = members.find(m => m.id === viewedMemberId) || members[0];
-  const memberPicks = picks.filter(p => p.member_id === member?.id);
-  const capEnabled = !!pool.rules?.salaryCap?.enabled;
-  const salaryUsed = memberPicks.reduce((s, p) => s + (Number(p.salary) || 0), 0);
-  const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
-  const isActive = pool.status === 'active';
-
-  const [pointsByRef, setPointsByRef] = useState({});
-  const [pointsLoading, setPointsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!isActive || !member?.id) { setPointsByRef({}); return; }
-    let annule = false;
-    setPointsLoading(true);
-    supabase.rpc('get_member_breakdown', { p_pool_id: pool.id, p_member_id: member.id }).then(({ data }) => {
-      if (annule) return;
-      const map = {};
-      (data || []).forEach(row => { map[`${row.kind}:${row.ref_id}`] = row.total_points; });
-      setPointsByRef(map);
-      setPointsLoading(false);
-    });
-    return () => { annule = true; };
-  }, [isActive, pool.id, member?.id]);
-
-  const totalPoints = useMemo(() => Object.values(pointsByRef).reduce((s, v) => s + (Number(v) || 0), 0), [pointsByRef]);
-
-  const quotaRows = useMemo(() => buildQuotaRows(pool.rules, memberPicks), [memberPicks, pool.rules]);
-
   return (
-    <div style={card}>
+    <div>
       <select value={member?.id || ''} onChange={e => setViewedMemberId(e.target.value)}
         style={{ ...inputStyle, fontWeight: '700', marginBottom: '10px' }}>
         {members.map(m => <option key={m.id} value={m.id}>{m.display_name || m.team_name}</option>)}
       </select>
-
-      <QuotaRowsDisplay rows={quotaRows} t={t} />
-
-      {isActive && (
-        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
-          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>{t('pool_standings_total_points')}</div>
-          <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>
-            {pointsLoading ? '…' : round1(totalPoints)}
-          </div>
-        </div>
-      )}
-
-      {capEnabled && (
-        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
-          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>{t('pool_draft_salary_used')} ({t(`pool_salarycap_source_short_${pool.rules.salaryCap.source}`)})</div>
-          <div style={{ fontSize: '13px', fontWeight: '900', color: salaryUsed > capAmount ? '#ef4444' : '#22c55e' }}>
-            {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $
-          </div>
-        </div>
-      )}
-
-      {memberPicks.length === 0 ? (
-        <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_draft_no_picks_yet')}</div>
-      ) : (
-        <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-          {memberPicks.map(p => (
-            <PickRow key={p.id} pick={p} capEnabled={capEnabled} seasonId={seasonId}
-              points={isActive ? pointsByRef[`${p.kind}:${p.player_id}`] : undefined} />
-          ))}
-        </div>
-      )}
+      <MemberDetailPanel pool={pool} member={member} lang={lang} />
     </div>
   );
 }
@@ -574,11 +595,13 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 
   if (detailMember) {
     return (
-      <MemberBreakdownPanel pool={pool} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
+      <MemberDetailPanel pool={pool} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
     );
   }
 
   const noGamesYet = (standings || []).every(row => Number(row.total_points) === 0) && daily.length === 0;
+  const capEnabled = !!pool.rules?.salaryCap?.enabled;
+  const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
 
   return (
     <div>
@@ -601,126 +624,175 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 
       <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '12px' }}>{t('pool_standings_lineup_note')}</div>
 
-      {noGamesYet ? (
-        <div style={{ ...card, textAlign: 'center', color: 'var(--c-555)', fontSize: '13px' }}>
+      {noGamesYet && (
+        <div style={{ fontSize: '13px', color: 'var(--c-555)', textAlign: 'center', padding: '10px 0', marginBottom: '8px' }}>
           {t('pool_standings_empty')}
         </div>
-      ) : (
-        <>
-          <div style={{ ...card, marginBottom: '16px', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '420px' }}>
-              <thead>
-                <tr style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'uppercase' }}>
-                  <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_rank')}</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_member')}</th>
-                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_total')}</th>
-                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_today')}</th>
-                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_last7')}</th>
-                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_gap')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(standings || []).map((row, i) => {
-                  const isMe = row.member_id === myMember?.id;
-                  const gap = i === 0 ? 0 : Number(standings[0].total_points) - Number(row.total_points);
-                  return (
-                    <tr key={row.member_id} onClick={() => setDetailMemberId(row.member_id)}
-                      style={{ cursor: 'pointer', backgroundColor: isMe ? 'rgba(249,115,22,0.12)' : 'transparent', borderTop: '1px solid var(--c-161616)' }}>
-                      <td style={{ padding: '8px', fontWeight: '800', color: row.rank === 1 ? '#f97316' : 'var(--c-white)' }}>{row.rank}</td>
-                      <td style={{ padding: '8px', color: 'var(--c-white)', fontWeight: isMe ? '800' : '500' }}>{row.display_name || row.team_name}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.today_points)}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.last7_points)}</td>
-                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{i === 0 ? '—' : `-${round1(gap)}`}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      )}
 
-          {chartData.length > 1 && (
-            <div style={{ ...card, height: '280px' }}>
-              <div style={sectionTitle('var(--c-666)')}>{t('pool_standings_chart_title')}</div>
-              <ResponsiveContainer width="100%" height="88%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--c-222)" />
-                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
-                  <YAxis tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', fontSize: '12px' }} />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
-                  {members.map((m, i) => (
-                    <Line key={m.id} type="monotone" dataKey={memberLabel(m, pool.rules)} stroke={CHART_COLORS[i % CHART_COLORS.length]} dot={false} strokeWidth={2} />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </>
+      <div style={{ ...card, marginBottom: '16px', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: capEnabled ? '520px' : '420px' }}>
+          <thead>
+            <tr style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'uppercase' }}>
+              <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_rank')}</th>
+              <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_member')}</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_total')}</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_today')}</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_last7')}</th>
+              <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_gap')}</th>
+              {capEnabled && <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_salary')}</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {(standings || []).map((row, i) => {
+              const isMe = row.member_id === myMember?.id;
+              const gap = i === 0 ? 0 : Number(standings[0].total_points) - Number(row.total_points);
+              const salaryUsed = Number(row.salary_used) || 0;
+              return (
+                <tr key={row.member_id} onClick={() => setDetailMemberId(row.member_id)}
+                  style={{ cursor: 'pointer', backgroundColor: isMe ? 'rgba(249,115,22,0.12)' : 'transparent', borderTop: '1px solid var(--c-161616)' }}>
+                  <td style={{ padding: '8px', fontWeight: '800', color: row.rank === 1 ? '#f97316' : 'var(--c-white)' }}>{row.rank}</td>
+                  <td style={{ padding: '8px', color: 'var(--c-white)', fontWeight: isMe ? '800' : '500' }}>{row.display_name || row.team_name}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.today_points)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.last7_points)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{i === 0 ? '—' : `-${round1(gap)}`}</td>
+                  {capEnabled && (
+                    <td style={{ padding: '8px', textAlign: 'right', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-666)' }}>
+                      {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {chartData.length > 1 && (
+        <div style={{ ...card, height: '280px' }}>
+          <div style={sectionTitle('var(--c-666)')}>{t('pool_standings_chart_title')}</div>
+          <ResponsiveContainer width="100%" height="88%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--c-222)" />
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
+              <YAxis tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
+              <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', fontSize: '12px' }} />
+              <Legend wrapperStyle={{ fontSize: '11px' }} />
+              {members.map((m, i) => (
+                <Line key={m.id} type="monotone" dataKey={memberLabel(m, pool.rules)} stroke={CHART_COLORS[i % CHART_COLORS.length]} dot={false} strokeWidth={2} />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );
 }
 
-const BREAKDOWN_POSITION_FILTERS = ['ALL', 'F', 'D', 'G', 'TEAM'];
+// Sections dans l'ordre demande : Attaquants, Defenseurs, Gardiens, Equipe NHL. Chaque ligne
+// de get_member_breakdown porte deja pos_group ('F'/'D'/'G'/'TEAM' -- vient de
+// pool_picks.position, toujours renseigne meme sans aucun match joue) et est deja triee par
+// points decroissants puis pick_no croissant par la RPC : un simple filtre par section suffit.
+const MEMBER_DETAIL_SECTIONS = [
+  { pos: 'F', titleKey: 'pool_slot_forwards', statKeys: POSITION_STAT_KEYS },
+  { pos: 'D', titleKey: 'pool_slot_defense', statKeys: POSITION_STAT_KEYS },
+  { pos: 'G', titleKey: 'pool_slot_goalies', statKeys: GOALIE_STAT_KEYS },
+  { pos: 'TEAM', titleKey: 'pool_recap_team_picks', statKeys: TEAM_STAT_KEYS },
+];
 
-function MemberBreakdownPanel({ pool, member, lang, onBack }) {
+// Detail d'un participant : utilise a la fois pour le clic sur une ligne du Classement
+// (onBack fourni) et pour l'onglet "Mon equipe" (onBack absent, voir TeamRosterPanel). Appele
+// a tout moment post-draft -- get_member_breakdown part du roster, pas des matchs.
+function MemberDetailPanel({ pool, member, lang, onBack }) {
   const t = getT(lang);
   const seasonId = useSaisonCourante();
   const [rows, setRows] = useState(null);
-  const [posFilter, setPosFilter] = useState('ALL');
 
   useEffect(() => {
     let annule = false;
     setRows(null);
+    if (!member?.id) return;
     supabase.rpc('get_member_breakdown', { p_pool_id: pool.id, p_member_id: member.id }).then(({ data }) => {
       if (!annule) setRows(data || []);
     });
     return () => { annule = true; };
-  }, [pool.id, member.id]);
+  }, [pool.id, member?.id]);
 
-  const filtered = (rows || []).filter(r => posFilter === 'ALL' || (posFilter === 'TEAM' ? r.kind === 'team' : r.pos_group === posFilter));
+  const capEnabled = !!pool.rules?.salaryCap?.enabled;
+  const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
   const total = (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
+  const salaryUsed = (rows || []).reduce((s, r) => s + (Number(r.salary) || 0), 0);
+  const quotaRows = useMemo(() => buildQuotaRows(pool.rules, (rows || []).map(r => ({ position: r.pos_group }))), [rows, pool.rules]);
 
   return (
     <div style={card}>
-      <button onClick={onBack} style={{ ...btnSecondary, marginBottom: '12px' }}>{t('pool_lobby_back_btn')}</button>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{member.display_name || member.team_name}</div>
-        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)}</div>
+      {onBack && <button onClick={onBack} style={{ ...btnSecondary, marginBottom: '12px' }}>{t('pool_lobby_back_btn')}</button>}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{memberLabel(member, pool.rules)}</div>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)} {t('pool_standings_total_points').toLowerCase()}</div>
       </div>
 
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        {BREAKDOWN_POSITION_FILTERS.map(p => (
-          <button key={p} onClick={() => setPosFilter(p)}
-            style={{ padding: '5px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700',
-              backgroundColor: posFilter === p ? '#f97316' : 'var(--c-111)', color: posFilter === p ? 'white' : 'var(--c-888)' }}>
-            {p === 'ALL' ? t('pool_standings_filter_all') : p === 'TEAM' ? t('pool_recap_team_picks') : t(`pool_slot_${p === 'F' ? 'forwards' : p === 'D' ? 'defense' : 'goalies'}`)}
-          </button>
-        ))}
-      </div>
+      <QuotaRowsDisplay rows={quotaRows} t={t} />
+
+      {capEnabled && (
+        <div style={{ marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--c-666)', marginBottom: '4px', flexWrap: 'wrap', gap: '4px' }}>
+            <span>{t('pool_draft_salary_used')} ({t(`pool_salarycap_source_short_${pool.rules.salaryCap.source}`)})</span>
+            <span style={{ fontWeight: '700', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-ccc)' }}>
+              {salaryUsed.toLocaleString()} $ / {capAmount.toLocaleString()} $ — {t('pool_standings_salary_remaining').replace('{montant}', Math.max(0, capAmount - salaryUsed).toLocaleString())}
+            </span>
+          </div>
+          <div style={{ height: '6px', borderRadius: '3px', backgroundColor: 'var(--c-111)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, capAmount ? (salaryUsed / capAmount) * 100 : 0)}%`, backgroundColor: salaryUsed > capAmount ? '#ef4444' : '#22c55e', transition: 'width 0.3s ease' }} />
+          </div>
+        </div>
+      )}
 
       {rows === null ? (
         <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_draft_no_picks_yet')}</div>
       ) : (
-        <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-          {filtered.map(r => (
-            <div key={`${r.kind}:${r.ref_id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', borderTop: '1px solid var(--c-161616)' }}>
-              {r.kind === 'team' ? <TeamLogo abbrev={r.ref_id} size={26} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, null)} size={26} />}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</div>
-                <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>{t('pool_standings_games_played').replace('{n}', r.games_played)}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{round1(r.total_points)}</div>
-                {Number(r.today_points) !== 0 && <div style={{ fontSize: '10px', color: '#22c55e' }}>+{round1(r.today_points)} {t('pool_standings_today_suffix')}</div>}
-              </div>
+        MEMBER_DETAIL_SECTIONS.map(section => {
+          const sectionRows = rows.filter(r => r.pos_group === section.pos);
+          if (sectionRows.length === 0) return null;
+          return (
+            <div key={section.pos} style={{ marginBottom: '16px' }}>
+              <div style={sectionTitle(POS_COLORS[section.pos])}>{t(section.titleKey)}</div>
+              {sectionRows.map(r => (
+                <MemberDetailRow key={`${r.kind}:${r.ref_id}`} row={r} statKeys={section.statKeys} capEnabled={capEnabled} seasonId={seasonId} t={t} />
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })
       )}
+    </div>
+  );
+}
+
+function MemberDetailRow({ row, statKeys, capEnabled, seasonId, t }) {
+  const isTeam = row.kind === 'team';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderTop: '1px solid var(--c-161616)', flexWrap: 'wrap' }}>
+      {isTeam ? <TeamLogo abbrev={row.ref_id} size={28} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={28} />}
+      <div style={{ flex: 1, minWidth: '130px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--c-white)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.label}</div>
+        <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>
+          {!isTeam && row.team_abbrev ? `${row.team_abbrev} · ` : ''}{t('pool_standings_games_played').replace('{n}', row.games_played)}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '10px', color: 'var(--c-555)' }}>
+        {statKeys.map(k => (
+          <span key={k}>{t(`pool_stat_${k}`)} <strong style={{ color: 'var(--c-ccc)' }}>{row.stats?.[k] ?? 0}</strong></span>
+        ))}
+      </div>
+      {capEnabled && !isTeam && row.salary > 0 && <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>{Number(row.salary).toLocaleString()} $</span>}
+      <div style={{ textAlign: 'right', minWidth: '50px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</div>
+        {Number(row.today_points) !== 0 && <div style={{ fontSize: '10px', color: '#22c55e' }}>+{round1(row.today_points)} {t('pool_standings_today_suffix')}</div>}
+      </div>
     </div>
   );
 }
@@ -908,7 +980,7 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
   const t = getT(lang);
   const isMobile = useIsMobile();
   const seasonId = useSaisonCourante();
-  const { players, setPlayers, loading, error } = useNhlPlayers(seasonId);
+  const { players, setPlayers, loading, error, blendInfo } = useNhlPlayers(seasonId);
   const { teams, loading: teamsLoading } = useNhlTeams();
 
   const myMember = members.find(m => m.user_id === utilisateur.id);
@@ -1003,7 +1075,10 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
   const teamPicksRemaining = members.length
     ? computeRosterQuota(pool.rules, 'TEAM') - picks.filter(p => p.position === 'TEAM' && p.member_id === (pickForMemberId || myMember?.id)).length
     : 0;
-  const canFreeTeamPick = !pool.rules.draft.teamPickCountsAsRound && teamPicksRemaining > 0 && !draftFinished;
+  // Un choix d'equipe NHL "libre" (teamPickCountsAsRound=false) n'est jamais bloquant pour le
+  // minuteur : n'importe quel membre peut le faire a tout moment, pas seulement celui sur
+  // l'horloge (contrairement aux joueurs/equipes qui comptent comme une ronde).
+  const canPickTeamNow = !draftFinished && (pool.rules.draft.teamPickCountsAsRound ? !!activeMemberForPick : teamPicksRemaining > 0);
 
   // Auto-pick a l'expiration du minuteur : n'importe quel client connecte peut le declencher
   // (pas seulement celui sur l'horloge). La RPC revalide tout cote serveur et est idempotente
@@ -1149,20 +1224,6 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
         </div>
       )}
 
-      {canFreeTeamPick && (
-        <div style={{ ...card, marginBottom: '14px' }}>
-          <div style={sectionTitle(POS_COLORS.TEAM)}>{t('pool_draft_pick_team_title')}</div>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {Object.keys(LOGOS_NHL).sort().filter(ab => !takenTeamIds.has(ab)).map(ab => (
-              <button key={ab} onClick={() => requestPick({ id: ab, name: ab, team: ab }, 'team')}
-                style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', color: 'var(--c-ccc)', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
-                {ab}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {actionError && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{actionError}</div>}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
@@ -1271,6 +1332,20 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
                 </div>
               )}
 
+              {posFilter !== 'TEAM' && pool.rules.draftAssistant?.enabled && blendInfo.active && (
+                <div style={{ fontSize: '11px', color: 'var(--c-666)', marginBottom: '10px' }}>
+                  {t('pool_draft_ia_season_basis')
+                    .replace('{saison}', currentSeasonLabelFromSeasonId(seasonId))
+                    .replace('{saisonPrec}', currentSeasonLabelFromSeasonId(blendInfo.prevSeasonId))}
+                </div>
+              )}
+
+              {posFilterToScoringGroup(posFilter) && pool.rules.draftAssistant?.enabled && !groupHasScoring(pool.rules, posFilterToScoringGroup(posFilter)) && (
+                <div style={{ fontSize: '12px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px' }}>
+                  {t('pool_draft_no_scoring_warning').replace('{position}', t(`pool_slot_${posFilter === 'F' ? 'forwards' : posFilter === 'D' ? 'defense' : 'goalies'}`))}
+                </div>
+              )}
+
               {posFilter === 'TEAM' ? (
                 teamsLoading ? (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--c-444)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
@@ -1279,7 +1354,7 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
                 ) : (
                   filteredTeams.map(tm => {
                     const taken = takenTeamIds.has(tm.abbrev);
-                    const canPick = !!activeMemberForPick && !taken;
+                    const canPick = canPickTeamNow && !taken;
                     return (
                       <div key={tm.abbrev} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: taken ? 0.4 : 1 }}>
                         <div onClick={() => openTeamDetail(tm)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, cursor: 'pointer', minWidth: 0 }}>

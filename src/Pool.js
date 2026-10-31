@@ -1014,7 +1014,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       )}
 
       {activeTab === 'team' && (
-        <TeamRosterPanel pool={pool} members={members} picks={picks} lang={lang}
+        <TeamRosterPanel pool={pool} members={members} lang={lang}
           viewedMemberId={viewedMemberId || myMember?.id || members[0]?.id} setViewedMemberId={setViewedMemberId} />
       )}
 

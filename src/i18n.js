@@ -464,6 +464,8 @@ const translations = {
     pool_standings_col_today: 'Aujourd\'hui',
     pool_standings_col_last7: '7 derniers jours',
     pool_standings_col_gap: 'Écart',
+    pool_standings_col_salary: 'Salaire',
+    pool_standings_salary_remaining: 'il reste {montant} $',
     pool_standings_chart_title: 'Évolution des points',
     pool_standings_filter_all: 'Tous',
     pool_standings_games_played: '{n} match(s) joué(s)',
@@ -496,8 +498,6 @@ const translations = {
     pool_draft_pick_for_none: 'Choisir pour...',
     pool_draft_pick_for: 'Choisir pour',
 
-    pool_draft_pick_team_title: 'Choisir son équipe NHL',
-
     pool_draft_search_ph: 'Rechercher un joueur (dès 2 lettres)...',
     pool_draft_filter_all: 'Tous',
     pool_draft_already_taken: 'Pris par',
@@ -509,6 +509,8 @@ const translations = {
     pool_draft_load_error: 'Impossible de charger les joueurs NHL pour l\'instant.',
     pool_draft_no_players_found: 'Aucun joueur trouvé',
     pool_draft_ia_label: 'IA',
+    pool_draft_ia_season_basis: 'Classement basé sur : saison {saison} + {saisonPrec} (échantillon limité en début de saison)',
+    pool_draft_no_scoring_warning: 'Aucun point attribué aux {position} dans ce pool — l\'ordre ci-dessous n\'est pas significatif.',
     pool_draft_pick_btn: 'Repêcher',
     pool_draft_show_more: 'Voir plus',
     pool_draft_confirm_pick: 'Confirmer le choix',
@@ -1017,6 +1019,8 @@ const translations = {
     pool_standings_col_today: 'Today',
     pool_standings_col_last7: 'Last 7 days',
     pool_standings_col_gap: 'Gap',
+    pool_standings_col_salary: 'Salary',
+    pool_standings_salary_remaining: '{montant} $ remaining',
     pool_standings_chart_title: 'Points over time',
     pool_standings_filter_all: 'All',
     pool_standings_games_played: '{n} game(s) played',
@@ -1049,8 +1053,6 @@ const translations = {
     pool_draft_pick_for_none: 'Pick for...',
     pool_draft_pick_for: 'Pick for',
 
-    pool_draft_pick_team_title: 'Pick Your NHL Team',
-
     pool_draft_search_ph: 'Search a player (2+ letters)...',
     pool_draft_filter_all: 'All',
     pool_draft_already_taken: 'Taken by',
@@ -1062,6 +1064,8 @@ const translations = {
     pool_draft_load_error: 'Could not load NHL players right now.',
     pool_draft_no_players_found: 'No players found',
     pool_draft_ia_label: 'AI',
+    pool_draft_ia_season_basis: 'Ranking based on: {saison} season + {saisonPrec} (small sample early in the season)',
+    pool_draft_no_scoring_warning: 'No points are awarded to {position} in this pool — the order below isn\'t meaningful.',
     pool_draft_pick_btn: 'Draft',
     pool_draft_show_more: 'Show more',
     pool_draft_confirm_pick: 'Confirm Pick',
