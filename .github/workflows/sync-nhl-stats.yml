@@ -9,6 +9,12 @@ name: Sync NHL Stats (Pools)
 # majorite de la saison NHL) : 23h30, 1h30, 3h30 et 6h30 ET. Pendant l'heure avancee (EDT,
 # UTC-4, en debut/fin de saison), ces executions tombent une heure plus tot cote horloge
 # locale -- sans consequence, elles couvrent toujours la meme fenetre de matchs.
+#
+# Authentification : Bearer = secret SUPABASE_SERVICE_ROLE_KEY (repo Settings > Secrets and
+# variables > Actions). La fonction compare ce jeton EXACTEMENT a sa propre variable
+# d'environnement SUPABASE_SERVICE_ROLE_KEY (fournie automatiquement par Supabase) ; un
+# mauvais secret (ex. la cle anon collee par erreur) est maintenant rejete avec 401, pas une
+# erreur de validation confuse.
 on:
   schedule:
     - cron: '30 4 * * *'   # ~23h30 ET
@@ -16,6 +22,13 @@ on:
     - cron: '30 8 * * *'   # ~3h30 ET
     - cron: '30 11 * * *'  # ~6h30 ET
   workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Date de debut (YYYY-MM-DD), optionnel -- laisser vide pour la plage par defaut'
+        required: false
+      end_date:
+        description: 'Date de fin (YYYY-MM-DD), optionnel'
+        required: false
 
 jobs:
   sync:
@@ -23,8 +36,24 @@ jobs:
     steps:
       - name: Appeler l'Edge Function sync-nhl-stats
         run: |
-          curl -sS --fail-with-body -X POST \
+          body=$(jq -n \
+            --arg start_date "${{ github.event.inputs.start_date }}" \
+            --arg end_date "${{ github.event.inputs.end_date }}" \
+            '{} + (if $start_date != "" then {start_date: $start_date} else {} end) + (if $end_date != "" then {end_date: $end_date} else {} end)')
+
+          http_response=$(curl -sS -w "\n%{http_code}" -X POST \
             "https://gjuxwzpylonusvogqpjw.supabase.co/functions/v1/sync-nhl-stats" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{}'
+            -d "$body")
+
+          http_code=$(echo "$http_response" | tail -n1)
+          response_body=$(echo "$http_response" | sed '$d')
+
+          echo "Code HTTP : $http_code"
+          echo "Reponse : $response_body"
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::error::sync-nhl-stats a echoue (HTTP $http_code) -- voir la reponse ci-dessus."
+            exit 1
+          fi

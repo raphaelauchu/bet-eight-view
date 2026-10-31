@@ -6,7 +6,9 @@
 // authentifie avec "Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>" -- cette cle n'est
 // JAMAIS dans le code client ni le repo, seulement comme secret Supabase et comme secret du
 // repo GitHub) et le bouton "Recalculer" du commissaire dans l'UI (authentifie avec le jeton
-// normal de l'utilisateur, voir Deno.serve plus bas pour le detail des deux chemins).
+// normal de l'utilisateur + { pool_id } dans le corps, voir Deno.serve plus bas pour le
+// detail des deux chemins). Corps JSON optionnel : { start_date?, end_date?, pool_id? }
+// (dates au format YYYY-MM-DD) ; pool_id present => mode commissaire, absent => mode planifie.
 //
 // PPP (power play points), SHP (short handed points) et les buts gagnants (GWG) ne sont pas
 // dans le boxscore NHL : on les derive du detail but-par-but fourni par /v1/score/{date}
@@ -70,7 +72,9 @@ function bump(map: Map<number, number>, id: number | undefined | null) {
   map.set(id, (map.get(id) || 0) + 1);
 }
 
-async function syncDate(supabase: any, dateStr: string, summary: { gamesSynced: number; errors: string[] }) {
+type SyncSummary = { gamesSynced: number; playerStatRowsSynced: number; teamResultRowsSynced: number; errors: string[] };
+
+async function syncDate(supabase: any, dateStr: string, summary: SyncSummary) {
   const scoreData = await fetchWithRetry(`${NHL_BASE}/score/${dateStr}`);
   const games = scoreData.games || [];
 
@@ -115,6 +119,7 @@ async function syncDate(supabase: any, dateStr: string, summary: { gamesSynced: 
     ];
     const { error: teamErr } = await supabase.from('nhl_team_game_results').upsert(teamRows, { onConflict: 'game_id,team_abbrev' });
     if (teamErr) summary.errors.push(`resultats equipes ${g.id}: ${teamErr.message}`);
+    else summary.teamResultRowsSynced += teamRows.length;
 
     // --- boxscore (stats individuelles) ---
     let box: any;
@@ -228,17 +233,28 @@ async function syncDate(supabase: any, dateStr: string, summary: { gamesSynced: 
     if (playerRows.length > 0) {
       const { error: playersErr } = await supabase.from('nhl_player_game_stats').upsert(playerRows, { onConflict: 'game_id,player_id' });
       if (playersErr) summary.errors.push(`stats joueurs ${g.id}: ${playersErr.message}`);
+      else summary.playerStatRowsSynced += playerRows.length;
     }
   }
 }
 
-// Deux appelants possibles :
-// 1) Le GitHub Action planifie, qui porte "Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>"
-//    (secret du repo GitHub, jamais dans le code) : plage par defaut, tous les pools.
-// 2) Le bouton "Recalculer" du commissaire dans l'UI, qui porte le jeton Supabase normal de
-//    l'utilisateur connecte + { pool_id } dans le corps : on verifie que l'utilisateur est
-//    bien commissaire de ce pool (RPC is_pool_commissioner, avec SON jeton, donc soumise a
-//    RLS) avant de lancer la synchro, limitee a la fenetre de pointage du pool.
+// Rattrapage maximal (en jours) quand la derniere date synchronisee dans nhl_games est
+// ancienne (ex. premiere execution, ou cron reste silencieux un moment) : evite de relancer
+// des mois de synchro d'un seul coup.
+const MAX_CATCHUP_DAYS = 14;
+
+// Deux modes, distingues par la presence de pool_id dans le corps (jamais par la simple
+// presence d'un Authorization quelconque -- la cle anon est AUSSI un JWT valide pour la
+// passerelle Supabase, donc le controle d'acces reel se fait ici, pas au niveau gateway) :
+//
+// a) Mode planifie (sans pool_id) : reserve a l'appelant qui presente EXACTEMENT la cle
+//    service_role en Bearer (comparaison avec la variable d'environnement
+//    SUPABASE_SERVICE_ROLE_KEY, fournie automatiquement a la fonction par Supabase -- jamais
+//    dans le code ni le repo). Synchronise globalement hier + aujourd'hui, avec rattrapage
+//    jusqu'a la derniere date synchronisee (plafonne a MAX_CATCHUP_DAYS).
+// b) Mode commissaire (avec pool_id) : jeton Supabase normal de l'utilisateur connecte ; on
+//    verifie qu'il est bien commissaire de ce pool (RPC is_pool_commissioner, soumise a RLS
+//    via SON jeton) avant de lancer la synchro, limitee a la fenetre de pointage du pool.
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -246,19 +262,17 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const providedToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-  const isServiceCaller = providedToken === serviceKey;
 
-  let body: { from?: string; to?: string; pool_id?: string } = {};
-  try { body = await req.json(); } catch { /* corps vide = plage par defaut */ }
+  let body: { start_date?: string; end_date?: string; pool_id?: string } = {};
+  try { body = await req.json(); } catch { /* corps vide = plage par defaut, mode planifie uniquement */ }
 
-  let fromDate = body.from;
-  let toDate = body.to;
+  let fromDate = body.start_date;
+  let toDate = body.end_date;
 
-  if (!isServiceCaller) {
-    if (!body.pool_id) return jsonResponse({ error: 'pool_id_required' }, 400);
-
+  if (body.pool_id) {
+    // --- Mode commissaire ---
     const auth = await getAuthenticatedUser(req);
     if (auth.error) return jsonResponse({ error: auth.error }, 401);
 
@@ -271,7 +285,17 @@ Deno.serve(async (req) => {
     const { data: poolRow, error: poolErr } = await userClient.from('pools').select('scoring_start_at').eq('id', body.pool_id).single();
     if (poolErr || !poolRow?.scoring_start_at) return jsonResponse({ error: 'pool_not_active' }, 400);
     fromDate = easternDateStr(new Date(poolRow.scoring_start_at));
+  } else {
+    // --- Mode planifie : le Bearer doit etre EXACTEMENT la cle service_role ---
+    if (!serviceKey || providedToken !== serviceKey) {
+      return jsonResponse({ error: 'unauthorized' }, 401);
+    }
   }
+
+  // Les ecritures (upsert) exigent toujours la cle service_role pour contourner RLS, meme en
+  // mode commissaire -- si elle est absente cote fonction, c'est une mauvaise configuration
+  // Supabase (secret reserve non fourni), pas une question d'autorisation de l'appelant.
+  if (!serviceKey) return jsonResponse({ error: 'service_role_key_unavailable' }, 500);
 
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -279,15 +303,18 @@ Deno.serve(async (req) => {
     toDate = toDate || todayEt;
 
     if (!fromDate) {
-      // Par defaut (appel cron sans plage explicite) : hier + aujourd'hui, en remontant
-      // jusqu'a la derniere date deja synchronisee si une execution a ete manquee.
+      // Par defaut (mode planifie sans plage explicite) : hier + aujourd'hui, en remontant
+      // jusqu'a la derniere date deja synchronisee si une execution a ete manquee, plafonne a
+      // MAX_CATCHUP_DAYS pour ne jamais relancer un historique demesure d'un coup.
       const yesterdayEt = addDaysStr(todayEt, -1);
+      const maxLookbackDate = addDaysStr(todayEt, -MAX_CATCHUP_DAYS);
       const { data: lastGame } = await supabase
         .from('nhl_games').select('game_date').order('game_date', { ascending: false }).limit(1).maybeSingle();
-      fromDate = (lastGame?.game_date && lastGame.game_date < yesterdayEt) ? lastGame.game_date : yesterdayEt;
+      const candidate = (lastGame?.game_date && lastGame.game_date < yesterdayEt) ? lastGame.game_date : yesterdayEt;
+      fromDate = candidate < maxLookbackDate ? maxLookbackDate : candidate;
     }
 
-    const summary = { gamesSynced: 0, errors: [] as string[] };
+    const summary: SyncSummary = { gamesSynced: 0, playerStatRowsSynced: 0, teamResultRowsSynced: 0, errors: [] };
     const datesSynced: string[] = [];
     for (let d = fromDate; d <= toDate; d = addDaysStr(d, 1)) {
       await syncDate(supabase, d, summary);
