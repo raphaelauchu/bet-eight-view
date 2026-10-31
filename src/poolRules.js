@@ -378,3 +378,19 @@ export function mirrorGameCountsForPeriod(game, fromAt, toAt) {
   if (toAt && start >= new Date(toAt).getTime()) return false;
   return true;
 }
+
+// Postes d'alignement admissibles pour un joueur, selon son poste detaille (prioritaire) ou,
+// a defaut (pas encore retro-rempli via backfill_detailed_positions), son regroupement
+// grossier. Miroir exact de pool_eligible_slots() (migration 20261109) : UTIL = patineur
+// seulement, IR accepte tout le monde (aucune place n'y est comptee cote serveur).
+export function mirrorEligibleSlots(posGroup, detailedPosition) {
+  if (detailedPosition === 'C') return ['C', 'UTIL', 'BN', 'IR'];
+  if (detailedPosition === 'LW') return ['LW', 'UTIL', 'BN', 'IR'];
+  if (detailedPosition === 'RW') return ['RW', 'UTIL', 'BN', 'IR'];
+  if (detailedPosition === 'D') return ['D', 'UTIL', 'BN', 'IR'];
+  if (detailedPosition === 'G') return ['G', 'BN', 'IR'];
+  if (posGroup === 'G') return ['G', 'BN', 'IR'];
+  if (posGroup === 'D') return ['D', 'UTIL', 'BN', 'IR'];
+  if (posGroup === 'F') return ['UTIL', 'BN', 'IR'];
+  return ['BN', 'IR'];
+}

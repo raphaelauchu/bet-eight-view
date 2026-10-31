@@ -896,13 +896,17 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
   );
 }
 
+const SLOT_BADGE_COLORS = { C: '#f97316', LW: '#f97316', RW: '#f97316', D: '#3b82f6', G: '#22c55e', UTIL: '#a78bfa', BN: '#888888', IR: '#ef4444' };
+
 function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
   const seasonId = useSaisonCourante();
   const cols = sectionColumns(pool.rules, section.pos, section.group);
   const isTeamSection = section.pos === 'TEAM';
+  const isFantasy = pool.rules.poolType === 'fantasy' && !isTeamSection;
   const totalGp = rows.reduce((s, r) => s + (Number(r.games_played) || 0), 0);
   const totalPts = rows.reduce((s, r) => s + (Number(r.total_points) || 0), 0);
   const totalSalary = rows.reduce((s, r) => s + (Number(r.salary) || 0), 0);
+  const totalBenchPts = rows.reduce((s, r) => s + (Number(r.bench_points) || 0), 0);
 
   return (
     <div style={{ ...card, marginBottom: '16px', overflowX: 'auto', padding: 0 }}>
@@ -915,6 +919,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
             {cols.map(k => <th key={k} style={{ padding: '6px', textAlign: 'right' }}>{t(`pool_stat_short_${k}`)}</th>)}
             <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_standings_col_pts')}</th>
             <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_standings_col_avg')}</th>
+            {isFantasy && <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_member_bench_points')}</th>}
             {capEnabled && !isTeamSection && <th style={{ padding: '6px', textAlign: 'right' }}>{t('pool_draft_salary_used')}</th>}
           </tr>
         </thead>
@@ -927,8 +932,9 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
             // conserves mais compte a part des choix actifs -- rien de ca n'existe encore, le
             // crochet reste toujours faux pour l'instant.
             const isTraded = false;
+            const isBenched = isFantasy && (r.current_slot === 'BN' || r.current_slot === 'IR');
             return (
-              <tr key={`${r.kind}:${r.ref_id}`} style={{ borderTop: '1px solid var(--c-161616)', backgroundColor: isTraded ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
+              <tr key={`${r.kind}:${r.ref_id}`} style={{ borderTop: '1px solid var(--c-161616)', backgroundColor: isTraded ? 'rgba(239,68,68,0.06)' : 'transparent', opacity: isBenched ? 0.55 : 1 }}>
                 <td style={stickyFirstCellStyle('var(--c-0d0d0d)')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={24} />}
@@ -936,6 +942,11 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
                     <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       {r.label}{r.pick_no ? <span style={{ color: 'var(--c-555)', fontWeight: '400' }}> (#{r.pick_no})</span> : ''}
                     </span>
+                    {isFantasy && r.current_slot && (
+                      <span style={{ fontSize: '9px', fontWeight: '700', color: SLOT_BADGE_COLORS[r.current_slot] || 'var(--c-666)', backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                        {r.current_slot}
+                      </span>
+                    )}
                     {r.is_hot && <span title={t('pool_member_trend_hot')}>🔥</span>}
                     {r.is_cold && <span title={t('pool_member_trend_cold')}>❄️</span>}
                     {r.opponent_abbrev && (
@@ -949,6 +960,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
                 {cols.map(k => <td key={k} style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-888)' }}>{r.stats?.[k] ?? 0}</td>)}
                 <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(r.total_points)}</td>
                 <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{avg}</td>
+                {isFantasy && <td style={{ padding: '8px 6px', textAlign: 'right', color: Number(r.bench_points) > 0 ? '#ef4444' : 'var(--c-666)' }}>{round1(r.bench_points)}</td>}
                 {capEnabled && !isTeamSection && (
                   <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-666)' }}>{r.salary > 0 ? Number(r.salary).toLocaleString() + ' $' : '—'}</td>
                 )}
@@ -961,6 +973,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
             {cols.map(k => <td key={k} style={{ padding: '8px 6px' }}></td>)}
             <td style={{ padding: '8px 6px', textAlign: 'right', color: '#f97316' }}>{round1(totalPts)}</td>
             <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{totalGp > 0 ? round1(totalPts / totalGp) : 0}</td>
+            {isFantasy && <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{round1(totalBenchPts)}</td>}
             {capEnabled && !isTeamSection && <td style={{ padding: '8px 6px', textAlign: 'right', color: 'var(--c-white)' }}>{totalSalary.toLocaleString()} $</td>}
           </tr>
         </tbody>
@@ -975,6 +988,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
 // (echanges) : toujours 0 pour l'instant, aucun pick n'etant jamais inactif tant que les
 // echanges n'existent pas.
 function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }) {
+  const isFantasy = pool.rules.poolType === 'fantasy';
   const bySection = MEMBER_DETAIL_SECTIONS.map(section => {
     const sectionRows = rows.filter(r => r.pos_group === section.pos);
     return {
@@ -984,10 +998,12 @@ function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }
       gp: sectionRows.reduce((s, r) => s + (Number(r.games_played) || 0), 0),
       total: sectionRows.reduce((s, r) => s + (Number(r.total_points) || 0), 0),
       salary: sectionRows.reduce((s, r) => s + (Number(r.salary) || 0), 0),
+      bench: sectionRows.reduce((s, r) => s + (Number(r.bench_points) || 0), 0),
     };
   });
   const grandTotalGp = bySection.reduce((s, x) => s + x.gp, 0);
   const grandTotalPts = bySection.reduce((s, x) => s + x.total, 0);
+  const grandTotalBench = bySection.reduce((s, x) => s + x.bench, 0);
 
   return (
     <div style={{ ...card, overflowX: 'auto' }}>
@@ -1001,6 +1017,7 @@ function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }
             <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_gp')}</th>
             <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_pts')}</th>
             <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_standings_col_avg')}</th>
+            {isFantasy && <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_member_bench_points')}</th>}
             {capEnabled && <th style={{ textAlign: 'right', padding: '6px' }}>{t('pool_draft_salary_used')}</th>}
           </tr>
         </thead>
@@ -1013,6 +1030,7 @@ function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }
               <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.gp}</td>
               <td style={{ padding: '6px', textAlign: 'right', fontWeight: '700', color: 'var(--c-white)' }}>{round1(x.total)}</td>
               <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.gp > 0 ? round1(x.total / x.gp) : 0}</td>
+              {isFantasy && <td style={{ padding: '6px', textAlign: 'right', color: x.bench > 0 ? '#ef4444' : 'var(--c-666)' }}>{round1(x.bench)}</td>}
               {capEnabled && <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-666)' }}>{x.salary.toLocaleString()} $</td>}
             </tr>
           ))}
@@ -1023,6 +1041,7 @@ function MemberSummaryTable({ rows, pool, capEnabled, capAmount, salaryUsed, t }
             <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{grandTotalGp}</td>
             <td style={{ padding: '6px', textAlign: 'right', color: '#f97316' }}>{round1(grandTotalPts)}</td>
             <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{grandTotalGp > 0 ? round1(grandTotalPts / grandTotalGp) : 0}</td>
+            {isFantasy && <td style={{ padding: '6px', textAlign: 'right', color: 'var(--c-white)' }}>{round1(grandTotalBench)}</td>}
             {capEnabled && <td style={{ padding: '6px', textAlign: 'right', color: salaryUsed > capAmount ? '#ef4444' : 'var(--c-white)' }}>{salaryUsed.toLocaleString()} $</td>}
           </tr>
           {capEnabled && (
@@ -1337,6 +1356,7 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
       p_pool_id: pool.id, p_kind: candidate.kind, p_player_id: candidate.playerId,
       p_player_name: candidate.playerName, p_position: candidate.position,
       p_nhl_team: candidate.nhlTeam, p_salary: candidate.salary,
+      p_detailed_position: candidate.detailedPosition,
     }).then(() => onAction?.());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, deadline, paused, draftFinished, currentPick, currentMember, players.length, teams.length]);
@@ -1358,6 +1378,7 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
     const base = {
       p_pool_id: pool.id, p_kind: pendingPick.kind, p_player_id: String(pendingPick.id), p_player_name: pendingPick.name,
       p_position: pickPosition, p_nhl_team: nhlTeam, p_salary: salary, p_is_manual: !!pendingPick.manual,
+      p_detailed_position: isTeamPick ? null : pendingPick.posReel,
     };
     const { error: err } = pickForMemberId
       ? await supabase.rpc('commissioner_pick', { ...base, p_member_id: pickForMemberId })
@@ -1723,7 +1744,7 @@ export function pickBestAvailableFor(member, players, picks, pool, teams = []) {
     const available = teams.filter(tm => !takenTeams.has(tm.abbrev)).sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
     if (!available.length) return null;
     const best = available[0];
-    return { kind: 'team', playerId: best.abbrev, playerName: best.name, position: 'TEAM', nhlTeam: best.abbrev, salary: null };
+    return { kind: 'team', playerId: best.abbrev, playerName: best.name, position: 'TEAM', nhlTeam: best.abbrev, salary: null, detailedPosition: null };
   }
 
   if (!players.length) return null;
@@ -1738,6 +1759,7 @@ export function pickBestAvailableFor(member, players, picks, pool, teams = []) {
   return {
     kind: 'player', playerId: best.id, playerName: best.name,
     position: posReelToPickPosition(best.posReel), nhlTeam: best.team, salary: null,
+    detailedPosition: best.posReel,
   };
 }
 

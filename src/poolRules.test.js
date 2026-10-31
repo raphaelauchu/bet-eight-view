@@ -2,6 +2,7 @@ import {
   validateTrade, defaultTradesForType, defaultRules, normalizeRules,
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
   mirrorSkaterPoints, mirrorGoaliePoints, mirrorTeamPoints, mirrorGameCountsForPeriod,
+  mirrorEligibleSlots,
 } from './poolRules';
 
 function player(id, positionGroup, salary = 0) {
@@ -244,4 +245,18 @@ test('pointage : un joueur sans match rapporte zero point', () => {
   const stats = { goals: 0, assists: 0, powerPlayPoints: 0, shortHandedPoints: 0, shotsOnGoal: 0, hits: 0, blockedShots: 0, pim: 0, plusMinus: 0, gameWinningGoals: 0 };
 
   expect(mirrorSkaterPoints(rules, 'F', stats)).toBe(0);
+});
+
+test('alignement : postes admissibles selon le poste detaille (prioritaire sur le regroupement)', () => {
+  expect(mirrorEligibleSlots('F', 'C')).toEqual(['C', 'UTIL', 'BN', 'IR']);
+  expect(mirrorEligibleSlots('F', 'LW')).toEqual(['LW', 'UTIL', 'BN', 'IR']);
+  expect(mirrorEligibleSlots('F', 'RW')).toEqual(['RW', 'UTIL', 'BN', 'IR']);
+  expect(mirrorEligibleSlots('D', 'D')).toEqual(['D', 'UTIL', 'BN', 'IR']);
+  expect(mirrorEligibleSlots('G', 'G')).toEqual(['G', 'BN', 'IR']); // jamais UTIL pour un gardien
+});
+
+test('alignement : repli sur le regroupement grossier quand le poste detaille est inconnu (pas encore retro-rempli)', () => {
+  expect(mirrorEligibleSlots('D', null)).toEqual(['D', 'UTIL', 'BN', 'IR']); // D : aucune ambiguite
+  expect(mirrorEligibleSlots('G', null)).toEqual(['G', 'BN', 'IR']); // G : aucune ambiguite
+  expect(mirrorEligibleSlots('F', null)).toEqual(['UTIL', 'BN', 'IR']); // F ambigu (C/LW/RW) : UTIL seulement
 });

@@ -482,6 +482,7 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
       p_pool_id: pool.id, p_kind: pendingAdd.kind, p_player_id: String(pendingAdd.id ?? pendingAdd.abbrev),
       p_player_name: pendingAdd.name, p_position: position, p_nhl_team: nhlTeam, p_salary: null,
       p_drop_player_id: dropChoice?.ref_id || null, p_drop_kind: dropChoice?.kind || 'player',
+      p_detailed_position: pendingAdd.kind === 'team' ? null : pendingAdd.posReel,
     });
     setBusy(false);
     if (err) { setError(mapTradeError(err.message, t)); return; }

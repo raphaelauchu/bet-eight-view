@@ -5,6 +5,7 @@ import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
 import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel, PoolStandings } from './PoolDraftRoom';
 import { PoolTradesTab, PoolWaiversTab } from './PoolTrades';
+import { PoolLineupTab } from './PoolLineup';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
@@ -841,8 +842,9 @@ function LeavePoolButton({ pool, t, onLeft }) {
   );
 }
 
-const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'trades', 'waivers', 'rules'];
-const ACTIVE_ONLY_TABS = ['standings', 'trades', 'waivers'];
+const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'trades', 'waivers', 'lineup', 'rules'];
+const ACTIVE_ONLY_TABS = ['standings', 'trades', 'waivers', 'lineup'];
+const FANTASY_ONLY_TABS = ['lineup'];
 
 function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
   const t = getT(lang);
@@ -959,7 +961,10 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto' }}>
-        {LOBBY_TABS.filter(tab => !ACTIVE_ONLY_TABS.includes(tab) || pool.status === 'active').map(tab => (
+        {LOBBY_TABS
+          .filter(tab => !ACTIVE_ONLY_TABS.includes(tab) || pool.status === 'active')
+          .filter(tab => !FANTASY_ONLY_TABS.includes(tab) || pool.rules.poolType === 'fantasy')
+          .map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{ position: 'relative', padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
             {t(`pool_tab_${tab}`)}
@@ -1055,6 +1060,10 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
 
       {activeTab === 'waivers' && pool.status === 'active' && (
         <PoolWaiversTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} />
+      )}
+
+      {activeTab === 'lineup' && pool.status === 'active' && pool.rules.poolType === 'fantasy' && (
+        <PoolLineupTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} />
       )}
 
       {activeTab === 'rules' && <RulesSummary rules={pool.rules} t={t} />}
