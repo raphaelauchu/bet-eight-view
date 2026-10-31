@@ -5,7 +5,7 @@ import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
-  DRAFT_TYPES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES,
+  DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES,
   POOL_TYPE_INFO, defaultRules, cloneRules, validateRules, hasAnyScoring,
   totalRosterSlots, currentSeasonLabelFromSeasonId, applyPoolType, normalizeRules,
 } from './poolRules';
@@ -117,6 +117,7 @@ function summarizeTrades(trades, t) {
   const parts = [
     trades.maxPerSeason == null ? t('pool_unlimited') : `${trades.maxPerSeason} ${t('pool_recap_max_suffix')}`,
     trades.noReacquire ? t('pool_trades_no_reacquire') : null,
+    trades.balanceByPosition ? t('pool_trades_balance_by_position') : null,
     `${t('pool_trades_approval')}: ${t(`pool_trades_approval_${trades.approval}`)}`,
   ].filter(Boolean);
   return parts.join(' · ');
@@ -170,6 +171,10 @@ function TradesBlock({ trades, onChange, t }) {
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
             <input type="checkbox" checked={trades.noReacquire} onChange={e => onChange({ noReacquire: e.target.checked })} />
             <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{t('pool_trades_no_reacquire')}</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={trades.balanceByPosition} onChange={e => onChange({ balanceByPosition: e.target.checked })} />
+            <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{t('pool_trades_balance_by_position')}</span>
           </label>
           <div>
             <label style={labelStyle}>{t('pool_trades_approval')}</label>
@@ -453,10 +458,16 @@ function StepDraft({ form, setForm, t }) {
         </div>
         <label style={labelStyle}>{t('pool_draft_seconds')}</label>
         <input type="number" min={10} max={600} style={inputStyle} value={draft.secondsPerPick} onChange={e => setDraft({ secondsPerPick: parseInt(e.target.value, 10) || 0 })} />
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', marginBottom: '16px', cursor: 'pointer' }}>
           <input type="checkbox" checked={draft.teamPickCountsAsRound} onChange={e => setDraft({ teamPickCountsAsRound: e.target.checked })} />
           <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{t('pool_draft_team_pick_rounds')}</span>
         </label>
+        <label style={labelStyle}>{t('pool_draft_order_mode_label')}</label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {DRAFT_ORDER_MODES.map(om => (
+            <button key={om} onClick={() => setDraft({ orderMode: om })} style={choiceBtn(draft.orderMode === om)}>{t(`pool_draft_order_mode_${om}`)}</button>
+          ))}
+        </div>
       </div>
       {form.rules.poolType === 'classic' && (
         <TradesBlock trades={form.rules.trades} onChange={setTrades} t={t} />
@@ -487,7 +498,7 @@ function StepRecap({ form, setForm, mode, t, errors }) {
       <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
       {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
       <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
-      <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s`} />
+      <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s · ${t(`pool_draft_order_mode_${rules.draft.orderMode}`)}`} />
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
       {rules.trades?.enabled && <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic', padding: '6px 0' }}>{t('pool_trades_day_points_note')}</div>}
@@ -626,7 +637,7 @@ function RulesSummary({ rules, t }) {
       <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
       {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
       <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
-      <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s`} />
+      <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s · ${t(`pool_draft_order_mode_${rules.draft.orderMode}`)}`} />
       <RecapRow label={t('pool_draft_assistant_title')} value={rules.draftAssistant?.enabled ? t('pool_enabled') : t('pool_disabled')} />
       {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
       <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
@@ -636,7 +647,95 @@ function RulesSummary({ rules, t }) {
   );
 }
 
-function PoolLobby({ pool, utilisateur, lang, onBack, onEditRules }) {
+function DraftOrderSection({ pool, members, isCommissioner, isMobile, onReordered, t }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [dragIndex, setDragIndex] = useState(null);
+  const orderMode = pool.rules.draft.orderMode;
+  const canReorder = isCommissioner && pool.status === 'setup';
+  const sorted = [...members].sort((a, b) => (a.draft_position ?? 999999) - (b.draft_position ?? 999999));
+
+  async function persistOrder(orderedIds) {
+    setBusy(true); setError('');
+    const { error: err } = await supabase.rpc('set_draft_order', { p_pool_id: pool.id, p_member_ids: orderedIds });
+    setBusy(false);
+    if (err) { setError(err.message); return; }
+    onReordered();
+  }
+
+  async function shuffleNow() {
+    setBusy(true); setError('');
+    const { error: err } = await supabase.rpc('shuffle_draft_order', { p_pool_id: pool.id });
+    setBusy(false);
+    if (err) { setError(err.message); return; }
+    onReordered();
+  }
+
+  function moveMember(index, dir) {
+    const target = index + dir;
+    if (target < 0 || target >= sorted.length) return;
+    const next = [...sorted];
+    [next[index], next[target]] = [next[target], next[index]];
+    persistOrder(next.map(m => m.id));
+  }
+
+  function onDrop(index) {
+    if (dragIndex === null || dragIndex === index) { setDragIndex(null); return; }
+    const next = [...sorted];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(index, 0, moved);
+    setDragIndex(null);
+    persistOrder(next.map(m => m.id));
+  }
+
+  const canDrag = canReorder && orderMode === 'manual' && !isMobile;
+
+  return (
+    <div style={{ ...card, marginBottom: '16px' }}>
+      <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_draft_order_title')}</div>
+
+      {orderMode === 'random' ? (
+        <div style={{ fontSize: '13px', color: 'var(--c-888)', marginBottom: canReorder ? '10px' : '6px' }}>{t('pool_draft_order_random_note')}</div>
+      ) : (
+        <div style={{ fontSize: '12px', color: 'var(--c-666)', marginBottom: '10px' }}>
+          {canReorder ? t('pool_draft_order_manual_hint') : t('pool_draft_order_readonly_hint')}
+        </div>
+      )}
+
+      {canReorder && orderMode === 'random' && (
+        <button onClick={shuffleNow} disabled={busy} style={{ ...btnSecondary, opacity: busy ? 0.6 : 1, marginBottom: '10px' }}>
+          {t('pool_draft_order_shuffle_btn')}
+        </button>
+      )}
+
+      {error && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{error}</div>}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {sorted.map((m, i) => (
+          <div key={m.id}
+            draggable={canDrag}
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={e => e.preventDefault()}
+            onDrop={() => onDrop(i)}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px', cursor: canDrag ? 'grab' : 'default' }}>
+            <span style={{ fontSize: '12px', color: '#f97316', fontWeight: '700', minWidth: '20px' }}>#{i + 1}</span>
+            <span style={{ flex: 1, fontSize: '13px', color: 'var(--c-white)' }}>{memberDisplayName(m, pool.rules, t)}</span>
+            {canReorder && orderMode === 'manual' && isMobile && (
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={() => moveMember(i, -1)} disabled={busy || i === 0}
+                  style={{ ...btnSecondary, padding: '4px 8px', fontSize: '12px', opacity: (busy || i === 0) ? 0.4 : 1 }}>↑</button>
+                <button onClick={() => moveMember(i, 1)} disabled={busy || i === sorted.length - 1}
+                  style={{ ...btnSecondary, padding: '4px 8px', fontSize: '12px', opacity: (busy || i === sorted.length - 1) ? 0.4 : 1 }}>↓</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
   const t = getT(lang);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -711,6 +810,8 @@ function PoolLobby({ pool, utilisateur, lang, onBack, onEditRules }) {
           </div>
         ))}
       </div>
+
+      <DraftOrderSection pool={pool} members={members} isCommissioner={isCommissioner} isMobile={isMobile} onReordered={chargerMembres} t={t} />
 
       <RulesSummary rules={pool.rules} t={t} />
 
@@ -949,7 +1050,7 @@ export default function PoolHub({ utilisateur, lang }) {
   if (view === 'lobby' && selectedPool) {
     return (
       <div style={containerStyle}>
-        <PoolLobby pool={selectedPool} utilisateur={utilisateur} lang={lang}
+        <PoolLobby pool={selectedPool} utilisateur={utilisateur} lang={lang} isMobile={isMobile}
           onBack={() => setView('list')} onEditRules={() => setView('edit')} />
       </div>
     );

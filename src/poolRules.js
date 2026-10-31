@@ -27,8 +27,9 @@ export const CLASSIC_ROSTER_KEYS = ['forwards', 'defense', 'goalies'];
 export const FANTASY_ROSTER_KEYS = ['C', 'LW', 'RW', 'D', 'G', 'UTIL', 'bench', 'ir'];
 
 export const DRAFT_TYPES = ['snake', 'linear'];
+export const DRAFT_ORDER_MODES = ['random', 'manual'];
 export const LINEUP_MODES = ['fixed', 'weekly', 'daily'];
-export const TRADE_APPROVAL_TYPES = ['none', 'commissioner', 'vote'];
+export const TRADE_APPROVAL_TYPES = ['none', 'commissioner'];
 export const WAIVER_CLAIM_ORDERS = ['reverse_standings', 'first_come'];
 export const DISPLAY_MODES = ['player', 'team'];
 
@@ -50,10 +51,12 @@ export function defaultRosterForType(poolType) {
 // tradeDayPoints : valeur fixe (non modifiable dans l'UI pour l'instant) - le jour d'un
 // echange, les deux joueurs echanges ne rapportent de points a personne ; ils comptent
 // pour leur nouveau proprietaire a partir du lendemain.
+// balanceByPosition : exige le meme nombre de joueurs par poste (incluant le choix
+// d'equipe NHL) des deux cotes d'un echange.
 export function defaultTradesForType(poolType) {
   return poolType === 'classic'
-    ? { enabled: false, maxPerSeason: null, noReacquire: true, approval: 'commissioner', tradeDayPoints: 'nobody' }
-    : { enabled: true, maxPerSeason: null, noReacquire: true, approval: 'commissioner', tradeDayPoints: 'nobody' };
+    ? { enabled: false, maxPerSeason: null, noReacquire: true, approval: 'commissioner', balanceByPosition: true, tradeDayPoints: 'nobody' }
+    : { enabled: true, maxPerSeason: null, noReacquire: true, approval: 'commissioner', balanceByPosition: true, tradeDayPoints: 'nobody' };
 }
 
 export function defaultWaiversForType(poolType) {
@@ -75,7 +78,7 @@ export function defaultRules(poolType = 'classic') {
     sameForwardDefenseScoring: true,
     roster: defaultRosterForType(poolType),
     salaryCap: { enabled: false, amount: DEFAULT_SALARY_CAP_AMOUNT, source: 'manual' },
-    draft: { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false },
+    draft: { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false, orderMode: 'random' },
     draftAssistant: { enabled: true },
     lineup: poolType === 'classic' ? 'fixed' : 'weekly',
     trades: defaultTradesForType(poolType),
@@ -197,6 +200,8 @@ export function normalizeRules(rawRules) {
   }
   delete rules.trades.deadline;
   rules.trades.tradeDayPoints = 'nobody';
+  if (!TRADE_APPROVAL_TYPES.includes(rules.trades.approval)) rules.trades.approval = 'commissioner';
+  if (typeof rules.trades.balanceByPosition !== 'boolean') rules.trades.balanceByPosition = true;
   if (!rules.waivers || typeof rules.waivers.enabled !== 'boolean') {
     const legacyTx = rules.transactions;
     rules.waivers = legacyTx
@@ -206,10 +211,77 @@ export function normalizeRules(rawRules) {
   delete rules.transactions;
 
   if (!rules.draft) rules.draft = { type: 'snake', secondsPerPick: 60, teamPickCountsAsRound: false };
+  if (!DRAFT_ORDER_MODES.includes(rules.draft.orderMode)) rules.draft.orderMode = 'random';
   if (!rules.draftAssistant || typeof rules.draftAssistant.enabled !== 'boolean') rules.draftAssistant = { enabled: true };
   if (!rules.lineup) rules.lineup = poolType === 'classic' ? 'fixed' : 'weekly';
   if (poolType === 'classic') rules.lineup = 'fixed';
   if (!DISPLAY_MODES.includes(rules.display)) rules.display = 'player';
 
   return rules;
+}
+
+// ===================== Validation d'un echange (fonction pure) =====================
+// La regle "un joueur appartient toujours a exactement une equipe du pool" est fixe et
+// non modifiable : rosterA/rosterB representent cette affectation au moment de l'echange,
+// et givesA/givesB doivent etre des sous-ensembles de rosterA/rosterB respectivement
+// (verifie ci-dessous via pool_trade_error_invalid_ownership).
+// Forme attendue d'un joueur : { id, positionGroup: 'forward'|'defense'|'goalie'|'team', salary }.
+// tradesAlreadyMade (historique saisonnier, optionnel) :
+//   { countA, countB, tradedAwayByA: [ids], tradedAwayByB: [ids] }
+// L'application reelle de ces regles (bloquer un echange invalide dans l'UI) viendra
+// avec l'interface d'echange en Phase 4 ; pour l'instant seule cette fonction existe.
+export function validateTrade(rules, rosterA, rosterB, givesA, givesB, tradesAlreadyMade = {}) {
+  const trades = rules?.trades || {};
+
+  if (!trades.enabled) {
+    return { ok: false, errors: ['pool_trade_error_disabled'] };
+  }
+
+  const history = {
+    countA: tradesAlreadyMade.countA || 0,
+    countB: tradesAlreadyMade.countB || 0,
+    tradedAwayByA: tradesAlreadyMade.tradedAwayByA || [],
+    tradedAwayByB: tradesAlreadyMade.tradedAwayByB || [],
+  };
+
+  const errors = [];
+
+  const idsA = new Set((rosterA || []).map(p => p.id));
+  const idsB = new Set((rosterB || []).map(p => p.id));
+  const ownershipOk = (givesA || []).every(p => idsA.has(p.id)) && (givesB || []).every(p => idsB.has(p.id));
+  if (!ownershipOk) errors.push('pool_trade_error_invalid_ownership');
+
+  if (trades.balanceByPosition) {
+    const countBy = (list) => (list || []).reduce((acc, p) => {
+      acc[p.positionGroup] = (acc[p.positionGroup] || 0) + 1;
+      return acc;
+    }, {});
+    const countsA = countBy(givesA);
+    const countsB = countBy(givesB);
+    const groups = new Set([...Object.keys(countsA), ...Object.keys(countsB)]);
+    for (const g of groups) {
+      if ((countsA[g] || 0) !== (countsB[g] || 0)) { errors.push('pool_trade_error_position_imbalance'); break; }
+    }
+  }
+
+  if (trades.maxPerSeason != null) {
+    if (history.countA + 1 > trades.maxPerSeason) errors.push('pool_trade_error_max_per_season_a');
+    if (history.countB + 1 > trades.maxPerSeason) errors.push('pool_trade_error_max_per_season_b');
+  }
+
+  if (trades.noReacquire) {
+    if ((givesB || []).some(p => history.tradedAwayByA.includes(p.id))) errors.push('pool_trade_error_no_reacquire_a');
+    if ((givesA || []).some(p => history.tradedAwayByB.includes(p.id))) errors.push('pool_trade_error_no_reacquire_b');
+  }
+
+  if (rules?.salaryCap?.enabled) {
+    const sumSalary = (list) => (list || []).reduce((s, p) => s + (Number(p.salary) || 0), 0);
+    const cap = Number(rules.salaryCap.amount) || 0;
+    const newSalaryA = sumSalary(rosterA) - sumSalary(givesA) + sumSalary(givesB);
+    const newSalaryB = sumSalary(rosterB) - sumSalary(givesB) + sumSalary(givesA);
+    if (newSalaryA > cap) errors.push('pool_trade_error_salary_cap_a');
+    if (newSalaryB > cap) errors.push('pool_trade_error_salary_cap_b');
+  }
+
+  return { ok: errors.length === 0, errors };
 }
