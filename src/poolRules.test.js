@@ -1,4 +1,7 @@
-import { validateTrade, defaultTradesForType } from './poolRules';
+import {
+  validateTrade, defaultTradesForType, defaultRules,
+  computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
+} from './poolRules';
 
 function player(id, positionGroup, salary = 0) {
   return { id, positionGroup, salary };
@@ -77,4 +80,45 @@ test('detecte un joueur qui ne fait pas partie du roster cedant', () => {
   const result = validateTrade(baseRules(), rosterA, rosterB, [player('ghost', 'forward')], [player('p2', 'forward')]);
   expect(result.ok).toBe(false);
   expect(result.errors).toContain('pool_trade_error_invalid_ownership');
+});
+
+test('computePicksPerMember : classique = total du roster, equipe NHL non comptee par defaut', () => {
+  const rules = defaultRules('classic');
+  expect(computePicksPerMember(rules)).toBe(9 + 6 + 2);
+});
+
+test('computePicksPerMember : equipe NHL comptee comme une ronde si teamPickCountsAsRound', () => {
+  const rules = defaultRules('classic');
+  rules.draft.teamPickCountsAsRound = true;
+  expect(computePicksPerMember(rules)).toBe(9 + 6 + 2 + 1);
+});
+
+test('computeRosterQuota : postes distincts en classique', () => {
+  const rules = defaultRules('classic');
+  expect(computeRosterQuota(rules, 'F')).toBe(9);
+  expect(computeRosterQuota(rules, 'D')).toBe(6);
+  expect(computeRosterQuota(rules, 'G')).toBe(2);
+  expect(computeRosterQuota(rules, 'TEAM')).toBe(1);
+});
+
+test('computeRosterQuota : F et D partagent un quota combine en fantasy', () => {
+  const rules = defaultRules('fantasy');
+  const combined = rules.roster.C + rules.roster.LW + rules.roster.RW + rules.roster.D + rules.roster.UTIL + rules.roster.bench + rules.roster.ir;
+  expect(computeRosterQuota(rules, 'F')).toBe(combined);
+  expect(computeRosterQuota(rules, 'D')).toBe(combined);
+});
+
+test('computeCurrentMemberId : ordre lineaire repete simplement l\'ordre a chaque ronde', () => {
+  const order = ['a', 'b', 'c'];
+  expect(computeCurrentMemberId(order, 1, 'linear')).toBe('a');
+  expect(computeCurrentMemberId(order, 3, 'linear')).toBe('c');
+  expect(computeCurrentMemberId(order, 4, 'linear')).toBe('a');
+});
+
+test('computeCurrentMemberId : ordre snake s\'inverse a la deuxieme ronde', () => {
+  const order = ['a', 'b', 'c'];
+  expect(computeCurrentMemberId(order, 3, 'snake')).toBe('c');
+  expect(computeCurrentMemberId(order, 4, 'snake')).toBe('c');
+  expect(computeCurrentMemberId(order, 6, 'snake')).toBe('a');
+  expect(computeCurrentMemberId(order, 7, 'snake')).toBe('a');
 });

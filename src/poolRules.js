@@ -220,6 +220,46 @@ export function normalizeRules(rawRules) {
   return rules;
 }
 
+// ===================== Moteur de draft (helpers cote client, lecture seule) =====================
+// Ces fonctions repliquent exactement les formules SQL equivalentes (pool_picks_per_member,
+// pool_roster_quota, pool_current_member_id dans la migration 20261102_pool_draft_engine.sql)
+// pour l'affichage en direct. La RPC Postgres reste la seule source de verite pour la
+// validation reelle d'un choix - ces copies ne servent qu'a l'UI (minuteur, quotas, bandeau
+// "c'est ton tour").
+export const PICK_POSITIONS = ['F', 'D', 'G', 'TEAM'];
+
+export function computePicksPerMember(rules) {
+  const teamPicks = Number(rules?.roster?.teamPicks) || 0;
+  return totalRosterSlots(rules) + (rules?.draft?.teamPickCountsAsRound ? teamPicks : 0);
+}
+
+export function computeRosterQuota(rules, position) {
+  if (position === 'TEAM') return Number(rules?.roster?.teamPicks) || 0;
+  const roster = rules?.roster || {};
+  if (rules?.poolType === 'classic') {
+    if (position === 'F') return Number(roster.forwards) || 0;
+    if (position === 'D') return Number(roster.defense) || 0;
+    if (position === 'G') return Number(roster.goalies) || 0;
+    return 0;
+  }
+  if (position === 'F' || position === 'D') {
+    return ['C', 'LW', 'RW', 'D', 'UTIL', 'bench', 'ir'].reduce((s, k) => s + (Number(roster[k]) || 0), 0);
+  }
+  if (position === 'G') return Number(roster.G) || 0;
+  return 0;
+}
+
+// order : tableau d'ids de membres (ordre fige au demarrage du draft) ; currentPick : 1-indexe.
+export function computeCurrentMemberId(order, currentPick, draftType) {
+  const n = order?.length || 0;
+  if (n === 0 || !currentPick || currentPick < 1) return null;
+  const idx0 = currentPick - 1;
+  const round0 = Math.floor(idx0 / n);
+  const pos = idx0 % n;
+  if (draftType === 'snake' && round0 % 2 === 1) return order[n - 1 - pos];
+  return order[pos];
+}
+
 // ===================== Validation d'un echange (fonction pure) =====================
 // La regle "un joueur appartient toujours a exactement une equipe du pool" est fixe et
 // non modifiable : rosterA/rosterB representent cette affectation au moment de l'echange,

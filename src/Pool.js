@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
+import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel } from './PoolDraftRoom';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES,
@@ -735,15 +736,67 @@ function DraftOrderSection({ pool, members, isCommissioner, isMobile, onReordere
   );
 }
 
+function mapPoolErrorCode(code, t) {
+  const key = `pool_draft_error_${code}`;
+  const translated = t(key);
+  return translated !== key ? translated : t('pool_draft_error_generic');
+}
+
+function StartDraftButton({ isCommissioner, onStart, busy, error, t, variant = 'primary' }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  if (!isCommissioner) return null;
+  if (!confirmOpen) {
+    return <button onClick={() => setConfirmOpen(true)} style={variant === 'primary' ? { ...btnPrimary, width: '100%' } : btnSecondary}>{t('pool_draft_start_btn')}</button>;
+  }
+  return (
+    <div style={{ ...card }}>
+      <div style={{ fontSize: '12px', color: '#f97316', marginBottom: '10px' }}>{t('pool_draft_start_confirm')}</div>
+      {error && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '10px' }}>{error}</div>}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={() => setConfirmOpen(false)} style={btnSecondary}>{t('pool_join_cancel_btn')}</button>
+        <button onClick={onStart} disabled={busy} style={{ ...btnPrimary, flex: 1, opacity: busy ? 0.6 : 1 }}>{busy ? t('pool_wizard_saving') : t('pool_draft_start_btn')}</button>
+      </div>
+    </div>
+  );
+}
+
+const LOBBY_TABS = ['lobby', 'draft', 'team', 'rules'];
+
 function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
   const t = getT(lang);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [openDraft, setOpenDraft] = useState(false);
+  const [openDraftTool, setOpenDraftTool] = useState(false);
+  const [activeTab, setActiveTab] = useState('lobby');
+  const [picks, setPicks] = useState([]);
+  const [startBusy, setStartBusy] = useState(false);
+  const [startError, setStartError] = useState('');
+  const [viewedMemberId, setViewedMemberId] = useState(null);
+  const prevStatusRef = React.useRef(pool.status);
 
   useEffect(() => { chargerMembres(); }, [pool.id]);
+
+  useEffect(() => {
+    if (prevStatusRef.current === 'setup' && pool.status !== 'setup') setActiveTab('draft');
+    prevStatusRef.current = pool.status;
+  }, [pool.status]);
+
+  useEffect(() => {
+    async function chargerPicks() {
+      const { data } = await supabase.from('pool_picks').select('*').eq('pool_id', pool.id).order('picked_at', { ascending: true });
+      setPicks(data || []);
+    }
+    chargerPicks();
+    const channel = supabase.channel(`pool_picks_${pool.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pool_picks', filter: `pool_id=eq.${pool.id}` }, (payload) => {
+        if (payload.eventType === 'INSERT') setPicks(p => [...p, payload.new]);
+        else if (payload.eventType === 'DELETE') setPicks(p => p.filter(x => x.id !== payload.old.id));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [pool.id]);
 
   async function chargerMembres() {
     setLoading(true); setError('');
@@ -752,8 +805,18 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
     setLoading(false);
   }
 
+  async function handleStartDraft() {
+    setStartBusy(true); setStartError('');
+    const { error: err } = await supabase.rpc('start_draft', { p_pool_id: pool.id });
+    setStartBusy(false);
+    if (err) { setStartError(mapPoolErrorCode(err.message, t)); return; }
+    await chargerMembres();
+    setActiveTab('draft');
+  }
+
   const isCommissioner = pool.owner_id === utilisateur.id;
   const inviteLink = `${window.location.origin}/pool/join/${pool.invite_code}`;
+  const myMember = members.find(m => m.user_id === utilisateur.id);
 
   function copyLink() {
     if (!navigator.clipboard) return;
@@ -763,23 +826,23 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
     }).catch(() => {});
   }
 
-  if (openDraft) {
+  if (openDraftTool) {
     return (
       <div>
-        <button onClick={() => setOpenDraft(false)} style={{ ...btnSecondary, marginBottom: '16px' }}>{t('pool_draft_tool_back')}</button>
+        <button onClick={() => setOpenDraftTool(false)} style={{ ...btnSecondary, marginBottom: '16px' }}>{t('pool_draft_tool_back')}</button>
         <PoolDraft />
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '760px', margin: '0 auto' }}>
       <button onClick={onBack}
         style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', marginBottom: '16px' }}>
         {t('pool_lobby_back_btn')}
       </button>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: '800' }}>{pool.name}</h2>
           <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{pool.season}</div>
@@ -789,40 +852,78 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, onBack, onEditRules }) {
 
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
-      <div style={{ ...card, marginBottom: '16px' }}>
-        <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_invite_title')}</div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <code style={{ flex: 1, minWidth: '160px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {pool.invite_code}
-          </code>
-          <button onClick={copyLink} style={btnSecondary}>{copied ? t('pool_lobby_invite_copied') : t('pool_lobby_invite_copy')}</button>
-        </div>
-      </div>
-
-      <div style={{ ...card, marginBottom: '16px' }}>
-        <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_members_title')} · {members.length}/{pool.max_members}</div>
-        {loading ? (
-          <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
-        ) : members.map(m => (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--c-111)' }}>
-            <span style={{ fontSize: '13px', color: 'var(--c-white)' }}>{memberDisplayName(m, pool.rules, t)}</span>
-            {m.role === 'commissioner' && <span style={{ fontSize: '11px', color: '#f97316', fontWeight: '700' }}>{t('pool_lobby_commissioner_badge')}</span>}
-          </div>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto' }}>
+        {LOBBY_TABS.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            style={{ padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
+            {t(`pool_tab_${tab}`)}
+          </button>
         ))}
       </div>
 
-      <DraftOrderSection pool={pool} members={members} isCommissioner={isCommissioner} isMobile={isMobile} onReordered={chargerMembres} t={t} />
+      {activeTab === 'lobby' && (
+        <>
+          <div style={{ ...card, marginBottom: '16px' }}>
+            <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_invite_title')}</div>
+            {pool.status !== 'setup' ? (
+              <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{t('pool_lobby_invite_closed')}</div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <code style={{ flex: 1, minWidth: '160px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {pool.invite_code}
+                </code>
+                <button onClick={copyLink} style={btnSecondary}>{copied ? t('pool_lobby_invite_copied') : t('pool_lobby_invite_copy')}</button>
+              </div>
+            )}
+          </div>
 
-      <RulesSummary rules={pool.rules} t={t} />
+          <div style={{ ...card, marginBottom: '16px' }}>
+            <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_members_title')} · {members.length}/{pool.max_members}</div>
+            {loading ? (
+              <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
+            ) : members.map(m => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--c-111)' }}>
+                <span style={{ fontSize: '13px', color: 'var(--c-white)' }}>{memberDisplayName(m, pool.rules, t)}</span>
+                {m.role === 'commissioner' && <span style={{ fontSize: '11px', color: '#f97316', fontWeight: '700' }}>{t('pool_lobby_commissioner_badge')}</span>}
+              </div>
+            ))}
+          </div>
 
-      {isCommissioner && pool.status === 'setup' && (
-        <button onClick={onEditRules} style={{ ...btnSecondary, width: '100%', marginTop: '16px' }}>{t('pool_lobby_edit_rules_btn')}</button>
+          {pool.status === 'setup' && (
+            <DraftOrderSection pool={pool} members={members} isCommissioner={isCommissioner} isMobile={isMobile} onReordered={chargerMembres} t={t} />
+          )}
+
+          {isCommissioner && pool.status === 'setup' && (
+            <button onClick={onEditRules} style={{ ...btnSecondary, width: '100%', marginBottom: '12px' }}>{t('pool_lobby_edit_rules_btn')}</button>
+          )}
+          {isCommissioner && pool.status !== 'setup' && (
+            <div style={{ fontSize: '12px', color: 'var(--c-555)', marginBottom: '12px', textAlign: 'center' }}>{t('pool_lobby_locked_notice')}</div>
+          )}
+
+          {pool.status === 'setup' && (
+            <StartDraftButton isCommissioner={isCommissioner} onStart={handleStartDraft} busy={startBusy} error={startError} t={t} />
+          )}
+
+          <button onClick={() => setOpenDraftTool(true)} style={{ ...btnSecondary, width: '100%', marginTop: '12px' }}>{t('pool_lobby_open_draft_btn')}</button>
+        </>
       )}
-      {isCommissioner && pool.status !== 'setup' && (
-        <div style={{ fontSize: '12px', color: 'var(--c-555)', marginTop: '12px', textAlign: 'center' }}>{t('pool_lobby_locked_notice')}</div>
+
+      {activeTab === 'draft' && (
+        pool.status === 'setup' ? (
+          <DraftWaitingRoom pool={pool} members={members} lang={lang} isCommissioner={isCommissioner}
+            onStartDraft={handleStartDraft} startBusy={startBusy} startError={startError} />
+        ) : (
+          <PoolDraftRoom pool={pool} members={members} picks={picks} utilisateur={utilisateur} lang={lang}
+            isCommissioner={isCommissioner} onAction={chargerMembres} />
+        )
       )}
 
-      <button onClick={() => setOpenDraft(true)} style={{ ...btnPrimary, width: '100%', marginTop: '12px' }}>{t('pool_lobby_open_draft_btn')}</button>
+      {activeTab === 'team' && (
+        <TeamRosterPanel pool={pool} members={members} picks={picks} lang={lang}
+          viewedMemberId={viewedMemberId || myMember?.id || members[0]?.id} setViewedMemberId={setViewedMemberId} />
+      )}
+
+      {activeTab === 'rules' && <RulesSummary rules={pool.rules} t={t} />}
     </div>
   );
 }
@@ -951,6 +1052,18 @@ export default function PoolHub({ utilisateur, lang }) {
     if (!utilisateur?.id) return;
     resolveMyIdentity(utilisateur).then(({ firstName, lastName }) => { setMyFirstName(firstName); setMyLastName(lastName); });
   }, [utilisateur?.id]);
+
+  // Garde le pool ouvert a jour en temps reel (status, draft_state) pendant que le
+  // commissaire demarre/avance le draft, meme pour les membres restes dans le lobby.
+  useEffect(() => {
+    if (!selectedPool?.id) return;
+    const channel = supabase.channel(`pool_row_${selectedPool.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pools', filter: `id=eq.${selectedPool.id}` }, (payload) => {
+        setSelectedPool(prev => (prev ? { ...prev, ...payload.new, rules: normalizeRules(payload.new.rules) } : prev));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selectedPool?.id]);
 
   async function chargerPools() {
     if (!utilisateur?.id) return;

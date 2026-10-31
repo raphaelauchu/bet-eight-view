@@ -424,6 +424,75 @@ const translations = {
     pool_join_error_pool_full: 'Ce pool est complet.',
     pool_join_error_pool_closed: 'Ce pool est terminé et ne peut plus être rejoint.',
     pool_join_error_generic: 'Impossible de rejoindre ce pool : {erreur}',
+
+    // Salle de draft en direct (Phase 2)
+    pool_tab_lobby: 'Lobby',
+    pool_tab_draft: 'Draft',
+    pool_tab_team: 'Mon équipe',
+    pool_tab_rules: 'Règles',
+    pool_lobby_invite_closed: 'Les inscriptions sont fermées : le draft a commencé.',
+
+    pool_draft_start_btn: 'Démarrer le draft',
+    pool_draft_start_confirm: 'Les règles seront verrouillées et l\'ordre fixé. Continuer ?',
+
+    pool_draft_waiting_title: 'En attente du commissaire',
+    pool_draft_waiting_sub: 'Le draft commencera dès que le commissaire cliquera sur « Démarrer le draft ».',
+    pool_draft_waiting_non_commissioner: 'Seul le commissaire peut démarrer le draft.',
+    pool_draft_scheduled_at: 'Date prévue',
+
+    pool_draft_skaters: 'Patineurs',
+    pool_draft_salary_used: 'Salaire utilisé',
+    pool_draft_no_picks_yet: 'Aucun choix pour l\'instant.',
+
+    pool_draft_board_title: 'Tableau du draft',
+    pool_draft_round_label: 'Ronde',
+
+    pool_draft_on_the_clock: 'Au tour de',
+    pool_draft_next_up: 'Prochain',
+    pool_draft_pick_label: 'Choix',
+    pool_draft_paused_banner: '⏸ Draft en pause',
+
+    pool_draft_pause_btn: 'Mettre en pause',
+    pool_draft_resume_btn: 'Reprendre',
+    pool_draft_undo_btn: 'Annuler le dernier choix',
+    pool_draft_pick_for_none: 'Choisir pour...',
+    pool_draft_pick_for: 'Choisir pour',
+
+    pool_draft_pick_team_title: 'Choisir son équipe NHL',
+
+    pool_draft_search_ph: 'Rechercher un joueur (dès 2 lettres)...',
+    pool_draft_filter_all: 'Tous',
+    pool_draft_already_taken: 'Pris par',
+    pool_draft_already_taken_badge: 'DÉJÀ PRIS',
+    pool_draft_add_manual: 'Ajouter manuellement',
+    pool_draft_add_btn: 'Ajouter',
+
+    pool_draft_loading_players: 'Chargement des joueurs NHL...',
+    pool_draft_load_error: 'Impossible de charger les joueurs NHL pour l\'instant.',
+    pool_draft_no_players_found: 'Aucun joueur trouvé',
+    pool_draft_ia_label: 'IA',
+    pool_draft_pick_btn: 'Repêcher',
+    pool_draft_show_more: 'Voir plus',
+    pool_draft_confirm_pick: 'Confirmer le choix',
+
+    pool_draft_finished_title: 'Draft terminé 🎉',
+
+    pool_draft_error_generic: 'Une erreur est survenue.',
+    pool_draft_error_not_commissioner: 'Seul le commissaire peut faire cette action.',
+    pool_draft_error_pool_not_found: 'Pool introuvable.',
+    pool_draft_error_draft_already_started: 'Le draft a déjà commencé.',
+    pool_draft_error_not_enough_members: 'Il faut au moins 2 membres pour démarrer le draft.',
+    pool_draft_error_incomplete_manual_order: 'L\'ordre manuel est incomplet : assigne une position à chaque membre dans le lobby.',
+    pool_draft_error_empty_roster: 'L\'alignement du pool est vide.',
+    pool_draft_error_draft_not_active: 'Le draft n\'est pas en cours.',
+    pool_draft_error_draft_paused: 'Le draft est en pause.',
+    pool_draft_error_not_a_member: 'Tu ne fais pas partie de ce pool.',
+    pool_draft_error_not_your_turn: 'Ce n\'est pas ton tour.',
+    pool_draft_error_already_taken: 'Ce joueur (ou cette équipe) a déjà été choisi.',
+    pool_draft_error_position_quota_reached: 'Le quota pour ce poste est atteint.',
+    pool_draft_error_salary_cap_exceeded: 'Ce choix dépasserait le plafond salarial.',
+    pool_draft_error_not_expired: 'Le temps n\'est pas encore écoulé.',
+    pool_draft_error_nothing_to_undo: 'Aucun choix à annuler.',
   },
 
   en: {
@@ -851,6 +920,75 @@ const translations = {
     pool_join_error_pool_full: 'This pool is full.',
     pool_join_error_pool_closed: 'This pool has finished and can no longer be joined.',
     pool_join_error_generic: 'Could not join this pool: {erreur}',
+
+    // Live draft room (Phase 2)
+    pool_tab_lobby: 'Lobby',
+    pool_tab_draft: 'Draft',
+    pool_tab_team: 'My Team',
+    pool_tab_rules: 'Rules',
+    pool_lobby_invite_closed: 'Sign-ups are closed: the draft has started.',
+
+    pool_draft_start_btn: 'Start the Draft',
+    pool_draft_start_confirm: 'The rules will be locked and the order fixed. Continue?',
+
+    pool_draft_waiting_title: 'Waiting for the Commissioner',
+    pool_draft_waiting_sub: 'The draft will start once the commissioner clicks "Start the Draft".',
+    pool_draft_waiting_non_commissioner: 'Only the commissioner can start the draft.',
+    pool_draft_scheduled_at: 'Scheduled for',
+
+    pool_draft_skaters: 'Skaters',
+    pool_draft_salary_used: 'Salary Used',
+    pool_draft_no_picks_yet: 'No picks yet.',
+
+    pool_draft_board_title: 'Draft Board',
+    pool_draft_round_label: 'Round',
+
+    pool_draft_on_the_clock: 'On the Clock',
+    pool_draft_next_up: 'Next',
+    pool_draft_pick_label: 'Pick',
+    pool_draft_paused_banner: '⏸ Draft Paused',
+
+    pool_draft_pause_btn: 'Pause',
+    pool_draft_resume_btn: 'Resume',
+    pool_draft_undo_btn: 'Undo Last Pick',
+    pool_draft_pick_for_none: 'Pick for...',
+    pool_draft_pick_for: 'Pick for',
+
+    pool_draft_pick_team_title: 'Pick Your NHL Team',
+
+    pool_draft_search_ph: 'Search a player (2+ letters)...',
+    pool_draft_filter_all: 'All',
+    pool_draft_already_taken: 'Taken by',
+    pool_draft_already_taken_badge: 'ALREADY TAKEN',
+    pool_draft_add_manual: 'Add manually',
+    pool_draft_add_btn: 'Add',
+
+    pool_draft_loading_players: 'Loading NHL players...',
+    pool_draft_load_error: 'Could not load NHL players right now.',
+    pool_draft_no_players_found: 'No players found',
+    pool_draft_ia_label: 'AI',
+    pool_draft_pick_btn: 'Draft',
+    pool_draft_show_more: 'Show more',
+    pool_draft_confirm_pick: 'Confirm Pick',
+
+    pool_draft_finished_title: 'Draft Complete 🎉',
+
+    pool_draft_error_generic: 'Something went wrong.',
+    pool_draft_error_not_commissioner: 'Only the commissioner can do this.',
+    pool_draft_error_pool_not_found: 'Pool not found.',
+    pool_draft_error_draft_already_started: 'The draft has already started.',
+    pool_draft_error_not_enough_members: 'You need at least 2 members to start the draft.',
+    pool_draft_error_incomplete_manual_order: "The manual order is incomplete: assign a position to every member in the lobby.",
+    pool_draft_error_empty_roster: "The pool's roster is empty.",
+    pool_draft_error_draft_not_active: 'The draft is not currently active.',
+    pool_draft_error_draft_paused: 'The draft is paused.',
+    pool_draft_error_not_a_member: "You're not a member of this pool.",
+    pool_draft_error_not_your_turn: "It's not your turn.",
+    pool_draft_error_already_taken: 'This player (or team) has already been picked.',
+    pool_draft_error_position_quota_reached: 'The quota for this position has been reached.',
+    pool_draft_error_salary_cap_exceeded: 'This pick would exceed the salary cap.',
+    pool_draft_error_not_expired: "Time hasn't run out yet.",
+    pool_draft_error_nothing_to_undo: 'Nothing to undo.',
   },
 };
 
