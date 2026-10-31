@@ -10,11 +10,11 @@ name: Sync NHL Stats (Pools)
 # UTC-4, en debut/fin de saison), ces executions tombent une heure plus tot cote horloge
 # locale -- sans consequence, elles couvrent toujours la meme fenetre de matchs.
 #
-# Authentification : Bearer = secret SUPABASE_SERVICE_ROLE_KEY (repo Settings > Secrets and
-# variables > Actions). La fonction compare ce jeton EXACTEMENT a sa propre variable
-# d'environnement SUPABASE_SERVICE_ROLE_KEY (fournie automatiquement par Supabase) ; un
-# mauvais secret (ex. la cle anon collee par erreur) est maintenant rejete avec 401, pas une
-# erreur de validation confuse.
+# Authentification : en-tete x-sync-secret = secret SYNC_CRON_SECRET (repo Settings > Secrets
+# and variables > Actions), distinct de la cle service_role. La fonction compare cet en-tete
+# a temps constant a sa propre variable d'environnement SYNC_CRON_SECRET (secret Supabase de
+# la fonction, jamais dans le code). La verification JWT est desactivee pour cette fonction
+# (supabase/config.toml) : aucun en-tete Authorization n'est necessaire ici.
 on:
   schedule:
     - cron: '30 4 * * *'   # ~23h30 ET
@@ -43,7 +43,7 @@ jobs:
 
           http_response=$(curl -sS -w "\n%{http_code}" -X POST \
             "https://gjuxwzpylonusvogqpjw.supabase.co/functions/v1/sync-nhl-stats" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "x-sync-secret: ${{ secrets.SYNC_CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -d "$body")
 

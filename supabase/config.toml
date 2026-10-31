@@ -1,0 +1,14 @@
+# Pour la documentation complete : https://supabase.com/docs/guides/local-development/cli/config
+#
+# Ce fichier ne contient que les overrides necessaires -- le reste des reglages (local dev,
+# db, auth, storage...) suit les defauts de Supabase, ce projet n'utilisant pas la stack
+# locale (`supabase start`), seulement `supabase functions deploy` / migrations distantes.
+project_id = "gjuxwzpylonusvogqpjw"
+
+# sync-nhl-stats gere son propre controle d'acces dans le code (voir
+# supabase/functions/sync-nhl-stats/index.ts) : secret dedie x-sync-secret pour le mode
+# planifie (cron), jeton utilisateur valide via getUser() + is_pool_commissioner pour le mode
+# commissaire. La verification JWT de la passerelle est donc desactivee pour CETTE fonction
+# uniquement -- toutes les autres Edge Functions du projet gardent verify_jwt = true (defaut).
+[functions.sync-nhl-stats]
+verify_jwt = false

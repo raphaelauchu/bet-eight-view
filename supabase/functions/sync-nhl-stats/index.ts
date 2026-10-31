@@ -2,13 +2,21 @@
 // tables partagees nhl_games / nhl_player_game_stats / nhl_team_game_results, pour que
 // tous les pools voient les memes chiffres (Phase 3 - moteur de pointage).
 //
-// Deux appelants : le GitHub Action planifie (voir .github/workflows/sync-nhl-stats.yml,
-// authentifie avec "Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>" -- cette cle n'est
-// JAMAIS dans le code client ni le repo, seulement comme secret Supabase et comme secret du
-// repo GitHub) et le bouton "Recalculer" du commissaire dans l'UI (authentifie avec le jeton
-// normal de l'utilisateur + { pool_id } dans le corps, voir Deno.serve plus bas pour le
-// detail des deux chemins). Corps JSON optionnel : { start_date?, end_date?, pool_id? }
-// (dates au format YYYY-MM-DD) ; pool_id present => mode commissaire, absent => mode planifie.
+// Deux appelants, authentifies dans le code (verify_jwt est desactive pour cette fonction
+// dans supabase/config.toml -- la passerelle ne filtre donc plus rien, tout le controle
+// d'acces vit ici) :
+// - Le GitHub Action planifie (voir .github/workflows/sync-nhl-stats.yml), identifie par un
+//   secret dedie dans l'en-tete "x-sync-secret", compare a temps constant a la variable
+//   d'environnement SYNC_CRON_SECRET de la fonction. Ni ce secret ni la cle service_role ne
+//   sont JAMAIS dans le code client ni le repo -- seulement comme secrets Supabase (fonction)
+//   et GitHub (repo).
+// - Le bouton "Recalculer" du commissaire dans l'UI, identifie par son jeton Supabase normal
+//   (valide ici via auth.getUser(), puisque la passerelle ne le fait plus) + { pool_id } dans
+//   le corps, puis verifie commissaire du pool via is_pool_commissioner.
+// Dans les deux cas, les ecritures utilisent le client service_role interne de la fonction
+// (fourni automatiquement par Supabase) pour contourner RLS -- jamais le Bearer de l'appelant.
+// Corps JSON optionnel : { start_date?, end_date?, pool_id? } (dates au format YYYY-MM-DD) ;
+// pool_id present => mode commissaire, absent => mode planifie.
 //
 // PPP (power play points), SHP (short handed points) et les buts gagnants (GWG) ne sont pas
 // dans le boxscore NHL : on les derive du detail but-par-but fourni par /v1/score/{date}
@@ -70,6 +78,19 @@ function addDaysStr(dateStr: string, days: number): string {
 function bump(map: Map<number, number>, id: number | undefined | null) {
   if (id == null) return;
   map.set(id, (map.get(id) || 0) + 1);
+}
+
+// Comparaison a temps constant (pas de court-circuit sur la premiere difference) pour ne pas
+// laisser fuiter d'information sur le secret via le temps de reponse.
+function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  const maxLen = Math.max(aBytes.length, bBytes.length);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < maxLen; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
 }
 
 type SyncSummary = { gamesSynced: number; playerStatRowsSynced: number; teamResultRowsSynced: number; errors: string[] };
@@ -243,18 +264,20 @@ async function syncDate(supabase: any, dateStr: string, summary: SyncSummary) {
 // des mois de synchro d'un seul coup.
 const MAX_CATCHUP_DAYS = 14;
 
-// Deux modes, distingues par la presence de pool_id dans le corps (jamais par la simple
-// presence d'un Authorization quelconque -- la cle anon est AUSSI un JWT valide pour la
-// passerelle Supabase, donc le controle d'acces reel se fait ici, pas au niveau gateway) :
+// Deux modes, distingues par la presence de pool_id dans le corps. verify_jwt est desactive
+// pour cette fonction (supabase/config.toml) : la passerelle ne verifie plus rien, tout le
+// controle d'acces se fait explicitement ci-dessous.
 //
-// a) Mode planifie (sans pool_id) : reserve a l'appelant qui presente EXACTEMENT la cle
-//    service_role en Bearer (comparaison avec la variable d'environnement
-//    SUPABASE_SERVICE_ROLE_KEY, fournie automatiquement a la fonction par Supabase -- jamais
-//    dans le code ni le repo). Synchronise globalement hier + aujourd'hui, avec rattrapage
+// a) Mode planifie (sans pool_id) : exige l'en-tete "x-sync-secret" EXACTEMENT egal a la
+//    variable d'environnement SYNC_CRON_SECRET de la fonction (secret dedie, distinct de la
+//    cle service_role -- ni l'un ni l'autre ne sont dans le code ni le repo, seulement comme
+//    secrets Supabase/GitHub). Refuse (401) si le secret cote fonction est absent/vide ou si
+//    l'en-tete ne correspond pas. Synchronise globalement hier + aujourd'hui, avec rattrapage
 //    jusqu'a la derniere date synchronisee (plafonne a MAX_CATCHUP_DAYS).
-// b) Mode commissaire (avec pool_id) : jeton Supabase normal de l'utilisateur connecte ; on
-//    verifie qu'il est bien commissaire de ce pool (RPC is_pool_commissioner, soumise a RLS
-//    via SON jeton) avant de lancer la synchro, limitee a la fenetre de pointage du pool.
+// b) Mode commissaire (avec pool_id) : jeton Supabase de l'utilisateur connecte, valide ici
+//    via auth.getUser() (voir _shared/auth.ts) ; on verifie ensuite qu'il est bien
+//    commissaire de ce pool (RPC is_pool_commissioner, soumise a RLS via SON jeton) avant de
+//    lancer la synchro, limitee a la fenetre de pointage du pool.
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -263,7 +286,8 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const providedToken = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  const cronSecret = Deno.env.get('SYNC_CRON_SECRET');
+  const providedSecret = req.headers.get('x-sync-secret') || '';
 
   let body: { start_date?: string; end_date?: string; pool_id?: string } = {};
   try { body = await req.json(); } catch { /* corps vide = plage par defaut, mode planifie uniquement */ }
@@ -286,8 +310,8 @@ Deno.serve(async (req) => {
     if (poolErr || !poolRow?.scoring_start_at) return jsonResponse({ error: 'pool_not_active' }, 400);
     fromDate = easternDateStr(new Date(poolRow.scoring_start_at));
   } else {
-    // --- Mode planifie : le Bearer doit etre EXACTEMENT la cle service_role ---
-    if (!serviceKey || providedToken !== serviceKey) {
+    // --- Mode planifie : x-sync-secret doit correspondre EXACTEMENT a SYNC_CRON_SECRET ---
+    if (!cronSecret || !providedSecret || !timingSafeEqual(providedSecret, cronSecret)) {
       return jsonResponse({ error: 'unauthorized' }, 401);
     }
   }
