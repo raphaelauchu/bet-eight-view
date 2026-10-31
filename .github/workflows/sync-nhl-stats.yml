@@ -1,26 +1,32 @@
 name: Sync NHL Stats (Pools)
 
 # Declenche la synchronisation des matchs/stats NHL (Edge Function sync-nhl-stats) qui
-# alimente le moteur de pointage des pools. Plusieurs executions par soiree + fin de nuit,
-# heure de l'Est, pour couvrir les matchs qui finissent tard et les prolongations/tirs de
-# barrage qui se terminent apres minuit.
+# alimente le moteur de pointage des pools.
 #
-# Les heures cron sont en UTC et calees sur l'heure normale de l'Est (EST, UTC-5, la
-# majorite de la saison NHL) : 23h30, 1h30, 3h30 et 6h30 ET. Pendant l'heure avancee (EDT,
-# UTC-4, en debut/fin de saison), ces executions tombent une heure plus tot cote horloge
-# locale -- sans consequence, elles couvrent toujours la meme fenetre de matchs.
+# Horaires (UTC) :
+# - Toutes les 30 min de 23h00 a 06h00 UTC : couvre les matchs du soir, leurs prolongations
+#   et tirs de barrage qui se terminent souvent apres minuit ET.
+#     * Heure avancee de l'Est (EDT, UTC-4, jusqu'au 1er novembre 2026) : 19h00 a 02h00 ET.
+#     * Heure normale de l'Est (EST, UTC-5, a partir du 1er novembre 2026) : 18h00 a 01h00 ET.
+# - 09h07 UTC : rattrapage matinal (matchs/stats qui auraient fini d'etre confirmes tard).
+#     * EDT : ~05h07 ET.  EST : ~04h07 ET.
+# - 15h23 UTC : rattrapage pour les matchs d'apres-midi (debuts de saison/playoffs, matchs
+#   matinaux rares) et toute statistique tardive non encore officielle la veille.
+#     * EDT : ~11h23 ET.  EST : ~10h23 ET.
+# Les minutes des deux passages de rattrapage sont volontairement decalees de l'heure pile
+# (7 et 23, pas 0) pour eviter la charge au pic des crons GitHub programmes a :00.
 #
 # Authentification : en-tete x-sync-secret = secret SYNC_CRON_SECRET (repo Settings > Secrets
-# and variables > Actions), distinct de la cle service_role. La fonction compare cet en-tete
-# a temps constant a sa propre variable d'environnement SYNC_CRON_SECRET (secret Supabase de
-# la fonction, jamais dans le code). La verification JWT est desactivee pour cette fonction
-# (supabase/config.toml) : aucun en-tete Authorization n'est necessaire ici.
+# and variables > Actions), distinct de la cle service_role (non utilisee par ce workflow).
+# La fonction compare cet en-tete a temps constant a sa propre variable d'environnement
+# SYNC_CRON_SECRET (secret Supabase de la fonction, jamais dans le code). La verification JWT
+# est desactivee pour cette fonction (supabase/config.toml) : aucun en-tete Authorization
+# n'est necessaire ici.
 on:
   schedule:
-    - cron: '30 4 * * *'   # ~23h30 ET
-    - cron: '30 6 * * *'   # ~1h30 ET
-    - cron: '30 8 * * *'   # ~3h30 ET
-    - cron: '30 11 * * *'  # ~6h30 ET
+    - cron: '0,30 23,0,1,2,3,4,5,6 * * *'  # toutes les 30 min, 23h-6h UTC (voir ET ci-dessus)
+    - cron: '7 9 * * *'                     # rattrapage matinal, ~09h07 UTC
+    - cron: '23 15 * * *'                   # rattrapage apres-midi, ~15h23 UTC
   workflow_dispatch:
     inputs:
       start_date:
@@ -29,6 +35,13 @@ on:
       end_date:
         description: 'Date de fin (YYYY-MM-DD), optionnel'
         required: false
+
+# Une seule synchronisation a la fois : les executions rapprochees (toutes les 30 min) se
+# mettent en file plutot que de se chevaucher ou de s'annuler (cancel-in-progress: false), le
+# travail en cours doit toujours aller a son terme.
+concurrency:
+  group: sync-nhl-stats
+  cancel-in-progress: false
 
 jobs:
   sync:
