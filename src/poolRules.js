@@ -331,3 +331,50 @@ export function validateTrade(rules, rosterA, rosterB, givesA, givesB, tradesAlr
 
   return { ok: errors.length === 0, errors };
 }
+
+// ===================== Miroir JS du moteur de pointage (Phase 3) =====================
+// Le calcul reel des points vit cote serveur (RPC SQL get_pool_standings / get_member_breakdown,
+// voir supabase/migrations/20261104_pool_scoring_engine.sql -- pool_scored_events) : le
+// client ne doit jamais etre la source de verite des points. Ces fonctions reproduisent la
+// meme formule uniquement pour pouvoir l'exercer avec des tests unitaires JS rapides, sans
+// dependre d'une base Postgres.
+
+// Points d'un patineur (F/D) pour un match, selon rules.scoring.forward/defense.
+export function mirrorSkaterPoints(rules, position, stats) {
+  const group = (position === 'D' ? rules?.scoring?.defense : rules?.scoring?.forward) || {};
+  return POSITION_STAT_KEYS.reduce((sum, k) => sum + (Number(stats[k]) || 0) * (Number(group[k]) || 0), 0);
+}
+
+// Points d'un gardien pour un match, selon rules.scoring.goalie. `stats.decision` vaut
+// 'W' | 'L' | 'OTL' | null, `stats.shutout` est un booleen.
+export function mirrorGoaliePoints(rules, stats) {
+  const group = rules?.scoring?.goalie || {};
+  const values = {
+    goals: Number(stats.goals) || 0,
+    assists: Number(stats.assists) || 0,
+    wins: stats.decision === 'W' ? 1 : 0,
+    shutouts: stats.shutout ? 1 : 0,
+    saves: Number(stats.saves) || 0,
+    goalsAgainst: Number(stats.goalsAgainst) || 0,
+    otLosses: stats.decision === 'OTL' ? 1 : 0,
+  };
+  return GOALIE_STAT_KEYS.reduce((sum, k) => sum + values[k] * (Number(group[k]) || 0), 0);
+}
+
+// Points d'une equipe NHL pour un match, selon rules.scoring.team. `result` vaut
+// 'W' | 'OTL' | 'SOL' | 'L' (une defaite reguliere 'L' ne rapporte jamais de points).
+export function mirrorTeamPoints(rules, result) {
+  const group = rules?.scoring?.team || {};
+  const values = { wins: result === 'W' ? 1 : 0, overtimeLosses: result === 'OTL' ? 1 : 0, shootoutLosses: result === 'SOL' ? 1 : 0 };
+  return TEAM_STAT_KEYS.reduce((sum, k) => sum + values[k] * (Number(group[k]) || 0), 0);
+}
+
+// Un match ne compte pour une periode d'appartenance que s'il est termine et que son heure
+// de debut tombe dans [fromAt, toAt) (toAt null = periode toujours ouverte).
+export function mirrorGameCountsForPeriod(game, fromAt, toAt) {
+  if (game.state !== 'FINAL' && game.state !== 'OFF') return false;
+  const start = new Date(game.startTimeUtc).getTime();
+  if (start < new Date(fromAt).getTime()) return false;
+  if (toAt && start >= new Date(toAt).getTime()) return false;
+  return true;
+}

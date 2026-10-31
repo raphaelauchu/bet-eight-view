@@ -1,6 +1,7 @@
 import {
   validateTrade, defaultTradesForType, defaultRules, normalizeRules,
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
+  mirrorSkaterPoints, mirrorGoaliePoints, mirrorTeamPoints, mirrorGameCountsForPeriod,
 } from './poolRules';
 
 function player(id, positionGroup, salary = 0) {
@@ -156,4 +157,60 @@ test('normalizeRules : salaryCap.source nhl/manual migrent vers capHit', () => {
   expect(legacyNhl.salaryCap.source).toBe('capHit');
   expect(legacyManual.salaryCap.source).toBe('capHit');
   expect(alreadyNew.salaryCap.source).toBe('actualSalary');
+});
+
+// ===================== Moteur de pointage (Phase 3) - miroir JS de la formule SQL =====================
+
+function scoringRules(overrides = {}) {
+  const rules = defaultRules('classic');
+  rules.scoring.forward = { ...rules.scoring.forward, ...overrides.forward };
+  rules.scoring.defense = { ...rules.scoring.defense, ...overrides.defense };
+  rules.scoring.goalie = { ...rules.scoring.goalie, ...overrides.goalie };
+  rules.scoring.team = { ...rules.scoring.team, ...overrides.team };
+  return rules;
+}
+
+test('pointage : bareme different attaquants/defenseurs pour la meme ligne de stats', () => {
+  const rules = scoringRules({ forward: { goals: 3, assists: 2 }, defense: { goals: 5, assists: 1 } });
+  const stats = { goals: 2, assists: 1, powerPlayPoints: 0, shortHandedPoints: 0, shotsOnGoal: 0, hits: 0, blockedShots: 0, pim: 0, plusMinus: 0, gameWinningGoals: 0 };
+
+  const forwardPoints = mirrorSkaterPoints(rules, 'F', stats);
+  const defensePoints = mirrorSkaterPoints(rules, 'D', stats);
+
+  expect(forwardPoints).toBe(2 * 3 + 1 * 2); // 8
+  expect(defensePoints).toBe(2 * 5 + 1 * 1); // 11
+  expect(forwardPoints).not.toBe(defensePoints);
+});
+
+test('pointage : gardien avec victoire + blanchissage + but/passe', () => {
+  const rules = scoringRules({ goalie: { wins: 2, shutouts: 5, saves: 0.1, goals: 10, assists: 4, goalsAgainst: -1, otLosses: 1 } });
+  const stats = { goals: 1, assists: 1, decision: 'W', shutout: true, saves: 30, goalsAgainst: 0 };
+
+  const points = mirrorGoaliePoints(rules, stats);
+
+  expect(points).toBeCloseTo(1 * 10 + 1 * 4 + 1 * 2 + 1 * 5 + 30 * 0.1 + 0 * -1 + 0 * 1); // 24
+});
+
+test('pointage : equipe NHL victoire vs defaite en prolongation vs defaite en tirs de barrage', () => {
+  const rules = scoringRules({ team: { wins: 3, overtimeLosses: 1, shootoutLosses: 0.5 } });
+
+  expect(mirrorTeamPoints(rules, 'W')).toBe(3);
+  expect(mirrorTeamPoints(rules, 'OTL')).toBe(1);
+  expect(mirrorTeamPoints(rules, 'SOL')).toBe(0.5);
+  expect(mirrorTeamPoints(rules, 'L')).toBe(0); // defaite reguliere : jamais de points
+});
+
+test('pointage : un match avant from_at (debut du pointage) est ignore', () => {
+  const finalGame = { state: 'FINAL', startTimeUtc: '2026-01-10T00:00:00Z' };
+  const fromAt = '2026-01-15T00:00:00Z';
+
+  expect(mirrorGameCountsForPeriod(finalGame, fromAt, null)).toBe(false);
+  expect(mirrorGameCountsForPeriod({ ...finalGame, startTimeUtc: '2026-01-20T00:00:00Z' }, fromAt, null)).toBe(true);
+});
+
+test('pointage : un joueur sans match rapporte zero point', () => {
+  const rules = scoringRules({ forward: { goals: 5, assists: 3 } });
+  const stats = { goals: 0, assists: 0, powerPlayPoints: 0, shortHandedPoints: 0, shotsOnGoal: 0, hits: 0, blockedShots: 0, pim: 0, plusMinus: 0, gameWinningGoals: 0 };
+
+  expect(mirrorSkaterPoints(rules, 'F', stats)).toBe(0);
 });

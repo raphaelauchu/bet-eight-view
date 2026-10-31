@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
-import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel } from './PoolDraftRoom';
+import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel, PoolStandings } from './PoolDraftRoom';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
@@ -535,6 +535,11 @@ function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, on
   const t = getT(lang);
   const seasonId = useSaisonCourante();
   const [stepIndex, setStepIndex] = useState(0);
+  // La saison "courante" se resout de facon asynchrone (useSaisonCourante demarre avec une
+  // saison de secours le temps d'un appel reseau) : on garde une reference vers la derniere
+  // valeur auto-remplie pour pouvoir la mettre a jour quand la vraie saison arrive, sans
+  // ecraser une valeur que l'utilisateur aurait deja modifiee a la main.
+  const autoSeasonRef = React.useRef(currentSeasonLabelFromSeasonId(seasonId));
   const [form, setForm] = useState(() => ({
     name: initial?.name || '',
     season: initial?.season || currentSeasonLabelFromSeasonId(seasonId),
@@ -545,6 +550,16 @@ function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, on
     maxMembers: initial?.maxMembers ?? 12,
     rules: initial?.rules ? cloneRules(initial.rules) : defaultRules('classic'),
   }));
+
+  useEffect(() => {
+    if (mode !== 'create' || initial?.season) return;
+    const label = currentSeasonLabelFromSeasonId(seasonId);
+    setForm(f => {
+      if (f.season !== autoSeasonRef.current) return f; // deja modifie a la main, on ne touche plus
+      autoSeasonRef.current = label;
+      return f.season === label ? f : { ...f, season: label };
+    });
+  }, [seasonId, mode, initial]);
 
   const steps = stepsForType(form.rules.poolType);
   const stepIndexClamped = Math.min(stepIndex, steps.length - 1);
@@ -825,7 +840,7 @@ function LeavePoolButton({ pool, t, onLeft }) {
   );
 }
 
-const LOBBY_TABS = ['lobby', 'draft', 'team', 'rules'];
+const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'rules'];
 
 function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
   const t = getT(lang);
@@ -918,7 +933,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto' }}>
-        {LOBBY_TABS.map(tab => (
+        {LOBBY_TABS.filter(tab => tab !== 'standings' || pool.status === 'active').map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{ padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
             {t(`pool_tab_${tab}`)}
@@ -992,6 +1007,10 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
           <PoolDraftRoom pool={pool} members={members} picks={picks} utilisateur={utilisateur} lang={lang}
             isCommissioner={isCommissioner} onAction={chargerMembres} />
         )
+      )}
+
+      {activeTab === 'standings' && pool.status === 'active' && (
+        <PoolStandings pool={pool} members={members} utilisateur={utilisateur} lang={lang} isCommissioner={isCommissioner} />
       )}
 
       {activeTab === 'team' && (

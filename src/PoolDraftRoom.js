@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
@@ -378,6 +379,26 @@ export function TeamRosterPanel({ pool, members, picks, lang, viewedMemberId, se
   const capEnabled = !!pool.rules?.salaryCap?.enabled;
   const salaryUsed = memberPicks.reduce((s, p) => s + (Number(p.salary) || 0), 0);
   const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
+  const isActive = pool.status === 'active';
+
+  const [pointsByRef, setPointsByRef] = useState({});
+  const [pointsLoading, setPointsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isActive || !member?.id) { setPointsByRef({}); return; }
+    let annule = false;
+    setPointsLoading(true);
+    supabase.rpc('get_member_breakdown', { p_pool_id: pool.id, p_member_id: member.id }).then(({ data }) => {
+      if (annule) return;
+      const map = {};
+      (data || []).forEach(row => { map[`${row.kind}:${row.ref_id}`] = row.total_points; });
+      setPointsByRef(map);
+      setPointsLoading(false);
+    });
+    return () => { annule = true; };
+  }, [isActive, pool.id, member?.id]);
+
+  const totalPoints = useMemo(() => Object.values(pointsByRef).reduce((s, v) => s + (Number(v) || 0), 0), [pointsByRef]);
 
   const quotaRows = useMemo(() => buildQuotaRows(pool.rules, memberPicks), [memberPicks, pool.rules]);
 
@@ -389,6 +410,15 @@ export function TeamRosterPanel({ pool, members, picks, lang, viewedMemberId, se
       </select>
 
       <QuotaRowsDisplay rows={quotaRows} t={t} />
+
+      {isActive && (
+        <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
+          <div style={{ fontSize: '9px', color: 'var(--c-666)' }}>{t('pool_standings_total_points')}</div>
+          <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>
+            {pointsLoading ? '…' : round1(totalPoints)}
+          </div>
+        </div>
+      )}
 
       {capEnabled && (
         <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px', textAlign: 'center' }}>
@@ -404,7 +434,8 @@ export function TeamRosterPanel({ pool, members, picks, lang, viewedMemberId, se
       ) : (
         <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
           {memberPicks.map(p => (
-            <PickRow key={p.id} pick={p} capEnabled={capEnabled} seasonId={seasonId} />
+            <PickRow key={p.id} pick={p} capEnabled={capEnabled} seasonId={seasonId}
+              points={isActive ? pointsByRef[`${p.kind}:${p.player_id}`] : undefined} />
           ))}
         </div>
       )}
@@ -441,7 +472,7 @@ function QuotaRowsDisplay({ rows, t }) {
   );
 }
 
-function PickRow({ pick, capEnabled, onClick, highlight, seasonId }) {
+function PickRow({ pick, capEnabled, onClick, highlight, seasonId, points }) {
   return (
     <div onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 4px', borderTop: '1px solid var(--c-161616)',
@@ -453,6 +484,243 @@ function PickRow({ pick, capEnabled, onClick, highlight, seasonId }) {
       <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS[pick.position] }}>{pick.position}</span>
       <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pick.player_name}</span>
       {capEnabled && pick.salary > 0 && <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>{Number(pick.salary).toLocaleString()} $</span>}
+      {points !== undefined && <span style={{ fontSize: '12px', fontWeight: '800', color: '#f97316', minWidth: '28px', textAlign: 'right' }}>{round1(Number(points) || 0)}</span>}
+    </div>
+  );
+}
+
+// ===================== Classement (Phase 3 : moteur de pointage) =====================
+
+const CHART_COLORS = ['#f97316', '#3b82f6', '#22c55e', '#a78bfa', '#ef4444', '#eab308', '#06b6d4', '#ec4899', '#84cc16', '#f472b6'];
+
+function memberLabel(m, rules) {
+  if (rules?.display === 'team' && m?.team_name) return m.team_name;
+  return m?.display_name || m?.team_name || '?';
+}
+
+// Transforme les lignes (member_id, display_name, day, points) renvoyees par
+// get_pool_daily_points en une serie cumulative, une ligne par jour, une colonne par membre
+// (format attendu par recharts). Les jours sans match pour un membre reprennent son dernier
+// total connu (ligne plate, pas de trou dans le graphique).
+function buildCumulativeSeries(daily, members, rules) {
+  const days = Array.from(new Set(daily.map(r => r.day))).sort();
+  const labelByMember = Object.fromEntries(members.map(m => [m.id, memberLabel(m, rules)]));
+  const pointsByMemberDay = {};
+  daily.forEach(r => { pointsByMemberDay[`${r.member_id}:${r.day}`] = Number(r.points) || 0; });
+
+  const running = Object.fromEntries(members.map(m => [m.id, 0]));
+  return days.map(day => {
+    const row = { day };
+    members.forEach(m => {
+      running[m.id] += pointsByMemberDay[`${m.id}:${day}`] || 0;
+      row[labelByMember[m.id]] = round1(running[m.id]);
+    });
+    return row;
+  });
+}
+
+export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner }) {
+  const t = getT(lang);
+  const [standings, setStandings] = useState(null);
+  const [daily, setDaily] = useState([]);
+  const [lastSync, setLastSync] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [detailMemberId, setDetailMemberId] = useState(null);
+  const [recalcBusy, setRecalcBusy] = useState(false);
+  const [recalcMsg, setRecalcMsg] = useState('');
+
+  const myMember = members.find(m => m.user_id === utilisateur.id);
+
+  async function loadStandings() {
+    setLoading(true); setError('');
+    const [standingsRes, dailyRes, lastGameRes] = await Promise.all([
+      supabase.rpc('get_pool_standings', { p_pool_id: pool.id }),
+      supabase.rpc('get_pool_daily_points', { p_pool_id: pool.id }),
+      supabase.from('nhl_games').select('updated_at').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    if (standingsRes.error) setError(standingsRes.error.message);
+    setStandings(standingsRes.data || []);
+    setDaily(dailyRes.data || []);
+    setLastSync(lastGameRes.data?.updated_at || null);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadStandings(); }, [pool.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const id = setInterval(loadStandings, 120000);
+    return () => clearInterval(id);
+  }, [pool.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleRecalc() {
+    setRecalcBusy(true); setRecalcMsg('');
+    const { data, error: err } = await supabase.functions.invoke('sync-nhl-stats', { body: { pool_id: pool.id } });
+    if (err || data?.error) {
+      setRecalcMsg(t('pool_error_generic').replace('{erreur}', data?.error || err.message));
+    } else {
+      setRecalcMsg(t('pool_standings_recalc_done').replace('{n}', data?.gamesSynced ?? 0));
+      await loadStandings();
+    }
+    setRecalcBusy(false);
+  }
+
+  const chartData = useMemo(() => buildCumulativeSeries(daily, members, pool.rules), [daily, members, pool.rules]);
+  const detailMember = members.find(m => m.id === detailMemberId);
+
+  if (loading && !standings) {
+    return <div style={card}><div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div></div>;
+  }
+
+  if (detailMember) {
+    return (
+      <MemberBreakdownPanel pool={pool} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
+    );
+  }
+
+  const noGamesYet = (standings || []).every(row => Number(row.total_points) === 0) && daily.length === 0;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>
+          {t('pool_standings_last_sync')} {lastSync ? new Date(lastSync).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-US') : t('pool_standings_never_synced')}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button onClick={loadStandings} style={btnSecondary}>{t('pool_standings_refresh_btn')}</button>
+          {isCommissioner && (
+            <button onClick={handleRecalc} disabled={recalcBusy} style={{ ...btnSecondary, opacity: recalcBusy ? 0.6 : 1 }}>
+              {recalcBusy ? t('pool_wizard_saving') : t('pool_standings_recalc_btn')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {recalcMsg && <div style={{ fontSize: '12px', color: 'var(--c-666)', marginBottom: '10px' }}>{recalcMsg}</div>}
+      {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
+
+      <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '12px' }}>{t('pool_standings_lineup_note')}</div>
+
+      {noGamesYet ? (
+        <div style={{ ...card, textAlign: 'center', color: 'var(--c-555)', fontSize: '13px' }}>
+          {t('pool_standings_empty')}
+        </div>
+      ) : (
+        <>
+          <div style={{ ...card, marginBottom: '16px', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '420px' }}>
+              <thead>
+                <tr style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'uppercase' }}>
+                  <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_rank')}</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('pool_standings_col_member')}</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_total')}</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_today')}</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_last7')}</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px' }}>{t('pool_standings_col_gap')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(standings || []).map((row, i) => {
+                  const isMe = row.member_id === myMember?.id;
+                  const gap = i === 0 ? 0 : Number(standings[0].total_points) - Number(row.total_points);
+                  return (
+                    <tr key={row.member_id} onClick={() => setDetailMemberId(row.member_id)}
+                      style={{ cursor: 'pointer', backgroundColor: isMe ? 'rgba(249,115,22,0.12)' : 'transparent', borderTop: '1px solid var(--c-161616)' }}>
+                      <td style={{ padding: '8px', fontWeight: '800', color: row.rank === 1 ? '#f97316' : 'var(--c-white)' }}>{row.rank}</td>
+                      <td style={{ padding: '8px', color: 'var(--c-white)', fontWeight: isMe ? '800' : '500' }}>{row.display_name || row.team_name}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', fontWeight: '800', color: 'var(--c-white)' }}>{round1(row.total_points)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.today_points)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{round1(row.last7_points)}</td>
+                      <td style={{ padding: '8px', textAlign: 'right', color: 'var(--c-666)' }}>{i === 0 ? '—' : `-${round1(gap)}`}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {chartData.length > 1 && (
+            <div style={{ ...card, height: '280px' }}>
+              <div style={sectionTitle('var(--c-666)')}>{t('pool_standings_chart_title')}</div>
+              <ResponsiveContainer width="100%" height="88%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--c-222)" />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
+                  <YAxis tick={{ fontSize: 10, fill: 'var(--c-666)' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', fontSize: '12px' }} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  {members.map((m, i) => (
+                    <Line key={m.id} type="monotone" dataKey={memberLabel(m, pool.rules)} stroke={CHART_COLORS[i % CHART_COLORS.length]} dot={false} strokeWidth={2} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+const BREAKDOWN_POSITION_FILTERS = ['ALL', 'F', 'D', 'G', 'TEAM'];
+
+function MemberBreakdownPanel({ pool, member, lang, onBack }) {
+  const t = getT(lang);
+  const seasonId = useSaisonCourante();
+  const [rows, setRows] = useState(null);
+  const [posFilter, setPosFilter] = useState('ALL');
+
+  useEffect(() => {
+    let annule = false;
+    setRows(null);
+    supabase.rpc('get_member_breakdown', { p_pool_id: pool.id, p_member_id: member.id }).then(({ data }) => {
+      if (!annule) setRows(data || []);
+    });
+    return () => { annule = true; };
+  }, [pool.id, member.id]);
+
+  const filtered = (rows || []).filter(r => posFilter === 'ALL' || (posFilter === 'TEAM' ? r.kind === 'team' : r.position === posFilter));
+  const total = (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
+
+  return (
+    <div style={card}>
+      <button onClick={onBack} style={{ ...btnSecondary, marginBottom: '12px' }}>{t('pool_lobby_back_btn')}</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{member.display_name || member.team_name}</div>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)}</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {BREAKDOWN_POSITION_FILTERS.map(p => (
+          <button key={p} onClick={() => setPosFilter(p)}
+            style={{ padding: '5px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '700',
+              backgroundColor: posFilter === p ? '#f97316' : 'var(--c-111)', color: posFilter === p ? 'white' : 'var(--c-888)' }}>
+            {p === 'ALL' ? t('pool_standings_filter_all') : p === 'TEAM' ? t('pool_recap_team_picks') : t(`pool_slot_${p === 'F' ? 'forwards' : p === 'D' ? 'defense' : 'goalies'}`)}
+          </button>
+        ))}
+      </div>
+
+      {rows === null ? (
+        <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_draft_no_picks_yet')}</div>
+      ) : (
+        <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+          {filtered.map(r => (
+            <div key={`${r.kind}:${r.ref_id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 4px', borderTop: '1px solid var(--c-161616)' }}>
+              {r.kind === 'team' ? <TeamLogo abbrev={r.ref_id} size={26} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, null)} size={26} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</div>
+                <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>{t('pool_standings_games_played').replace('{n}', r.games_played)}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{round1(r.total_points)}</div>
+                {Number(r.today_points) !== 0 && <div style={{ fontSize: '10px', color: '#22c55e' }}>+{round1(r.today_points)} {t('pool_standings_today_suffix')}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
