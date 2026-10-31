@@ -1862,9 +1862,8 @@ function App() {
       { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
       { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
-      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
     ];
-    const tabsMobile = tabsPrincipaux.filter(tab => tab.id !== 'pooldraft');
+    const tabsMobile = tabsPrincipaux;
     const tabsSecondaires = [
       { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
