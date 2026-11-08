@@ -66,3 +66,64 @@ body {
   max-width: 100vw;
   overflow-x: hidden;
 }
+
+/* Focus clavier visible partout (accessibilite) : anneau orange coherent avec l'identite
+   Betrics, sans dependre du style de focus par defaut (variable selon navigateur/OS). */
+:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* ===================== Accueil (HomeDashboard) : grille responsive desktop/tablette =====================
+   < 768px (mobile) : .home-grid n'est meme pas rendu (HomeDashboard affiche directement la
+   mise en page mobile existante, inchangee) -- ces regles ne s'appliquent donc qu'a partir de
+   768px, ou le composant desktop/tablette est monte.
+   768-1199px (iPad) : 2 colonnes, 65%/35%.
+   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr, espacement plus genereux. */
+.home-grid {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 20px;
+  padding: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .home-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    grid-template-columns: 2fr 1fr;
+    gap: 28px;
+    padding: 32px;
+  }
+}
+
+.home-main-col, .home-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0; /* evite qu'un enfant large (ex. graphique) ne force un debordement de colonne */
+}
+
+/* Rangee de cartes stats (ROI / taux de reussite / paris actifs / meilleure serie) : 2
+   colonnes en portrait iPad (~820px), 4 colonnes des que la largeur le permet (~900px et
+   plus, couvre l'iPad paysage ~1180px ainsi que le web). */
+.home-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .home-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Zones tactiles >=44px (iPad) sur les elements interactifs de l'accueil desktop/tablette. */
+.home-grid button, .home-grid [role="button"] {
+  min-height: 44px;
+}
+.home-grid button.home-chip {
+  min-height: 36px; /* chips de periode/onglets : zone tactile elargie via padding, pas la hauteur de la puce elle-meme */
+}

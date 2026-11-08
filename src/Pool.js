@@ -1192,7 +1192,7 @@ function getInitialJoinCode() {
   } catch { return null; }
 }
 
-export default function PoolHub({ utilisateur, lang }) {
+export default function PoolHub({ utilisateur, lang, openPoolId, onConsumedOpenPoolId }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
 
@@ -1214,6 +1214,18 @@ export default function PoolHub({ utilisateur, lang }) {
     if (!utilisateur?.id) return;
     resolveMyIdentity(utilisateur).then(({ firstName, lastName }) => { setMyFirstName(firstName); setMyLastName(lastName); });
   }, [utilisateur?.id]);
+
+  // Ouverture directe d'un pool demandee par l'exterieur (ex. bouton "Ouvrir" de la carte
+  // "Mes pools" sur l'accueil) : une fois la liste chargee, on ouvre le pool demande puis on
+  // previent le parent que la demande a ete consommee (sinon elle se redeclencherait a
+  // chaque re-render tant que le parent garde le meme id en etat).
+  useEffect(() => {
+    if (!openPoolId || loading) return;
+    const match = pools.find(r => r.pool?.id === openPoolId);
+    if (match) openPool(match.pool);
+    onConsumedOpenPoolId?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openPoolId, loading, pools]);
 
   // Garde le pool ouvert a jour en temps reel (status, draft_state) pendant que le
   // commissaire demarre/avance le draft, meme pour les membres restes dans le lobby.

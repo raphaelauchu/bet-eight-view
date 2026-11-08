@@ -173,7 +173,22 @@ function useIsMobile() {
   }, []);
   return isMobile;
 }
- 
+
+// >= 1200px ("web" dans la grille responsive de l'accueil) : utilise pour choisir entre une
+// barre laterale compacte (icones seules, 768-1199px) et une barre laterale large
+// (icones + libelles, >=1200px). La repartition des colonnes de la grille elle-meme n'a pas
+// besoin de JS (CSS + media queries), seul ce choix structurel (afficher ou non le texte des
+// libelles) en a besoin.
+function useIsDesktopWide() {
+  const [isDesktopWide, setIsDesktopWide] = useState(window.innerWidth >= 1200);
+  useEffect(() => {
+    const handle = () => setIsDesktopWide(window.innerWidth >= 1200);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, []);
+  return isDesktopWide;
+}
+
 function getDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -5430,6 +5445,6 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, LOGOS_NHL, useIsMobile, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
+export { AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, LOGOS_NHL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
 export default Analyses;
  

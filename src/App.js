@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Dashboard, { titreBetAuto } from './Dashboard';
+import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile } from './Analyses';
+import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
+import { HomeDashboard } from './Home';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { supabase } from './supabase';
@@ -165,36 +166,45 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
   );
 }
 
-// Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : icones + tooltips au survol.
-function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t }) {
+// Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : icones + tooltips au
+// survol en-dessous de 1200px (SIDEBAR_WIDTH_COMPACT) ; a partir de 1200px ("web"), elle
+// s'elargit et affiche le libelle en permanence a cote de l'icone (SIDEBAR_WIDTH_WIDE), plus
+// besoin de tooltip puisque le texte est deja visible.
+export const SIDEBAR_WIDTH_COMPACT = 60;
+export const SIDEBAR_WIDTH_WIDE = 220;
+
+function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t, isWide }) {
+  const width = isWide ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_COMPACT;
+  function SidebarButton({ tab, size }) {
+    return (
+      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0 }}>
+        <button onClick={() => onSelectTab(tab)} style={{
+          width: isWide ? '100%' : '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+          backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: isWide ? 'flex-start' : 'center',
+          gap: isWide ? '12px' : 0, padding: isWide ? '0 12px' : 0,
+        }}>
+          <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={size} />
+          {isWide && <span style={{ fontSize: '13px', fontWeight: activeId === tab.id ? '700' : '500', color: activeId === tab.id ? '#f97316' : 'var(--c-ccc)', whiteSpace: 'nowrap' }}>{tab.label}</span>}
+        </button>
+        {!isWide && <span className="sb-tooltip">{tab.label}</span>}
+      </div>
+    );
+  }
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '60px', backgroundColor: 'var(--c-111)', borderRight: '1px solid var(--c-1e1e1e)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 14px', zIndex: 300 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: `${width}px`, backgroundColor: 'var(--c-111)', borderRight: '1px solid var(--c-1e1e1e)', display: 'flex', flexDirection: 'column', alignItems: isWide ? 'stretch' : 'center', padding: '18px 0 14px', zIndex: 300, transition: 'width 0.15s ease' }}>
       <style>{`
         .sb-item { position: relative; }
         .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
         .sb-item:hover .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
       `}</style>
-      <div style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px' }}>B</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', alignItems: 'center' }}>
-        {tabsPrincipaux.map(tab => (
-          <div key={tab.id} className="sb-item">
-            <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={20} />
-            </button>
-            <span className="sb-tooltip">{tab.label}</span>
-          </div>
-        ))}
-        {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '8px 0' }} />}
-        {tabsSecondaires.map(tab => (
-          <div key={tab.id} className="sb-item">
-            <button onClick={() => onSelectTab(tab)} style={{ width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer', backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={18} />
-            </button>
-            <span className="sb-tooltip">{tab.label}</span>
-          </div>
-        ))}
+      <div style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px', paddingLeft: isWide ? '22px' : 0, textAlign: isWide ? 'left' : 'center' }}>{isWide ? 'Betrics' : 'B'}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', alignItems: isWide ? 'stretch' : 'center' }}>
+        {tabsPrincipaux.map(tab => <SidebarButton key={tab.id} tab={tab} size={20} />)}
+        {tabsSecondaires.length > 0 && <div style={{ width: isWide ? 'calc(100% - 20px)' : '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: isWide ? '8px 10px' : '8px 0' }} />}
+        {tabsSecondaires.map(tab => <SidebarButton key={tab.id} tab={tab} size={18} />)}
       </div>
-      <div className="sb-item">
+      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0 }}>
         <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" />
       </div>
     </div>
@@ -811,297 +821,6 @@ function PropsPage({ lang = 'en' }) {
             </div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, lang = 'en' }) {
-  const t = getT(lang);
-  const [firstName, setFirstName] = React.useState('');
-  const [bankroll, setBankroll] = React.useState(null);
-  const [paris, setParis] = React.useState([]);
-  const [betsAuto, setBetsAuto] = React.useState([]);
-  const [matchsSoir, setMatchsSoir] = React.useState([]);
-  const [filtreGraph, setFiltreGraph] = React.useState('1m');
-  const [filtreCustomDebut, setFiltreCustomDebut] = React.useState('');
-  const [filtreCustomFin, setFiltreCustomFin] = React.useState('');
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
-
-  const getDateStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
-  const getUrl = (path) => {
-    const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
-    return isProd ? '/api/nhl?path=' + encodeURIComponent('https://api-web.nhle.com/v1/' + path) : 'https://api-web.nhle.com/v1/' + path;
-  };
-
-  const LOGOS = { BOS:'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',BUF:'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',DET:'https://assets.nhle.com/logos/nhl/svg/DET_light.svg',FLA:'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg',MTL:'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg',OTT:'https://assets.nhle.com/logos/nhl/svg/OTT_light.svg',TBL:'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg',TOR:'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg',CAR:'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg',CBJ:'https://assets.nhle.com/logos/nhl/svg/CBJ_light.svg',NJD:'https://assets.nhle.com/logos/nhl/svg/NJD_light.svg',NYI:'https://assets.nhle.com/logos/nhl/svg/NYI_light.svg',NYR:'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg',PHI:'https://assets.nhle.com/logos/nhl/svg/PHI_light.svg',WSH:'https://assets.nhle.com/logos/nhl/svg/WSH_light.svg',CHI:'https://assets.nhle.com/logos/nhl/svg/CHI_light.svg',COL:'https://assets.nhle.com/logos/nhl/svg/COL_light.svg',DAL:'https://assets.nhle.com/logos/nhl/svg/DAL_light.svg',MIN:'https://assets.nhle.com/logos/nhl/svg/MIN_light.svg',NSH:'https://assets.nhle.com/logos/nhl/svg/NSH_light.svg',STL:'https://assets.nhle.com/logos/nhl/svg/STL_light.svg',WPG:'https://assets.nhle.com/logos/nhl/svg/WPG_light.svg',ANA:'https://assets.nhle.com/logos/nhl/svg/ANA_light.svg',CGY:'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg',EDM:'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg',LAK:'https://assets.nhle.com/logos/nhl/svg/LAK_light.svg',SJS:'https://assets.nhle.com/logos/nhl/svg/SJS_light.svg',SEA:'https://assets.nhle.com/logos/nhl/svg/SEA_light.svg',VGK:'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg',VAN:'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg',UTA:'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',PIT:'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg' };
-
-  React.useEffect(() => {
-    if (utilisateur?.id) {
-      supabase.from('profiles').select('first_name').eq('id', utilisateur.id).single()
-        .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
-      supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).maybeSingle()
-        .then(({ data }) => { if (data) setBankroll(data.montant); });
-      supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false })
-        .then(({ data }) => { if (data) setParis(data); });
-      supabase.from('bets_auto').select('*').eq('user_id', utilisateur.id).order('created_at', { ascending: false })
-        .then(({ data }) => { if (data) setBetsAuto(data); });
-    }
-    // Charger matchs du soir
-    const today = getDateStr(new Date());
-    fetch(getUrl('schedule/' + today))
-      .then(r => r.json())
-      .then(data => {
-        const games = data.gameWeek?.[0]?.games || [];
-        setMatchsSoir(games.slice(0, 5));
-      }).catch(() => {});
-  }, [utilisateur?.id]);
-
-  const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
-  const parisActifs = paris.filter(p => p.statut === 'actif');
-  const parisTraites = paris.filter(p => p.statut !== 'actif');
-  const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
-  const parisGagnes = parisTraites.filter(p => p.statut === 'gagne').length;
-  const winRate = parisTraites.length > 0 ? Math.round((parisGagnes / parisTraites.length) * 100) : 0;
-  const miseTotale = parisTraites.reduce((acc, p) => acc + (p.mise || 0), 0);
-  const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
-  const bankrollDisplay = bankroll !== null ? bankroll.toFixed(2) : '...';
-  const kellyStake = bankroll !== null ? (bankroll * 0.05).toFixed(2) : '...';
-  const recentCombines = [
-    ...paris.map(p => ({
-      key: `m-${p.id}`, titre: p.match, bookmaker: p.bookmaker, cote: p.cote,
-      statut: p.statut, profit: p.profit, mise: p.mise, date: p.date_pari,
-    })),
-    ...betsAuto.map(b => ({
-      key: `a-${b.id}`, titre: titreBetAuto(b), bookmaker: b.bookmaker, cote: b.cote,
-      statut: b.statut === 'pending' ? 'actif' : b.statut, profit: b.resultat, mise: b.mise,
-      date: b.verified_at || b.created_at,
-    })),
-  ].sort((a, b) => {
-    const actifA = a.statut === 'actif' ? 0 : 1;
-    const actifB = b.statut === 'actif' ? 0 : 1;
-    if (actifA !== actifB) return actifA - actifB;
-    return new Date(b.date || 0) - new Date(a.date || 0);
-  }).slice(0, 3);
-
-  // Profit curve data
-  const now = new Date();
-  const periodeJoursHome = { '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
-
-  // Stats 30 derniers jours
-  const paris30 = parisTraites.filter(p => p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
-  const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
-  const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
-  const winRate30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
-  const mise30 = paris30.reduce((a, p) => a + (p.mise || 0), 0);
-  const roi30 = mise30 > 0 ? ((profit30 / mise30) * 100).toFixed(1) : '0.0';
-
-  // Paris filtrés pour le graphique
-  const parisFiltresGraph = parisTraites.filter(p => {
-    if (!p.date_pari) return false;
-    const datePari = new Date(p.date_pari);
-    if (filtreCustomDebut && filtreCustomFin) {
-      const debut = new Date(filtreCustomDebut);
-      const fin = new Date(filtreCustomFin);
-      fin.setHours(23,59,59);
-      return datePari >= debut && datePari <= fin;
-    }
-    const diff = (now - datePari) / 86400000;
-    return diff <= periodeJoursHome[filtreGraph];
-  });
-
-  const parisTraitesSorted = [...parisFiltresGraph].sort((a,b) => new Date(a.date_pari) - new Date(b.date_pari));
-  let cumul = 0;
-  const curveData = parisTraitesSorted.map(p => { cumul += (p.profit || 0); return cumul; });
-  const maxVal = Math.max(...curveData, 1);
-  const minVal = Math.min(...curveData, 0);
-  const range = maxVal - minVal || 1;
-  const H = 60;
-  const W = 200;
-  const points = curveData.map((v, i) => {
-    const x = curveData.length === 1 ? W/2 : (i / (curveData.length - 1)) * W;
-    const y = H - ((v - minVal) / range) * H;
-    return x + ',' + y;
-  }).join(' ');
-  const profitFiltre = parisFiltresGraph.reduce((a, p) => a + (p.profit || 0), 0);
-
-  return (
-    <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-      {/* Greeting */}
-      <div style={{ marginBottom: '20px' }}>
-        <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t('home_welcome')}</p>
-        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
-      </div>
-
-      {/* Bankroll card */}
-      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
-          <div style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '20px', padding: '3px 10px' }}>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{t('home_live')}</span>
-          </div>
-        </div>
-        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span></h1>
-
-        {/* Stats 30 derniers jours */}
-        <div style={{ marginBottom: '12px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_last30')}</span>
-            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>{t('home_live')}</span>
-          </div>
-          <div style={{ display: 'flex' }}>
-            {[
-              [t('home_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
-              [t('home_win_rate'), winRate30 + '%', 'white'],
-              [t('home_roi'), (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
-            ].map(([label, val, color], i) => (
-              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
-                <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color }}>{val}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Profit Curve avec filtres */}
-        <div style={{ marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
-              <span style={{ fontSize: '11px', fontWeight: '700', color: profitFiltre >= 0 ? '#22c55e' : '#ef4444' }}>{profitFiltre >= 0 ? '+' : ''}${profitFiltre.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
-                <button key={val} onClick={() => { setFiltreGraph(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '2px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraph === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtreGraph === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '10px', fontWeight: '600' }}>
-                  {label}
-                </button>
-              ))}
-              <button onClick={() => setShowAdvanced(!showAdvanced)}
-                style={{ padding: '2px 6px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showAdvanced || filtreCustomDebut ? '#f97316' : 'transparent', color: showAdvanced || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px' }}>
-                ⚙
-              </button>
-            </div>
-          </div>
-          {showAdvanced && (
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
-              <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
-              <span style={{ color: 'var(--c-444)', fontSize: '10px' }}>→</span>
-              <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
-              {(filtreCustomDebut || filtreCustomFin) && (
-                <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '6px 8px', backgroundColor: 'transparent', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-555)', cursor: 'pointer', fontSize: '10px' }}>✕</button>
-              )}
-            </div>
-          )}
-          {curveData.length > 1 ? (
-            <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polyline points={points} fill="none" stroke={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="var(--c-333)" strokeWidth="0.5" strokeDasharray="4,4" />
-            </svg>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--c-333)', fontSize: '11px' }}>{t('home_no_bets_period')}</div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
-          {[[t('home_roi'), `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], [t('home_win_rate'), `${winRate}%`, 'white'], [t('home_active'), `${parisActifs.length} ${t('home_bets_unit')}`, '#f97316']].map(([label, val, color], i) => (
-            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
-              <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color }}>{val}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-
-
-      {/* Matchs du soir */}
-      {matchsSoir.length > 0 && (
-        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_tonight')}</h3>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} {t('home_games_unit')}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {matchsSoir.map((m, i) => {
-              const away = m.awayTeam?.abbrev;
-              const home = m.homeTeam?.abbrev;
-              const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
-              const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                    <img src={LOGOS[away]} alt={away} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>@</span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{home}</span>
-                    <img src={LOGOS[home]} alt={home} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
-                  </div>
-                  {isLive ? (
-                    <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
-                  ) : (
-                    <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{heure}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Bets */}
-      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_recent_bets')}</h3>
-          <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>{t('home_see_all')}</span>
-        </div>
-        {recentCombines.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
-            <span style={{ fontSize: '28px' }}>🏒</span>
-            <p style={{ margin: 0, color: 'var(--c-333)', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
-            <p style={{ margin: 0, color: 'var(--c-222)', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
-          </div>
-        ) : recentCombines.map((p, i) => (
-          <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-            <div>
-              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'var(--c-white)' }}>{p.titre}</p>
-              <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              {p.statut === 'actif' ? (
-                <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>{t('home_active_badge')}</span>
-              ) : (
-                <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
-                  {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Kelly */}
-      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('home_kelly')}</p>
-            <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>${kellyStake.split('.')[0]}<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.{kellyStake.split('.')[1] || '00'}</span></p>
-          </div>
-          <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: '14px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.15)' }}>
-            <p style={{ margin: '0 0 2px', color: '#22c55e', fontSize: '11px', fontWeight: '600', textAlign: 'center' }}>{t('home_per_bet')}</p>
-            <p style={{ margin: 0, color: '#1a6b3c', fontSize: '10px', textAlign: 'center' }}>{t('home_max_risk')}</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -1815,7 +1534,9 @@ function App() {
   const [showRecherche, setShowRecherche] = useState(false);
   const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
   const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
+  const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
   const isMobile = useIsMobile();
+  const isDesktopWide = useIsDesktopWide();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1896,7 +1617,7 @@ function App() {
     ) : page === 'bankroll' ? (
       <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
     ) : page === 'pooldraft' ? (
-      <PoolHub utilisateur={utilisateur} lang={lang} />
+      <PoolHub utilisateur={utilisateur} lang={lang} openPoolId={pendingOpenPoolId} onConsumedOpenPoolId={() => setPendingOpenPoolId(null)} />
     ) : page === 'admin' ? (
       <AdminPage />
     ) : page === 'stats' ? (
@@ -1904,17 +1625,22 @@ function App() {
     ) : page === 'props' ? (
       <ModelesFlux />
     ) : (
-      <HomeDashboard utilisateur={utilisateur} onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')} lang={lang} />
+      <HomeDashboard
+        utilisateur={utilisateur} lang={lang}
+        onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
+        onGoToPool={(poolId) => { setPendingOpenPoolId(poolId || null); setPage('pooldraft'); }}
+        onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
+      />
     );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : '60px', paddingBottom: isMobile ? '80px' : 0 }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${isDesktopWide ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? '80px' : 0 }}>
 
         {!isMobile && (
           <AppSidebar
             tabsPrincipaux={tabsPrincipaux} tabsSecondaires={tabsSecondaires} activeId={activeId} onSelectTab={handleSelectTab}
             utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
-            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t} isWide={isDesktopWide}
           />
         )}
 
