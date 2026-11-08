@@ -127,3 +127,47 @@ body {
 .home-grid button.home-chip {
   min-height: 36px; /* chips de periode/onglets : zone tactile elargie via padding, pas la hauteur de la puce elle-meme */
 }
+
+/* ===================== Analyse (espace de travail unifie equipe/joueur) =====================
+   <768px (mobile) : .analyse-shell-mobile, une seule colonne (recherche + onglets + fiche) ;
+   liste de suivi et paris a faire deviennent des tiroirs (AnalyseDrawer, geres en JS).
+   768-1199px (iPad) : .analyse-shell-tablet, 2 zones (suivi | analyse) ; paris a faire reste
+   un tiroir.
+   >=1200px (web) : .analyse-shell-desktop, 3 zones (suivi | analyse | paris a faire). */
+.analyse-shell-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+.analyse-shell-tablet {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  padding: 16px;
+  align-items: start;
+}
+
+.analyse-shell-desktop {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 20px;
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.analyse-col-watchlist, .analyse-col-savedpicks {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+}
+
+.analyse-col-main {
+  min-width: 0;
+}
+
+/* Zones tactiles >=44px sur tout element interactif de l'espace Analyse. */
+.analyse-shell-mobile button, .analyse-shell-tablet button, .analyse-shell-desktop button {
+  min-height: 44px;
+}

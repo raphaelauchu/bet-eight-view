@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
 import { getCotesHockey, trouverCotesPourMatch, extraireCotesMatch } from './cotes';
+import { supabase } from './supabase';
+import { getT } from './i18n';
+import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetAutoForm';
+import { BOOKMAKERS_SUPPORTES } from './bookmakers';
  
 const NHL_ABBREV_TO_SLUG = {
   'ANA': 'anaheim-ducks', 'BOS': 'boston-bruins', 'BUF': 'buffalo-sabres',
@@ -1929,7 +1933,7 @@ function orangeParTirs(val) {
   return '#E65100';
 }
 
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_REG_2526 }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_REG_2526, isFavorite, onToggleFavorite, onSavePick }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -1941,6 +1945,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   const [ongletFiche, setOngletFiche] = useState('stats');
   const [rosterEquipe, setRosterEquipe] = useState([]);
   const [chargementRoster, setChargementRoster] = useState(false);
+  const [prochainMatch, setProchainMatch] = useState(null);
  
   const abbrev = equipe?.teamAbbrev?.default || '';
   const abbrevAdv = equipeAdverse?.teamAbbrev?.default || '';
@@ -1960,6 +1965,29 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   useEffect(() => {
     if (ongletFiche === 'lineup') chargerRoster();
   }, [ongletFiche, saison]);
+
+  // "Prochain match" : meme helper que FicheJoueur (trouverProchainMatchEquipe), avec le meme
+  // repli hors-saison (premiere journee de la saison suivante si le calendrier courant est
+  // termine). equipeAdverse (optionnel, derive d'un match du jour deja charge par l'appelant)
+  // sert pour le contexte de matchup ; ce bloc fonctionne independamment, pour toute equipe
+  // ouverte directement depuis la recherche, sans match du jour connu a l'avance.
+  useEffect(() => {
+    let annule = false;
+    setProchainMatch(null);
+    (async () => {
+      try {
+        let prochain = await trouverProchainMatchEquipe(abbrev, saison.seasonId);
+        if (!prochain) {
+          const anneeDebut = parseInt(saison.seasonId.slice(0, 4), 10);
+          prochain = await trouverProchainMatchEquipe(abbrev, `${anneeDebut + 1}${anneeDebut + 2}`);
+        }
+        if (annule || !prochain) return;
+        const domicile = prochain.homeTeam?.abbrev === abbrev;
+        setProchainMatch({ abbrev: domicile ? prochain.awayTeam?.abbrev : prochain.homeTeam?.abbrev, gameDate: prochain.gameDate, domicile });
+      } catch { if (!annule) setProchainMatch(null); }
+    })();
+    return () => { annule = true; };
+  }, [abbrev, saison]);
 
   async function chargerRoster() {
     setChargementRoster(true);
@@ -2192,7 +2220,23 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
  
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        {onToggleFavorite && (
+          <button
+            onClick={() => onToggleFavorite('team', abbrev)}
+            aria-label={isFavorite ? 'Retirer de la liste de suivi' : 'Ajouter a la liste de suivi'}
+            title={isFavorite ? 'Retirer de la liste de suivi' : 'Ajouter a la liste de suivi'}
+            style={{ backgroundColor: 'transparent', color: isFavorite ? '#f97316' : 'var(--c-666)', border: `1px solid ${isFavorite ? '#f97316' : 'var(--c-333)'}`, padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', minWidth: '44px', minHeight: '44px' }}
+          >{isFavorite ? '★' : '☆'}</button>
+        )}
+        {onSavePick && (
+          <button
+            onClick={() => onSavePick({ kind: 'team', ref_id: abbrev, label: nom })}
+            style={{ backgroundColor: 'transparent', color: 'var(--c-888)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', minHeight: '44px' }}
+          >Sauvegarder un pari</button>
+        )}
+      </div>
       <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '10px', padding: '4px', border: '1px solid var(--c-161616)', width: 'fit-content' }}>
         <button onClick={() => setOngletFiche('stats')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'stats' ? '#f97316' : 'transparent', color: ongletFiche === 'stats' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletFiche === 'stats' ? '600' : 'normal' }}>Stats</button>
         <button onClick={() => setOngletFiche('lineup')} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: ongletFiche === 'lineup' ? '#f97316' : 'transparent', color: ongletFiche === 'lineup' ? 'white' : 'var(--c-555)', fontSize: '13px', fontWeight: ongletFiche === 'lineup' ? '600' : 'normal' }}>Lineup</button>
@@ -2213,6 +2257,18 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
           <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>RANK</div>
           <div style={{ color: '#f97316', fontSize: '22px', fontWeight: '900' }}>#{rang}</div>
           <div style={{ color: 'var(--c-555)', fontSize: '9px' }}>classement</div>
+        </div>
+        <div style={{ textAlign: 'center', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '8px 12px', border: '1px solid var(--c-222)', minWidth: '64px' }}>
+          <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>PROCHAIN</div>
+          {prochainMatch ? (
+            <>
+              <img src={LOGOS_NHL[prochainMatch.abbrev]} alt={prochainMatch.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain', margin: '2px 0' }} onError={e => e.target.style.display = 'none'} />
+              <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{prochainMatch.domicile ? 'vs' : '@'} {prochainMatch.abbrev}</div>
+              <div style={{ color: 'var(--c-555)', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
+            </>
+          ) : (
+            <div style={{ color: 'var(--c-555)', fontSize: '11px', padding: '10px 0' }}>-</div>
+          )}
         </div>
       </div>
  
@@ -2428,11 +2484,11 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
   );
 }
 
-function FicheJoueur({ joueur, onBack }) {
+function FicheJoueur({ joueur, onBack, onSelectTeam, isFavorite, onToggleFavorite, onSavePick }) {
   const isMobile = useIsMobile();
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [dernierMatchs, setDernierMatchs] = useState([]);
-  const [ongletStat, setOngletStat] = useState('PTS');
+  const [ongletStat, setOngletStat] = useState(joueur.position === 'G' ? 'GAA' : 'PTS');
   const [ongletPeriode, setOngletPeriode] = useState('L10');
   const ongletChart = 'SZN';
   const [shotChartData, setShotChartData] = useState(null);
@@ -2457,6 +2513,13 @@ function FicheJoueur({ joueur, onBack }) {
 
   useEffect(() => { chargerStats(); }, [joueur.id, modeStats, seasonId]);
   useEffect(() => { chargerProchainAdversaire(); }, [joueur.equipe, seasonId]);
+  // Bogue connu (gardiens) : l'onglet de stat par defaut etait fige a 'PTS', une categorie qui
+  // n'existe pas dans ongletsDef pour un gardien (['GAA','SVP']) -- aucun onglet ne s'affichait
+  // actif et le graphique restait vide jusqu'a ce que l'utilisateur clique manuellement sur
+  // GAA/SV%. Remis a jour explicitement a chaque changement de joueur (pas seulement a l'etat
+  // initial), au cas ou cette fiche serait un jour reutilisee sans remonter entre deux joueurs
+  // (ex. onglets d'analyse qui reutiliseraient la meme instance).
+  useEffect(() => { setOngletStat(joueur.position === 'G' ? 'GAA' : 'PTS'); }, [joueur.id, joueur.position]);
 
   async function chargerProchainAdversaire() {
     setProchainAdversaire(null);
@@ -2740,6 +2803,20 @@ const getMatchsChart = () => {
     <div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        {onToggleFavorite && (
+          <button
+            onClick={() => onToggleFavorite('player', String(joueur.id))}
+            aria-label={isFavorite ? 'Retirer de la liste de suivi' : 'Ajouter a la liste de suivi'}
+            title={isFavorite ? 'Retirer de la liste de suivi' : 'Ajouter a la liste de suivi'}
+            style={{ backgroundColor: 'transparent', color: isFavorite ? '#f97316' : 'var(--c-666)', border: `1px solid ${isFavorite ? '#f97316' : 'var(--c-333)'}`, padding: '7px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', minWidth: '44px', minHeight: '44px' }}
+          >{isFavorite ? '★' : '☆'}</button>
+        )}
+        {onSavePick && (
+          <button
+            onClick={() => onSavePick({ kind: 'player', ref_id: String(joueur.id), label: joueur.nom })}
+            style={{ backgroundColor: 'transparent', color: 'var(--c-888)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', minHeight: '44px' }}
+          >Sauvegarder un pari</button>
+        )}
         {!isGardien && (
           <button
             onClick={() => prochainAdversaire && setAnalyseAvanceeOuverte(true)}
@@ -2756,7 +2833,10 @@ const getMatchsChart = () => {
         <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+          <div
+            onClick={onSelectTeam ? () => onSelectTeam(joueur.equipe) : undefined}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '6px', cursor: onSelectTeam ? 'pointer' : 'default', minHeight: onSelectTeam ? '28px' : 'auto' }}
+          >
             <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
             <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
           </div>
@@ -5079,64 +5159,773 @@ function Analyses({ onLigueChange }) {
 // Flux dedie a l'onglet Analyses : page d'accueil avec 2 cartes (Equipe / Joueur), pas de
 // choix de ligue/categorie. "Analyser une Equipe" va direct aux matchups d'equipes,
 // "Analyser un Joueur" va a une page recherche + Matchups joueurs.
-function AnalysesFlux({ onLigueChange }) {
-  const isMobile = useIsMobile();
-  const [vue, setVue] = useState(null); // null = accueil, 'equipes' | 'joueurs'
-  const [classement, setClassement] = useState([]);
-  const [joueurSelectionne, setJoueurSelectionne] = useState(null);
-  const lineupDF = useLineupsDailyFaceoff();
+// ===================== Analyse : espace de travail unifie (equipe + joueur), style TradingView =====================
+// Fusionne les anciens ecrans separes "Analyser une Equipe" / "Analyser un Joueur" en UN seul
+// espace : recherche universelle, onglets d'analyses ouvertes, liste de suivi (favoris,
+// watchlist_items) et paris a faire (saved_picks). Reutilise FicheJoueur/FicheEquipe tels
+// quels pour le panneau central -- aucune logique de stats n'est dupliquee ici.
 
-  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
-  useEffect(() => { chargerClassement(); }, []);
+const ANALYSE_STORAGE_KEY = 'betrics_analyse_tabs_v1';
 
-  async function chargerClassement() {
-    try {
-      const res = await fetch(getUrl('standings/now'));
-      const data = await res.json();
-      setClassement(data.standings || []);
-    } catch (err) { console.error(err); }
+function tabKey(tab) { return `${tab.kind}:${tab.id}`; }
+
+// Ouvre un nouvel onglet ou active l'existant si deja ouvert (meme kind+id) -- jamais de
+// doublon. Retourne le nouvel etat {tabs, activeKey}.
+function openOrActivateTab(tabs, newTab) {
+  const key = tabKey(newTab);
+  const existing = tabs.find(t => tabKey(t) === key);
+  if (existing) return { tabs, activeKey: key };
+  return { tabs: [...tabs, newTab], activeKey: key };
+}
+
+// Ferme l'onglet keyToClose. Si c'etait l'onglet actif, active son voisin (suivant, sinon
+// precedent) ; null si c'etait le dernier onglet ouvert.
+function closeAnalyseTab(tabs, activeKey, keyToClose) {
+  const idx = tabs.findIndex(t => tabKey(t) === keyToClose);
+  if (idx === -1) return { tabs, activeKey };
+  const nextTabs = tabs.filter(t => tabKey(t) !== keyToClose);
+  let nextActiveKey = activeKey;
+  if (activeKey === keyToClose) {
+    const voisin = nextTabs[idx] || nextTabs[idx - 1] || null;
+    nextActiveKey = voisin ? tabKey(voisin) : null;
+  }
+  return { tabs: nextTabs, activeKey: nextActiveKey };
+}
+
+// Deplace l'index actif d'une liste de resultats de recherche (navigation clavier
+// Haut/Bas) ; boucle (dernier -> premier et inversement), -1 = aucune selection.
+function moveActiveSearchIndex(currentIndex, total, direction) {
+  if (total === 0) return -1;
+  if (currentIndex < 0) return direction > 0 ? 0 : total - 1;
+  return (currentIndex + direction + total) % total;
+}
+
+// Groupe "Joueurs / Equipes" a partir des resultats bruts (recherche texte libre NHL deja
+// chargee en amont + classement local pour les equipes, comme WSSearchBar/RechercheOverlay).
+function buildSearchGroups(query, freeTextPlayers, classement) {
+  const q = (query || '').trim().toLowerCase();
+  if (q.length < 2) return { players: [], teams: [] };
+  const players = (freeTextPlayers || []).map(j => ({
+    type: 'player', id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '',
+  }));
+  const teams = (classement || []).filter(e => {
+    const abbrev = (e.teamAbbrev?.default || '').toLowerCase();
+    const nom = (e.teamName?.default || '').toLowerCase();
+    const commun = (e.teamCommonName?.default || '').toLowerCase();
+    return abbrev.includes(q) || nom.includes(q) || commun.includes(q);
+  }).map(e => ({ type: 'team', id: e.teamAbbrev?.default, nom: e.teamName?.default || e.teamAbbrev?.default, data: e }));
+  return { players: players.slice(0, 8), teams: teams.slice(0, 6) };
+}
+
+function readAnalyseState() {
+  try {
+    const raw = window.localStorage.getItem(ANALYSE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.tabs)) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+function writeAnalyseState(state) {
+  try { window.localStorage.setItem(ANALYSE_STORAGE_KEY, JSON.stringify(state)); } catch { /* ignore */ }
+}
+
+// Formulaire BetAutoForm pre-rempli a partir d'un pari sauvegarde (bouton "Placer").
+function formFromSavedPick(pick) {
+  return {
+    bookmaker: BOOKMAKERS_SUPPORTES[0],
+    type_bet: pick.kind === 'team' ? 'Moneyline' : 'Prop joueur',
+    joueur_ou_equipe: pick.label || '',
+    stat_pariee: STAT_VALEURS[0],
+    over_under: 'over',
+    ligne: pick.line ?? '',
+    mise: pick.planned_stake ?? '',
+    cote: pick.odds ?? '',
+    equipe: pick.kind === 'team' ? pick.ref_id : '',
+    adversaire: '',
+    date_match: '',
+    game_id: '',
+  };
+}
+
+// Reconstruit les infos minimales d'un joueur (nom/equipe/poste/numero) a partir de son id,
+// pour un favori dont le cache local (nom/equipe deja vus lors d'une recherche) a ete perdu
+// (nouvelle session, autre appareil). Vraie donnee NHL, jamais fabriquee.
+async function resolverJoueurMeta(id) {
+  try {
+    const res = await fetch(getUrl(`player/${id}/landing`));
+    const d = await res.json();
+    return {
+      id, nom: `${d.firstName?.default || ''} ${d.lastName?.default || ''}`.trim() || String(id),
+      equipe: d.currentTeamAbbrev || '', position: d.position || '', numero: d.sweaterNumber || '',
+    };
+  } catch { return { id, nom: String(id), equipe: '', position: '', numero: '' }; }
+}
+
+// Forme recente (5 derniers matchs) : points par match pour un joueur, victoire/defaite pour
+// une equipe. Reutilise getGameLogJoueur (nhlApi.js) et club-schedule-season (meme endpoint
+// que FicheEquipe). null = echec de chargement (etat vide propre cote appelant, jamais de 0
+// invente a la place d'une vraie absence de donnee).
+async function chargerFormeJoueur(id, seasonId) {
+  try {
+    const log = await getGameLogJoueur(id, 2, seasonId);
+    if (!log || log.length === 0) return [];
+    return log.slice(0, 5).map(m => ({ positif: (m.points ?? ((m.goals || 0) + (m.assists || 0))) > 0 }));
+  } catch { return null; }
+}
+
+async function chargerFormeEquipe(abbrev, seasonId) {
+  try {
+    const res = await fetch(getUrl(`club-schedule-season/${abbrev}/${seasonId}`));
+    const data = await res.json();
+    const joues = (data.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL').slice(-5);
+    if (joues.length === 0) return [];
+    return joues.map(g => {
+      const dom = g.homeTeam?.abbrev === abbrev;
+      const bp = dom ? (g.homeTeam?.score ?? 0) : (g.awayTeam?.score ?? 0);
+      const bc = dom ? (g.awayTeam?.score ?? 0) : (g.homeTeam?.score ?? 0);
+      return { positif: bp > bc };
+    });
+  } catch { return null; }
+}
+
+// Petite bande de points (5 derniers resultats) : vert = positif (points pour un joueur,
+// victoire pour une equipe), rouge sinon. Etat vide propre si aucune donnee.
+function FormeRecenteStrip({ t, forme }) {
+  if (forme === undefined) return <span style={{ fontSize: '11px', color: 'var(--c-555)' }}>{t('analyse_watchlist_loading_form')}</span>;
+  if (forme === null || forme.length === 0) return <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>—</span>;
+  return (
+    <div style={{ display: 'flex', gap: '3px' }}>
+      {forme.map((f, i) => (
+        <span key={i} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: f.positif ? '#22c55e' : '#ef4444', display: 'inline-block' }} />
+      ))}
+    </div>
+  );
+}
+
+function IconStarSmall({ filled, size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#f97316' : 'none'} stroke={filled ? '#f97316' : 'var(--c-666)'} strokeWidth="2">
+      <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
+    </svg>
+  );
+}
+
+// ===================== Recherche universelle =====================
+
+function AnalyseSearchBar({ t, classement, onOpenPlayer, onOpenTeam }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const [freeTextPlayers, setFreeTextPlayers] = useState([]);
+  const [chargement, setChargement] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const debounceRef = useRef(null);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onClickOutside(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = query.trim();
+    setActiveIndex(-1);
+    if (q.length < 2) { setFreeTextPlayers([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setChargement(true);
+      try {
+        const res = await fetch(`https://search.d3.nhle.com/api/v1/search/player?culture=fr-CA&limit=20&q=${encodeURIComponent(q)}&active=true`);
+        const data = await res.json();
+        setFreeTextPlayers(data || []);
+      } catch { setFreeTextPlayers([]); }
+      setChargement(false);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [query]);
+
+  const groups = useMemo(() => buildSearchGroups(query, freeTextPlayers, classement), [query, freeTextPlayers, classement]);
+  const flat = [...groups.players, ...groups.teams];
+
+  function choisir(item) {
+    if (!item) return;
+    if (item.type === 'player') onOpenPlayer({ id: item.id, nom: item.nom, equipe: item.equipe, position: item.position, numero: item.numero });
+    else onOpenTeam(item.id, item.data);
+    setQuery(''); setOpen(false); setActiveIndex(-1);
   }
 
-  const padding = isMobile ? '16px' : '32px';
-  const maxWidth = isMobile ? '100%' : '1000px';
+  function onKeyDown(e) {
+    if (!open || flat.length === 0) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => moveActiveSearchIndex(i, flat.length, 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => moveActiveSearchIndex(i, flat.length, -1)); }
+    else if (e.key === 'Enter') { e.preventDefault(); choisir(flat[activeIndex] ?? flat[0]); }
+    else if (e.key === 'Escape') { setOpen(false); }
+  }
 
-  if (joueurSelectionne) {
-    return (
-      <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-        <FicheJoueur joueur={joueurSelectionne} onBack={() => setJoueurSelectionne(null)} />
+  const actif = query.trim().length >= 2;
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-2a2a2a)', borderRadius: '10px', padding: '10px 14px', minHeight: '44px' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-666)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
+        </svg>
+        <input
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          placeholder={t('analyse_search_placeholder')}
+          role="combobox"
+          aria-expanded={open}
+          style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: 'var(--c-white)', fontSize: '14px' }}
+        />
       </div>
-    );
-  }
-
-  if (!vue) {
-    return (
-      <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: padding, maxWidth: '900px', margin: '0 auto' }}>
-        <h2 style={{ margin: '0 0 24px', fontSize: isMobile ? '24px' : '30px', fontWeight: '900', textAlign: 'center', color: 'var(--c-white)' }}>Analyses</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
-          <div onClick={() => setVue('equipes')} style={{ backgroundColor: 'var(--c-111)', borderRadius: '16px', border: '2px solid var(--c-222)', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
-          >
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏒</div>
-            <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--c-white)' }}>Analyser une Équipe</div>
-          </div>
-          <div onClick={() => setVue('joueurs')} style={{ backgroundColor: 'var(--c-111)', borderRadius: '16px', border: '2px solid var(--c-222)', padding: '32px 20px', textAlign: 'center', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
-          >
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏃</div>
-            <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--c-white)' }}>Analyser un Joueur</div>
-          </div>
+      {open && actif && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', boxShadow: '0 12px 40px rgba(0,0,0,0.4)', zIndex: 80, overflow: 'hidden', maxHeight: '420px', overflowY: 'auto' }}>
+          {chargement ? (
+            <div style={{ padding: '16px', color: 'var(--c-555)', fontSize: '12px', textAlign: 'center' }}>{t('analyse_search_searching')}</div>
+          ) : flat.length === 0 ? (
+            <div style={{ padding: '16px', color: 'var(--c-555)', fontSize: '12px', textAlign: 'center' }}>{t('analyse_search_no_results')}</div>
+          ) : (
+            <>
+              {groups.players.length > 0 && (
+                <div>
+                  <div style={{ padding: '8px 14px 4px', fontSize: '10px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--c-555)' }}>{t('analyse_search_group_players')}</div>
+                  {groups.players.map((r, i) => {
+                    const idx = i;
+                    return (
+                      <div key={`p-${r.id}`} onClick={() => choisir(r)} onMouseEnter={() => setActiveIndex(idx)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
+                        <img src={`https://assets.nhle.com/mugs/nhl/20252026/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{r.position} · {r.equipe}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {groups.teams.length > 0 && (
+                <div>
+                  <div style={{ padding: '8px 14px 4px', fontSize: '10px', fontWeight: '700', letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--c-555)' }}>{t('analyse_search_group_teams')}</div>
+                  {groups.teams.map((r, i) => {
+                    const idx = groups.players.length + i;
+                    return (
+                      <div key={`e-${r.id}`} onClick={() => choisir(r)} onMouseEnter={() => setActiveIndex(idx)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
+                        <img src={LOGOS_NHL[r.id]} alt={r.id} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{r.nom}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ===================== Onglets d'analyses ouvertes =====================
+
+function AnalyseTabsBar({ t, tabs, activeKey, onActivate, onClose }) {
+  if (tabs.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '2px' }}>
+      {tabs.map(tab => {
+        const key = tabKey(tab);
+        const active = key === activeKey;
+        return (
+          <div key={key} onClick={() => onActivate(key)}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px 8px 14px', borderRadius: '10px', cursor: 'pointer', backgroundColor: active ? '#f97316' : 'var(--c-111)', color: active ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: active ? '700' : '500', flexShrink: 0, whiteSpace: 'nowrap', minHeight: '44px' }}>
+            <span>{tab.kind === 'team' ? '🏒' : '🏃'} {tab.nom}</span>
+            <button onClick={e => { e.stopPropagation(); onClose(key); }} aria-label={t('analyse_tab_close')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? 'rgba(255,255,255,0.8)' : 'var(--c-555)', fontSize: '13px', padding: '4px', lineHeight: 1 }}>✕</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ===================== Liste de suivi (favoris) =====================
+
+function WatchlistPanel({ t, watchlist, formeCache, onOpen, onRemove }) {
+  return (
+    <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '14px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '12px' }}>{t('analyse_watchlist_title')}</div>
+      {watchlist.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+          <div style={{ fontSize: '22px', marginBottom: '6px' }}>⭐</div>
+          <div style={{ fontSize: '12.5px', color: 'var(--c-555)', fontWeight: '600', marginBottom: '4px' }}>{t('analyse_watchlist_empty_title')}</div>
+          <div style={{ fontSize: '11.5px', color: 'var(--c-333)' }}>{t('analyse_watchlist_empty_sub')}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {watchlist.map(w => {
+            const cacheKey = `${w.kind}:${w.ref_id}`;
+            return (
+              <div key={w.id} onClick={() => onOpen(w)}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: '10px', cursor: 'pointer', minHeight: '44px' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : `https://assets.nhle.com/mugs/nhl/20252026/${w.equipe || ''}/${w.ref_id}.png`}
+                  alt={w.label} style={{ width: '28px', height: '28px', borderRadius: w.kind === 'team' ? 0 : '50%', objectFit: w.kind === 'team' ? 'contain' : 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }}
+                  onError={e => { e.target.style.display = 'none'; }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.label}</div>
+                  <FormeRecenteStrip t={t} forme={formeCache[cacheKey]} />
+                </div>
+                <button onClick={e => { e.stopPropagation(); onRemove(w); }} aria-label={t('analyse_savedpicks_delete')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', minWidth: '28px', minHeight: '28px' }}>
+                  <IconStarSmall filled size={16} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===================== Paris a faire (saved picks) =====================
+
+function SavedPickRow({ t, pick, onSave, onDelete, onPlace }) {
+  const [edition, setEdition] = useState(false);
+  const [champs, setChamps] = useState({ market: pick.market || '', line: pick.line ?? '', odds: pick.odds ?? '', planned_stake: pick.planned_stake ?? '', note: pick.note || '' });
+
+  function champ(nom, label, type = 'text') {
+    return (
+      <div>
+        <div style={{ fontSize: '10px', color: 'var(--c-555)', marginBottom: '3px' }}>{label}</div>
+        <input type={type} value={champs[nom]} onChange={e => setChamps({ ...champs, [nom]: e.target.value })}
+          style={{ width: '100%', padding: '7px 8px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '7px', color: 'var(--c-white)', fontSize: '12px', boxSizing: 'border-box', outline: 'none' }} />
       </div>
     );
   }
 
   return (
-    <div style={{ padding: padding, maxWidth: maxWidth, margin: '0 auto' }}>
-      <button onClick={() => setVue(null)} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
-      {vue === 'equipes' && <PageStatsEquipesAnalyses classement={classement} onSelectJoueur={setJoueurSelectionne} lineupDF={lineupDF} />}
-      {vue === 'joueurs' && <PageStatsJoueursAnalyses onSelectJoueur={setJoueurSelectionne} />}
+    <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: edition ? '10px' : 0 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pick.label}</div>
+          {!edition && (
+            <div style={{ fontSize: '11px', color: 'var(--c-666)', marginTop: '2px' }}>
+              {pick.market || '—'}{pick.line != null ? ` · ${pick.line}` : ''}{pick.odds != null ? ` · ${t('analyse_savedpicks_field_odds')} ${pick.odds}` : ''}{pick.planned_stake != null ? ` · $${pick.planned_stake}` : ''}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {edition && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+          {champ('market', t('analyse_savedpicks_field_market'))}
+          {champ('line', t('analyse_savedpicks_field_line'), 'number')}
+          {champ('odds', t('analyse_savedpicks_field_odds'), 'number')}
+          {champ('planned_stake', t('analyse_savedpicks_field_stake'), 'number')}
+          <div style={{ gridColumn: '1 / -1' }}>{champ('note', t('analyse_savedpicks_field_note'))}</div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+        {edition ? (
+          <>
+            <button onClick={() => { onSave(pick.id, champs); setEdition(false); }} style={{ minHeight: '36px', padding: '6px 12px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '7px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700' }}>{t('analyse_savedpicks_save')}</button>
+            <button onClick={() => setEdition(false)} style={{ minHeight: '36px', padding: '6px 12px', backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', borderRadius: '7px', cursor: 'pointer', fontSize: '11.5px' }}>{t('analyse_savedpicks_cancel')}</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => onPlace(pick)} style={{ minHeight: '36px', padding: '6px 12px', backgroundColor: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '7px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700' }}>{t('analyse_savedpicks_place')}</button>
+            <button onClick={() => setEdition(true)} style={{ minHeight: '36px', padding: '6px 12px', backgroundColor: 'transparent', color: 'var(--c-888)', border: '1px solid var(--c-333)', borderRadius: '7px', cursor: 'pointer', fontSize: '11.5px' }}>{t('analyse_savedpicks_edit')}</button>
+            <button onClick={() => onDelete(pick.id)} style={{ minHeight: '36px', padding: '6px 12px', backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', borderRadius: '7px', cursor: 'pointer', fontSize: '11.5px' }}>{t('analyse_savedpicks_delete')}</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SavedPicksPanel({ t, picks, onSave, onDelete, onPlace }) {
+  return (
+    <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-161616)', padding: '14px', height: '100%', overflowY: 'auto' }}>
+      <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '12px' }}>{t('analyse_savedpicks_title')}</div>
+      {picks.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+          <div style={{ fontSize: '22px', marginBottom: '6px' }}>🎯</div>
+          <div style={{ fontSize: '12.5px', color: 'var(--c-555)', fontWeight: '600', marginBottom: '4px' }}>{t('analyse_savedpicks_empty_title')}</div>
+          <div style={{ fontSize: '11.5px', color: 'var(--c-333)' }}>{t('analyse_savedpicks_empty_sub')}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {picks.map(p => <SavedPickRow key={p.id} t={t} pick={p} onSave={onSave} onDelete={onDelete} onPlace={onPlace} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===================== Modales : sauvegarder un pari / placer un pari =====================
+
+function ModalShell({ title, onClose, children }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '420px', maxHeight: '85vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--c-white)' }}>{title}</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--c-666)', fontSize: '18px', cursor: 'pointer', minWidth: '32px', minHeight: '32px' }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SavePickModal({ t, cible, onClose, onConfirm }) {
+  const [champs, setChamps] = useState({ market: '', line: '', odds: '', planned_stake: '', note: '' });
+  function champ(nom, label, type = 'text') {
+    return (
+      <div style={{ marginBottom: '10px' }}>
+        <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '4px' }}>{label}</div>
+        <input type={type} value={champs[nom]} onChange={e => setChamps({ ...champs, [nom]: e.target.value })}
+          style={{ width: '100%', padding: '9px 10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }} />
+      </div>
+    );
+  }
+  return (
+    <ModalShell title={t('analyse_save_pick_modal_title')} onClose={onClose}>
+      <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '14px' }}>{cible.label}</div>
+      {champ('market', t('analyse_savedpicks_field_market'))}
+      {champ('line', t('analyse_savedpicks_field_line'), 'number')}
+      {champ('odds', t('analyse_savedpicks_field_odds'), 'number')}
+      {champ('planned_stake', t('analyse_savedpicks_field_stake'), 'number')}
+      {champ('note', t('analyse_savedpicks_field_note'))}
+      <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+        <button onClick={onClose} style={{ flex: 1, padding: '10px', backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', minHeight: '44px' }}>{t('analyse_save_pick_cancel')}</button>
+        <button onClick={() => onConfirm(champs)} style={{ flex: 1, padding: '10px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', minHeight: '44px' }}>{t('analyse_save_pick_confirm')}</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+function PlacePickModal({ t, pick, onClose, onConfirm }) {
+  const [form, setForm] = useState(() => formFromSavedPick(pick));
+  return (
+    <ModalShell title={t('analyse_place_pick_modal_title')} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '14px' }}>
+        <BetAutoForm form={form} setForm={setForm} t={t} />
+      </div>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={onClose} style={{ flex: 1, padding: '10px', backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', minHeight: '44px' }}>{t('analyse_place_pick_cancel')}</button>
+        <button onClick={() => onConfirm(form)} disabled={!form.mise || !form.cote} style={{ flex: 1, padding: '10px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', minHeight: '44px', opacity: (!form.mise || !form.cote) ? 0.5 : 1 }}>{t('analyse_place_pick_confirm')}</button>
+      </div>
+    </ModalShell>
+  );
+}
+
+// ===================== Tiroir generique (tablette/mobile) =====================
+
+function AnalyseDrawer({ t, onClose, children }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 550, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-080808)', borderRadius: '18px 18px 0 0', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflowY: 'auto', padding: '16px', boxShadow: '0 -10px 40px rgba(0,0,0,0.5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--c-666)', fontSize: '13px', cursor: 'pointer', minHeight: '36px', padding: '4px 10px' }}>{t('analyse_drawer_close')}</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ===================== Composant principal =====================
+
+function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
+  const t = getT(lang);
+  const isMobile = useIsMobile();
+  const isDesktopWide = useIsDesktopWide();
+  const isTablet = !isMobile && !isDesktopWide;
+  const seasonId = useSaisonCourante();
+  const lineupDF = useLineupsDailyFaceoff();
+
+  const [classement, setClassement] = useState([]);
+  const [tabs, setTabs] = useState([]);
+  const [activeKey, setActiveKey] = useState(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  const [watchlist, setWatchlist] = useState([]);
+  const [formeCache, setFormeCache] = useState({});
+  const [savedPicks, setSavedPicks] = useState([]);
+
+  const [savePickCible, setSavePickCible] = useState(null); // {kind, ref_id, label}
+  const [placePick, setPlacePick] = useState(null); // ligne saved_picks
+  const [showWatchlistDrawer, setShowWatchlistDrawer] = useState(false);
+  const [showSavedPicksDrawer, setShowSavedPicksDrawer] = useState(false);
+
+  useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(getUrl('standings/now'));
+        const data = await res.json();
+        setClassement(data.standings || []);
+      } catch (err) { console.error(err); }
+    })();
+  }, []);
+
+  // Hydrate les onglets depuis localStorage une seule fois au montage (jamais apres, pour ne
+  // pas ecraser une session en cours si la fonction re-render).
+  useEffect(() => {
+    const saved = readAnalyseState();
+    if (saved) { setTabs(saved.tabs || []); setActiveKey(saved.activeKey || null); }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeAnalyseState({ tabs, activeKey });
+  }, [tabs, activeKey, hydrated]);
+
+  // ===== Liste de suivi (Supabase, realtime) =====
+  useEffect(() => {
+    if (!utilisateur?.id) return;
+    let annule = false;
+    supabase.from('watchlist_items').select('*').eq('user_id', utilisateur.id).order('created_at', { ascending: false })
+      .then(({ data }) => { if (!annule) setWatchlist((data || []).map(enrichirWatchlistItem)); });
+    const channel = supabase.channel(`watchlist_${utilisateur.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'watchlist_items', filter: `user_id=eq.${utilisateur.id}` }, () => {
+        supabase.from('watchlist_items').select('*').eq('user_id', utilisateur.id).order('created_at', { ascending: false })
+          .then(({ data }) => setWatchlist((data || []).map(enrichirWatchlistItem)));
+      })
+      .subscribe();
+    return () => { annule = true; supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [utilisateur?.id]);
+
+  // Libelle + equipe (pour la photo) d'un favori : d'abord depuis un onglet deja ouvert pour ce
+  // meme joueur/equipe (cache gratuit, aucune requete), sinon ref_id tel quel en attendant une
+  // resolution asynchrone (voir effet suivant).
+  function enrichirWatchlistItem(item) {
+    const matchTab = tabs.find(tb => tb.kind === item.kind && String(tb.id) === item.ref_id);
+    if (matchTab) return { ...item, label: matchTab.nom, equipe: matchTab.equipe };
+    if (item.kind === 'team') {
+      const eq = classement.find(e => e.teamAbbrev?.default === item.ref_id);
+      return { ...item, label: eq?.teamName?.default || item.ref_id, equipe: item.ref_id };
+    }
+    return { ...item, label: item.ref_id, equipe: '' };
+  }
+
+  // Resout le nom reel des favoris "joueur" dont le libelle est encore le ref_id brut
+  // (aucun onglet ouvert pour ce joueur dans cette session) : vraie donnee NHL (player landing),
+  // jamais fabriquee.
+  useEffect(() => {
+    const aResoudre = watchlist.filter(w => w.kind === 'player' && w.label === w.ref_id);
+    if (aResoudre.length === 0) return;
+    let annule = false;
+    Promise.all(aResoudre.map(w => resolverJoueurMeta(w.ref_id))).then(resolus => {
+      if (annule) return;
+      setWatchlist(prev => prev.map(w => {
+        const r = resolus.find(x => String(x.id) === w.ref_id);
+        return r && r.nom !== String(r.id) ? { ...w, label: r.nom, equipe: r.equipe } : w;
+      }));
+    });
+    return () => { annule = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlist.length]);
+
+  // Forme recente (5 derniers matchs) de chaque favori, chargee une fois par item.
+  useEffect(() => {
+    if (!seasonId) return;
+    watchlist.forEach(w => {
+      const key = `${w.kind}:${w.ref_id}`;
+      if (formeCache[key] !== undefined) return;
+      (w.kind === 'player' ? chargerFormeJoueur(w.ref_id, seasonId) : chargerFormeEquipe(w.ref_id, seasonId))
+        .then(forme => setFormeCache(prev => ({ ...prev, [key]: forme })));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlist, seasonId]);
+
+  // ===== Paris a faire (Supabase, realtime) =====
+  useEffect(() => {
+    if (!utilisateur?.id) return;
+    let annule = false;
+    function recharger() {
+      supabase.from('saved_picks').select('*').eq('user_id', utilisateur.id).eq('status', 'saved').order('created_at', { ascending: false })
+        .then(({ data }) => { if (!annule) setSavedPicks(data || []); });
+    }
+    recharger();
+    const channel = supabase.channel(`saved_picks_${utilisateur.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_picks', filter: `user_id=eq.${utilisateur.id}` }, recharger)
+      .subscribe();
+    return () => { annule = true; supabase.removeChannel(channel); };
+  }, [utilisateur?.id]);
+
+  function openPlayerTab(joueur) {
+    const { tabs: nextTabs, activeKey: nextKey } = openOrActivateTab(tabs, { kind: 'player', id: String(joueur.id), nom: joueur.nom, equipe: joueur.equipe, position: joueur.position, numero: joueur.numero });
+    setTabs(nextTabs); setActiveKey(nextKey);
+    setShowWatchlistDrawer(false);
+  }
+
+  function openTeamTab(abbrev, standingsRow) {
+    const row = standingsRow || classement.find(e => e.teamAbbrev?.default === abbrev);
+    const nom = row?.teamName?.default || row?.teamCommonName?.default || abbrev;
+    const { tabs: nextTabs, activeKey: nextKey } = openOrActivateTab(tabs, { kind: 'team', id: abbrev, nom, equipe: abbrev });
+    setTabs(nextTabs); setActiveKey(nextKey);
+    setShowWatchlistDrawer(false);
+  }
+
+  function onOpenWatchlistItem(item) {
+    if (item.kind === 'team') openTeamTab(item.ref_id);
+    else openPlayerTab({ id: item.ref_id, nom: item.label, equipe: item.equipe, position: '', numero: '' });
+  }
+
+  async function toggleFavorite(kind, refId) {
+    if (!utilisateur?.id) return;
+    const existant = watchlist.find(w => w.kind === kind && w.ref_id === refId);
+    if (existant) {
+      await supabase.from('watchlist_items').delete().eq('id', existant.id);
+    } else {
+      await supabase.from('watchlist_items').insert({ user_id: utilisateur.id, kind, ref_id: refId });
+    }
+  }
+
+  async function removeFavorite(item) {
+    await supabase.from('watchlist_items').delete().eq('id', item.id);
+  }
+
+  async function confirmSavePick(champs) {
+    if (!utilisateur?.id || !savePickCible) return;
+    await supabase.from('saved_picks').insert({
+      user_id: utilisateur.id, kind: savePickCible.kind, ref_id: savePickCible.ref_id, label: savePickCible.label,
+      market: champs.market || null, line: champs.line !== '' ? parseFloat(champs.line) : null,
+      odds: champs.odds !== '' ? parseFloat(champs.odds) : null, planned_stake: champs.planned_stake !== '' ? parseFloat(champs.planned_stake) : null,
+      note: champs.note || null, status: 'saved',
+    });
+    setSavePickCible(null);
+  }
+
+  async function saveSavedPickEdit(id, champs) {
+    await supabase.from('saved_picks').update({
+      market: champs.market || null, line: champs.line !== '' ? parseFloat(champs.line) : null,
+      odds: champs.odds !== '' ? parseFloat(champs.odds) : null, planned_stake: champs.planned_stake !== '' ? parseFloat(champs.planned_stake) : null,
+      note: champs.note || null,
+    }).eq('id', id);
+  }
+
+  async function deleteSavedPick(id) {
+    await supabase.from('saved_picks').delete().eq('id', id);
+  }
+
+  async function confirmPlacePick(form) {
+    if (!utilisateur?.id || !placePick) return;
+    await supabase.from('bets_auto').insert({ user_id: utilisateur.id, statut: 'pending', ...champsDBDepuisForm(form, t) });
+    await supabase.from('saved_picks').update({ status: 'placed' }).eq('id', placePick.id);
+    setPlacePick(null);
+  }
+
+  const activeTab = tabs.find(tb => tabKey(tb) === activeKey) || null;
+  const isActiveFavorite = activeTab ? watchlist.some(w => w.kind === activeTab.kind && w.ref_id === String(activeTab.id)) : false;
+
+  function closeTab(key) {
+    const { tabs: nextTabs, activeKey: nextKey } = closeAnalyseTab(tabs, activeKey, key);
+    setTabs(nextTabs); setActiveKey(nextKey);
+  }
+
+  let panneauCentral;
+  if (!activeTab) {
+    panneauCentral = (
+      <div style={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔎</div>
+        <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '6px' }}>{t('analyse_empty_title')}</div>
+        <div style={{ fontSize: '13px', color: 'var(--c-555)' }}>{t('analyse_empty_sub')}</div>
+      </div>
+    );
+  } else if (activeTab.kind === 'player') {
+    panneauCentral = (
+      <FicheJoueur
+        key={tabKey(activeTab)}
+        joueur={activeTab}
+        onBack={() => closeTab(tabKey(activeTab))}
+        onSelectTeam={(abbrev) => openTeamTab(abbrev)}
+        isFavorite={isActiveFavorite}
+        onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
+        onSavePick={utilisateur?.id ? setSavePickCible : undefined}
+      />
+    );
+  } else {
+    const equipeRow = classement.find(e => e.teamAbbrev?.default === activeTab.id);
+    panneauCentral = equipeRow ? (
+      <FicheEquipe
+        key={tabKey(activeTab)}
+        equipe={equipeRow}
+        equipeAdverse={null}
+        classement={classement}
+        onBack={() => closeTab(tabKey(activeTab))}
+        onSelectJoueur={(j) => openPlayerTab(j)}
+        lineupDF={lineupDF}
+        isFavorite={isActiveFavorite}
+        onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
+        onSavePick={utilisateur?.id ? setSavePickCible : undefined}
+      />
+    ) : (
+      <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--c-555)' }}>{t('analyse_loading')}</div>
+    );
+  }
+
+  const shellClass = isDesktopWide ? 'analyse-shell analyse-shell-desktop' : isTablet ? 'analyse-shell analyse-shell-tablet' : 'analyse-shell analyse-shell-mobile';
+
+  return (
+    <div style={{ padding: isMobile ? '12px' : '0' }}>
+      <div className={shellClass}>
+        {!isMobile && (
+          <div className="analyse-col-watchlist">
+            <WatchlistPanel t={t} watchlist={watchlist} formeCache={formeCache} onOpen={onOpenWatchlistItem} onRemove={removeFavorite} />
+          </div>
+        )}
+
+        <div className="analyse-col-main">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
+            <AnalyseSearchBar t={t} classement={classement} onOpenPlayer={openPlayerTab} onOpenTeam={openTeamTab} />
+            {isMobile && (
+              <button onClick={() => setShowWatchlistDrawer(true)} style={{ minHeight: '44px', padding: '0 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-888)', cursor: 'pointer', fontSize: '12px' }}>⭐ {watchlist.length}</button>
+            )}
+            {(isMobile || isTablet) && (
+              <button onClick={() => setShowSavedPicksDrawer(true)} style={{ minHeight: '44px', padding: '0 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-888)', cursor: 'pointer', fontSize: '12px' }}>🎯 {savedPicks.length}</button>
+            )}
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <AnalyseTabsBar t={t} tabs={tabs} activeKey={activeKey} onActivate={setActiveKey} onClose={closeTab} />
+          </div>
+          {panneauCentral}
+        </div>
+
+        {isDesktopWide && (
+          <div className="analyse-col-savedpicks">
+            <SavedPicksPanel t={t} picks={savedPicks} onSave={saveSavedPickEdit} onDelete={deleteSavedPick} onPlace={setPlacePick} />
+          </div>
+        )}
+      </div>
+
+      {showWatchlistDrawer && (
+        <AnalyseDrawer t={t} onClose={() => setShowWatchlistDrawer(false)}>
+          <WatchlistPanel t={t} watchlist={watchlist} formeCache={formeCache} onOpen={onOpenWatchlistItem} onRemove={removeFavorite} />
+        </AnalyseDrawer>
+      )}
+      {showSavedPicksDrawer && (
+        <AnalyseDrawer t={t} onClose={() => setShowSavedPicksDrawer(false)}>
+          <SavedPicksPanel t={t} picks={savedPicks} onSave={saveSavedPickEdit} onDelete={deleteSavedPick} onPlace={setPlacePick} />
+        </AnalyseDrawer>
+      )}
+      {savePickCible && <SavePickModal t={t} cible={savePickCible} onClose={() => setSavePickCible(null)} onConfirm={confirmSavePick} />}
+      {placePick && <PlacePickModal t={t} pick={placePick} onClose={() => setPlacePick(null)} onConfirm={confirmPlacePick} />}
     </div>
   );
 }
@@ -5445,6 +6234,12 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
   );
 }
 
-export { AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, LOGOS_NHL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch };
+export {
+  AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipe, FicheEquipeWS, WS_THEME, useWSTheme,
+  LOGOS_NHL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs,
+  formatSemaineDe, calculerFavoriMatch,
+  tabKey, openOrActivateTab, closeAnalyseTab, moveActiveSearchIndex, buildSearchGroups,
+  readAnalyseState, writeAnalyseState, formFromSavedPick,
+};
 export default Analyses;
  

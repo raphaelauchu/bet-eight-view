@@ -176,18 +176,25 @@ export const SIDEBAR_WIDTH_WIDE = 220;
 function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t, isWide }) {
   const width = isWide ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_COMPACT;
   function SidebarButton({ tab, size }) {
+    const badge = tab.badge > 0 ? tab.badge : null;
     return (
-      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0 }}>
+      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0, position: 'relative' }}>
         <button onClick={() => onSelectTab(tab)} style={{
           width: isWide ? '100%' : '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer',
           backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: isWide ? 'flex-start' : 'center',
-          gap: isWide ? '12px' : 0, padding: isWide ? '0 12px' : 0,
+          gap: isWide ? '12px' : 0, padding: isWide ? '0 12px' : 0, position: 'relative',
         }}>
           <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={size} />
           {isWide && <span style={{ fontSize: '13px', fontWeight: activeId === tab.id ? '700' : '500', color: activeId === tab.id ? '#f97316' : 'var(--c-ccc)', whiteSpace: 'nowrap' }}>{tab.label}</span>}
+          {badge && !isWide && (
+            <span style={{ position: 'absolute', top: '2px', right: isWide ? 'auto' : '2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{badge}</span>
+          )}
+          {badge && isWide && (
+            <span style={{ marginLeft: 'auto', backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '800', borderRadius: '10px', minWidth: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{badge}</span>
+          )}
         </button>
-        {!isWide && <span className="sb-tooltip">{tab.label}</span>}
+        {!isWide && <span className="sb-tooltip">{tab.label}{badge ? ` (${badge})` : ''}</span>}
       </div>
     );
   }
@@ -217,8 +224,13 @@ function BottomNav({ tabs, activeId, onSelectTab }) {
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
       <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
         {tabs.map(tab => (
-          <button key={tab.id} onClick={() => onSelectTab(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}>
-            <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={20} />
+          <button key={tab.id} onClick={() => onSelectTab(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0', position: 'relative' }}>
+            <span style={{ position: 'relative' }}>
+              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={20} />
+              {tab.badge > 0 && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-8px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{tab.badge}</span>
+              )}
+            </span>
             <span style={{ fontSize: '10px', fontWeight: activeId === tab.id ? '600' : '400', color: activeId === tab.id ? '#f97316' : 'var(--c-444)', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
             {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
           </button>
@@ -1510,6 +1522,26 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   );
 }
 
+// Nombre de paris sauvegardes (saved_picks, status='saved') pour le badge sur l'onglet
+// Analyses de la sidebar/bottom nav. Abonnement realtime : reste a jour quand l'espace de
+// travail Analyse sauvegarde/supprime/place un pari, sans avoir a faire remonter l'etat.
+function useSavedPicksCount(utilisateur) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!utilisateur?.id) { setCount(0); return; }
+    function recharger() {
+      supabase.from('saved_picks').select('id', { count: 'exact', head: true }).eq('user_id', utilisateur.id).eq('status', 'saved')
+        .then(({ count: n }) => setCount(n || 0));
+    }
+    recharger();
+    const channel = supabase.channel(`saved_picks_count_${utilisateur.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'saved_picks', filter: `user_id=eq.${utilisateur.id}` }, recharger)
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [utilisateur?.id]);
+  return count;
+}
+
 function App() {
   // Lien d'invitation /pool/join/:code — detecte une fois, utilise pour forcer l'auth
   // et atterrir directement sur l'onglet Pool (en mode "rejoindre") apres connexion.
@@ -1537,6 +1569,10 @@ function App() {
   const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
   const isMobile = useIsMobile();
   const isDesktopWide = useIsDesktopWide();
+  // Appele sans condition (regle des hooks) : utilisateur peut passer de null a connecte entre
+  // deux rendus, un hook appele seulement dans la branche "if (utilisateur)" plus bas
+  // changerait d'ordre d'appel entre les rendus. Le hook lui-meme gere deja utilisateur=null.
+  const savedPicksCount = useSavedPicksCount(utilisateur);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1581,7 +1617,7 @@ function App() {
     const tabsPrincipaux = [
       { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
       { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
-      { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart },
+      { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
     const tabsMobile = tabsPrincipaux;
@@ -1621,7 +1657,7 @@ function App() {
     ) : page === 'admin' ? (
       <AdminPage />
     ) : page === 'stats' ? (
-      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} />
+      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur} />
     ) : page === 'props' ? (
       <ModelesFlux />
     ) : (
