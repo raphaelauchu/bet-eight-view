@@ -619,7 +619,7 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
 
   if (detailMember) {
     return (
-      <MemberDetailPanel pool={pool} members={members} member={detailMember} lang={lang} onBack={() => setDetailMemberId(null)} />
+      <MemberDetailPanel pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} onBack={() => setDetailMemberId(null)} />
     );
   }
 
@@ -821,6 +821,16 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
   const member = members.find(m => m.id === selectedMemberId) || members[0];
   const { from, to } = useMemo(() => periodToRange(period, selectedDay, selectedMonth), [period, selectedDay, selectedMonth]);
 
+  // Flèches précédent/suivant : cyclent dans le même ordre que le sélecteur (members), pour
+  // changer d'équipe sans revenir au Classement. La barre de période (period/selectedDay/
+  // selectedMonth) n'est pas touchée : seul selectedMemberId change.
+  const memberIndex = members.findIndex(m => m.id === member?.id);
+  function goToOffset(offset) {
+    if (members.length < 2 || memberIndex < 0) return;
+    const nextIndex = (memberIndex + offset + members.length) % members.length;
+    setSelectedMemberId(members[nextIndex].id);
+  }
+
   useEffect(() => {
     let annule = false;
     setRows(null); setError('');
@@ -847,9 +857,15 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
         {members.length > 1 && (
-          <select value={member?.id || ''} onChange={e => setSelectedMemberId(e.target.value)} style={{ ...inputStyle, fontWeight: '700' }}>
-            {members.map(m => <option key={m.id} value={m.id}>{memberLabel(m, pool.rules)}</option>)}
-          </select>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button type="button" onClick={() => goToOffset(-1)} aria-label={t('pool_member_prev_btn')} title={t('pool_member_prev_btn')}
+              style={{ ...btnSecondary, padding: '10px 12px', flex: '0 0 auto' }}>‹</button>
+            <select value={member?.id || ''} onChange={e => setSelectedMemberId(e.target.value)} style={{ ...inputStyle, fontWeight: '700', flex: 1 }}>
+              {members.map(m => <option key={m.id} value={m.id}>{memberLabel(m, pool.rules)}</option>)}
+            </select>
+            <button type="button" onClick={() => goToOffset(1)} aria-label={t('pool_member_next_btn')} title={t('pool_member_next_btn')}
+              style={{ ...btnSecondary, padding: '10px 12px', flex: '0 0 auto' }}>›</button>
+          </div>
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {PERIOD_OPTIONS.map(p => (
