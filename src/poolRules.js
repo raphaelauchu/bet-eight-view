@@ -21,6 +21,51 @@ export const POSITION_STAT_KEYS = [
 export const GOALIE_STAT_KEYS = ['goals', 'assists', 'wins', 'shutouts', 'saves', 'goalsAgainst', 'otLosses'];
 export const TEAM_STAT_KEYS = ['wins', 'overtimeLosses', 'shootoutLosses'];
 
+// Categories "de penalite" (ou intrinsequement signees) : seules celles-ci peuvent avoir un
+// bareme negatif. Toutes les autres categories representent un accomplissement positif (but,
+// passe, victoire, arret...) et leur bareme doit toujours etre >= 0 - un bareme negatif y est
+// forcement une erreur de saisie (ex. le bogue du switch "meme pointage" qui propage un signe
+// invalide de l'attaque vers la defense). pim/plusMinus sont volontairement exclus de cette
+// liste : un pool peut légitimement vouloir les penaliser (pim) ou les valoriser dans les deux
+// sens (plusMinus), donc les deux signes restent permis pour ces deux categories.
+const NEGATIVE_ALLOWED_POSITION_KEYS = ['pim', 'plusMinus'];
+const NEGATIVE_ALLOWED_GOALIE_KEYS = ['goalsAgainst', 'otLosses'];
+const NEGATIVE_ALLOWED_TEAM_KEYS = ['overtimeLosses', 'shootoutLosses'];
+
+// Vrai si la categorie `key` du groupe `group` ('forward'|'defense'|'goalie'|'team') peut
+// legitimement avoir un bareme negatif (categorie de penalite). Utilise a la fois par l'UI
+// (StepScoring) et par normalizeRules (filet de securite cote donnees).
+export function canScoringKeyBeNegative(group, key) {
+  if (group === 'goalie') return NEGATIVE_ALLOWED_GOALIE_KEYS.includes(key);
+  if (group === 'team') return NEGATIVE_ALLOWED_TEAM_KEYS.includes(key);
+  return NEGATIVE_ALLOWED_POSITION_KEYS.includes(key); // forward / defense
+}
+
+// Normalise une valeur de bareme saisie par l'utilisateur ou chargee depuis la base :
+// - accepte la virgule comme separateur decimal ("7,6" -> 7.6) ;
+// - toute valeur non numerique (chaine vide, texte, NaN, undefined...) devient 0 ;
+// - si la categorie n'autorise pas les valeurs negatives, le signe est corrige (valeur
+//   absolue) plutot que mis a 0, pour ne pas silencieusement effacer l'intention de
+//   l'utilisateur (ex. -7.6 saisi par erreur sur "passes" redevient 7.6, pas 0) ;
+// - arrondie a 2 decimales maximum pour eviter l'accumulation de resultats flottants
+//   (0.1 + 0.2 etc.) et les saisies a precision ridicule.
+export function sanitizeScoringValue(rawValue, allowNegative) {
+  let n = rawValue;
+  if (typeof n === 'string') n = n.trim().replace(',', '.');
+  n = Number(n);
+  if (!Number.isFinite(n)) n = 0;
+  if (!allowNegative) n = Math.abs(n);
+  return Math.round(n * 100) / 100;
+}
+
+// Sanitize un groupe complet de bareme (forward/defense/goalie/team) : chaque cle de `keys`
+// est presente dans le resultat (defaut 0 si absente de `rawGroup`), chaque valeur passee par
+// sanitizeScoringValue selon ce que canScoringKeyBeNegative autorise pour ce groupe/cle.
+function sanitizeScoringGroup(group, rawGroup, keys) {
+  const src = rawGroup || {};
+  return Object.fromEntries(keys.map(k => [k, sanitizeScoringValue(src[k], canScoringKeyBeNegative(group, k))]));
+}
+
 export const SALARY_CAP_SOURCES = ['capHit', 'actualSalary'];
 
 // Alignement : pool classique = simples compteurs par groupe de position (nombre a repecher).
@@ -157,13 +202,18 @@ export function normalizeRules(rawRules) {
   const goalie = legacyScoring.goalie || {};
   const team = legacyScoring.team || {};
   rules.scoring = {
-    forward: { ...defaultScoringGroup(), ...forward },
-    defense: { ...defaultScoringGroup(), ...defense },
+    // sanitizeScoringGroup fait a la fois le merge avec les defauts (0) et la validation :
+    // virgule decimale acceptee, valeurs non numeriques ramenees a 0, signe corrige pour les
+    // categories qui ne sont pas des penalites (voir canScoringKeyBeNegative), arrondi a 2
+    // decimales. Applique a chaque sauvegarde/chargement : repare aussi bien une saisie
+    // invalide dans le wizard qu'une valeur deja enregistree en base par erreur.
+    forward: sanitizeScoringGroup('forward', forward, POSITION_STAT_KEYS),
+    defense: sanitizeScoringGroup('defense', defense, POSITION_STAT_KEYS),
     // Merge explicite (pas de spread de `goalie`/`team` complet) : une ancienne cle qui
     // n'existe plus dans le schema courant (ex. scoring.team.shutouts, remplace par
     // shootoutLosses) ne doit pas trainer dans l'objet normalise.
-    goalie: Object.fromEntries(GOALIE_STAT_KEYS.map(k => [k, Number(goalie[k]) || 0])),
-    team: Object.fromEntries(TEAM_STAT_KEYS.map(k => [k, Number(team[k]) || 0])),
+    goalie: sanitizeScoringGroup('goalie', goalie, GOALIE_STAT_KEYS),
+    team: sanitizeScoringGroup('team', team, TEAM_STAT_KEYS),
   };
   if (typeof rules.sameForwardDefenseScoring !== 'boolean') {
     rules.sameForwardDefenseScoring = !!legacySkater;

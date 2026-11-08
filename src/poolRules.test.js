@@ -2,7 +2,7 @@ import {
   validateTrade, defaultTradesForType, defaultRules, normalizeRules,
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
   mirrorSkaterPoints, mirrorGoaliePoints, mirrorTeamPoints, mirrorGameCountsForPeriod,
-  mirrorEligibleSlots,
+  mirrorEligibleSlots, sanitizeScoringValue, canScoringKeyBeNegative,
 } from './poolRules';
 
 function player(id, positionGroup, salary = 0) {
@@ -259,4 +259,93 @@ test('alignement : repli sur le regroupement grossier quand le poste detaille es
   expect(mirrorEligibleSlots('D', null)).toEqual(['D', 'UTIL', 'BN', 'IR']); // D : aucune ambiguite
   expect(mirrorEligibleSlots('G', null)).toEqual(['G', 'BN', 'IR']); // G : aucune ambiguite
   expect(mirrorEligibleSlots('F', null)).toEqual(['UTIL', 'BN', 'IR']); // F ambigu (C/LW/RW) : UTIL seulement
+});
+
+// ===================== Bareme : saisie (virgule, signe, arrondi) =====================
+// Regression pour le bogue "scoring.defense.assists enregistre a -7.6 au lieu d'une valeur
+// positive" : cause par le switch "meme pointage attaquants/defenseurs" qui copiait une
+// valeur deja invalide (signe neglige) de "forward" vers "defense" sans jamais la valider.
+
+test('sanitizeScoringValue : accepte la virgule decimale ("1,5" -> 1.5)', () => {
+  expect(sanitizeScoringValue('1,5', true)).toBe(1.5);
+  expect(sanitizeScoringValue('-2,25', true)).toBe(-2.25);
+});
+
+test('sanitizeScoringValue : une categorie qui n\'autorise pas le negatif corrige le signe (valeur absolue, pas 0)', () => {
+  // Cas exact du bogue : -7.6 sur les passes (categorie positive) redevient 7.6.
+  expect(sanitizeScoringValue(-7.6, false)).toBe(7.6);
+  expect(sanitizeScoringValue('-7,6', false)).toBe(7.6);
+});
+
+test('sanitizeScoringValue : une categorie de penalite garde le droit d\'etre negative', () => {
+  expect(sanitizeScoringValue(-1.5, true)).toBe(-1.5);
+  expect(sanitizeScoringValue('-0,5', true)).toBe(-0.5);
+});
+
+test('sanitizeScoringValue : valeur non numerique -> 0', () => {
+  expect(sanitizeScoringValue('abc', true)).toBe(0);
+  expect(sanitizeScoringValue(undefined, true)).toBe(0);
+  expect(sanitizeScoringValue(null, false)).toBe(0);
+  expect(sanitizeScoringValue('', true)).toBe(0);
+});
+
+test('sanitizeScoringValue : arrondit a 2 decimales maximum', () => {
+  expect(sanitizeScoringValue(1.23456, true)).toBe(1.23);
+  expect(sanitizeScoringValue('0,1', true) + sanitizeScoringValue('0,2', true)).toBeCloseTo(0.3);
+});
+
+test('canScoringKeyBeNegative : seules les categories de penalite peuvent etre negatives', () => {
+  // Attaquants/defenseurs : but/passe/tir/mise en echec/bris d'egalite = toujours positifs.
+  expect(canScoringKeyBeNegative('forward', 'assists')).toBe(false);
+  expect(canScoringKeyBeNegative('defense', 'assists')).toBe(false);
+  expect(canScoringKeyBeNegative('forward', 'goals')).toBe(false);
+  // pim/plusMinus restent bidirectionnels (penalisables ou valorisables selon le pool).
+  expect(canScoringKeyBeNegative('defense', 'pim')).toBe(true);
+  expect(canScoringKeyBeNegative('forward', 'plusMinus')).toBe(true);
+  // Gardiens : victoire/blanchissage/arret toujours positifs ; buts accordes/defaites en
+  // prolongation peuvent etre negatifs (categories de penalite explicitement citees).
+  expect(canScoringKeyBeNegative('goalie', 'wins')).toBe(false);
+  expect(canScoringKeyBeNegative('goalie', 'saves')).toBe(false);
+  expect(canScoringKeyBeNegative('goalie', 'goalsAgainst')).toBe(true);
+  expect(canScoringKeyBeNegative('goalie', 'otLosses')).toBe(true);
+  // Equipe NHL : victoire toujours positive ; defaites (OT/TB) peuvent etre negatives.
+  expect(canScoringKeyBeNegative('team', 'wins')).toBe(false);
+  expect(canScoringKeyBeNegative('team', 'overtimeLosses')).toBe(true);
+  expect(canScoringKeyBeNegative('team', 'shootoutLosses')).toBe(true);
+});
+
+test('normalizeRules : corrige une valeur negative/virgule/invalide sur chaque groupe de pointage', () => {
+  const rules = normalizeRules({
+    poolType: 'classic',
+    scoring: {
+      forward: { goals: '3,5', assists: -7.6 },
+      defense: { assists: 'oups' },
+      goalie: { wins: -2, goalsAgainst: -1 },
+      team: { wins: -3, overtimeLosses: -1 },
+    },
+  });
+  expect(rules.scoring.forward.goals).toBe(3.5);
+  expect(rules.scoring.forward.assists).toBe(7.6); // signe corrige, pas mis a 0
+  expect(rules.scoring.defense.assists).toBe(0); // "oups" n'est pas numerique
+  expect(rules.scoring.goalie.wins).toBe(2); // victoire : toujours positive
+  expect(rules.scoring.goalie.goalsAgainst).toBe(-1); // penalite : negatif autorise
+  expect(rules.scoring.team.wins).toBe(3);
+  expect(rules.scoring.team.overtimeLosses).toBe(-1);
+});
+
+test('normalizeRules : reproduit puis corrige le bogue du switch "meme pointage" (signe invalide copie vers defense)', () => {
+  // Reproduit l'etat exact produit par l'ancien bug : le switch "meme pointage
+  // attaquants/defenseurs" est actif et a copie tel quel un -7.6 de forward.assists vers
+  // defense.assists, sans jamais valider le signe.
+  const buggedRules = {
+    poolType: 'classic',
+    sameForwardDefenseScoring: true,
+    scoring: {
+      forward: { assists: -7.6 },
+      defense: { assists: -7.6 },
+    },
+  };
+  const fixed = normalizeRules(buggedRules);
+  expect(fixed.scoring.forward.assists).toBe(7.6);
+  expect(fixed.scoring.defense.assists).toBe(7.6);
 });

@@ -11,6 +11,7 @@ import {
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
   POOL_TYPE_INFO, defaultRules, cloneRules, validateRules, hasAnyScoring,
   totalRosterSlots, currentSeasonLabelFromSeasonId, applyPoolType, normalizeRules,
+  canScoringKeyBeNegative, sanitizeScoringValue,
 } from './poolRules';
 
 const card = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-161616)', padding: '20px' };
@@ -85,12 +86,17 @@ function RecapRow({ label, value }) {
   );
 }
 
+// type="text" + inputMode="decimal" (plutot que type="number") : un input number natif
+// normalise/rejette "7,6" de facon incoherente selon le navigateur/la locale, alors qu'on veut
+// explicitement accepter la virgule decimale. onChange transmet la chaine brute telle que
+// tapee ; c'est setStat (StepScoring) qui la valide/arrondit via sanitizeScoringValue, avec la
+// bonne regle de signe pour la categorie concernee.
 function ScoringRow({ label, value, onChange, disabled }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid var(--c-111)' }}>
       <span style={{ fontSize: '13px', color: disabled ? 'var(--c-555)' : 'var(--c-ccc)' }}>{label}</span>
-      <input type="number" step="0.1" value={value} disabled={disabled}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
+      <input type="text" inputMode="decimal" value={value} disabled={disabled}
+        onChange={e => onChange(e.target.value)}
         style={{ width: '80px', padding: '6px 8px', backgroundColor: disabled ? 'var(--c-0d0d0d)' : 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: disabled ? 'var(--c-666)' : 'var(--c-white)', fontSize: '13px', textAlign: 'right' }} />
     </div>
   );
@@ -310,7 +316,12 @@ function StepType({ form, setForm, t }) {
 function StepScoring({ form, setForm, t, errors }) {
   const { scoring, sameForwardDefenseScoring } = form.rules;
 
-  function setStat(group, key, value) {
+  function setStat(group, key, rawValue) {
+    // Valide ICI (virgule decimale, signe selon la categorie, arrondi a 2 decimales) avant de
+    // stocker quoi que ce soit dans l'etat : la copie "meme pointage attaquants/defenseurs"
+    // ci-dessous propage donc toujours une valeur deja saine vers "defense", et ne peut plus
+    // y recopier un signe invalide depuis "forward".
+    const value = sanitizeScoringValue(rawValue, canScoringKeyBeNegative(group, key));
     setForm(f => {
       const nextGroup = { ...f.rules.scoring[group], [key]: value };
       const nextScoring = { ...f.rules.scoring, [group]: nextGroup };
@@ -1264,7 +1275,9 @@ export default function PoolHub({ utilisateur, lang }) {
       season: form.season.trim(),
       visibility: form.visibility,
       max_members: form.maxMembers,
-      rules: form.rules,
+      // normalizeRules revalide le bareme (virgule, signe, arrondi) une derniere fois avant
+      // l'ecriture en base : filet de securite independant de l'UI du wizard.
+      rules: normalizeRules(form.rules),
     }).select().single();
     if (errPool) { setFormError(errPool.message); setBusy(false); return; }
 
@@ -1291,7 +1304,7 @@ export default function PoolHub({ utilisateur, lang }) {
       season: form.season.trim(),
       visibility: form.visibility,
       max_members: form.maxMembers,
-      rules: form.rules,
+      rules: normalizeRules(form.rules),
     }).eq('id', selectedPool.id).select().single();
     setBusy(false);
     if (errUpdate) { setFormError(errUpdate.message); return; }
