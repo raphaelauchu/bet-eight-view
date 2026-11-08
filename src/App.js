@@ -1704,10 +1704,8 @@ function App() {
           </div>
         )}
 
-        {/* Ticker NHL */}
-        {page === 'stats' && !joueurFicheGlobal && !equipeFicheGlobal && ligueAnalyses === 'nhl' ? (
-          <HockeyTicker onMatchsCharge={(nombre) => setNombreMatchs(nombre)} />
-        ) : null}
+        {/* Pas de ticker ici pour l'onglet Analyses : AnalysesFlux affiche desormais son
+            propre bandeau de scores cliquable (ouvre l'onglet matchup), voir Analyses.js. */}
 
         {/* Contenu */}
         <div style={{ padding: '0' }}>

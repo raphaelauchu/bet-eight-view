@@ -6,6 +6,7 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetAutoForm';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
+import HockeyTicker from './HockeyTicker';
  
 const NHL_ABBREV_TO_SLUG = {
   'ANA': 'anaheim-ducks', 'BOS': 'boston-bruins', 'BUF': 'buffalo-sabres',
@@ -5290,6 +5291,358 @@ async function chargerFormeEquipe(abbrev, seasonId) {
   } catch { return null; }
 }
 
+// ===================== Matchup (equipe vs equipe) : edge, tendances, face-a-face =====================
+// Fonctions pures reutilisees par MatchupPanel plus bas -- exportees pour les tests.
+
+// Construit un onglet "match" persistable (localStorage, meme mecanisme que les onglets
+// joueur/equipe) a partir d'un objet match brut de l'API calendrier NHL (schedule). Ne garde
+// que les champs utilises par ApercuMatchup/CarteMatchJoueurs, pour rester leger.
+function buildMatchTab(match) {
+  const awayAbbrev = match.awayTeam?.abbrev;
+  const homeAbbrev = match.homeTeam?.abbrev;
+  return {
+    kind: 'match',
+    id: String(match.id),
+    nom: `${awayAbbrev} @ ${homeAbbrev}`,
+    match: {
+      id: match.id,
+      gameDate: match.gameDate,
+      gameState: match.gameState,
+      startTimeUTC: match.startTimeUTC,
+      awayTeam: { abbrev: awayAbbrev, commonName: match.awayTeam?.commonName, score: match.awayTeam?.score },
+      homeTeam: { abbrev: homeAbbrev, commonName: match.homeTeam?.commonName, score: match.homeTeam?.score },
+    },
+  };
+}
+
+// Probabilite implicite (0-1) a partir d'une cote decimale (format par defaut de
+// getCotesHockey/The Odds API -- aucun oddsFormat=american demande dans cotes.js). null si
+// cote absente/invalide (etat vide cote appelant, jamais une valeur inventee).
+function calculerProbabiliteImplicite(decimalOdds) {
+  const o = Number(decimalOdds);
+  if (!Number.isFinite(o) || o <= 1) return null;
+  return 1 / o;
+}
+
+// Edge (%) = probabilite du modele (calculerProbaVictoire, deja utilisee par
+// CarteMatchEquipesDetaille) - probabilite implicite du marche, en points de pourcentage.
+// null si l'une des deux manque.
+function calculerEdgePct(modelProbPct, decimalOdds) {
+  const impliedProb = calculerProbabiliteImplicite(decimalOdds);
+  if (impliedProb == null || modelProbPct == null) return null;
+  return Math.round((modelProbPct - impliedProb * 100) * 10) / 10;
+}
+
+// Agrege les tendances d'une equipe (fiche, buts pour/contre, differentiel) sur une periode,
+// a partir de son calendrier de saison (club-schedule-season, deja trie chronologiquement par
+// l'API, matchs termines uniquement). periode : 'L5' | 'L10' | 'SZN' (= tous les matchs recus).
+function aggregerTendanceEquipe(games, abbrev, periode) {
+  if (!games || games.length === 0) return null;
+  const subset = periode === 'L5' ? games.slice(-5) : periode === 'L10' ? games.slice(-10) : games;
+  if (subset.length === 0) return null;
+  let bp = 0, bc = 0, victoires = 0;
+  subset.forEach(g => {
+    const dom = g.homeTeam?.abbrev === abbrev;
+    const pour = dom ? (g.homeTeam?.score ?? 0) : (g.awayTeam?.score ?? 0);
+    const contre = dom ? (g.awayTeam?.score ?? 0) : (g.homeTeam?.score ?? 0);
+    bp += pour; bc += contre;
+    if (pour > contre) victoires += 1;
+  });
+  const nb = subset.length;
+  return { nb, victoires, defaites: nb - victoires, bpMoy: bp / nb, bcMoy: bc / nb, diff: bp - bc };
+}
+
+// Historique face-a-face CETTE saison (seule donnee realiste et bornee disponible sans appel
+// reseau supplementaire, a partir du calendrier de saison deja charge pour les tendances) :
+// filtre les matchs d'une equipe contre un adversaire donne.
+function filtrerFaceAFace(games, adversaireAbbrev) {
+  if (!games) return [];
+  return games.filter(g => g.awayTeam?.abbrev === adversaireAbbrev || g.homeTeam?.abbrev === adversaireAbbrev);
+}
+
+// Sequence W/L REELLE (pas aleatoire) des n derniers matchs d'une equipe, du plus ancien au
+// plus recent. Remplace genT() de CarteMatchEquipesDetaille, qui fabriquait une forme avec
+// Math.random() : jamais reutilise dans l'espace Analyse, qui interdit les donnees inventees.
+function formeSequence(games, abbrev, n = 5) {
+  if (!games) return [];
+  return games.slice(-n).map(g => {
+    const dom = g.homeTeam?.abbrev === abbrev;
+    const pour = dom ? (g.homeTeam?.score ?? 0) : (g.awayTeam?.score ?? 0);
+    const contre = dom ? (g.awayTeam?.score ?? 0) : (g.homeTeam?.score ?? 0);
+    return pour > contre ? 'W' : 'L';
+  });
+}
+
+const TENDANCE_PERIODES = ['L5', 'L10', 'SZN'];
+
+// Panneau "matchup" (onglet de type 'match') : face-a-face, edge modele/cotes, tendances par
+// periode, historique face-a-face saison, domicile/exterieur, blesses (etat vide -- aucune
+// source de donnees), puis le contenu existant (cotes complètes/gardiens/lignes maison) via
+// ApercuMatchup, reutilise tel quel.
+function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTeam, onSelectJoueur, onBack, watchlist, onToggleFavorite, onSavePick }) {
+  const isMobile = useIsMobile();
+  const match = matchTab.match;
+  const awayAbbrev = match.awayTeam?.abbrev;
+  const homeAbbrev = match.homeTeam?.abbrev;
+  const awayRow = classement.find(e => e.teamAbbrev?.default === awayAbbrev);
+  const homeRow = classement.find(e => e.teamAbbrev?.default === homeAbbrev);
+  const awayNom = awayRow?.teamName?.default || match.awayTeam?.commonName?.default || awayAbbrev;
+  const homeNom = homeRow?.teamName?.default || match.homeTeam?.commonName?.default || homeAbbrev;
+
+  const [cotes, setCotes] = useState(null);
+  const [gamesAway, setGamesAway] = useState(null); // null = pas encore charge, [] = charge mais vide
+  const [gamesHome, setGamesHome] = useState(null);
+  const [periode, setPeriode] = useState('L10');
+  const [statsSzn, setStatsSzn] = useState(null); // { [abbrev]: { powerPlayPct, penaltyKillPct } }
+
+  useEffect(() => {
+    let annule = false;
+    getCotesHockey().then(data => {
+      if (annule) return;
+      const trouve = trouverCotesPourMatch(data, awayNom, homeNom);
+      setCotes(trouve ? extraireCotesMatch(trouve) : null);
+    }).catch(() => { if (!annule) setCotes(null); });
+    return () => { annule = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awayAbbrev, homeAbbrev]);
+
+  useEffect(() => {
+    if (!seasonId) return;
+    let annule = false;
+    (async () => {
+      try {
+        const [rAway, rHome] = await Promise.all([
+          fetch(getUrl(`club-schedule-season/${awayAbbrev}/${seasonId}`)),
+          fetch(getUrl(`club-schedule-season/${homeAbbrev}/${seasonId}`)),
+        ]);
+        const [dAway, dHome] = await Promise.all([rAway.json(), rHome.json()]);
+        if (annule) return;
+        setGamesAway((dAway.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL'));
+        setGamesHome((dHome.games || []).filter(g => g.gameState === 'OFF' || g.gameState === 'FINAL'));
+      } catch { if (!annule) { setGamesAway([]); setGamesHome([]); } }
+    })();
+    return () => { annule = true; };
+  }, [awayAbbrev, homeAbbrev, seasonId]);
+
+  // PP%/PK% : stat cumulative de saison, pas divisible par periode -- chargee une seule fois,
+  // affichee uniquement dans l'onglet Saison.
+  useEffect(() => {
+    if (periode !== 'SZN' || statsSzn || !seasonId) return;
+    let annule = false;
+    (async () => {
+      try {
+        const cayenne = encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`);
+        const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=${cayenne}`));
+        const data = await res.json();
+        const find = (nom) => (data.data || []).find(tm => tm.teamFullName?.toLowerCase().includes(nom.split(' ').pop().toLowerCase()));
+        if (annule) return;
+        setStatsSzn({ [awayAbbrev]: find(awayNom) || {}, [homeAbbrev]: find(homeNom) || {} });
+      } catch { if (!annule) setStatsSzn({ [awayAbbrev]: {}, [homeAbbrev]: {} }); }
+    })();
+    return () => { annule = true; };
+  }, [periode, seasonId, awayAbbrev, homeAbbrev, awayNom, homeNom, statsSzn]);
+
+  const tendanceAway = gamesAway ? aggregerTendanceEquipe(gamesAway, awayAbbrev, periode) : null;
+  const tendanceHome = gamesHome ? aggregerTendanceEquipe(gamesHome, homeAbbrev, periode) : null;
+  const h2h = gamesAway ? filtrerFaceAFace(gamesAway, homeAbbrev) : null;
+  const h2hVictoiresAway = (h2h || []).filter(g => {
+    const dom = g.homeTeam?.abbrev === awayAbbrev;
+    const pour = dom ? g.homeTeam?.score : g.awayTeam?.score;
+    const contre = dom ? g.awayTeam?.score : g.homeTeam?.score;
+    return (pour ?? 0) > (contre ?? 0);
+  }).length;
+
+  const { probAway, probHome } = calculerProbaVictoire(awayRow?.points || 0, homeRow?.points || 0);
+  const trouverCoteEquipe = (nom) => (cotes?.moneyline || []).find(o => {
+    const n = (o.name || '').toLowerCase(); const cible = nom.toLowerCase();
+    return n.includes(cible) || cible.includes(n);
+  });
+  const mlAway = trouverCoteEquipe(awayNom);
+  const mlHome = trouverCoteEquipe(homeNom);
+  const edgeAway = calculerEdgePct(probAway, mlAway?.price);
+  const edgeHome = calculerEdgePct(probHome, mlHome?.price);
+  const auMoinsUneCote = !!(mlAway || mlHome);
+
+  const isFavAway = (watchlist || []).some(w => w.kind === 'team' && w.ref_id === awayAbbrev);
+  const isFavHome = (watchlist || []).some(w => w.kind === 'team' && w.ref_id === homeAbbrev);
+
+  const cardStyleLocal = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px', marginBottom: '14px' };
+  const sectionTitleLocal = { color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px', textTransform: 'uppercase' };
+
+  function equipeHeader(abbrev, nom, isFav, ml) {
+    return (
+      <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
+        <div onClick={() => onSelectTeam(abbrev)} style={{ cursor: 'pointer', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-white)' }}>{nom}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+          {onToggleFavorite && (
+            <button onClick={() => onToggleFavorite('team', abbrev)} aria-label={isFav ? t('analyse_favorite_remove') : t('analyse_favorite_add')} title={isFav ? t('analyse_favorite_remove') : t('analyse_favorite_add')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              <IconStarSmall filled={isFav} size={16} />
+            </button>
+          )}
+          {onSavePick && (
+            <button onClick={() => onSavePick({ kind: 'team', ref_id: abbrev, label: matchTab.nom, market: t('analyse_market_moneyline'), odds: ml?.price ?? '' })}
+              style={{ background: 'none', border: '1px solid var(--c-333)', borderRadius: '7px', cursor: 'pointer', color: 'var(--c-888)', fontSize: '10px', padding: '4px 8px' }}>
+              {t('analyse_savedpicks_title')}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function edgeCell(abbrev, nom, modelProb, ml, edge) {
+    if (!ml) {
+      return (
+        <div style={{ textAlign: 'center', padding: '10px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '4px' }}>{nom}</div>
+          <div style={{ fontSize: '11px', color: 'var(--c-555)' }}>{t('analyse_odds_unavailable')}</div>
+        </div>
+      );
+    }
+    const impliedPct = Math.round(calculerProbabiliteImplicite(ml.price) * 1000) / 10;
+    const positif = edge != null && edge > 0;
+    return (
+      <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+        <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '8px' }}>{nom}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '8px' }}>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{Math.round(modelProb)}%</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>{t('analyse_model_prob')}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)' }}>{impliedPct}%</div>
+            <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>{t('analyse_implied_prob')}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: '18px', fontWeight: '900', color: positif ? '#22c55e' : edge != null ? '#ef4444' : 'var(--c-555)' }}>
+          {edge != null ? `${edge > 0 ? '+' : ''}${edge}%` : '-'}
+        </div>
+        <div style={{ fontSize: '9px', color: 'var(--c-555)' }}>{t('analyse_edge')}</div>
+      </div>
+    );
+  }
+
+  function tendanceColonne(abbrev, nom, tendance) {
+    if (!tendance) return <div style={{ color: 'var(--c-555)', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>{t('analyse_loading')}</div>;
+    const ppPct = statsSzn?.[abbrev]?.powerPlayPct != null ? (statsSzn[abbrev].powerPlayPct * 100).toFixed(1) + '%' : null;
+    const seq = (abbrev === awayAbbrev ? gamesAway : gamesHome);
+    const forme = seq ? formeSequence(seq, abbrev, 5) : [];
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)' }}>{nom}</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '8px' }}>
+          {[
+            [t('analyse_tendance_record'), `${tendance.victoires}-${tendance.defaites}`],
+            [t('analyse_tendance_diff'), tendance.diff > 0 ? `+${tendance.diff}` : `${tendance.diff}`],
+            [t('analyse_tendance_gf'), tendance.bpMoy.toFixed(2)],
+            [t('analyse_tendance_ga'), tendance.bcMoy.toFixed(2)],
+          ].map(([label, val]) => (
+            <div key={label} style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--c-white)' }}>{val}</div>
+              <div style={{ fontSize: '8px', color: 'var(--c-555)', marginTop: '2px' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+        {periode === 'SZN' && (
+          <div style={{ fontSize: '11px', color: 'var(--c-666)', marginBottom: '6px' }}>{t('analyse_tendance_pp')}: {ppPct ?? t('analyse_loading')}</div>
+        )}
+        {forme.length > 0 && (
+          <div style={{ display: 'flex', gap: '3px' }}>
+            {forme.map((r, i) => <span key={i} style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: r === 'W' ? '#22c55e' : '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: '800', color: 'white' }}>{r}</span>)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const totalPredit = tendanceAway && tendanceHome ? (tendanceAway.bpMoy + tendanceAway.bcMoy + tendanceHome.bpMoy + tendanceHome.bcMoy) / 2 : null;
+  const overUnder = totalPredit != null ? (totalPredit > 5.5 ? 'OVER' : 'UNDER') : null;
+
+  return (
+    <div>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', padding: 0, marginBottom: '16px' }}>← {t('analyse_tab_close')}</button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        {equipeHeader(awayAbbrev, awayNom, isFavAway, mlAway)}
+        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '15px' }}>@</span>
+        {equipeHeader(homeAbbrev, homeNom, isFavHome, mlHome)}
+      </div>
+
+      <div style={cardStyleLocal}>
+        <div style={sectionTitleLocal}>{t('analyse_edge_title')}</div>
+        {auMoinsUneCote ? (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+            {edgeCell(awayAbbrev, awayNom, probAway, mlAway, edgeAway)}
+            {edgeCell(homeAbbrev, homeNom, probHome, mlHome, edgeHome)}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '10px 0' }}>{t('analyse_odds_unavailable')}</div>
+        )}
+      </div>
+
+      <div style={cardStyleLocal}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ ...sectionTitleLocal, marginBottom: 0 }}>{t('analyse_tendance_title')}</div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {TENDANCE_PERIODES.map(p => (
+              <button key={p} onClick={() => setPeriode(p)} style={{ padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: periode === p ? '#f97316' : 'var(--c-1a1a1a)', color: periode === p ? 'white' : 'var(--c-666)', fontSize: '11px', fontWeight: '700' }}>{t(`analyse_periode_${p.toLowerCase()}`)}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: totalPredit != null ? '12px' : 0 }}>
+          {tendanceColonne(awayAbbrev, awayNom, tendanceAway)}
+          {tendanceColonne(homeAbbrev, homeNom, tendanceHome)}
+        </div>
+        {totalPredit != null && (
+          <div style={{ borderTop: '1px solid var(--c-1a1a1a)', paddingTop: '10px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--c-666)' }}>{t('analyse_predicted_total')}: <strong style={{ color: 'var(--c-white)' }}>{totalPredit.toFixed(1)}</strong></span>
+            <span style={{ fontSize: '12px', fontWeight: '800', color: overUnder === 'OVER' ? '#f97316' : 'var(--c-888)' }}>{overUnder}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={cardStyleLocal}>
+        <div style={sectionTitleLocal}>{t('analyse_h2h_title')}</div>
+        {h2h === null ? (
+          <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '10px 0' }}>{t('analyse_loading')}</div>
+        ) : h2h.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '10px 0' }}>{t('analyse_h2h_empty')}</div>
+        ) : (
+          <div style={{ textAlign: 'center', fontSize: '13px', color: 'var(--c-white)' }}>
+            {awayAbbrev} <strong>{h2hVictoiresAway}</strong> - <strong>{h2h.length - h2hVictoiresAway}</strong> {homeAbbrev} <span style={{ color: 'var(--c-555)', fontSize: '11px' }}>({t('analyse_h2h_season')})</span>
+          </div>
+        )}
+      </div>
+
+      <div style={cardStyleLocal}>
+        <div style={sectionTitleLocal}>{t('analyse_homeaway_title')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+          {[[awayAbbrev, awayRow], [homeAbbrev, homeRow]].map(([abbrev, row]) => (
+            <div key={abbrev} style={{ backgroundColor: 'var(--c-111)', borderRadius: '10px', padding: '10px', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', color: 'var(--c-666)', marginBottom: '4px' }}>{abbrev}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-ccc)' }}>{t('analyse_home_short')} {row?.homeWins ?? 0}-{row?.homeLosses ?? 0}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-ccc)' }}>{t('analyse_away_short')} {row?.roadWins ?? 0}-{row?.roadLosses ?? 0}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={cardStyleLocal}>
+        <div style={sectionTitleLocal}>{t('analyse_injuries_title')}</div>
+        <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '6px 0' }}>{t('analyse_injuries_empty')}</div>
+      </div>
+
+      <ApercuMatchup match={match} lineupDF={lineupDF} onSelectJoueur={onSelectJoueur} onBack={onBack} />
+    </div>
+  );
+}
+
 // Petite bande de points (5 derniers resultats) : vert = positif (points pour un joueur,
 // victoire pour une equipe), rouge sinon. Etat vide propre si aucune donnee.
 function FormeRecenteStrip({ t, forme }) {
@@ -5314,12 +5667,13 @@ function IconStarSmall({ filled, size = 14 }) {
 
 // ===================== Recherche universelle =====================
 
-function AnalyseSearchBar({ t, classement, onOpenPlayer, onOpenTeam }) {
+function AnalyseSearchBar({ t, classement, seasonId, onOpenPlayer, onOpenTeam, onOpenUpcomingMatch }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [freeTextPlayers, setFreeTextPlayers] = useState([]);
   const [chargement, setChargement] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [chargementProchain, setChargementProchain] = useState(null); // abbrev en cours de recherche
   const debounceRef = useRef(null);
   const ref = useRef(null);
 
@@ -5353,6 +5707,24 @@ function AnalyseSearchBar({ t, classement, onOpenPlayer, onOpenTeam }) {
     if (!item) return;
     if (item.type === 'player') onOpenPlayer({ id: item.id, nom: item.nom, equipe: item.equipe, position: item.position, numero: item.numero });
     else onOpenTeam(item.id, item.data);
+    setQuery(''); setOpen(false); setActiveIndex(-1);
+  }
+
+  // "Matchs a venir" sur un resultat equipe : ouvre directement son prochain match (onglet
+  // matchup), sans passer par la fiche equipe. Reutilise trouverProchainMatchEquipe (meme
+  // helper que FicheJoueur/FicheEquipe).
+  async function ouvrirProchainMatch(abbrev) {
+    if (!onOpenUpcomingMatch) return;
+    setChargementProchain(abbrev);
+    try {
+      let prochain = await trouverProchainMatchEquipe(abbrev, seasonId);
+      if (!prochain) {
+        const anneeDebut = parseInt(seasonId.slice(0, 4), 10);
+        prochain = await trouverProchainMatchEquipe(abbrev, `${anneeDebut + 1}${anneeDebut + 2}`);
+      }
+      if (prochain) onOpenUpcomingMatch(prochain);
+    } catch { /* aucun match trouve : on ne fait rien, pas d'etat invente */ }
+    setChargementProchain(null);
     setQuery(''); setOpen(false); setActiveIndex(-1);
   }
 
@@ -5415,10 +5787,18 @@ function AnalyseSearchBar({ t, classement, onOpenPlayer, onOpenTeam }) {
                   {groups.teams.map((r, i) => {
                     const idx = groups.players.length + i;
                     return (
-                      <div key={`e-${r.id}`} onClick={() => choisir(r)} onMouseEnter={() => setActiveIndex(idx)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
-                        <img src={LOGOS_NHL[r.id]} alt={r.id} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{r.nom}</div>
+                      <div key={`e-${r.id}`} onMouseEnter={() => setActiveIndex(idx)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
+                        <div onClick={() => choisir(r)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                          <img src={LOGOS_NHL[r.id]} alt={r.id} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{r.nom}</div>
+                        </div>
+                        {onOpenUpcomingMatch && (
+                          <button onClick={() => ouvrirProchainMatch(r.id)} disabled={chargementProchain === r.id}
+                            style={{ background: 'none', border: '1px solid var(--c-333)', borderRadius: '7px', cursor: 'pointer', color: 'var(--c-888)', fontSize: '10px', padding: '6px 8px', flexShrink: 0, minHeight: '32px' }}>
+                            {chargementProchain === r.id ? t('analyse_loading') : t('analyse_upcoming_matches')}
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -5444,12 +5824,72 @@ function AnalyseTabsBar({ t, tabs, activeKey, onActivate, onClose }) {
         return (
           <div key={key} onClick={() => onActivate(key)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px 8px 14px', borderRadius: '10px', cursor: 'pointer', backgroundColor: active ? '#f97316' : 'var(--c-111)', color: active ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: active ? '700' : '500', flexShrink: 0, whiteSpace: 'nowrap', minHeight: '44px' }}>
-            <span>{tab.kind === 'team' ? '🏒' : '🏃'} {tab.nom}</span>
+            <span>{tab.kind === 'match' ? '🆚' : tab.kind === 'team' ? '🏒' : '🏃'} {tab.nom}</span>
             <button onClick={e => { e.stopPropagation(); onClose(key); }} aria-label={t('analyse_tab_close')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: active ? 'rgba(255,255,255,0.8)' : 'var(--c-555)', fontSize: '13px', padding: '4px', lineHeight: 1 }}>✕</button>
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ===================== Calendrier (ecran par defaut, aucun onglet ouvert) =====================
+// Reutilise exactement le mecanisme de PageStatsEquipesAnalyses/PageStatsJoueursAnalyses
+// (chargerProchaineSemaineAvecMatchs : cherche semaine par semaine la premiere avec des
+// matchs, gere la morte-saison) et la carte de match existante (CarteMatchJoueurs) --
+// seul le clic change de destination (onglet "match" au lieu de l'ancien etat local
+// matchOuvert/ApercuMatchup direct).
+function AnalyseCalendarDefault({ t, onOpenMatch }) {
+  const [matchsParJour, setMatchsParJour] = useState({});
+  const [jourActif, setJourActif] = useState('');
+  const [chargement, setChargement] = useState(true);
+
+  useEffect(() => {
+    let annule = false;
+    (async () => {
+      const resultats = await chargerProchaineSemaineAvecMatchs();
+      if (annule) return;
+      setMatchsParJour(resultats);
+      setJourActif(Object.keys(resultats).sort()[0] || '');
+      setChargement(false);
+    })();
+    return () => { annule = true; };
+  }, []);
+
+  const jours = Object.keys(matchsParJour).sort();
+
+  return (
+    <div>
+      <div style={{ textAlign: 'center', padding: '12px 8px 20px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--c-555)' }}>{t('analyse_calendar_help')}</div>
+      </div>
+      {chargement ? (
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>{t('analyse_loading')}</p>
+      ) : jours.length === 0 ? (
+        <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>{t('analyse_calendar_empty')}</p>
+      ) : (
+        <>
+          <div style={{ color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>{formatSemaineDe(jours[0])}</div>
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {jours.map(jour => {
+              const d = new Date(jour + 'T12:00:00');
+              const estAujourdhui = jour === getDateStr(new Date());
+              const label = estAujourdhui ? t('analyse_calendar_today') : d.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' });
+              const nb = matchsParJour[jour]?.length || 0;
+              return (
+                <button key={jour} onClick={() => setJourActif(jour)} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: jourActif === jour ? '#f97316' : 'var(--c-1a1a1a)', color: jourActif === jour ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: jourActif === jour ? 'bold' : 'normal' }}>
+                  {label}
+                  <span style={{ display: 'block', fontSize: '10px', color: jourActif === jour ? 'rgba(255,255,255,0.8)' : 'var(--c-555)' }}>{nb}G</span>
+                </button>
+              );
+            })}
+          </div>
+          {(matchsParJour[jourActif] || []).map((match, i) => (
+            <CarteMatchJoueurs key={`${jourActif}-${i}`} match={match} onOpenMatchup={onOpenMatch} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -5589,7 +6029,11 @@ function ModalShell({ title, onClose, children }) {
 }
 
 function SavePickModal({ t, cible, onClose, onConfirm }) {
-  const [champs, setChamps] = useState({ market: '', line: '', odds: '', planned_stake: '', note: '' });
+  // Pre-rempli depuis la cible (match/marche/cote deja affiches sur l'analyse d'origine, ex.
+  // le bouton "Sauvegarder un pari" d'un matchup) : le formulaire reste modifiable ensuite.
+  const [champs, setChamps] = useState({
+    market: cible.market || '', line: cible.line ?? '', odds: cible.odds ?? '', planned_stake: '', note: '',
+  });
   function champ(nom, label, type = 'text') {
     return (
       <div style={{ marginBottom: '10px' }}>
@@ -5782,6 +6226,14 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
     setShowWatchlistDrawer(false);
   }
 
+  // Ouvre (ou active) l'onglet matchup d'un match : depuis le calendrier par defaut, le
+  // bandeau de scores (HockeyTicker) ou "Matchs a venir" dans la recherche.
+  function openMatchTab(match) {
+    const { tabs: nextTabs, activeKey: nextKey } = openOrActivateTab(tabs, buildMatchTab(match));
+    setTabs(nextTabs); setActiveKey(nextKey);
+    setShowWatchlistDrawer(false);
+  }
+
   function onOpenWatchlistItem(item) {
     if (item.kind === 'team') openTeamTab(item.ref_id);
     else openPlayerTab({ id: item.ref_id, nom: item.label, equipe: item.equipe, position: '', numero: '' });
@@ -5841,13 +6293,7 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
 
   let panneauCentral;
   if (!activeTab) {
-    panneauCentral = (
-      <div style={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
-        <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔎</div>
-        <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--c-white)', marginBottom: '6px' }}>{t('analyse_empty_title')}</div>
-        <div style={{ fontSize: '13px', color: 'var(--c-555)' }}>{t('analyse_empty_sub')}</div>
-      </div>
-    );
+    panneauCentral = <AnalyseCalendarDefault t={t} onOpenMatch={openMatchTab} />;
   } else if (activeTab.kind === 'player') {
     panneauCentral = (
       <FicheJoueur
@@ -5856,6 +6302,23 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
         onBack={() => closeTab(tabKey(activeTab))}
         onSelectTeam={(abbrev) => openTeamTab(abbrev)}
         isFavorite={isActiveFavorite}
+        onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
+        onSavePick={utilisateur?.id ? setSavePickCible : undefined}
+      />
+    );
+  } else if (activeTab.kind === 'match') {
+    panneauCentral = (
+      <MatchupPanel
+        key={tabKey(activeTab)}
+        t={t}
+        matchTab={activeTab}
+        classement={classement}
+        lineupDF={lineupDF}
+        seasonId={seasonId}
+        onSelectTeam={(abbrev) => openTeamTab(abbrev)}
+        onSelectJoueur={(j) => openPlayerTab(j)}
+        onBack={() => closeTab(tabKey(activeTab))}
+        watchlist={watchlist}
         onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
         onSavePick={utilisateur?.id ? setSavePickCible : undefined}
       />
@@ -5892,8 +6355,11 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
         )}
 
         <div className="analyse-col-main">
+          <div style={{ marginBottom: '10px', borderRadius: '10px', overflow: 'hidden' }}>
+            <HockeyTicker onSelectMatch={openMatchTab} />
+          </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
-            <AnalyseSearchBar t={t} classement={classement} onOpenPlayer={openPlayerTab} onOpenTeam={openTeamTab} />
+            <AnalyseSearchBar t={t} classement={classement} seasonId={seasonId} onOpenPlayer={openPlayerTab} onOpenTeam={openTeamTab} onOpenUpcomingMatch={openMatchTab} />
             {isMobile && (
               <button onClick={() => setShowWatchlistDrawer(true)} style={{ minHeight: '44px', padding: '0 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-888)', cursor: 'pointer', fontSize: '12px' }}>⭐ {watchlist.length}</button>
             )}
@@ -6240,6 +6706,8 @@ export {
   formatSemaineDe, calculerFavoriMatch,
   tabKey, openOrActivateTab, closeAnalyseTab, moveActiveSearchIndex, buildSearchGroups,
   readAnalyseState, writeAnalyseState, formFromSavedPick,
+  buildMatchTab, calculerProbabiliteImplicite, calculerEdgePct, aggregerTendanceEquipe,
+  filtrerFaceAFace, formeSequence,
 };
 export default Analyses;
  

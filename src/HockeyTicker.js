@@ -52,7 +52,7 @@ function getUrl(path) {
   return `https://corsproxy.io/?${encodeURIComponent('https://api-web.nhle.com/v1/' + path)}`;
 }
 
-function HockeyTicker({ onMatchsCharge }) {
+function HockeyTicker({ onMatchsCharge, onSelectMatch }) {
   const [matchs, setMatchs] = useState([]);
 
   useEffect(() => {
@@ -107,7 +107,7 @@ function HockeyTicker({ onMatchsCharge }) {
           const scoreVis = match.awayTeam?.score;
 
           return (
-            <div key={index} style={{
+            <div key={index} onClick={() => onSelectMatch?.(match)} style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
