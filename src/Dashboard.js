@@ -6,6 +6,7 @@ import BetImportFlow from './BetImportFlow';
 import BetDetailSheet from './BetDetailSheet';
 import { fichierVersJpegBase64 } from './imageUtils';
 import { BET_TYPES } from './betTypes';
+import { useIsMobile } from './Analyses';
 
 // Titre d'affichage d'un bet importe : joueur (prop) > equipe misee (moneyline) > type
 export function titreBetAuto(bet) {
@@ -16,6 +17,7 @@ export function titreBetAuto(bet) {
 
 function Dashboard({ lang = 'en' }) {
   const t = getT(lang);
+  const isMobile = useIsMobile();
   const [paris, setParis] = useState([]);
   const [bankroll, setBankrollState] = useState(1000);
   const [afficherImport, setAfficherImport] = useState(false);
@@ -297,8 +299,10 @@ function Dashboard({ lang = 'en' }) {
 
   if (chargement) return <div style={{ padding: '80px', textAlign: 'center', color: 'var(--c-555)' }}>Loading...</div>;
 
-  return (
-    <div style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+  const miseActiveTotal = actifsCombines.reduce((a, e) => a + (parseFloat(e.data.mise) || 0), 0);
+
+  const contenuPrincipal = (
+    <>
       <div style={{ marginBottom: '32px' }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('bets_title')}</h2>
         <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '14px' }}>Track and manage your wagers</p>
@@ -545,7 +549,70 @@ function Dashboard({ lang = 'en' }) {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+        {contenuPrincipal}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bets-grid" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
+      <div className="bets-main-col">{contenuPrincipal}</div>
+      <div className="bets-side-col">
+        <BetsSummaryCards t={t} roi={roi} winRate={winRate} activeCount={actifsCombines.length} activeStake={miseActiveTotal} donneesGraphique={donneesGraphique} />
+      </div>
     </div>
+  );
+}
+
+// Resume (colonne droite, iPad/web uniquement) : ROI, taux de reussite, mises actives et une
+// courbe de profit reduite -- reutilise les memes valeurs deja calculees dans Dashboard (roi,
+// winRate, donneesGraphique), aucune nouvelle logique metier.
+function BetsSummaryCards({ t, roi, winRate, activeCount, activeStake, donneesGraphique }) {
+  const cardStyle = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '20px', border: '1px solid var(--c-161616)' };
+  const statBoxStyle = { backgroundColor: 'var(--c-111)', borderRadius: '10px', padding: '14px', textAlign: 'center' };
+  return (
+    <>
+      <div style={cardStyle}>
+        <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '14px', letterSpacing: '-0.3px' }}>{t('bets_summary_title')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={statBoxStyle}>
+            <div style={{ color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>ROI</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444' }}>{roi}%</div>
+          </div>
+          <div style={statBoxStyle}>
+            <div style={{ color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('bets_win_rate')}</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)' }}>{winRate}%</div>
+          </div>
+          <div style={{ ...statBoxStyle, gridColumn: '1 / -1' }}>
+            <div style={{ color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t('bets_active_stakes')}</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)' }}>{activeCount} · ${activeStake.toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
+      <div style={cardStyle}>
+        <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '10px', letterSpacing: '-0.3px' }}>{t('bets_profit_curve')}</div>
+        {donneesGraphique.length > 1 ? (
+          <div style={{ width: '100%', height: 110 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={donneesGraphique} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                <XAxis dataKey="date" tick={{ fill: 'var(--c-555)', fontSize: 9 }} axisLine={{ stroke: 'var(--c-222)' }} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--c-555)', fontSize: 9 }} axisLine={false} tickLine={false} width={36} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '8px', fontSize: '11px' }} labelStyle={{ color: 'var(--c-888)' }} />
+                <Line type="monotone" dataKey="profit" stroke="#f97316" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
+        )}
+      </div>
+    </>
   );
 }
 

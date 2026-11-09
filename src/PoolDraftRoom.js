@@ -617,7 +617,10 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
     return <div style={card}><div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div></div>;
   }
 
-  if (detailMember) {
+  // Sur mobile, le clic sur un participant remplace toujours le tableau par sa fiche
+  // (comportement inchange). Sur iPad/web, le tableau reste visible et la fiche s'affiche a
+  // cote (voir le "return" plus bas).
+  if (detailMember && isMobile) {
     return (
       <MemberDetailPanel pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} onBack={() => setDetailMemberId(null)} />
     );
@@ -627,7 +630,7 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
   const showToday = !isMobile || mobileGroup === 'today';
   const showCumul = !isMobile || mobileGroup === 'cumul';
 
-  return (
+  const tableauClassement = (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>
@@ -725,6 +728,21 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
       <TopScorersBlock pool={pool} lang={lang} rows={topScorers} showAll={showAllTop} setShowAll={setShowAllTop} />
     </div>
   );
+
+  // iPad/web avec un participant selectionne : tableau a gauche, fiche a droite (sticky),
+  // sans bouton retour (il suffit de cliquer une autre ligne ou de refermer via le tableau).
+  if (!isMobile && detailMember) {
+    return (
+      <div className="pool-standings-shell">
+        <div>{tableauClassement}</div>
+        <div className="pool-standings-side">
+          <MemberDetailPanel key={detailMember.id} pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} />
+        </div>
+      </div>
+    );
+  }
+
+  return tableauClassement;
 }
 
 function TopScorersBlock({ pool, lang, rows, showAll, setShowAll }) {

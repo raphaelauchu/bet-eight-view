@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
-import { useIsMobile, useSaisonCourante } from './Analyses';
+import { useIsMobile, useIsDesktopWide, useSaisonCourante } from './Analyses';
 import PoolDraft from './PoolDraft';
 import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel, PoolStandings } from './PoolDraftRoom';
 import { PoolTradesTab, PoolWaiversTab } from './PoolTrades';
@@ -544,8 +544,9 @@ function stepTitleKey(stepId, poolType) {
   return `pool_wizard_step_${stepId}`;
 }
 
-function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, onCancel, onSubmit, busy, submitError }) {
+export function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, onCancel, onSubmit, busy, submitError }) {
   const t = getT(lang);
+  const isDesktopWide = useIsDesktopWide();
   const seasonId = useSaisonCourante();
   const [stepIndex, setStepIndex] = useState(0);
   // La saison "courante" se resout de facon asynchrone (useSaisonCourante demarre avec une
@@ -613,7 +614,8 @@ function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, on
   }
 
   return (
-    <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+    <div className="pool-wizard-shell">
+    <div style={{ maxWidth: '560px', width: '100%' }}>
       <h2 style={{ margin: '0 0 4px', fontSize: '20px', fontWeight: '800' }}>{mode === 'create' ? t('pool_wizard_create_title') : t('pool_wizard_edit_title')}</h2>
       <div style={{ fontSize: '12px', color: 'var(--c-666)', marginBottom: '16px' }}>
         {stepId === 'recap' ? t('pool_wizard_step_recap') : t('pool_wizard_step_counter').replace('{n}', stepIndexClamped + 1).replace('{total}', steps.length - 1)}
@@ -649,6 +651,12 @@ function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastName, on
           </button>
         )}
       </div>
+    </div>
+    {isDesktopWide && (
+      <div className="pool-wizard-recap">
+        <RulesSummary rules={form.rules} t={t} />
+      </div>
+    )}
     </div>
   );
 }
@@ -954,8 +962,13 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
     );
   }
 
+  // La salle de draft en direct et le classement ont besoin de toute la largeur disponible
+  // (colonnes internes) sur iPad/web ; les autres onglets restent une colonne unique centree
+  // (pas de contenu pertinent pour une deuxieme colonne, voir .pool-lobby-narrow).
+  const shellWide = !isMobile && (activeTab === 'standings' || (activeTab === 'draft' && pool.status !== 'setup'));
+
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+    <div className={isMobile ? undefined : 'pool-lobby-shell'} style={isMobile ? { maxWidth: '760px', margin: '0 auto' } : undefined}>
       <button onClick={onBack}
         style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', marginBottom: '16px' }}>
         {t('pool_lobby_back_btn')}
@@ -988,6 +1001,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
         ))}
       </div>
 
+      <div className={!isMobile && !shellWide ? 'pool-lobby-narrow' : undefined}>
       {activeTab === 'lobby' && (
         <>
           <div style={{ ...card, marginBottom: '16px' }}>
@@ -1078,6 +1092,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       )}
 
       {activeTab === 'rules' && <RulesSummary rules={pool.rules} t={t} />}
+      </div>
     </div>
   );
 }

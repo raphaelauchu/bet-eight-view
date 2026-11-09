@@ -9,11 +9,12 @@ jest.mock('./supabase', () => ({
 }));
 
 jest.mock('./Analyses', () => ({
-  useIsMobile: () => false,
+  useIsMobile: jest.fn(() => false),
   useSaisonCourante: () => '20252026',
 }));
 
 const { supabase } = require('./supabase');
+const { useIsMobile } = require('./Analyses');
 
 const POOL = { id: 'pool-1', rules: { poolType: 'classic', display: 'team', salaryCap: { enabled: false } } };
 
@@ -36,6 +37,7 @@ const STANDINGS_ROWS = [
 
 beforeEach(() => {
   jest.clearAllMocks();
+  useIsMobile.mockReturnValue(false);
   supabase.rpc.mockImplementation((fn) => {
     if (fn === 'get_pool_standings') return Promise.resolve({ data: STANDINGS_ROWS, error: null });
     if (fn === 'get_pool_top_scorers_today') return Promise.resolve({ data: [], error: null });
@@ -96,8 +98,10 @@ test('le selecteur reflete le participant affiche et permet de changer d\'equipe
   await waitFor(() => expect(headerText()).toBe('Equipe Dave'));
   expect(select.value).toBe('m-dave');
 
-  // On ne revient PAS au classement en changeant d'equipe via le selecteur.
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  // Sur iPad/web (useIsMobile mocke a false ici), le tableau du classement reste visible a
+  // cote de la fiche du participant selectionne (voir .pool-standings-shell) -- on ne revient
+  // PAS a un etat "tableau seul", mais le tableau n'est jamais remplace non plus.
+  expect(screen.queryByRole('table')).toBeInTheDocument();
 });
 
 test('les fleches precedent/suivant changent d\'equipe en conservant la periode selectionnee', async () => {
@@ -125,4 +129,21 @@ test('les fleches precedent/suivant changent d\'equipe en conservant la periode 
 test('l\'onglet "Mon equipe" (TeamRosterPanel) affiche toujours mon equipe, independamment du classement', async () => {
   render(<TeamRosterPanel pool={POOL} members={MEMBERS} lang="fr" viewedMemberId="m-moi" />);
   await waitFor(() => expect(headerText()).toBe('Mon Equipe'));
+});
+
+test('iPad/web : le tableau du classement reste visible a cote de la fiche du participant selectionne', async () => {
+  useIsMobile.mockReturnValue(false);
+  await renderStandings();
+  fireEvent.click(screen.getByText('Dave'));
+  await waitFor(() => expect(headerText()).toBe('Equipe Dave'));
+  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(screen.getByText('Dave')).toBeInTheDocument(); // toujours dans le tableau
+});
+
+test('mobile (<768px) : cliquer un participant remplace toujours le tableau par sa fiche (comportement inchange)', async () => {
+  useIsMobile.mockReturnValue(true);
+  await renderStandings();
+  fireEvent.click(screen.getByText('Dave'));
+  await waitFor(() => expect(headerText()).toBe('Equipe Dave'));
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });

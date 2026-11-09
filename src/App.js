@@ -1206,8 +1206,9 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   );
 }
 
-function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
+export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const t = getT(lang);
+  const isMobile = useIsMobile();
   const [transactions, setTransactions] = React.useState([]);
   const [bankroll, setBankroll] = React.useState(null);
   const [montant, setMontant] = React.useState('');
@@ -1319,107 +1320,115 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
 
   const inp = { width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' };
 
-  return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('home_bankroll')}</h2>
-      </div>
+  const headerBlock = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+      <button onClick={onBack} style={{ backgroundColor: 'transparent', border: '1px solid var(--c-222)', color: 'var(--c-666)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{t('back_btn')}</button>
+      <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>{t('home_bankroll')}</h2>
+    </div>
+  );
 
-      {/* Bankroll card */}
-      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('bank_current')}</p>
-        <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
-          ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
-        </h1>
+  const decorativeCircle = <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />;
 
-        {/* Stats 30 derniers jours */}
-        <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_last30')}</span>
-            <span style={{ color: '#f97316', fontSize: '10px', fontWeight: '600' }}>● Live</span>
-          </div>
-          <div style={{ display: 'flex' }}>
-            {(() => {
-              const now = new Date();
-              const paris30 = parisList.filter(p => p.statut !== 'actif' && p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
-              const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
-              const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
-              const wr30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
-              const tx30 = transactions.filter(t => t.date_transaction && (now - new Date(t.date_transaction)) / 86400000 <= 30);
-              const dep30 = tx30.filter(t => t.type === 'deposit').reduce((a, t) => a + t.montant, 0);
-              const ret30 = tx30.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
-              const net30 = ret30 - dep30 + profit30;
-              return [
-                [t('bank_bet_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
-                [t('bank_win_rate'), wr30 + '%', 'white'],
-                [t('bank_net_pnl'), (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
-              ].map(([label, val, color], i) => (
-                <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
-                  <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
-                  <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
-                </div>
-              ));
-            })()}
-          </div>
+  // Solde actuel + stats 30 derniers jours : carte "hero" (colonne droite sur iPad/web).
+  const balanceAndStats = (
+    <>
+      <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('bank_current')}</p>
+      <h1 style={{ margin: '6px 0 20px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
+        ${bankroll !== null ? Math.floor(bankroll).toLocaleString() : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankroll !== null ? (bankroll % 1).toFixed(2).slice(2) : '00'}</span>
+      </h1>
+
+      {/* Stats 30 derniers jours */}
+      <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', border: '1px solid var(--c-1a1a1a)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_last30')}</span>
+          <span style={{ color: '#f97316', fontSize: '10px', fontWeight: '600' }}>● Live</span>
         </div>
+        <div style={{ display: 'flex' }}>
+          {(() => {
+            const now = new Date();
+            const paris30 = parisList.filter(p => p.statut !== 'actif' && p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
+            const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
+            const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
+            const wr30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
+            const tx30 = transactions.filter(t => t.date_transaction && (now - new Date(t.date_transaction)) / 86400000 <= 30);
+            const dep30 = tx30.filter(t => t.type === 'deposit').reduce((a, t) => a + t.montant, 0);
+            const ret30 = tx30.filter(t => t.type === 'withdrawal').reduce((a, t) => a + t.montant, 0);
+            const net30 = ret30 - dep30 + profit30;
+            return [
+              [t('bank_bet_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
+              [t('bank_win_rate'), wr30 + '%', 'white'],
+              [t('bank_net_pnl'), (net30 >= 0 ? '+' : '') + '$' + net30.toFixed(2), net30 >= 0 ? '#22c55e' : '#ef4444'],
+            ].map(([label, val, color], i) => (
+              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+                <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
+              </div>
+            ));
+          })()}
+        </div>
+      </div>
+    </>
+  );
 
-        {/* Graphique avec filtre */}
-        <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', marginBottom: '16px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
-                <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
-                  {label}
-                </button>
-              ))}
-              <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
-                style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
-                ⚙
+  // Graphique d'evolution + totaux "all-time" : colonne principale sur iPad/web.
+  const chartAndTotals = (
+    <>
+      <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', border: '1px solid var(--c-1a1a1a)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
+              <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
+                style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
+                {label}
               </button>
-            </div>
+            ))}
+            <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
+              style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
+              ⚙
+            </button>
           </div>
-          {curveData.length > 1 ? (
-            <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
-          )}
         </div>
-
-        <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
-          {[
-            [t('bank_total_deposited'), '$' + totalDepose.toFixed(2), 'var(--c-888)'],
-            [t('bank_total_withdrawn'), '$' + totalRetire.toFixed(2), 'var(--c-888)'],
-            [t('bank_alltime'), (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
-          ].map(([label, val, color], i) => (
-            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
-              <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
-              <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
-            </div>
-          ))}
-        </div>
+        {curveData.length > 1 ? (
+          <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
+        )}
       </div>
 
-      {/* Bouton + New Transaction */}
+      <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
+        {[
+          [t('bank_total_deposited'), '$' + totalDepose.toFixed(2), 'var(--c-888)'],
+          [t('bank_total_withdrawn'), '$' + totalRetire.toFixed(2), 'var(--c-888)'],
+          [t('bank_alltime'), (profitReel >= 0 ? '+' : '') + '$' + profitReel.toFixed(2), profitReel >= 0 ? '#22c55e' : '#ef4444'],
+        ].map(([label, val, color], i) => (
+          <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '12px' : '0', paddingLeft: i > 0 ? '12px' : '0' }}>
+            <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color }}>{val}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
+  // Bouton + formulaire de nouvelle transaction (depot/retrait) : colonne droite sur iPad/web.
+  const newTxBlock = (
+    <>
       <button onClick={() => setShowForm(!showForm)}
-        style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? 'var(--c-555)' : 'white', border: showForm ? '1px solid var(--c-333)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>
+        style={{ width: '100%', padding: '13px', background: showForm ? 'transparent' : 'linear-gradient(135deg, #f97316, #ea580c)', color: showForm ? 'var(--c-555)' : 'white', border: showForm ? '1px solid var(--c-333)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>
         {showForm ? t('cancel_btn') : t('bank_new_tx')}
       </button>
 
-      {/* Formulaire */}
       {showForm && (
-        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-1a1a1a)', marginBottom: '16px' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             {[['deposit', t('deposit_btn')], ['withdrawal', t('withdrawal_btn')]].map(([val, label]) => (
               <button key={val} onClick={() => setType(val)}
@@ -1446,9 +1455,13 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
           </div>
         </div>
       )}
+    </>
+  );
 
-      {/* Filtres */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
+  // Filtres de periode + liste des transactions : colonne principale sur iPad/web.
+  const filtersAndListBlock = (
+    <>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
           <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
             style={{ padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-0d0d0d)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
@@ -1461,9 +1474,8 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
         </button>
       </div>
 
-      {/* Filtres avancés */}
       {showFiltresAvances && (
-        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '16px', border: '1px solid var(--c-1a1a1a)', marginBottom: '12px' }}>
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '16px', border: '1px solid var(--c-1a1a1a)' }}>
           <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>{t('bank_custom_range')}</div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
             <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltrePeriode('all'); }}
@@ -1484,7 +1496,6 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
         </div>
       )}
 
-      {/* Liste transactions */}
       <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-161616)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>{t('bank_transactions')}</h3>
@@ -1517,6 +1528,40 @@ function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
             </div>
           </div>
         ))}
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: '-apple-system, sans-serif' }}>
+        {headerBlock}
+        <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
+          {decorativeCircle}
+          {balanceAndStats}
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>{chartAndTotals}</div>
+        </div>
+        <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>{newTxBlock}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>{filtersAndListBlock}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bankroll-grid" style={{ fontFamily: '-apple-system, sans-serif' }}>
+      <div className="bankroll-main-col">
+        {headerBlock}
+        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-161616)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {chartAndTotals}
+        </div>
+        {filtersAndListBlock}
+      </div>
+      <div className="bankroll-side-col">
+        <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
+          {decorativeCircle}
+          {balanceAndStats}
+        </div>
+        {newTxBlock}
       </div>
     </div>
   );

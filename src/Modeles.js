@@ -41,13 +41,15 @@ function AccueilModeles({ onSelect }) {
 }
 
 // Ecran 2 : liste des modeles disponibles pour le type choisi, triee par ROI decroissant.
-function ListeModeles({ type, onBack, onSelect }) {
+// embedded=true (colonne de gauche sur iPad/web) : pas de padding/largeur propres (geres par
+// le conteneur .modeles-shell), et la carte du modele selectionne reste surlignee.
+function ListeModeles({ type, onBack, onSelect, selectedId, embedded }) {
   const isMobile = useIsMobile();
   const padding = isMobile ? '16px' : '32px';
   const modeles = getModeles(type);
 
   return (
-    <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
+    <div style={embedded ? undefined : { padding, maxWidth: '900px', margin: '0 auto' }}>
       <BoutonBack onClick={onBack} />
       <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '24px', fontWeight: '900', color: 'var(--c-white)' }}>
         {type === 'equipe' ? 'Modèles Équipe' : 'Modèles Joueur'}
@@ -56,13 +58,14 @@ function ListeModeles({ type, onBack, onSelect }) {
       <div>
         {modeles.map(m => {
           const positif = m.roi >= 0;
+          const selectionne = embedded && m.id === selectedId;
           return (
             <div
               key={m.id}
               onClick={() => onSelect(m)}
-              style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', cursor: 'pointer' }}
+              style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: selectionne ? '1px solid #f97316' : '1px solid var(--c-222)', padding: '16px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = selectionne ? '#f97316' : 'var(--c-222)'}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '4px' }}>{m.nom}</div>
@@ -81,7 +84,9 @@ function ListeModeles({ type, onBack, onSelect }) {
 }
 
 // Ecran 3 : detail d'un modele - ROI + graphique, explication, selecteur de matchs eligibles, recommandation.
-function DetailModele({ modele, onBack }) {
+// embedded=true (colonne de droite sur iPad/web) : pas de padding/largeur propres, pas de
+// bouton retour (la liste reste visible a gauche, il suffit de cliquer un autre modele).
+function DetailModele({ modele, onBack, embedded }) {
   const isMobile = useIsMobile();
   const seasonId = useSaisonCourante();
   const padding = isMobile ? '16px' : '32px';
@@ -162,8 +167,8 @@ function DetailModele({ modele, onBack }) {
   const positif = roiAffiche >= 0;
 
   return (
-    <div style={{ padding, maxWidth: '900px', margin: '0 auto' }}>
-      <BoutonBack onClick={onBack} />
+    <div style={embedded ? undefined : { padding, maxWidth: '900px', margin: '0 auto' }}>
+      {!embedded && <BoutonBack onClick={onBack} />}
 
       {/* Top pick de la semaine : matchup avec la plus grande probabilite de victoire, tous matchs confondus */}
       {topPick && (
@@ -291,17 +296,41 @@ function DetailModele({ modele, onBack }) {
 
 // Flux complet de l'onglet Modeles : accueil -> liste -> detail, avec bouton Back a chaque etape
 // (meme pattern de navigation interne que AnalysesFlux).
+// <768px (mobile) : navigation plein ecran INCHANGEE (accueil -> liste -> detail, remplacement
+// complet a chaque etape). >=768px (iPad/web) : une fois un type choisi, la liste reste visible
+// a gauche et le detail du modele selectionne s'affiche a droite (voir .modeles-shell).
 function ModelesFlux() {
+  const isMobile = useIsMobile();
   const [type, setType] = useState(null); // null | 'equipe' | 'joueur'
   const [modeleSelectionne, setModeleSelectionne] = useState(null);
 
-  if (modeleSelectionne) {
-    return <DetailModele modele={modeleSelectionne} onBack={() => setModeleSelectionne(null)} />;
+  if (!type) {
+    return <AccueilModeles onSelect={setType} />;
   }
-  if (type) {
+
+  if (isMobile) {
+    if (modeleSelectionne) {
+      return <DetailModele modele={modeleSelectionne} onBack={() => setModeleSelectionne(null)} />;
+    }
     return <ListeModeles type={type} onBack={() => setType(null)} onSelect={setModeleSelectionne} />;
   }
-  return <AccueilModeles onSelect={setType} />;
+
+  return (
+    <div className="modeles-shell">
+      <div className="modeles-list-col">
+        <ListeModeles type={type} onBack={() => { setType(null); setModeleSelectionne(null); }} onSelect={setModeleSelectionne} selectedId={modeleSelectionne?.id} embedded />
+      </div>
+      <div>
+        {modeleSelectionne ? (
+          <DetailModele modele={modeleSelectionne} embedded />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', color: 'var(--c-555)', fontSize: '14px', textAlign: 'center' }}>
+            Sélectionnez un modèle à gauche pour voir son détail
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default ModelesFlux;

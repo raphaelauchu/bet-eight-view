@@ -171,3 +171,191 @@ body {
 .analyse-shell-mobile button, .analyse-shell-tablet button, .analyse-shell-desktop button {
   min-height: 44px;
 }
+
+/* ===================== Mes Paris (Dashboard) =====================
+   <768px (mobile) : INCHANGE, une seule colonne (meme JSX qu'avant).
+   768-1199px (iPad) : .bets-grid, 2 colonnes 65%/35%.
+   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr. */
+.bets-grid {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 20px;
+  padding: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .bets-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    grid-template-columns: 2fr 1fr;
+    gap: 28px;
+    padding: 32px;
+  }
+}
+
+.bets-main-col, .bets-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bets-side-col {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.bets-grid button, .bets-grid [role="button"] {
+  min-height: 44px;
+}
+
+/* ===================== Bankroll =====================
+   <768px (mobile) : INCHANGE.
+   768-1199px (iPad) : .bankroll-grid, 2 colonnes 65%/35%.
+   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr. */
+.bankroll-grid {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 20px;
+  padding: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .bankroll-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    grid-template-columns: 2fr 1fr;
+    gap: 28px;
+    padding: 32px;
+  }
+}
+
+.bankroll-main-col, .bankroll-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bankroll-side-col {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.bankroll-grid button, .bankroll-grid [role="button"] {
+  min-height: 44px;
+}
+
+/* ===================== Pool =====================
+   Le conteneur du lobby (PoolLobby) etait fige a max-width:760px pour TOUS les onglets, y
+   compris la salle de draft et le classement qui ont besoin de toute la largeur disponible
+   sur iPad/web. <768px (mobile) : conserve l'ancien style inline (760px, sans effet reel sous
+   768px) -- aucun changement. >=768px : .pool-lobby-shell (large, jusqu'a 1500px) pour les
+   onglets qui en ont besoin (classement, draft), .pool-lobby-narrow (centre, 900px) pour les
+   onglets a colonne unique (lobby, mon equipe, regles, echanges, agents libres, alignement). */
+.pool-lobby-shell {
+  margin: 0 auto;
+}
+
+@media (min-width: 1200px) {
+  .pool-lobby-shell {
+    max-width: 1500px;
+  }
+}
+
+.pool-lobby-narrow {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Classement : tableau a gauche, fiche du participant selectionne a droite sur iPad/web (le
+   clic sur une ligne et les fleches precedent/suivant du selecteur sont inchanges, voir
+   PoolStandings/MemberDetailPanel dans PoolDraftRoom.js). Sur mobile, le clic remplace
+   toujours le tableau par la fiche (comportement inchange). */
+.pool-standings-shell {
+  display: grid;
+  grid-template-columns: 65% 35%;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .pool-standings-shell {
+    grid-template-columns: 2fr 1fr;
+    gap: 28px;
+  }
+}
+
+.pool-standings-side {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+/* Assistant de creation/edition de pool : formulaire centre (comme avant) ; a partir de
+   1200px, un apercu recapitulatif (RulesSummary, deja utilise dans l'onglet Regles) apparait
+   a droite pendant le remplissage. */
+.pool-wizard-shell {
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 1200px) {
+  .pool-wizard-shell {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 28px;
+    max-width: 1140px;
+    margin: 0 auto;
+    align-items: start;
+  }
+}
+
+.pool-wizard-recap {
+  position: sticky;
+  top: 16px;
+}
+
+.pool-lobby-shell button, .pool-standings-shell button, .pool-wizard-shell button {
+  min-height: 44px;
+}
+
+/* ===================== Modeles =====================
+   <768px (mobile) : INCHANGE, navigation plein ecran Accueil -> Liste -> Detail.
+   >=768px : .modeles-shell, liste a gauche (persistante) et detail du modele selectionne a
+   droite (meme principe que le Classement des pools). */
+.modeles-shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  padding: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .modeles-shell {
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+.modeles-list-col {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.modeles-shell button {
+  min-height: 44px;
+}
