@@ -4069,15 +4069,22 @@ function formatDraft(draftDetails) {
   return `${draftDetails.year} · Ronde ${draftDetails.round}, ${draftDetails.overallPick}e au total (${draftDetails.teamAbbrev})`;
 }
 
-// Fiche joueur pour l'onglet Stats : infos bio, stats saison, carriere par saison, derniers matchs.
+function formatMain(shootsCatches) {
+  if (shootsCatches === 'L') return 'G';
+  if (shootsCatches === 'R') return 'D';
+  return '-';
+}
+
+// Fiche joueur pour l'onglet Search : infos bio, stats saison, carriere par saison, derniers matchs.
 // Pas de shot chart ni de graphique L5/L10/L20 (voir FicheJoueur pour l'onglet Analyses).
-function FicheJoueurStats({ joueur, onBack }) {
+function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
   const isMobile = useIsMobile();
   const [chargement, setChargement] = useState(true);
   const [infos, setInfos] = useState(null);
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [carriere, setCarriere] = useState([]);
   const [dernierMatchs, setDernierMatchs] = useState([]);
+  const [vue, setVue] = useState('saison'); // 'saison' | 'carriere'
   const seasonId = useSaisonCourante();
 
   useEffect(() => { chargerStats(); }, [joueur.id, seasonId]);
@@ -4144,6 +4151,8 @@ function FicheJoueurStats({ joueur, onBack }) {
         villeNaissance: data.birthCity?.default || '',
         paysNaissance: data.birthCountry || '',
         repechage: data.draftDetails,
+        main: data.shootsCatches || '',
+        nomEquipeComplet: data.fullTeamName?.default || '',
       });
 
       const statsSaison = extraireStatsSaisonJoueur(data, seasonId, 2);
@@ -4214,7 +4223,12 @@ function FicheJoueurStats({ joueur, onBack }) {
 
   return (
     <div>
-      <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '16px' }}>
+        <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>Back</button>
+        {onAnalyser && (
+          <button onClick={() => onAnalyser(joueur)} style={{ backgroundColor: '#f97316', color: 'white', border: 'none', padding: '7px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>Analyser</button>
+        )}
+      </div>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
@@ -4223,7 +4237,9 @@ function FicheJoueurStats({ joueur, onBack }) {
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}</span>
+            <span style={{ color: 'var(--c-666)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {infos?.position} · {infos?.nomEquipeComplet || infos?.equipe} ({infos?.equipe}) · #{infos?.numero}{infos?.main ? ` · ${formatMain(infos.main)}` : ''}
+            </span>
           </div>
         </div>
       </div>
@@ -4238,6 +4254,7 @@ function FicheJoueurStats({ joueur, onBack }) {
             ['Âge', age != null ? `${age} ans` : '-'],
             ['Naissance', formatDateNaissance(infos?.naissance)],
             ['Lieu', [infos?.villeNaissance, infos?.paysNaissance].filter(Boolean).join(', ') || '-'],
+            ['Nationalité', infos?.paysNaissance || '-'],
             ['Repêchage', formatDraft(infos?.repechage)],
           ].map(([label, valeur]) => (
             <div key={label} style={{ backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px 12px' }}>
@@ -4248,7 +4265,15 @@ function FicheJoueurStats({ joueur, onBack }) {
         </div>
       </div>
 
+      {/* Selecteur Saison / Carriere */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+        {[['saison', 'Saison'], ['carriere', 'Carrière']].map(([id, label]) => (
+          <button key={id} onClick={() => setVue(id)} style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: vue === id ? '#f97316' : 'var(--c-1a1a1a)', color: vue === id ? 'white' : 'var(--c-666)', fontSize: '13px', fontWeight: vue === id ? '700' : '500' }}>{label}</button>
+        ))}
+      </div>
+
       {/* Stats saison complete */}
+      {vue === 'saison' && (
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Saison régulière</h3>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px' }}>
@@ -4263,8 +4288,10 @@ function FicheJoueurStats({ joueur, onBack }) {
           ))}
         </div>
       </div>
+      )}
 
-      {/* Stats de carriere */}
+      {/* Stats de carriere, saison par saison */}
+      {vue === 'carriere' && (
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Statistiques de carrière</h3>
         {carriere.length === 0 ? (
@@ -4274,7 +4301,7 @@ function FicheJoueurStats({ joueur, onBack }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--c-222)' }}>
-                  {['Saison', 'Équipe', 'PJ', 'B', 'A', 'PTS'].map(h => (
+                  {(statsAvancees?.gardien ? ['Saison', 'Équipe', 'PJ', 'V', 'MOY', '%ARR', 'BL'] : ['Saison', 'Équipe', 'PJ', 'B', 'A', 'PTS', '+/-', 'PUN']).map(h => (
                     <th key={h} style={{ textAlign: h === 'Équipe' ? 'left' : 'center', padding: '8px 6px', color: 'var(--c-666)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -4285,9 +4312,22 @@ function FicheJoueurStats({ joueur, onBack }) {
                     <td style={{ padding: '8px 6px', color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>{formatSaison(s.season)}</td>
                     <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', whiteSpace: 'nowrap' }}>{s.teamCommonName?.default || s.teamName?.default || '-'}</td>
                     <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.gamesPlayed ?? 0}</td>
-                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.goals ?? 0}</td>
-                    <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.assists ?? 0}</td>
-                    <td style={{ padding: '8px 6px', color: '#f97316', fontWeight: '900', textAlign: 'center' }}>{s.points ?? 0}</td>
+                    {statsAvancees?.gardien ? (
+                      <>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.wins ?? 0}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.goalsAgainstAvg != null ? s.goalsAgainstAvg.toFixed(2) : '-'}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.savePctg != null ? (s.savePctg * 100).toFixed(1) : '-'}</td>
+                        <td style={{ padding: '8px 6px', color: '#f97316', fontWeight: '900', textAlign: 'center' }}>{s.shutouts ?? 0}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.goals ?? 0}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.assists ?? 0}</td>
+                        <td style={{ padding: '8px 6px', color: '#f97316', fontWeight: '900', textAlign: 'center' }}>{s.points ?? 0}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.plusMinus ?? 0}</td>
+                        <td style={{ padding: '8px 6px', color: 'var(--c-aaa)', textAlign: 'center' }}>{s.pim ?? 0}</td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -4295,6 +4335,7 @@ function FicheJoueurStats({ joueur, onBack }) {
           </div>
         )}
       </div>
+      )}
 
       {/* Derniers matchs */}
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad }}>
@@ -6091,7 +6132,7 @@ function AnalyseDrawer({ t, onClose, children }) {
 
 // ===================== Composant principal =====================
 
-function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
+function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur, pendingOpenPlayer, onConsumedOpenPlayer }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
   const isDesktopWide = useIsDesktopWide();
@@ -6137,6 +6178,15 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur }) {
     if (!hydrated) return;
     writeAnalyseState({ tabs, activeKey });
   }, [tabs, activeKey, hydrated]);
+
+  // Ouvre l'onglet d'un joueur arrivant depuis le bouton "Analyser" de la fiche profil
+  // (onglet Search), une fois les onglets existants hydrates depuis localStorage.
+  useEffect(() => {
+    if (!hydrated || !pendingOpenPlayer) return;
+    openPlayerTab(pendingOpenPlayer);
+    onConsumedOpenPlayer?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, pendingOpenPlayer]);
 
   // ===== Liste de suivi (Supabase, realtime) =====
   useEffect(() => {
@@ -6701,7 +6751,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
 }
 
 export {
-  AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipe, FicheEquipeWS, WS_THEME, useWSTheme,
+  AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheJoueurStats, FicheEquipe, FicheEquipeWS, WS_THEME, useWSTheme,
   LOGOS_NHL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs,
   formatSemaineDe, calculerFavoriMatch,
   tabKey, openOrActivateTab, closeAnalyseTab, moveActiveSearchIndex, buildSearchGroups,

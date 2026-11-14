@@ -3,7 +3,7 @@ import Dashboard from './Dashboard';
 import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
-import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueur, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
+import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
@@ -1612,6 +1612,7 @@ function App() {
   const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
   const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
   const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
+  const [pendingOpenPlayer, setPendingOpenPlayer] = useState(null);
   const isMobile = useIsMobile();
   const isDesktopWide = useIsDesktopWide();
   // Appele sans condition (regle des hooks) : utilisateur peut passer de null a connecte entre
@@ -1683,7 +1684,11 @@ function App() {
 
     const contenuPrincipal = joueurFicheGlobal ? (
       <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '900px', margin: '0 auto' }}>
-        <FicheJoueur joueur={joueurFicheGlobal} onBack={() => setJoueurFicheGlobal(null)} />
+        <FicheJoueurStats
+          joueur={joueurFicheGlobal}
+          onBack={() => setJoueurFicheGlobal(null)}
+          onAnalyser={(j) => { setPendingOpenPlayer(j); setJoueurFicheGlobal(null); setEquipeFicheGlobal(null); setPage('stats'); }}
+        />
       </div>
     ) : equipeFicheGlobal ? (
       <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '900px', margin: '0 auto' }}>
@@ -1702,7 +1707,8 @@ function App() {
     ) : page === 'admin' ? (
       <AdminPage />
     ) : page === 'stats' ? (
-      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur} />
+      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
+        pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />
     ) : page === 'props' ? (
       <ModelesFlux />
     ) : (
