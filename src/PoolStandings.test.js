@@ -54,6 +54,10 @@ beforeEach(() => {
       select: () => q,
       eq: () => q,
       in: () => q,
+      is: () => q,
+      gt: () => q,
+      gte: () => q,
+      or: () => q,
       order: () => q,
       limit: () => q,
       maybeSingle: () => Promise.resolve({ data: null, error: null }),
@@ -137,6 +141,25 @@ test('les fleches precedent/suivant changent d\'equipe en conservant la periode 
 test('l\'onglet "Mon equipe" (TeamRosterPanel) affiche toujours mon equipe, independamment du classement', async () => {
   render(<TeamRosterPanel pool={POOL} members={MEMBERS} lang="fr" viewedMemberId="m-moi" />);
   await waitFor(() => expect(headerText()).toBe('Mon Equipe'));
+});
+
+test('Classement : ecusson LNH (pool_roster_periods), nom du participant ET nom d\'equipe, ecart avec le premier', async () => {
+  supabase.from.mockImplementation((table) => {
+    const q = {
+      select: () => q, eq: () => q, in: () => q, is: () => q, gt: () => q, gte: () => q, or: () => q, order: () => q, limit: () => q,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      then: (resolve) => {
+        if (table === 'pool_roster_periods') return Promise.resolve({ data: [{ member_id: 'm-dave', player_id: 'MTL' }], error: null }).then(resolve);
+        return Promise.resolve({ data: [], error: null }).then(resolve);
+      },
+    };
+    return q;
+  });
+  await renderStandings();
+  expect(screen.getByAltText('MTL')).toBeInTheDocument(); // ecusson de Dave (rang 1)
+  expect(screen.getByText('Dave')).toBeInTheDocument(); // nom du participant
+  expect(screen.getByText('Equipe Dave')).toBeInTheDocument(); // nom d'equipe, affiche en plus
+  expect(screen.getByText('-10')).toBeInTheDocument(); // ecart avec le premier (Alice, total_diff=10)
 });
 
 test('iPad/web : le tableau du classement reste visible a cote de la fiche du participant selectionne', async () => {

@@ -6,6 +6,7 @@ import PoolDraft from './PoolDraft';
 import PoolDraftRoom, { DraftWaitingRoom, TeamRosterPanel, PoolStandings } from './PoolDraftRoom';
 import { PoolTradesTab, PoolWaiversTab } from './PoolTrades';
 import { PoolLineupTab } from './PoolLineup';
+import { PoolHomeDashboard } from './PoolHome';
 import {
   POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS, CLASSIC_ROSTER_KEYS, FANTASY_ROSTER_KEYS,
   DRAFT_TYPES, DRAFT_ORDER_MODES, LINEUP_MODES, TRADE_APPROVAL_TYPES, WAIVER_CLAIM_ORDERS, DISPLAY_MODES, SALARY_CAP_SOURCES,
@@ -663,25 +664,71 @@ export function PoolWizard({ lang, mode, initial, defaultFirstName, defaultLastN
 
 // ===================== Lobby =====================
 
+// Petites icones geometriques originales (cercles/traits), pas une reprise d'un jeu existant --
+// seulement pour reperer chaque carte de regles d'un coup d'oeil (type, pointage, alignement...).
+function RuleIcon({ d, color = '#f97316' }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+const RULE_ICON_PATHS = {
+  type: 'M4 4h16v16H4z M4 10h16 M10 10v10',
+  scoring: 'M12 2v20 M5 7l7-5 7 5 M5 17l7 5 7-5',
+  roster: 'M4 7h16 M4 12h16 M4 17h10',
+  cap: 'M12 2a6 6 0 100 12 6 6 0 000-12z M12 14v8 M8 22h8',
+  draft: 'M3 12h18 M3 6h18 M3 18h12',
+  trades: 'M7 7h13l-3-3 M20 17H7l3 3',
+};
+
+function RuleCard({ icon, title, children }) {
+  return (
+    <div style={{ ...card, marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        <RuleIcon d={RULE_ICON_PATHS[icon]} />
+        <span style={{ ...sectionTitleStyle('var(--c-666)'), marginBottom: 0 }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function RulesSummary({ rules, t }) {
   const isClassic = rules.poolType === 'classic';
   return (
-    <div style={card}>
-      <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_rules_title')}</div>
-      <RecapRow label={t('pool_recap_type')} value={t(`pool_type_${rules.poolType}`)} />
-      <RecapRow label={t('pool_scoring_forward_title')} value={summarizeStatsGroup(rules.scoring.forward, POSITION_STAT_KEYS, t)} />
-      <RecapRow label={t('pool_scoring_defense_title')} value={summarizeStatsGroup(rules.scoring.defense, POSITION_STAT_KEYS, t)} />
-      <RecapRow label={t('pool_scoring_goalie_title')} value={summarizeStatsGroup(rules.scoring.goalie, GOALIE_STAT_KEYS, t)} />
-      <RecapRow label={t(isClassic ? 'pool_team_title' : 'pool_roster_title')} value={summarizeRoster(rules, t)} />
-      <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
-      {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
-      <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
-      <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s · ${t(`pool_draft_order_mode_${rules.draft.orderMode}`)}`} />
-      <RecapRow label={t('pool_draft_assistant_title')} value={rules.draftAssistant?.enabled ? t('pool_enabled') : t('pool_disabled')} />
-      {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
-      <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
-      {rules.trades?.enabled && <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic', padding: '6px 0' }}>{t('pool_trades_day_points_note')}</div>}
-      {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
+    <div>
+      <RuleCard icon="type" title={t('pool_lobby_rules_title')}>
+        <RecapRow label={t('pool_recap_type')} value={t(`pool_type_${rules.poolType}`)} />
+      </RuleCard>
+
+      <RuleCard icon="scoring" title={t('pool_scoring_forward_title')}>
+        <RecapRow label={t('pool_scoring_forward_title')} value={summarizeStatsGroup(rules.scoring.forward, POSITION_STAT_KEYS, t)} />
+        <RecapRow label={t('pool_scoring_defense_title')} value={summarizeStatsGroup(rules.scoring.defense, POSITION_STAT_KEYS, t)} />
+        <RecapRow label={t('pool_scoring_goalie_title')} value={summarizeStatsGroup(rules.scoring.goalie, GOALIE_STAT_KEYS, t)} />
+        {rules.roster.teamPicks >= 1 && <RecapRow label={t('pool_scoring_team_title')} value={summarizeStatsGroup(rules.scoring.team, TEAM_STAT_KEYS, t)} />}
+      </RuleCard>
+
+      <RuleCard icon="roster" title={t(isClassic ? 'pool_team_title' : 'pool_roster_title')}>
+        <RecapRow label={t(isClassic ? 'pool_team_title' : 'pool_roster_title')} value={summarizeRoster(rules, t)} />
+        <RecapRow label={t('pool_recap_team_picks')} value={formatTeamPicks(rules.roster.teamPicks, t)} />
+        {!isClassic && <RecapRow label={t('pool_recap_lineup')} value={t(`pool_lineup_${rules.lineup}`)} />}
+      </RuleCard>
+
+      <RuleCard icon="cap" title={t('pool_recap_salarycap')}>
+        <RecapRow label={t('pool_recap_salarycap')} value={summarizeSalaryCap(rules, t)} />
+      </RuleCard>
+
+      <RuleCard icon="draft" title={t('pool_recap_draft')}>
+        <RecapRow label={t('pool_recap_draft')} value={`${t(`pool_draft_type_${rules.draft.type}`)} · ${rules.draft.secondsPerPick}s · ${t(`pool_draft_order_mode_${rules.draft.orderMode}`)}`} />
+        <RecapRow label={t('pool_draft_assistant_title')} value={rules.draftAssistant?.enabled ? t('pool_enabled') : t('pool_disabled')} />
+      </RuleCard>
+
+      <RuleCard icon="trades" title={t('pool_recap_trades')}>
+        <RecapRow label={t('pool_recap_trades')} value={summarizeTrades(rules.trades, t)} />
+        {rules.trades?.enabled && <div style={{ fontSize: '12px', color: 'var(--c-666)', fontStyle: 'italic', padding: '6px 0' }}>{t('pool_trades_day_points_note')}</div>}
+        {!isClassic && <RecapRow label={t('pool_recap_waivers')} value={summarizeWaivers(rules.waivers, t)} />}
+      </RuleCard>
     </div>
   );
 }
@@ -1054,6 +1101,10 @@ export function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBac
       <div className={!isMobile && !shellWide ? 'pool-lobby-narrow' : undefined}>
       {activeTab === 'lobby' && (
         <>
+          {repechageTermine && (
+            <PoolHomeDashboard pool={pool} members={members} myMember={myMember} lang={lang} />
+          )}
+
           <div style={{ ...card, marginBottom: '16px' }}>
             <div style={sectionTitleStyle('var(--c-666)')}>{t('pool_lobby_invite_title')}</div>
             {pool.status !== 'setup' ? (

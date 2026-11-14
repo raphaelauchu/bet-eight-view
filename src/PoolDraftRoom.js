@@ -543,6 +543,28 @@ function PickRow({ pick, capEnabled, onClick, highlight, seasonId, points }) {
   );
 }
 
+// Ecusson LNH choisi par chaque participant (kind='team', toujours actif -- to_at null) :
+// une seule requete pour tout le pool, reutilisee par l'Accueil (ecussons des participants)
+// et le Classement (colonne ecusson). pool_roster_periods est deja la source d'autorite pour
+// la propriete courante (voir Vue vestiaire) -- jamais pool_picks, qui ne bouge pas apres un
+// echange de choix d'equipe.
+export function useTeamCrests(poolId) {
+  const [crests, setCrests] = useState({});
+  useEffect(() => {
+    let annule = false;
+    supabase.from('pool_roster_periods').select('member_id, player_id').eq('pool_id', poolId).eq('kind', 'team').is('to_at', null)
+      .then(({ data, error }) => {
+        if (annule || error) return;
+        const map = {};
+        (data || []).forEach(r => { map[r.member_id] = r.player_id; });
+        setCrests(map);
+      })
+      .catch(() => {});
+    return () => { annule = true; };
+  }, [poolId]);
+  return crests;
+}
+
 // ===================== Classement : panorama (Phase 3 refonte) =====================
 
 export function memberLabel(m, rules) {
@@ -566,6 +588,7 @@ function stickyFirstCellStyle(bg) {
 export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
+  const crests = useTeamCrests(pool.id);
   const [standings, setStandings] = useState(null);
   const [topScorers, setTopScorers] = useState(null);
   const [showAllTop, setShowAllTop] = useState(false);
@@ -704,7 +727,13 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
                   <td style={stickyFirstCellStyle(rowBg === 'transparent' ? 'var(--c-0d0d0d)' : rowBg)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontWeight: '800', fontSize: '12px', color: podium?.color || 'var(--c-white)', minWidth: '16px' }}>{row.rank}</span>
-                      <span style={{ color: 'var(--c-white)', fontWeight: isMe ? '800' : '500', whiteSpace: 'nowrap' }}>{row.display_name || row.team_name}</span>
+                      {crests[row.member_id] && <TeamLogo abbrev={crests[row.member_id]} size={20} />}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: 'var(--c-white)', fontWeight: isMe ? '800' : '500', whiteSpace: 'nowrap', fontSize: '13px' }}>{row.display_name || row.team_name}</div>
+                        {row.display_name && row.team_name && row.team_name !== row.display_name && (
+                          <div style={{ color: 'var(--c-666)', fontSize: '10px', whiteSpace: 'nowrap' }}>{row.team_name}</div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   {showToday && <>

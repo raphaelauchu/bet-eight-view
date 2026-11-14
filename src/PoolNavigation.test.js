@@ -14,7 +14,7 @@ const { supabase } = require('./supabase');
 
 function mockQuery(result) {
   const q = {
-    select: () => q, eq: () => q, order: () => q, in: () => q,
+    select: () => q, eq: () => q, order: () => q, in: () => q, is: () => q, gt: () => q, gte: () => q, or: () => q, limit: () => q,
     then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
   };
   return q;
@@ -27,7 +27,11 @@ beforeEach(() => {
     if (table === 'pool_picks') return mockQuery({ data: [], error: null });
     return mockQuery({ data: [], error: null });
   });
-  supabase.channel.mockImplementation(() => ({ on: () => ({ subscribe: () => ({}) }) }));
+  supabase.channel.mockImplementation(() => {
+    const chan = { on: () => chan, subscribe: () => ({}) };
+    return chan;
+  });
+  supabase.rpc.mockImplementation(() => Promise.resolve({ data: [], error: null }));
 });
 
 const POOL_CLASSIC = (status) => ({ id: 'p1', name: 'Pool Test', season: '2026-27', max_members: 10, invite_code: 'ABC123', owner_id: 'u1', status, rules: { poolType: 'classic', salaryCap: { enabled: false }, draft: { orderMode: 'random' } } });
