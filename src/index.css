@@ -361,11 +361,13 @@ body {
 }
 
 /* ===================== Vue vestiaire des pools (src/PoolLockerRoom.js) =====================
-   Mobile (defaut) : formation toujours empilee verticalement (Attaquants / Defenseurs /
-   Gardiens, zones deja ordonnees ainsi dans le JSX) -- jamais de scroll horizontal (.locker-
-   line passe en flex-wrap). >=768px (iPad/web) : le conteneur et les cartes s'agrandissent
-   pour profiter de la pleine largeur, l'empilement vertical des zones est conserve (lecture
-   naturelle d'une patinoire, attaque -> defense -> gardien). */
+   >=1024px : 3 blocs (Attaque/Defense/Gardiens) cote a cote en grille, pleine largeur, alignes
+   en haut. <1024px : blocs empiles verticalement, chacun garde son propre regroupement interne
+   (lignes de 3 pour l'attaque, paires de 2 pour la defense/les gardiens). Mobile etroit
+   (<480px) : l'attaque repasse a 2 cartes par rangee pour eviter le debordement horizontal.
+   Repartition de colonnes = CSS pur (media queries), aucune branche JS -- seule la structure
+   DOM (blocs/groupes/cartes) est produite par le composant, dans le meme ordre a toutes les
+   largeurs. */
 .locker-banner {
   display: flex;
   flex-wrap: wrap;
@@ -452,57 +454,82 @@ body {
   max-width: 160px;
 }
 
-.locker-rink {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  padding: 20px 14px 26px;
+.locker-board {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.locker-block {
+  border-radius: 20px;
+  padding: 16px;
   border: 1px solid var(--c-1a1a1a);
-  background:
-    radial-gradient(ellipse at center, rgba(249,115,22,0.06) 0%, rgba(10,10,10,0) 72%),
-    #0b0d12;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  background: #0b0d12;
 }
 
-.locker-rink::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150px;
-  height: 150px;
-  border: 2px solid rgba(249,115,22,0.14);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+.locker-block-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-666);
+  margin-bottom: 12px;
 }
 
-.locker-rink::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: rgba(239,68,68,0.12);
-  pointer-events: none;
+.locker-group {
+  margin-bottom: 14px;
 }
 
-.locker-zone {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
+.locker-group:last-child {
+  margin-bottom: 0;
+}
+
+.locker-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-555);
+  margin-bottom: 6px;
+}
+
+.locker-group-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
   gap: 10px;
 }
 
-.locker-line {
+.locker-block-defense .locker-group-cards,
+.locker-block-goalies .locker-group-cards {
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+}
+
+.locker-goalie-slot {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+}
+
+.locker-goalie-slot .locker-group-label {
+  text-align: center;
+}
+
+.locker-flow-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 1024px) {
+  .locker-board {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .locker-block-forwards .locker-group-cards {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
 }
 
 /* ===================== PlayerCard (src/PlayerCard.js) : carte joueur unique =====================
@@ -720,40 +747,160 @@ body {
   color: #f97316;
 }
 
-.locker-reserves {
-  position: relative;
-  z-index: 1;
+.locker-former-sub {
+  font-size: 11px;
+  color: var(--c-666);
+  margin-bottom: 12px;
+}
+
+.locker-former-item {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--c-222);
+  gap: 6px;
 }
 
-.locker-reserve-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.locker-former-meta {
+  font-size: 10.5px;
+  line-height: 1.4;
   color: var(--c-666);
-  margin-bottom: 6px;
+  text-align: center;
 }
 
-.locker-former-section {
-  margin-top: 18px;
+.locker-former-date {
+  color: var(--c-555);
 }
 
-.locker-former-title {
+/* ===================== Variante "formation" de PlayerCard (src/PlayerCard.js) =====================
+   Carte large (min 150px, ratio portrait ~3:4) utilisee par la Vue vestiaire (Formation,
+   Banc/IR, Anciens joueurs) uniquement -- totalement separee des classes .player-card-S/M/L
+   (echanges, agents libres, repechage), donc sans aucun effet sur ces ecrans. Nom complet sur
+   deux lignes (jamais tronque), points en haut a gauche, blessure en haut a droite, statut de
+   match TOUJOURS en bas (jamais superpose aux points ni au nom). */
+.player-card-formation {
+  width: 100%;
+  min-width: 150px;
+  aspect-ratio: 3 / 4;
+  padding: 10px;
+  gap: 6px;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.pcf-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pcf-points {
+  font-size: 18px;
+  font-weight: 900;
+  color: #f97316;
+  line-height: 1;
+}
+
+.player-card-formation .player-card-injury-badge {
+  width: 24px;
+  height: 24px;
   font-size: 13px;
+}
+
+.pcf-photo {
+  flex: 1;
+  min-height: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--c-111);
+}
+
+.player-card-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.player-card-initials {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.pcf-name {
+  text-align: center;
+  line-height: 1.25;
   font-weight: 800;
   color: var(--c-white);
 }
 
-.locker-former-sub {
-  font-size: 11px;
+.pcf-name-line {
+  overflow-wrap: break-word;
+}
+
+.pcf-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pcf-pos {
+  font-size: 10px;
+  font-weight: 800;
   color: var(--c-666);
-  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.pcf-status {
+  width: 100%;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 0;
+  border-radius: 6px;
+}
+
+.pcf-status-tonight {
+  background: rgba(249,115,22,0.18);
+  color: #f97316;
+}
+
+.pcf-status-live {
+  background: #ef4444;
+  color: white;
+}
+
+@media (min-width: 768px) {
+  .pcf-points {
+    font-size: 20px;
+  }
+  .player-card-initials {
+    font-size: 26px;
+  }
+}
+
+.locker-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.locker-tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(0,0,0,0.25);
 }
 
 .locker-player-modal-backdrop {
@@ -794,9 +941,6 @@ body {
   }
   .player-card-points {
     font-size: 12px;
-  }
-  .locker-rink {
-    padding: 28px 24px 34px;
   }
 }
 

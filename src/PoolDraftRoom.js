@@ -947,7 +947,7 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack, stand
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       <PoolTeamHub
-        pool={pool} member={member} rows={rows} standingsRow={standingsRow} lang={lang}
+        pool={pool} member={member} members={members} rows={rows} standingsRow={standingsRow} lang={lang}
         loading={rows === null}
         emptyMessage={rows && rows.length === 0 ? (pool.status === 'setup' ? t('pool_locker_no_draft_yet') : t('pool_draft_no_picks_yet')) : null}
       >

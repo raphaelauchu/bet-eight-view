@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
-  buildFormation, buildFormerPlayers, gameStatusForTeam,
+  buildFormation, buildFormerPlayers, gameStatusForTeam, resolveFormerPlayerDeparture,
   exportLockerRoomImage, downloadLockerRoomImage, PoolTeamHub,
 } from './PoolLockerRoom';
 
@@ -116,6 +116,19 @@ test('gameStatusForTeam : en direct, joue ce soir, ou rien', () => {
   expect(gameStatusForTeam(games, null)).toBeNull();
 });
 
+// ===================== resolveFormerPlayerDeparture : date + destination du depart =====================
+
+test('resolveFormerPlayerDeparture : echange -> destinataire trouve ; libere -> aucun destinataire ; pas concerne -> null', () => {
+  const periods = [
+    { member_id: 'x', player_id: 'p1', from_at: '2026-01-01T00:00:00Z', to_at: '2026-02-01T00:00:00Z' },
+    { member_id: 'y', player_id: 'p1', from_at: '2026-02-02T00:00:00Z', to_at: null },
+    { member_id: 'x', player_id: 'p2', from_at: '2026-01-01T00:00:00Z', to_at: '2026-03-01T00:00:00Z' },
+  ];
+  expect(resolveFormerPlayerDeparture(periods, 'x', 'p1')).toEqual({ toAt: '2026-02-01T00:00:00Z', destMemberId: 'y' });
+  expect(resolveFormerPlayerDeparture(periods, 'x', 'p2')).toEqual({ toAt: '2026-03-01T00:00:00Z', destMemberId: null });
+  expect(resolveFormerPlayerDeparture(periods, 'z', 'p1')).toBeNull();
+});
+
 // ===================== Composant : PoolTeamHub (formation/tableau, blessures) =====================
 
 const POOL = { id: 'pool-1', status: 'active', rules: { poolType: 'classic', roster: { forwards: 9, defense: 6, goalies: 2, teamPicks: 1 }, salaryCap: { enabled: false } } };
@@ -144,25 +157,47 @@ test('PoolTeamHub : bascule Formation/Tableau, le tableau existant reste accessi
     </PoolTeamHub>
   );
 
-  // Formation par defaut : le nom du joueur apparait dans une carte, pas le contenu du tableau.
-  await waitFor(() => expect(screen.getByText('Connor McDavid')).toBeInTheDocument());
+  // Formation par defaut : le nom du joueur apparait dans une carte (sur 2 lignes -- prenom
+  // puis nom -- d'ou la recherche sur 'McDavid' et non la chaine complete), pas le tableau.
+  await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
   expect(screen.queryByText('CONTENU-TABLEAU-EXISTANT')).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByText('Tableau'));
   expect(screen.getByText('CONTENU-TABLEAU-EXISTANT')).toBeInTheDocument();
-  expect(screen.queryByText('Connor McDavid')).not.toBeInTheDocument();
+  expect(screen.queryByText('McDavid')).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByText('Formation'));
-  expect(screen.getByText('Connor McDavid')).toBeInTheDocument();
+  expect(screen.getByText('McDavid')).toBeInTheDocument();
 });
 
 test('PoolTeamHub : clic sur une carte ouvre FicheJoueurStats', async () => {
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
-  await waitFor(() => expect(screen.getByText('Connor McDavid')).toBeInTheDocument());
-  fireEvent.click(screen.getByText('Connor McDavid'));
+  await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
+  fireEvent.click(screen.getByText('McDavid'));
   expect(screen.getByText('FICHE:Connor McDavid')).toBeInTheDocument();
   fireEvent.click(screen.getByText('fermer-fiche'));
   expect(screen.queryByText('FICHE:Connor McDavid')).not.toBeInTheDocument();
+});
+
+test('PoolTeamHub : Formation affiche 3 blocs (Attaque/Defense/Gardiens) avec lignes/paires etiquetees', async () => {
+  render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
+
+  expect(screen.getByText('Attaque')).toBeInTheDocument();
+  expect(screen.getByText('Défense')).toBeInTheDocument();
+  expect(screen.getByText('Gardiens')).toBeInTheDocument();
+  expect(screen.getByText(/Ligne 1/)).toBeInTheDocument();
+  expect(screen.getByText(/Partant/)).toBeInTheDocument();
+  expect(screen.getByText(/Réserviste/)).toBeInTheDocument();
+
+  // La repartition cote a cote (>=1024px) vs empilee (<1024px) est purement CSS (grille +
+  // media queries, voir .locker-board dans index.css) : jsdom n'execute pas de vrai moteur de
+  // rendu CSS, donc ce test verifie la structure DOM (3 blocs, meme ordre) sur laquelle cette
+  // mise en page CSS s'appuie -- le comportement visuel reel doit etre verifie dans un
+  // navigateur, pas ici.
+  const board = document.querySelector('.locker-board');
+  const blocs = Array.from(board.children).filter(el => el.classList.contains('locker-block'));
+  expect(blocs.length).toBe(3);
 });
 
 test('PoolTeamHub : joueur blesse avec donnees affiche le badge et le detail, sans donnees reste propre', async () => {
@@ -195,19 +230,72 @@ test('PoolTeamHub : aucune blessure retournee (table absente/erreur) -- pas de b
     return mockQuery({ data: [], error: null });
   });
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
-  await waitFor(() => expect(screen.getByText('Connor McDavid')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
   expect(screen.queryByLabelText(/Blessure :/)).not.toBeInTheDocument();
 });
 
-test('PoolTeamHub : joueur echange visible dans "Anciens joueurs" avec ses points pendant la possession', async () => {
+test('PoolTeamHub : joueur echange cache par defaut, visible dans son propre onglet "Anciens joueurs" avec ses points pendant la possession', async () => {
   const rows = [
     ...baseRows(),
     makeRow({ ref_id: 'echange1', label: 'Joueur Echange', pos_group: 'D', is_active: false, closed_reason: 'trade', total_points: 7 }),
   ];
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('Anciens joueurs')).toBeInTheDocument());
-  const carte = screen.getByText('Joueur Echange').closest('.player-card');
+
+  // Masque tant que l'onglet "Anciens joueurs" n'est pas selectionne : il reste sur Formation.
+  expect(screen.queryByText('Echange')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('Anciens joueurs'));
+  const carte = screen.getByText('Echange').closest('.player-card');
   expect(carte).toHaveTextContent('7');
+});
+
+const POOL_FANTASY = {
+  id: 'pool-2', status: 'active',
+  rules: { poolType: 'fantasy', roster: { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 }, salaryCap: { enabled: false } },
+};
+
+test('PoolTeamHub : les 4 onglets affichent un compteur correct (habilles / actifs / banc+IR / anciens)', async () => {
+  const rows = [
+    makeRow({ ref_id: 'c1', label: 'Centre Un', pos_group: 'F', current_slot: 'C' }),
+    makeRow({ ref_id: 'lw1', label: 'Ailier Un', pos_group: 'F', current_slot: 'LW' }),
+    makeRow({ ref_id: 'd1', label: 'Defenseur Un', pos_group: 'D', current_slot: 'D' }),
+    makeRow({ ref_id: 'g1', label: 'Gardien Un', pos_group: 'G', current_slot: 'G' }),
+    makeRow({ ref_id: 'bn1', label: 'Banc Un', pos_group: 'F', current_slot: 'BN' }),
+    makeRow({ ref_id: 'ir1', label: 'Blesse Un', pos_group: 'D', current_slot: 'IR' }),
+    makeRow({ ref_id: 'echange1', label: 'Ancien Un', pos_group: 'F', is_active: false, closed_reason: 'trade', total_points: 3 }),
+  ];
+  render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('Formation')).toBeInTheDocument());
+
+  // Formation : seuls les 4 joueurs HABILLES (C/LW/D/G) -- banc, IR et anciens en sont exclus.
+  expect(screen.getByText('Formation').closest('button')).toHaveTextContent('4');
+  // Tableau : tous les joueurs ACTIFS (habilles + banc + IR), anciens exclus.
+  expect(screen.getByText('Tableau').closest('button')).toHaveTextContent('6');
+  // Banc/IR : visible (non vide) avec 1 banc + 1 IR = 2.
+  expect(screen.getByText('Banc/IR')).toBeInTheDocument();
+  expect(screen.getByText('Banc/IR').closest('button')).toHaveTextContent('2');
+  // Anciens joueurs : 1.
+  expect(screen.getByText('Anciens joueurs').closest('button')).toHaveTextContent('1');
+});
+
+test('PoolTeamHub : onglet Banc/IR masque pour un pool classique (toujours vide) ou un pool fantasy sans reserve', async () => {
+  render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('Formation')).toBeInTheDocument());
+  expect(screen.queryByText('Banc/IR')).not.toBeInTheDocument();
+});
+
+test('PoolTeamHub : onglet Banc/IR -- joueur sans photo affiche ses initiales, jamais un fantome', async () => {
+  const rows = [makeRow({ ref_id: 'bn1', label: 'Jean Dupont', pos_group: 'F', current_slot: 'BN', team_abbrev: 'MTL' })];
+  render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('Banc/IR')).toBeInTheDocument());
+  fireEvent.click(screen.getByText('Banc/IR'));
+
+  const img = document.querySelector('.player-card-photo-img');
+  expect(img).toBeInTheDocument();
+  fireEvent.error(img);
+  expect(document.querySelector('.player-card-initials')).toBeInTheDocument();
+  expect(screen.getByText('JD')).toBeInTheDocument();
 });
 
 // ===================== Export PNG ("Partager mon equipe") =====================

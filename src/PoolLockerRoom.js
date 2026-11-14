@@ -6,6 +6,8 @@ import { headshotUrl, TeamLogo, round1, memberLabel, easternDateStr } from './Po
 import { teamGradient, teamColors } from './nhlTeamColors';
 import PlayerCard, { computePlayerTier } from './PlayerCard';
 
+const DATE_LOCALE = { fr: 'fr-CA', en: 'en-US' };
+
 // ===================== Vue vestiaire : composition de la formation (pure, testable) =====================
 // Deduit la formation sur glace a partir des lignes deja renvoyees par get_member_breakdown
 // (rows) et des regles du pool (rules.roster) -- aucune nouvelle donnee, aucun calcul de
@@ -121,19 +123,65 @@ export function usePlayerInjuries(idsKey) {
   return injuries;
 }
 
+// ===================== Anciens joueurs : date et destination du depart (pure, testable) =====================
+// periods : lignes brutes de pool_roster_periods (member_id/player_id/from_at/to_at) pour UN
+// joueur donne, TOUS les membres du pool confondus (necessaire pour retrouver qui l'a recu).
+// memberId : le membre dont on affiche les "anciens joueurs" (celui qui a perdu ce joueur).
+// Renvoie { toAt, destMemberId } ou null si aucune periode fermee trouvee pour ce membre --
+// destMemberId est null si aucune periode ulterieure d'un AUTRE membre n'a ete trouvee (ex.
+// libere : personne ne le possede immediatement apres).
+export function resolveFormerPlayerDeparture(periods, memberId, refId) {
+  const mine = (periods || []).filter(p => String(p.player_id) === String(refId) && p.member_id === memberId && p.to_at);
+  if (mine.length === 0) return null;
+  const lastMine = mine.reduce((a, b) => (new Date(b.to_at) > new Date(a.to_at) ? b : a));
+  const next = (periods || [])
+    .filter(p => String(p.player_id) === String(refId) && p.member_id !== memberId && new Date(p.from_at) >= new Date(lastMine.to_at))
+    .sort((a, b) => new Date(a.from_at) - new Date(b.from_at))[0] || null;
+  return { toAt: lastMine.to_at, destMemberId: next ? next.member_id : null };
+}
+
+// Charge pool_roster_periods (lecture RLS deja ouverte a tout membre du pool, voir
+// is_pool_member dans supabase/migrations/20261030_pools_foundation.sql) pour les seuls
+// anciens joueurs affiches, puis derive date/destination via resolveFormerPlayerDeparture --
+// aucune nouvelle colonne/RPC necessaire. Se degrade silencieusement (comme usePlayerInjuries)
+// si la requete echoue : la section "Anciens joueurs" reste alors sans date/motif detaille.
+export function useFormerPlayerDepartures(poolId, memberId, formerPlayers) {
+  const idsKey = (formerPlayers || []).map(r => r.ref_id).join(',');
+  const [meta, setMeta] = useState({});
+  useEffect(() => {
+    const ids = idsKey ? idsKey.split(',').filter(Boolean) : [];
+    if (ids.length === 0 || !poolId || !memberId) { setMeta({}); return; }
+    let annule = false;
+    supabase.from('pool_roster_periods').select('member_id, player_id, from_at, to_at')
+      .eq('pool_id', poolId).eq('kind', 'player').in('player_id', ids)
+      .then(({ data, error }) => {
+        if (annule) return;
+        if (error) { setMeta({}); return; }
+        const next = {};
+        ids.forEach(id => { next[id] = resolveFormerPlayerDeparture(data || [], memberId, id); });
+        setMeta(next);
+      })
+      .catch(() => { if (!annule) setMeta({}); });
+    return () => { annule = true; };
+  }, [poolId, memberId, idsKey]);
+  return meta;
+}
+
 const toggleBtnStyle = (active) => ({
   padding: '9px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700',
   backgroundColor: active ? '#f97316' : 'var(--c-111)', color: active ? 'white' : 'var(--c-888)', minHeight: '44px',
 });
 
-// ===================== Zones de la glace =====================
-// La carte joueur elle-meme vit dans src/PlayerCard.js (composant unique reutilise par la
-// formation, les echanges, les agents libres, le repechage et les anciens joueurs).
+// ===================== Formation : trois blocs (Attaque/Defense/Gardiens) =====================
+// La carte joueur elle-meme vit dans src/PlayerCard.js (variant="formation" -- composant unique
+// reutilise aussi, en variant par defaut, par les echanges/agents libres/repechage). La
+// repartition en colonnes (3 blocs cote a cote >=1024px, empiles sinon) est purement CSS (voir
+// .locker-board dans index.css) : le DOM produit ici est le MEME a toutes les largeurs.
 
-function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
+function PoolIceBoard({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
   const t = getT(lang);
-  const card = (row, key, size = 'M') => (
-    <PlayerCard key={key} row={row} size={size} seasonId={seasonId} lang={lang}
+  const card = (row, key) => (
+    <PlayerCard key={key} row={row} variant="formation" seasonId={seasonId} lang={lang}
       tier={row ? computePlayerTier(row.total_points, allPoints) : undefined}
       injury={row ? injuries[String(row.ref_id)] : undefined}
       gameStatus={row ? gameStatusForTeam(gamesToday, row.team_abbrev) : null}
@@ -141,62 +189,108 @@ function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, all
   );
 
   return (
-    <div className="locker-rink">
-      <div className="locker-zone locker-zone-forwards">
+    <div className="locker-board">
+      <div className="locker-block locker-block-forwards">
+        <div className="locker-block-title">{t('pool_locker_block_forwards')}</div>
         {formation.lines.map((line, i) => (
-          <div className="locker-line" key={i}>
-            {line.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-f-${i}-${j}`))}
+          <div className="locker-group" key={i}>
+            <div className="locker-group-label">{t('pool_locker_line_label')} {i + 1}</div>
+            <div className="locker-group-cards">
+              {line.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-f-${i}-${j}`))}
+            </div>
           </div>
         ))}
-      </div>
-      <div className="locker-zone locker-zone-defense">
-        {formation.pairs.map((pair, i) => (
-          <div className="locker-line" key={i}>
-            {pair.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-d-${i}-${j}`))}
-          </div>
-        ))}
-      </div>
-      <div className="locker-zone locker-zone-goalies">
-        <div className="locker-line">
-          {formation.goalies.map((row, i) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-g-${i}`))}
-        </div>
       </div>
 
-      {(formation.bench.length > 0 || formation.ir.length > 0) && (
-        <div className="locker-reserves">
-          {formation.bench.length > 0 && (
-            <div className="locker-reserve-group">
-              <div className="locker-reserve-title">{t('pool_locker_bench_title')}</div>
-              <div className="locker-line locker-line-wrap">
-                {formation.bench.map(row => card(row, `${row.kind}:${row.ref_id}`, 'S'))}
-              </div>
+      <div className="locker-block locker-block-defense">
+        <div className="locker-block-title">{t('pool_locker_block_defense')}</div>
+        {formation.pairs.map((pair, i) => (
+          <div className="locker-group" key={i}>
+            <div className="locker-group-label">{t('pool_locker_pair_label')} {i + 1}</div>
+            <div className="locker-group-cards">
+              {pair.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-d-${i}-${j}`))}
             </div>
-          )}
-          {formation.ir.length > 0 && (
-            <div className="locker-reserve-group">
-              <div className="locker-reserve-title">{t('pool_locker_ir_title')}</div>
-              <div className="locker-line locker-line-wrap">
-                {formation.ir.map(row => card(row, `${row.kind}:${row.ref_id}`, 'S'))}
-              </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="locker-block locker-block-goalies">
+        <div className="locker-block-title">{t('pool_locker_block_goalies')}</div>
+        <div className="locker-group-cards">
+          {formation.goalies.map((row, i) => (
+            <div className="locker-goalie-slot" key={i}>
+              <div className="locker-group-label">{i === 0 ? t('pool_locker_goalie_starter') : t('pool_locker_goalie_backup')}</div>
+              {card(row, row ? `${row.kind}:${row.ref_id}` : `empty-g-${i}`)}
             </div>
-          )}
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================== Banc / Reserve des blesses (fantasy uniquement -- onglet masque sinon) =====================
+
+function PoolBenchIrPanel({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
+  const t = getT(lang);
+  const card = (row) => (
+    <PlayerCard key={`${row.kind}:${row.ref_id}`} row={row} variant="formation" seasonId={seasonId} lang={lang}
+      tier={computePlayerTier(row.total_points, allPoints)}
+      injury={injuries[String(row.ref_id)]}
+      gameStatus={gameStatusForTeam(gamesToday, row.team_abbrev)}
+      onOpen={onOpen} />
+  );
+  return (
+    <div className="locker-board">
+      {formation.bench.length > 0 && (
+        <div className="locker-block">
+          <div className="locker-block-title">{t('pool_locker_bench_title')}</div>
+          <div className="locker-flow-cards">{formation.bench.map(card)}</div>
+        </div>
+      )}
+      {formation.ir.length > 0 && (
+        <div className="locker-block">
+          <div className="locker-block-title">{t('pool_locker_ir_title')}</div>
+          <div className="locker-flow-cards">{formation.ir.map(card)}</div>
         </div>
       )}
     </div>
   );
 }
 
-function PoolFormerPlayers({ players, seasonId, lang, allPoints, onOpen }) {
+// ===================== Anciens joueurs (echanges/liberations) =====================
+// departures : map ref_id -> { toAt, destMemberId } (voir useFormerPlayerDepartures) --
+// peut etre vide (requete pas encore resolue/en echec) : la carte et les points restent alors
+// affiches, seule la ligne date/motif est omise -- jamais de donnee inventee.
+
+function PoolFormerPlayers({ players, seasonId, lang, allPoints, onOpen, departures, membersById, poolRules }) {
   const t = getT(lang);
   return (
-    <div className="locker-former-section">
-      <div className="locker-former-title">{t('pool_locker_former_players')}</div>
-      <div className="locker-former-sub">{t('pool_locker_former_players_sub')}</div>
-      <div className="locker-line locker-line-wrap">
-        {players.map(row => (
-          <PlayerCard key={`${row.kind}:${row.ref_id}`} row={row} size="S" seasonId={seasonId} lang={lang}
-            tier={computePlayerTier(row.total_points, allPoints)} onOpen={onOpen} className="player-card-former" />
-        ))}
+    <div className="locker-board">
+      <div className="locker-block">
+        <div className="locker-former-sub">{t('pool_locker_former_players_sub')}</div>
+        <div className="locker-flow-cards">
+          {players.map(row => {
+            const dep = departures ? departures[String(row.ref_id)] : null;
+            const destMember = dep?.destMemberId ? membersById?.[dep.destMemberId] : null;
+            const dateStr = dep?.toAt
+              ? new Date(dep.toAt).toLocaleDateString(DATE_LOCALE[lang] || DATE_LOCALE.en, { month: 'short', day: 'numeric', year: 'numeric' })
+              : '';
+            const motif = row.closed_reason === 'trade'
+              ? t('pool_locker_former_traded_to').replace('{team}', destMember ? memberLabel(destMember, poolRules) : t('pool_locker_former_unknown_destination'))
+              : t('pool_locker_former_dropped');
+            return (
+              <div className="locker-former-item" key={`${row.kind}:${row.ref_id}`}>
+                <PlayerCard row={row} variant="formation" seasonId={seasonId} lang={lang}
+                  tier={computePlayerTier(row.total_points, allPoints)} onOpen={onOpen} className="player-card-former" />
+                <div className="locker-former-meta">
+                  <div>{motif}</div>
+                  {dateStr && <div className="locker-former-date">{dateStr}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -402,7 +496,7 @@ function ShareButton({ pool, member, rows, standingsRow, lang, seasonId, teamAbb
 // formation/du tableau si le participant n'a aucun joueur (pool pas encore repeche, ou
 // participant sans choix) ; le bandeau (nom, rang, points) reste toujours visible, meme dans
 // ces deux cas, comme l'en-tete qu'il remplace.
-export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, loading, emptyMessage }) {
+export function PoolTeamHub({ pool, member, members, rows, standingsRow, lang, children, loading, emptyMessage }) {
   const t = getT(lang);
   const seasonId = useSaisonCourante();
   const [vue, setVue] = useState('formation');
@@ -417,6 +511,12 @@ export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, 
   const allPoints = useMemo(() => rowsSafe.filter(r => r.kind === 'player').map(r => Number(r.total_points) || 0), [rowsSafe]);
   const injuriesKey = useMemo(() => rowsSafe.filter(r => r.kind === 'player').map(r => String(r.ref_id)).join(','), [rowsSafe]);
   const injuries = usePlayerInjuries(injuriesKey);
+  const departures = useFormerPlayerDepartures(pool.id, member?.id, formerPlayers);
+  const membersById = useMemo(() => {
+    const map = {};
+    (members || []).forEach(m => { map[m.id] = m; });
+    return map;
+  }, [members]);
 
   function openCard(row) {
     if (!row || row.kind !== 'player') return;
@@ -424,13 +524,31 @@ export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, 
   }
 
   const showContent = !loading && !emptyMessage;
+  const dressedCount = formation.lines.flat().filter(Boolean).length
+    + formation.pairs.flat().filter(Boolean).length
+    + formation.goalies.filter(Boolean).length;
+  const activeCount = rowsSafe.filter(r => r.is_active && r.kind === 'player').length;
+  const reserveCount = formation.bench.length + formation.ir.length;
+  const showBenchTab = reserveCount > 0;
+  const showFormerTab = formerPlayers.length > 0;
+
+  function tabButton(key, labelKey, count) {
+    return (
+      <button type="button" role="tab" aria-selected={vue === key} onClick={() => setVue(key)} style={toggleBtnStyle(vue === key)}>
+        <span>{t(labelKey)}</span>
+        <span className="locker-tab-count">{count}</span>
+      </button>
+    );
+  }
 
   return (
     <div>
       {showContent && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
-          <button type="button" onClick={() => setVue('formation')} style={toggleBtnStyle(vue === 'formation')}>{t('pool_locker_view_formation')}</button>
-          <button type="button" onClick={() => setVue('table')} style={toggleBtnStyle(vue === 'table')}>{t('pool_locker_view_table')}</button>
+        <div className="locker-tabs" role="tablist">
+          {tabButton('formation', 'pool_locker_view_formation', dressedCount)}
+          {tabButton('table', 'pool_locker_view_table', activeCount)}
+          {showBenchTab && tabButton('bench', 'pool_locker_tab_bench_ir', reserveCount)}
+          {showFormerTab && tabButton('former', 'pool_locker_former_players', formerPlayers.length)}
         </div>
       )}
 
@@ -440,17 +558,20 @@ export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, 
         <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
       ) : emptyMessage ? (
         <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{emptyMessage}</div>
-      ) : vue === 'formation' ? (
-        <>
-          <PoolIceFormation formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} allPoints={allPoints} onOpen={openCard} />
-          {formerPlayers.length > 0 && (
-            <PoolFormerPlayers players={formerPlayers} seasonId={seasonId} lang={lang} allPoints={allPoints} onOpen={openCard} />
-          )}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
-            <ShareButton pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} lang={lang} seasonId={seasonId} teamAbbrev={formation.teamPick?.ref_id} />
-          </div>
-        </>
-      ) : children}
+      ) : vue === 'table' ? children
+        : vue === 'bench' && showBenchTab ? (
+          <PoolBenchIrPanel formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} allPoints={allPoints} onOpen={openCard} />
+        ) : vue === 'former' && showFormerTab ? (
+          <PoolFormerPlayers players={formerPlayers} seasonId={seasonId} lang={lang} allPoints={allPoints} onOpen={openCard}
+            departures={departures} membersById={membersById} poolRules={pool.rules} />
+        ) : (
+          <>
+            <PoolIceBoard formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} allPoints={allPoints} onOpen={openCard} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <ShareButton pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} lang={lang} seasonId={seasonId} teamAbbrev={formation.teamPick?.ref_id} />
+            </div>
+          </>
+        )}
 
       {openedPlayer && (
         <div className="locker-player-modal-backdrop" onClick={() => setOpenedPlayer(null)}>
