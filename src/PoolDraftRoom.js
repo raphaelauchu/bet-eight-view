@@ -7,6 +7,7 @@ import {
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId, PICK_POSITIONS,
   currentSeasonLabelFromSeasonId, POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS,
 } from './poolRules';
+import { PoolTeamHub } from './PoolLockerRoom';
 
 // ===================== Styles (memes conventions que Pool.js) =====================
 const card = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-161616)', padding: '16px' };
@@ -118,7 +119,7 @@ function previousSeasonId(seasonId) {
 
 // ===================== Dates/periodes (heure de l'Est) pour la page d'un participant =====================
 
-function easternDateStr(date = new Date()) {
+export function easternDateStr(date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
@@ -140,7 +141,7 @@ function addDaysToDateStr(dateStr, days) {
 
 // { from, to } (Date UTC, bornes [from, to) ) pour le selecteur de periode Aujourd'hui / Jour
 // / Mois / Total -- null,null pour Total (non borne, cote RPC).
-function periodToRange(period, selectedDay, selectedMonth) {
+export function periodToRange(period, selectedDay, selectedMonth) {
   if (period === 'today') {
     const today = easternDateStr();
     return { from: easternMidnightUtc(today), to: easternMidnightUtc(addDaysToDateStr(today, 1)) };
@@ -622,7 +623,7 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
   // cote (voir le "return" plus bas).
   if (detailMember && isMobile) {
     return (
-      <MemberDetailPanel pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} onBack={() => setDetailMemberId(null)} />
+      <MemberDetailPanel pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} standings={standings} onBack={() => setDetailMemberId(null)} />
     );
   }
 
@@ -736,7 +737,7 @@ export function PoolStandings({ pool, members, utilisateur, lang, isCommissioner
       <div className="pool-standings-shell">
         <div>{tableauClassement}</div>
         <div className="pool-standings-side">
-          <MemberDetailPanel key={detailMember.id} pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} />
+          <MemberDetailPanel key={detailMember.id} pool={pool} members={members} initialMemberId={detailMember.id} lang={lang} standings={standings} />
         </div>
       </div>
     );
@@ -827,9 +828,10 @@ function sectionColumns(rules, pos, group) {
 // (onBack fourni) et pour l'onglet "Mon equipe" (onBack absent, voir TeamRosterPanel). Le
 // selecteur de participant vit ici (pas chez l'appelant) pour rester utilisable des deux
 // cotes sans dupliquer l'etat.
-function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
+function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack, standings }) {
   const t = getT(lang);
   const [selectedMemberId, setSelectedMemberId] = useState(initialMemberId || members[0]?.id);
+  const [standingsAuto, setStandingsAuto] = useState(null);
   const [period, setPeriod] = useState('total');
   const [selectedDay, setSelectedDay] = useState(() => easternDateStr());
   const [selectedMonth, setSelectedMonth] = useState(() => easternDateStr().slice(0, 7));
@@ -864,9 +866,20 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
     return () => { annule = true; };
   }, [pool.id, member?.id, from, to]);
 
+  // Classement (rang, points totaux/aujourd'hui) pour le bandeau de la Vue vestiaire : reutilise
+  // les donnees deja chargees par PoolStandings quand elles sont fournies (clic sur une ligne du
+  // tableau), sinon charge la meme RPC ici (cas de l'onglet "Mon equipe", qui n'a pas de tableau).
+  useEffect(() => {
+    if (standings) return;
+    let annule = false;
+    supabase.rpc('get_pool_standings', { p_pool_id: pool.id }).then(({ data }) => { if (!annule) setStandingsAuto(data || []); });
+    return () => { annule = true; };
+  }, [pool.id, standings]);
+  const standingsEff = standings || standingsAuto || [];
+  const standingsRow = standingsEff.find(r => r.member_id === member?.id) || null;
+
   const capEnabled = !!pool.rules?.salaryCap?.enabled;
   const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
-  const total = (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
   const salaryUsed = (rows || []).reduce((s, r) => s + (Number(r.salary) || 0), 0);
 
   return (
@@ -902,30 +915,27 @@ function MemberDetailPanel({ pool, members, initialMemberId, lang, onBack }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{memberLabel(member, pool.rules)}</div>
-        <div style={{ fontSize: '18px', fontWeight: '900', color: '#f97316' }}>{round1(total)} {t('pool_standings_col_pts').toLowerCase()}</div>
-      </div>
-
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
-      {rows === null ? (
-        <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
-      ) : rows.length === 0 ? (
-        <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{t('pool_draft_no_picks_yet')}</div>
-      ) : (
-        <>
-          {MEMBER_DETAIL_SECTIONS.map(section => {
-            const sectionRows = rows.filter(r => r.pos_group === section.pos);
-            if (sectionRows.length === 0) return null;
-            return (
-              <MemberStatsSection key={section.pos} section={section} rows={sectionRows} pool={pool} capEnabled={capEnabled} t={t} lang={lang} />
-            );
-          })}
+      <PoolTeamHub
+        pool={pool} member={member} rows={rows} standingsRow={standingsRow} lang={lang}
+        loading={rows === null}
+        emptyMessage={rows && rows.length === 0 ? (pool.status === 'setup' ? t('pool_locker_no_draft_yet') : t('pool_draft_no_picks_yet')) : null}
+      >
+        {(rows || []).length > 0 && (
+          <>
+            {MEMBER_DETAIL_SECTIONS.map(section => {
+              const sectionRows = rows.filter(r => r.pos_group === section.pos);
+              if (sectionRows.length === 0) return null;
+              return (
+                <MemberStatsSection key={section.pos} section={section} rows={sectionRows} pool={pool} capEnabled={capEnabled} t={t} lang={lang} />
+              );
+            })}
 
-          <MemberSummaryTable rows={rows} pool={pool} capEnabled={capEnabled} capAmount={capAmount} salaryUsed={salaryUsed} t={t} />
-        </>
-      )}
+            <MemberSummaryTable rows={rows} pool={pool} capEnabled={capEnabled} capAmount={capAmount} salaryUsed={salaryUsed} t={t} />
+          </>
+        )}
+      </PoolTeamHub>
     </div>
   );
 }

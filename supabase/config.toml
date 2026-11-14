@@ -12,3 +12,9 @@ project_id = "gjuxwzpylonusvogqpjw"
 # uniquement -- toutes les autres Edge Functions du projet gardent verify_jwt = true (defaut).
 [functions.sync-nhl-stats]
 verify_jwt = false
+
+# sync-player-injuries : meme principe que sync-nhl-stats, mode planifie uniquement (pas de
+# mode commissaire) -- secret dedie x-sync-secret compare a SYNC_CRON_SECRET dans le code
+# (supabase/functions/sync-player-injuries/index.ts).
+[functions.sync-player-injuries]
+verify_jwt = false

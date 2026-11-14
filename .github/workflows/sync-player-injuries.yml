@@ -1,0 +1,46 @@
+name: Sync Player Injuries (Pools)
+
+# Declenche la synchronisation des blessures NHL (Edge Function sync-player-injuries) qui
+# alimente le badge "blessure" de la Vue vestiaire des pools (src/PoolLockerRoom.js). Source :
+# endpoint public ESPN (gratuit, sans cle), rapproche au roster NHL officiel par nom -- voir
+# le commentaire en tete de supabase/functions/sync-player-injuries/index.ts.
+#
+# Horaire : toutes les 3h (les statuts de blessure changent lentement, contrairement aux
+# scores en direct -- inutile de synchroniser aussi souvent que sync-nhl-stats).
+#
+# Authentification : en-tete x-sync-secret = secret SYNC_CRON_SECRET (meme secret repo que
+# sync-nhl-stats, configure separement comme variable d'environnement de CETTE fonction dans
+# Supabase). La fonction compare cet en-tete a temps constant a sa propre variable
+# d'environnement SYNC_CRON_SECRET. La verification JWT est desactivee pour cette fonction
+# (supabase/config.toml).
+on:
+  schedule:
+    - cron: '15 */3 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: sync-player-injuries
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler l'Edge Function sync-player-injuries
+        run: |
+          http_response=$(curl -sS -w "\n%{http_code}" -X POST \
+            "https://gjuxwzpylonusvogqpjw.supabase.co/functions/v1/sync-player-injuries" \
+            -H "x-sync-secret: ${{ secrets.SYNC_CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d "{}")
+
+          http_code=$(echo "$http_response" | tail -n1)
+          response_body=$(echo "$http_response" | sed '$d')
+
+          echo "Code HTTP : $http_code"
+          echo "Reponse : $response_body"
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::error::sync-player-injuries a echoue (HTTP $http_code) -- voir la reponse ci-dessus."
+            exit 1
+          fi

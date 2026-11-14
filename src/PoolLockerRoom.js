@@ -1,0 +1,539 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { supabase } from './supabase';
+import { getT } from './i18n';
+import { useSaisonCourante, LOGOS_NHL, FicheJoueurStats } from './Analyses';
+import { headshotUrl, TeamLogo, PlayerAvatar, round1, memberLabel, easternDateStr } from './PoolDraftRoom';
+import { teamGradient, teamColors } from './nhlTeamColors';
+
+// ===================== Vue vestiaire : composition de la formation (pure, testable) =====================
+// Deduit la formation sur glace a partir des lignes deja renvoyees par get_member_breakdown
+// (rows) et des regles du pool (rules.roster) -- aucune nouvelle donnee, aucun calcul de
+// points ici. Classique : tous les joueurs actifs sont "habilles" (pas de banc). Fantasy :
+// seuls les slots C/LW/RW/D/G/UTIL comptent comme habilles sur la glace ; BN et IR forment
+// les zones de reserve a part (toujours visibles, jamais retires de la vue).
+
+function slotCountsForFantasy(rules) {
+  const r = rules?.roster || {};
+  return {
+    forward: (Number(r.C) || 0) + (Number(r.LW) || 0) + (Number(r.RW) || 0) + (Number(r.UTIL) || 0),
+    defense: Number(r.D) || 0,
+    goalie: Number(r.G) || 0,
+  };
+}
+
+function chunkWithPlaceholders(list, minSlots, size) {
+  const total = Math.max(list.length, minSlots);
+  const padded = [...list, ...Array(Math.max(0, total - list.length)).fill(null)];
+  const chunks = [];
+  for (let i = 0; i < padded.length; i += size) chunks.push(padded.slice(i, i + size));
+  return chunks;
+}
+
+// rows : lignes de get_member_breakdown (kind/ref_id/label/pos_group/team_abbrev/total_points/
+// is_active/closed_reason/current_slot...). rules : pool.rules (poolType + roster).
+export function buildFormation(rows, rules) {
+  const isFantasy = rules?.poolType === 'fantasy';
+  const players = (rows || []).filter(r => r.is_active && r.kind === 'player');
+  const bench = isFantasy ? players.filter(r => r.current_slot === 'BN') : [];
+  const ir = isFantasy ? players.filter(r => r.current_slot === 'IR') : [];
+  const dressed = isFantasy
+    ? players.filter(r => r.current_slot && r.current_slot !== 'BN' && r.current_slot !== 'IR')
+    : players;
+
+  const forwards = dressed.filter(r => r.pos_group === 'F');
+  const defense = dressed.filter(r => r.pos_group === 'D');
+  const goalies = dressed.filter(r => r.pos_group === 'G');
+
+  const slots = isFantasy
+    ? slotCountsForFantasy(rules)
+    : { forward: Number(rules?.roster?.forwards) || 9, defense: Number(rules?.roster?.defense) || 6, goalie: Number(rules?.roster?.goalies) || 2 };
+
+  const goaliesTotal = Math.max(goalies.length, slots.goalie);
+  const goaliesPadded = [...goalies, ...Array(Math.max(0, goaliesTotal - goalies.length)).fill(null)];
+
+  const teamPick = (rows || []).find(r => r.is_active && r.kind === 'team') || null;
+
+  return {
+    lines: chunkWithPlaceholders(forwards, slots.forward, 3),
+    pairs: chunkWithPlaceholders(defense, slots.defense, 2),
+    goalies: goaliesPadded,
+    bench,
+    ir,
+    teamPick,
+  };
+}
+
+// Joueurs echanges hors de cette equipe : is_active=false + closed_reason='trade' (deja
+// calcule par get_member_breakdown a partir de pool_roster_periods.to_at/closed_reason).
+// total_points reste celui accumule PENDANT la periode de possession (pool_scored_events
+// attribue deja les points par periode, jamais apres le depart du joueur).
+export function buildFormerPlayers(rows) {
+  return (rows || []).filter(r => !r.is_active && r.kind === 'player' && r.closed_reason === 'trade');
+}
+
+// 'live' si l'equipe du joueur joue en ce moment, 'tonight' si elle joue plus tard aujourd'hui,
+// null sinon (pas de match, ou match deja termine). gamesToday : lignes nhl_games du jour
+// (home_abbrev/away_abbrev/state), chargees une seule fois et mises en cache par useTodayGames.
+export function gameStatusForTeam(gamesToday, abbrev) {
+  if (!abbrev || !gamesToday) return null;
+  const g = gamesToday.find(x => x.home_abbrev === abbrev || x.away_abbrev === abbrev);
+  if (!g) return null;
+  if (g.state === 'LIVE') return 'live';
+  if (g.state === 'FUT') return 'tonight';
+  return null;
+}
+
+function useTodayGames() {
+  const [games, setGames] = useState([]);
+  useEffect(() => {
+    let annule = false;
+    supabase.from('nhl_games').select('home_abbrev, away_abbrev, state').eq('game_date', easternDateStr())
+      .then(({ data, error }) => { if (!annule && !error) setGames(data || []); })
+      .catch(() => { if (!annule) setGames([]); });
+    return () => { annule = true; };
+  }, []);
+  return games;
+}
+
+// Table player_injuries (voir supabase/migrations/20261112_player_injuries.sql), alimentee
+// par l'Edge Function sync-player-injuries (source ESPN, jamais fabriquee cote client). Si la
+// table n'existe pas encore (migration pas encore appliquee) ou toute autre erreur reseau, se
+// degrade silencieusement vers "aucune blessure affichee" -- ne doit jamais faire planter la
+// Vue vestiaire.
+function usePlayerInjuries(idsKey) {
+  const [injuries, setInjuries] = useState({});
+  useEffect(() => {
+    const ids = idsKey ? idsKey.split(',').filter(Boolean) : [];
+    if (ids.length === 0) { setInjuries({}); return; }
+    let annule = false;
+    supabase.from('player_injuries').select('*').in('player_id', ids)
+      .then(({ data, error }) => {
+        if (annule) return;
+        if (error) { setInjuries({}); return; }
+        const map = {};
+        (data || []).forEach(row => { map[row.player_id] = row; });
+        setInjuries(map);
+      })
+      .catch(() => { if (!annule) setInjuries({}); });
+    return () => { annule = true; };
+  }, [idsKey]);
+  return injuries;
+}
+
+const toggleBtnStyle = (active) => ({
+  padding: '9px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700',
+  backgroundColor: active ? '#f97316' : 'var(--c-111)', color: active ? 'white' : 'var(--c-888)', minHeight: '44px',
+});
+
+// ===================== Carte joueur =====================
+
+function PoolPlayerCard({ row, seasonId, lang, injury, gameStatus, onOpen, small }) {
+  const t = getT(lang);
+  const [justScored, setJustScored] = useState(false);
+  const [showInjury, setShowInjury] = useState(false);
+  const prevPointsRef = useRef(row ? Number(row.total_points) || 0 : null);
+
+  useEffect(() => {
+    if (!row) return;
+    const current = Number(row.total_points) || 0;
+    const prev = prevPointsRef.current;
+    if (prev != null && current > prev) {
+      setJustScored(true);
+      const id = setTimeout(() => setJustScored(false), 1600);
+      prevPointsRef.current = current;
+      return () => clearTimeout(id);
+    }
+    prevPointsRef.current = current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row?.total_points]);
+
+  if (!row) {
+    return (
+      <div className={`locker-card locker-card-empty${small ? ' locker-card-small' : ''}`}>
+        <div className="locker-card-placeholder-icon">+</div>
+        <div className="locker-card-empty-label">{t('pool_locker_empty_slot')}</div>
+      </div>
+    );
+  }
+
+  const isTeam = row.kind === 'team';
+
+  return (
+    <div
+      className={`locker-card${justScored ? ' locker-card-scored' : ''}${small ? ' locker-card-small' : ''}`}
+      onClick={() => onOpen(row)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter') onOpen(row); }}
+    >
+      {injury && (
+        <span
+          className="locker-injury-badge"
+          role="button"
+          tabIndex={0}
+          aria-label={`${t('pool_locker_injury_prefix')} ${injury.status}`}
+          onClick={e => { e.stopPropagation(); setShowInjury(v => !v); }}
+          onMouseEnter={() => setShowInjury(true)}
+          onMouseLeave={() => setShowInjury(false)}
+        >+</span>
+      )}
+      {injury && showInjury && (
+        <div className="locker-injury-tooltip" onClick={e => e.stopPropagation()}>
+          <strong>{injury.status}</strong>
+          <div>{injury.description || t('pool_locker_injury_unknown_duration')}</div>
+        </div>
+      )}
+      {gameStatus && (
+        <span className={`locker-game-badge locker-game-badge-${gameStatus}`}>
+          {gameStatus === 'live' ? t('pool_locker_live_now') : t('pool_locker_playing_tonight')}
+        </span>
+      )}
+      {isTeam ? <TeamLogo abbrev={row.ref_id} size={small ? 32 : 44} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={small ? 32 : 44} />}
+      {!isTeam && row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={14} />}
+      <div className="locker-card-name">{row.label}</div>
+      {!isTeam && <div className="locker-card-pos">{row.pos_group}</div>}
+      <div className="locker-card-points">{round1(row.total_points)}</div>
+    </div>
+  );
+}
+
+// ===================== Zones de la glace =====================
+
+function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, onOpen }) {
+  const t = getT(lang);
+  const card = (row, key) => (
+    <PoolPlayerCard key={key} row={row} seasonId={seasonId} lang={lang}
+      injury={row ? injuries[String(row.ref_id)] : undefined}
+      gameStatus={row ? gameStatusForTeam(gamesToday, row.team_abbrev) : null}
+      onOpen={onOpen} />
+  );
+
+  return (
+    <div className="locker-rink">
+      <div className="locker-zone locker-zone-forwards">
+        {formation.lines.map((line, i) => (
+          <div className="locker-line" key={i}>
+            {line.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-f-${i}-${j}`))}
+          </div>
+        ))}
+      </div>
+      <div className="locker-zone locker-zone-defense">
+        {formation.pairs.map((pair, i) => (
+          <div className="locker-line" key={i}>
+            {pair.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-d-${i}-${j}`))}
+          </div>
+        ))}
+      </div>
+      <div className="locker-zone locker-zone-goalies">
+        <div className="locker-line">
+          {formation.goalies.map((row, i) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-g-${i}`))}
+        </div>
+      </div>
+
+      {(formation.bench.length > 0 || formation.ir.length > 0) && (
+        <div className="locker-reserves">
+          {formation.bench.length > 0 && (
+            <div className="locker-reserve-group">
+              <div className="locker-reserve-title">{t('pool_locker_bench_title')}</div>
+              <div className="locker-line locker-line-wrap">
+                {formation.bench.map(row => (
+                  <PoolPlayerCard key={`${row.kind}:${row.ref_id}`} row={row} seasonId={seasonId} lang={lang}
+                    injury={injuries[String(row.ref_id)]} gameStatus={gameStatusForTeam(gamesToday, row.team_abbrev)} onOpen={onOpen} small />
+                ))}
+              </div>
+            </div>
+          )}
+          {formation.ir.length > 0 && (
+            <div className="locker-reserve-group">
+              <div className="locker-reserve-title">{t('pool_locker_ir_title')}</div>
+              <div className="locker-line locker-line-wrap">
+                {formation.ir.map(row => (
+                  <PoolPlayerCard key={`${row.kind}:${row.ref_id}`} row={row} seasonId={seasonId} lang={lang}
+                    injury={injuries[String(row.ref_id)]} gameStatus={gameStatusForTeam(gamesToday, row.team_abbrev)} onOpen={onOpen} small />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PoolFormerPlayers({ players, seasonId, lang, onOpen }) {
+  const t = getT(lang);
+  return (
+    <div className="locker-former-section">
+      <div className="locker-former-title">{t('pool_locker_former_players')}</div>
+      <div className="locker-former-sub">{t('pool_locker_former_players_sub')}</div>
+      <div className="locker-line locker-line-wrap">
+        {players.map(row => (
+          <div key={`${row.kind}:${row.ref_id}`} className="locker-card locker-card-former" onClick={() => onOpen(row)} role="button" tabIndex={0}>
+            <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={36} />
+            {row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={14} />}
+            <div className="locker-card-name">{row.label}</div>
+            <div className="locker-card-points">{round1(row.total_points)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===================== Bandeau d'equipe =====================
+
+function PoolTeamBanner({ pool, member, rows, standingsRow, teamPick, lang }) {
+  const t = getT(lang);
+  const abbrev = teamPick?.ref_id;
+  const bestPlayer = useMemo(() => {
+    const actifs = (rows || []).filter(r => r.is_active && r.kind === 'player');
+    if (actifs.length === 0) return null;
+    return actifs.reduce((a, b) => ((Number(b.total_points) || 0) > (Number(a.total_points) || 0) ? b : a));
+  }, [rows]);
+  const totalPoints = standingsRow ? Number(standingsRow.total_points) || 0 : (rows || []).reduce((s, r) => s + (Number(r.total_points) || 0), 0);
+
+  return (
+    <div className="locker-banner" style={{ backgroundImage: teamGradient(abbrev) }}>
+      <div className="locker-banner-left">
+        {abbrev ? <TeamLogo abbrev={abbrev} size={56} /> : <div className="locker-banner-no-team">{t('pool_locker_no_team_pick')}</div>}
+        <div>
+          <div className="locker-banner-name">{memberLabel(member, pool.rules)}</div>
+          {standingsRow?.rank != null && <div className="locker-banner-rank">{t('pool_locker_rank_label')} #{standingsRow.rank}</div>}
+        </div>
+      </div>
+      <div className="locker-banner-stats">
+        <div className="locker-banner-stat">
+          <div className="locker-banner-stat-value">{round1(totalPoints)}</div>
+          <div className="locker-banner-stat-label">{t('pool_locker_total_points')}</div>
+        </div>
+        <div className="locker-banner-stat">
+          <div className="locker-banner-stat-value">{round1(standingsRow?.today_points ?? 0)}</div>
+          <div className="locker-banner-stat-label">{t('pool_locker_today_points')}</div>
+        </div>
+        {bestPlayer && (
+          <div className="locker-banner-stat locker-banner-best">
+            <div className="locker-banner-stat-label">{t('pool_locker_best_player')}</div>
+            <div className="locker-banner-best-name">{bestPlayer.label} · {round1(bestPlayer.total_points)}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ===================== Export PNG ("Partager mon equipe") =====================
+// Dessine un canevas a la main (en-tete degrade + liste des joueurs actifs) -- pas de
+// html-to-image/html2canvas (dependance evitee) : la copie DOM->canvas n'est de toute facon
+// pas fiable avec des images cross-origin non-CORS comme assets.nhle.com. Les images sont
+// chargees via /api/nhl-image (proxy CORS leger, voir api/nhl-image.js) pour pouvoir etre
+// dessinees sur le canevas sans "tainter" sa sortie (toBlob echouerait sinon).
+
+function imageProxyUrl(nhlUrl) {
+  if (!nhlUrl) return nhlUrl;
+  const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
+  return estEnProduction ? `/api/nhl-image?url=${encodeURIComponent(nhlUrl)}` : nhlUrl;
+}
+
+function loadImageSafe(url, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    if (!url) { resolve(null); return; }
+    const img = new Image();
+    let done = false;
+    const finish = (value) => { if (!done) { done = true; resolve(value); } };
+    img.crossOrigin = 'anonymous';
+    img.onload = () => finish(img);
+    img.onerror = () => finish(null);
+    img.src = url;
+    setTimeout(() => finish(null), timeoutMs);
+  });
+}
+
+// Exporte le canevas (pas de telechargement) : utile pour les tests ("au moins que la
+// fonction s'execute") et reutilise par downloadLockerRoomImage ci-dessous.
+export async function exportLockerRoomImage({ pool, member, rows, standingsRow, lang, seasonId, teamAbbrev }) {
+  const t = getT(lang);
+  const width = 900;
+  const padding = 28;
+  const headerH = 150;
+  const rowH = 40;
+  const players = (rows || []).filter(r => r.is_active && r.kind === 'player').sort((a, b) => (Number(b.total_points) || 0) - (Number(a.total_points) || 0));
+  const height = headerH + padding * 2 + Math.max(players.length, 1) * rowH + 20;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext && canvas.getContext('2d');
+  if (!ctx) return canvas; // environnement sans support canvas (ex. jsdom en test) : rien a dessiner, ne jamais planter
+
+  const colors = teamColors(teamAbbrev);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, width, height);
+  const grad = ctx.createLinearGradient(0, 0, width, headerH);
+  grad.addColorStop(0, colors.primary);
+  grad.addColorStop(1, colors.secondary);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, headerH);
+
+  if (teamAbbrev && LOGOS_NHL[teamAbbrev]) {
+    const logo = await loadImageSafe(imageProxyUrl(LOGOS_NHL[teamAbbrev]));
+    if (logo) ctx.drawImage(logo, padding, 20, 90, 90);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 28px -apple-system, Arial, sans-serif';
+  ctx.fillText(memberLabel(member, pool.rules), padding + 110, 60);
+  ctx.font = '600 15px -apple-system, Arial, sans-serif';
+  const rankTxt = standingsRow?.rank != null ? `${t('pool_locker_rank_label')} #${standingsRow.rank} · ` : '';
+  ctx.fillText(`${rankTxt}${round1(standingsRow?.total_points ?? 0)} ${t('pool_standings_col_pts')}`, padding + 110, 90);
+  ctx.font = '700 16px -apple-system, Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Betrics', width - padding, 36);
+  ctx.textAlign = 'left';
+
+  let y = headerH + padding + 14;
+  ctx.font = '600 15px -apple-system, Arial, sans-serif';
+  if (players.length === 0) {
+    ctx.fillStyle = '#888888';
+    ctx.fillText(t('pool_locker_no_players'), padding, y);
+  }
+  for (const r of players) {
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(padding, y - 22, width - padding * 2, rowH - 8);
+
+    const headshot = await loadImageSafe(imageProxyUrl(headshotUrl(r.ref_id, seasonId, r.team_abbrev)));
+    if (headshot) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(padding + 16, y - 6, 15, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(headshot, padding + 1, y - 21, 30, 30);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(r.label, padding + 42, y);
+    ctx.fillStyle = '#f97316';
+    ctx.textAlign = 'right';
+    ctx.font = '700 16px -apple-system, Arial, sans-serif';
+    ctx.fillText(String(round1(r.total_points)), width - padding - 10, y);
+    ctx.font = '600 15px -apple-system, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    y += rowH;
+  }
+
+  return canvas;
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve) => {
+    if (!canvas.toBlob) { resolve(null); return; }
+    let done = false;
+    const finish = (value) => { if (!done) { done = true; resolve(value); } };
+    // Repli : certains environnements (jsdom en test, navigateurs sans support canvas reel)
+    // exposent toBlob sans jamais appeler le callback -- ne doit jamais bloquer indefiniment.
+    setTimeout(() => finish(null), 2000);
+    try { canvas.toBlob((blob) => finish(blob), 'image/png'); } catch { finish(null); }
+  });
+}
+
+// Genere l'image ET declenche son telechargement. Retourne true si un blob a bien ete produit
+// (false en environnement sans canvas reel, ex. jsdom) -- jamais une exception non attrapee.
+export async function downloadLockerRoomImage(params) {
+  const canvas = await exportLockerRoomImage(params);
+  const blob = await canvasToBlob(canvas);
+  if (!blob) return false;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const nomFichier = (memberLabel(params.member, params.pool?.rules) || 'equipe').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-');
+  a.href = url;
+  a.download = `betrics-${nomFichier}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+function ShareButton({ pool, member, rows, standingsRow, lang, seasonId, teamAbbrev }) {
+  const t = getT(lang);
+  const [busy, setBusy] = useState(false);
+  async function handleClick() {
+    setBusy(true);
+    try { await downloadLockerRoomImage({ pool, member, rows, standingsRow, lang, seasonId, teamAbbrev }); }
+    catch (err) { console.error(err); }
+    setBusy(false);
+  }
+  return (
+    <button type="button" onClick={handleClick} disabled={busy}
+      style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', cursor: busy ? 'default' : 'pointer', backgroundColor: '#f97316', color: 'white', fontSize: '13px', fontWeight: '700', minHeight: '44px', opacity: busy ? 0.7 : 1 }}>
+      {busy ? t('pool_locker_sharing') : t('pool_locker_share_btn')}
+    </button>
+  );
+}
+
+// ===================== Composant principal : bascule Formation / Tableau =====================
+// `children` = le tableau detaille deja existant (MEMBER_DETAIL_SECTIONS + MemberSummaryTable
+// dans PoolDraftRoom.js), inchange, affiche quand vue==='table'. La selection de participant,
+// les fleches precedent/suivant et la barre de periode restent la responsabilite de l'appelant
+// (MemberDetailPanel) -- ce composant ne gere que l'affichage du participant deja selectionne.
+// loading : rows pas encore charges (true) -- emptyMessage : texte a afficher a la place de la
+// formation/du tableau si le participant n'a aucun joueur (pool pas encore repeche, ou
+// participant sans choix) ; le bandeau (nom, rang, points) reste toujours visible, meme dans
+// ces deux cas, comme l'en-tete qu'il remplace.
+export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, loading, emptyMessage }) {
+  const t = getT(lang);
+  const seasonId = useSaisonCourante();
+  const [vue, setVue] = useState('formation');
+  const [openedPlayer, setOpenedPlayer] = useState(null);
+  const gamesToday = useTodayGames();
+
+  const rowsSafe = rows || [];
+  const formation = useMemo(() => buildFormation(rowsSafe, pool.rules), [rowsSafe, pool.rules]);
+  const formerPlayers = useMemo(() => buildFormerPlayers(rowsSafe), [rowsSafe]);
+  const injuriesKey = useMemo(() => rowsSafe.filter(r => r.kind === 'player').map(r => String(r.ref_id)).join(','), [rowsSafe]);
+  const injuries = usePlayerInjuries(injuriesKey);
+
+  function openCard(row) {
+    if (!row || row.kind !== 'player') return;
+    setOpenedPlayer({ id: row.ref_id, nom: row.label, equipe: row.team_abbrev, position: row.pos_group, numero: '' });
+  }
+
+  const showContent = !loading && !emptyMessage;
+
+  return (
+    <div>
+      {showContent && (
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+          <button type="button" onClick={() => setVue('formation')} style={toggleBtnStyle(vue === 'formation')}>{t('pool_locker_view_formation')}</button>
+          <button type="button" onClick={() => setVue('table')} style={toggleBtnStyle(vue === 'table')}>{t('pool_locker_view_table')}</button>
+        </div>
+      )}
+
+      <PoolTeamBanner pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} teamPick={formation.teamPick} lang={lang} />
+
+      {loading ? (
+        <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
+      ) : emptyMessage ? (
+        <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{emptyMessage}</div>
+      ) : vue === 'formation' ? (
+        <>
+          <PoolIceFormation formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} onOpen={openCard} />
+          {formerPlayers.length > 0 && (
+            <PoolFormerPlayers players={formerPlayers} seasonId={seasonId} lang={lang} onOpen={openCard} />
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+            <ShareButton pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} lang={lang} seasonId={seasonId} teamAbbrev={formation.teamPick?.ref_id} />
+          </div>
+        </>
+      ) : children}
+
+      {openedPlayer && (
+        <div className="locker-player-modal-backdrop" onClick={() => setOpenedPlayer(null)}>
+          <div className="locker-player-modal" onClick={e => e.stopPropagation()}>
+            <FicheJoueurStats joueur={openedPlayer} onBack={() => setOpenedPlayer(null)} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

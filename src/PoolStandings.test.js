@@ -11,6 +11,8 @@ jest.mock('./supabase', () => ({
 jest.mock('./Analyses', () => ({
   useIsMobile: jest.fn(() => false),
   useSaisonCourante: () => '20252026',
+  LOGOS_NHL: {},
+  FicheJoueurStats: () => null,
 }));
 
 const { supabase } = require('./supabase');
@@ -44,23 +46,29 @@ beforeEach(() => {
     if (fn === 'get_member_breakdown') return Promise.resolve({ data: [], error: null });
     return Promise.resolve({ data: null, error: null });
   });
-  supabase.from.mockImplementation(() => ({
-    select: () => ({
-      order: () => ({
-        limit: () => ({
-          maybeSingle: () => Promise.resolve({ data: null, error: null }),
-        }),
-      }),
-    }),
-  }));
+  // Chainable generique (select/eq/in/order/limit/maybeSingle/then) : couvre a la fois la
+  // requete "dernier match synchronise" de PoolStandings et les requetes nhl_games/
+  // player_injuries de la Vue vestiaire (PoolLockerRoom.js), aucune des deux n'etant testee ici.
+  supabase.from.mockImplementation(() => {
+    const q = {
+      select: () => q,
+      eq: () => q,
+      in: () => q,
+      order: () => q,
+      limit: () => q,
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      then: (resolve) => Promise.resolve({ data: [], error: null }).then(resolve),
+    };
+    return q;
+  });
 });
 
-// L'en-tete du detail (nom du participant AFFICHE) est un <div> de ce style precis -- distinct
-// des <option> du selecteur, qui portent le MEME libelle (ex. "Equipe Dave" dans l'option ET
-// dans l'en-tete une fois ce participant selectionne). On cible explicitement le <div> pour ne
-// pas avoir un "multiple elements" sur un libelle qui apparait legitimement deux fois a l'ecran.
+// L'en-tete du detail (nom du participant AFFICHE) est le bandeau de la Vue vestiaire
+// (PoolTeamHub/PoolTeamBanner, voir PoolLockerRoom.js), reconnaissable a sa classe
+// .locker-banner-name -- distinct des <option> du selecteur, qui portent le MEME libelle (ex.
+// "Equipe Dave" dans l'option ET dans l'en-tete une fois ce participant selectionne).
 function headerText() {
-  return document.querySelector('div[style*="font-size: 16px"][style*="font-weight: 800"]')?.textContent;
+  return document.querySelector('.locker-banner-name')?.textContent;
 }
 
 async function renderStandings() {
