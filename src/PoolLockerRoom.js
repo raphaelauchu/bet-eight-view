@@ -24,16 +24,29 @@ function slotCountsForFantasy(rules) {
   };
 }
 
-function chunkWithPlaceholders(list, minSlots, size) {
+function padRows(list, minSlots) {
   const total = Math.max(list.length, minSlots);
-  const padded = [...list, ...Array(Math.max(0, total - list.length)).fill(null)];
-  const chunks = [];
-  for (let i = 0; i < padded.length; i += size) chunks.push(padded.slice(i, i + size));
-  return chunks;
+  return [...list, ...Array(Math.max(0, total - list.length)).fill(null)];
 }
+
+// Fantasy seulement : un groupe PAR SLOT REEL (C/LW/RW/D/G/UTIL -- jamais une numerotation
+// inventee comme "Ligne 1/2/3", qui n'existe pas dans les regles du pool), avec le compte
+// REELLEMENT configure pour ce slot (rules.roster[slotKey]) comme cible de remplissage.
+function groupBySlot(players, rules, slotKeys) {
+  const r = rules?.roster || {};
+  return slotKeys
+    .filter(key => (Number(r[key]) || 0) > 0)
+    .map(key => ({ label: key, rows: padRows(players.filter(p => p.current_slot === key), Number(r[key]) || 0) }));
+}
+
+const FANTASY_FORWARD_SLOTS = ['C', 'LW', 'RW', 'UTIL'];
 
 // rows : lignes de get_member_breakdown (kind/ref_id/label/pos_group/team_abbrev/total_points/
 // is_active/closed_reason/current_slot...). rules : pool.rules (poolType + roster).
+// lines/pairs : tableau de groupes { label, rows } -- label=null en pool classique (tous les
+// joueurs comptent pareil, aucune etiquette "Ligne"/"Paire" n'est affichee), label=slot reel
+// (ex. 'C', 'LW', 'D') en pool fantasy. counts/required : totaux pour l'indicateur discret du
+// titre de bloc (ex. "9/9").
 export function buildFormation(rows, rules) {
   const isFantasy = rules?.poolType === 'fantasy';
   const players = (rows || []).filter(r => r.is_active && r.kind === 'player');
@@ -51,18 +64,22 @@ export function buildFormation(rows, rules) {
     ? slotCountsForFantasy(rules)
     : { forward: Number(rules?.roster?.forwards) || 9, defense: Number(rules?.roster?.defense) || 6, goalie: Number(rules?.roster?.goalies) || 2 };
 
-  const goaliesTotal = Math.max(goalies.length, slots.goalie);
-  const goaliesPadded = [...goalies, ...Array(Math.max(0, goaliesTotal - goalies.length)).fill(null)];
+  const lines = isFantasy
+    ? groupBySlot(forwards, rules, FANTASY_FORWARD_SLOTS)
+    : [{ label: null, rows: padRows(forwards, slots.forward) }];
+  const pairs = isFantasy
+    ? groupBySlot(defense, rules, ['D'])
+    : [{ label: null, rows: padRows(defense, slots.defense) }];
 
   const teamPick = (rows || []).find(r => r.is_active && r.kind === 'team') || null;
 
   return {
-    lines: chunkWithPlaceholders(forwards, slots.forward, 3),
-    pairs: chunkWithPlaceholders(defense, slots.defense, 2),
-    goalies: goaliesPadded,
-    bench,
-    ir,
-    teamPick,
+    lines, pairs,
+    goalies: padRows(goalies, slots.goalie),
+    goaliesLabel: isFantasy ? 'G' : null,
+    bench, ir, teamPick, isFantasy,
+    counts: { forward: forwards.length, defense: defense.length, goalie: goalies.length },
+    required: { forward: slots.forward, defense: slots.defense, goalie: slots.goalie },
   };
 }
 
@@ -178,6 +195,15 @@ const toggleBtnStyle = (active) => ({
 // repartition en colonnes (3 blocs cote a cote >=1024px, empiles sinon) est purement CSS (voir
 // .locker-board dans index.css) : le DOM produit ici est le MEME a toutes les largeurs.
 
+function BlockTitle({ label, filled, required }) {
+  return (
+    <div className="locker-block-title">
+      <span>{label}</span>
+      <span className="locker-block-count">{filled}/{required}</span>
+    </div>
+  );
+}
+
 function PoolIceBoard({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
   const t = getT(lang);
   const card = (row, key) => (
@@ -191,40 +217,92 @@ function PoolIceBoard({ formation, seasonId, lang, gamesToday, injuries, allPoin
   return (
     <div className="locker-board">
       <div className="locker-block locker-block-forwards">
-        <div className="locker-block-title">{t('pool_locker_block_forwards')}</div>
-        {formation.lines.map((line, i) => (
+        <BlockTitle label={t('pool_locker_block_forwards')} filled={formation.counts.forward} required={formation.required.forward} />
+        {formation.lines.map((group, i) => (
           <div className="locker-group" key={i}>
-            <div className="locker-group-label">{t('pool_locker_line_label')} {i + 1}</div>
+            {group.label && <div className="locker-group-label">{group.label}</div>}
             <div className="locker-group-cards">
-              {line.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-f-${i}-${j}`))}
+              {group.rows.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-f-${i}-${j}`))}
             </div>
           </div>
         ))}
       </div>
 
       <div className="locker-block locker-block-defense">
-        <div className="locker-block-title">{t('pool_locker_block_defense')}</div>
-        {formation.pairs.map((pair, i) => (
+        <BlockTitle label={t('pool_locker_block_defense')} filled={formation.counts.defense} required={formation.required.defense} />
+        {formation.pairs.map((group, i) => (
           <div className="locker-group" key={i}>
-            <div className="locker-group-label">{t('pool_locker_pair_label')} {i + 1}</div>
+            {group.label && <div className="locker-group-label">{group.label}</div>}
             <div className="locker-group-cards">
-              {pair.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-d-${i}-${j}`))}
+              {group.rows.map((row, j) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-d-${i}-${j}`))}
             </div>
           </div>
         ))}
       </div>
 
       <div className="locker-block locker-block-goalies">
-        <div className="locker-block-title">{t('pool_locker_block_goalies')}</div>
-        <div className="locker-group-cards">
-          {formation.goalies.map((row, i) => (
-            <div className="locker-goalie-slot" key={i}>
-              <div className="locker-group-label">{i === 0 ? t('pool_locker_goalie_starter') : t('pool_locker_goalie_backup')}</div>
-              {card(row, row ? `${row.kind}:${row.ref_id}` : `empty-g-${i}`)}
-            </div>
-          ))}
+        <BlockTitle label={t('pool_locker_block_goalies')} filled={formation.counts.goalie} required={formation.required.goalie} />
+        <div className="locker-group">
+          {formation.goaliesLabel && <div className="locker-group-label">{formation.goaliesLabel}</div>}
+          <div className="locker-group-cards">
+            {formation.goalies.map((row, i) => card(row, row ? `${row.kind}:${row.ref_id}` : `empty-g-${i}`))}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Squelette de chargement (3 blocs muets, memes proportions que la vraie formation) --
+// respecte prefers-reduced-motion (voir .locker-skeleton-card dans index.css : pas de pulsation
+// si l'utilisateur prefere moins d'animation, juste un bloc statique).
+function PoolIceBoardSkeleton() {
+  return (
+    <div className="locker-board" aria-hidden="true">
+      {[3, 2, 2].map((n, bi) => (
+        <div className="locker-block" key={bi}>
+          <div className="locker-skeleton-title" />
+          <div className="locker-group-cards" style={{ gridTemplateColumns: `repeat(${n}, minmax(110px, 150px))` }}>
+            {Array.from({ length: n }).map((_, i) => <div className="locker-skeleton-card" key={i} />)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ===================== Legende des paliers de carte (bronze/argent/or/elite) =====================
+// Distinguables sans la couleur seule : nombre d'etoiles croissant (1 a 4), en plus de la
+// couleur de la pastille -- jamais la couleur comme seul signal. Infobulle accessible (clic,
+// survol, ou focus clavier, meme mecanisme que la croix de blessure de PlayerCard).
+
+const TIER_ORDER = ['bronze', 'silver', 'gold', 'elite'];
+const TIER_STARS = { bronze: 1, silver: 2, gold: 3, elite: 4 };
+
+function TierLegend({ lang }) {
+  const t = getT(lang);
+  const [showInfo, setShowInfo] = useState(false);
+  return (
+    <div className="locker-tier-legend">
+      {TIER_ORDER.map(tier => (
+        <div className="locker-tier-item" key={tier}>
+          <span className={`locker-tier-dot locker-tier-dot-${tier}`} aria-hidden="true">{'★'.repeat(TIER_STARS[tier])}</span>
+          <span className="locker-tier-name">{t(`pool_locker_tier_${tier}`)}</span>
+        </div>
+      ))}
+      <span
+        className="locker-tier-info"
+        role="button"
+        tabIndex={0}
+        aria-label={t('pool_locker_tier_explain')}
+        onClick={() => setShowInfo(v => !v)}
+        onMouseEnter={() => setShowInfo(true)}
+        onMouseLeave={() => setShowInfo(false)}
+        onFocus={() => setShowInfo(true)}
+        onBlur={() => setShowInfo(false)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowInfo(v => !v); } }}
+      >ⓘ</span>
+      {showInfo && <div className="locker-tier-tooltip" role="tooltip">{t('pool_locker_tier_explain')}</div>}
     </div>
   );
 }
@@ -524,10 +602,6 @@ export function PoolTeamHub({ pool, member, members, rows, standingsRow, lang, c
   }
 
   const showContent = !loading && !emptyMessage;
-  const dressedCount = formation.lines.flat().filter(Boolean).length
-    + formation.pairs.flat().filter(Boolean).length
-    + formation.goalies.filter(Boolean).length;
-  const activeCount = rowsSafe.filter(r => r.is_active && r.kind === 'player').length;
   const reserveCount = formation.bench.length + formation.ir.length;
   const showBenchTab = reserveCount > 0;
   const showFormerTab = formerPlayers.length > 0;
@@ -536,26 +610,27 @@ export function PoolTeamHub({ pool, member, members, rows, standingsRow, lang, c
     return (
       <button type="button" role="tab" aria-selected={vue === key} onClick={() => setVue(key)} style={toggleBtnStyle(vue === key)}>
         <span>{t(labelKey)}</span>
-        <span className="locker-tab-count">{count}</span>
+        {count != null && <span className="locker-tab-count">{count}</span>}
       </button>
     );
   }
 
   return (
-    <div>
+    <div className="locker-team-hub">
       {showContent && (
         <div className="locker-tabs" role="tablist">
-          {tabButton('formation', 'pool_locker_view_formation', dressedCount)}
-          {tabButton('table', 'pool_locker_view_table', activeCount)}
+          {tabButton('formation', 'pool_locker_view_formation')}
+          {tabButton('table', 'pool_locker_view_table')}
           {showBenchTab && tabButton('bench', 'pool_locker_tab_bench_ir', reserveCount)}
           {showFormerTab && tabButton('former', 'pool_locker_former_players', formerPlayers.length)}
         </div>
       )}
 
       <PoolTeamBanner pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} teamPick={formation.teamPick} lang={lang} />
+      <TierLegend lang={lang} />
 
       {loading ? (
-        <div style={{ color: 'var(--c-555)', fontSize: '13px' }}>{t('pool_loading_generic')}</div>
+        <PoolIceBoardSkeleton />
       ) : emptyMessage ? (
         <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{emptyMessage}</div>
       ) : vue === 'table' ? children

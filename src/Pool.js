@@ -1062,10 +1062,11 @@ export function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBac
     );
   }
 
-  // La salle de draft en direct et le classement ont besoin de toute la largeur disponible
-  // (colonnes internes) sur iPad/web ; les autres onglets restent une colonne unique centree
-  // (pas de contenu pertinent pour une deuxieme colonne, voir .pool-lobby-narrow).
-  const shellWide = !isMobile && (activeTab === 'standings' || (activeTab === 'draft' && pool.status !== 'setup'));
+  // La salle de draft en direct, le classement et Mon equipe (formation 3 blocs) ont besoin de
+  // toute la largeur disponible (colonnes internes) sur iPad/web ; les autres onglets restent
+  // une colonne unique centree (pas de contenu pertinent pour une deuxieme colonne, voir
+  // .pool-lobby-narrow).
+  const shellWide = !isMobile && (activeTab === 'standings' || activeTab === 'team' || (activeTab === 'draft' && pool.status !== 'setup'));
 
   return (
     <div className={isMobile ? undefined : 'pool-lobby-shell'} style={isMobile ? { maxWidth: '760px', margin: '0 auto' } : undefined}>

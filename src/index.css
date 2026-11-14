@@ -254,13 +254,15 @@ body {
 
 /* ===================== Pool =====================
    Le conteneur du lobby (PoolLobby) etait fige a max-width:760px pour TOUS les onglets, y
-   compris la salle de draft et le classement qui ont besoin de toute la largeur disponible
-   sur iPad/web. <768px (mobile) : conserve l'ancien style inline (760px, sans effet reel sous
-   768px) -- aucun changement. >=768px : .pool-lobby-shell (large, jusqu'a 1500px) pour les
-   onglets qui en ont besoin (classement, draft), .pool-lobby-narrow (centre, 900px) pour les
-   onglets a colonne unique (lobby, mon equipe, regles, echanges, agents libres, alignement). */
+   compris la salle de draft, le classement et Mon equipe qui ont besoin de toute la largeur
+   disponible sur iPad/web. <768px (mobile) : conserve l'ancien style inline (760px, sans effet
+   reel sous 768px) -- aucun changement. >=768px : .pool-lobby-shell (large, jusqu'a 1500px,
+   ALIGNE A GAUCHE -- pas de marge auto qui le centrerait avec un vide entre la barre laterale
+   et le contenu sur tres grand ecran) pour les onglets qui en ont besoin (classement, draft,
+   mon equipe), .pool-lobby-narrow (centre, 900px) pour les onglets a colonne unique (lobby,
+   regles, echanges, agents libres, alignement). */
 .pool-lobby-shell {
-  margin: 0 auto;
+  margin: 0;
 }
 
 @media (min-width: 1200px) {
@@ -361,13 +363,20 @@ body {
 }
 
 /* ===================== Vue vestiaire des pools (src/PoolLockerRoom.js) =====================
-   >=1024px : 3 blocs (Attaque/Defense/Gardiens) cote a cote en grille, pleine largeur, alignes
-   en haut. <1024px : blocs empiles verticalement, chacun garde son propre regroupement interne
-   (lignes de 3 pour l'attaque, paires de 2 pour la defense/les gardiens). Mobile etroit
-   (<480px) : l'attaque repasse a 2 cartes par rangee pour eviter le debordement horizontal.
-   Repartition de colonnes = CSS pur (media queries), aucune branche JS -- seule la structure
-   DOM (blocs/groupes/cartes) est produite par le composant, dans le meme ordre a toutes les
-   largeurs. */
+   .locker-team-hub est un conteneur de taille (container-type: inline-size) : la repartition
+   en 3 blocs cote a cote vs empiles repond a la largeur REELLE de ce conteneur, pas a celle de
+   la fenetre (@container, pas @media) -- essentiel car cette vue est reutilisee dans un
+   panneau etroit (cote a cote avec le tableau du Classement sur iPad/web), ou une regle basee
+   sur la largeur de fenetre activerait le mode 3 colonnes alors qu'il n'y a pas assez de place
+   et causerait un debordement horizontal. >=960px de conteneur : 3 blocs (Attaque/Defense/
+   Gardiens) cote a cote, grille proportionnelle (3fr/2fr/2fr, cartes de meme taille dans les
+   trois blocs car 3 cartes/rangee en attaque contre 2 en defense/gardiens). <960px : blocs
+   empiles, chacun garde son propre regroupement interne. .locker-block-forwards est LUI-MEME
+   un conteneur : en dessous de 400px (son panneau de Classement etroit, ou un mobile etroit en
+   mode empile), l'attaque repasse a 2 cartes par rangee pour eviter tout debordement. */
+.locker-team-hub {
+  container-type: inline-size;
+}
 .locker-banner {
   display: flex;
   flex-wrap: wrap;
@@ -457,28 +466,40 @@ body {
 .locker-board {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 10px;
   align-items: start;
 }
 
 .locker-block {
-  border-radius: 20px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 10px;
   border: 1px solid var(--c-1a1a1a);
   background: #0b0d12;
+  min-width: 0;
 }
 
 .locker-block-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--c-666);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+.locker-block-count {
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-555);
 }
 
 .locker-group {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .locker-group:last-child {
@@ -496,39 +517,34 @@ body {
 
 .locker-group-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(110px, 150px));
+  gap: 8px;
 }
 
 .locker-block-defense .locker-group-cards,
 .locker-block-goalies .locker-group-cards {
-  grid-template-columns: repeat(2, minmax(150px, 1fr));
-}
-
-.locker-goalie-slot {
-  display: flex;
-  flex-direction: column;
-}
-
-.locker-goalie-slot .locker-group-label {
-  text-align: center;
+  grid-template-columns: repeat(2, minmax(110px, 150px));
 }
 
 .locker-flow-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 150px));
+  gap: 8px;
 }
 
-@media (min-width: 1024px) {
+@container (min-width: 960px) {
   .locker-board {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr);
   }
 }
 
-@media (max-width: 480px) {
+.locker-block-forwards {
+  container-type: inline-size;
+}
+
+@container (max-width: 399px) {
   .locker-block-forwards .locker-group-cards {
-    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 150px));
   }
 }
 
@@ -771,17 +787,17 @@ body {
 }
 
 /* ===================== Variante "formation" de PlayerCard (src/PlayerCard.js) =====================
-   Carte large (min 150px, ratio portrait ~3:4) utilisee par la Vue vestiaire (Formation,
-   Banc/IR, Anciens joueurs) uniquement -- totalement separee des classes .player-card-S/M/L
-   (echanges, agents libres, repechage), donc sans aucun effet sur ces ecrans. Nom complet sur
-   deux lignes (jamais tronque), points en haut a gauche, blessure en haut a droite, statut de
-   match TOUJOURS en bas (jamais superpose aux points ni au nom). */
+   Carte plus compacte (min 110px, max 150px, ratio portrait ~3:4) utilisee par la Vue
+   vestiaire (Formation, Banc/IR, Anciens joueurs) uniquement -- totalement separee des classes
+   .player-card-S/M/L (echanges, agents libres, repechage), donc sans aucun effet sur ces
+   ecrans. Nom complet sur deux lignes (jamais tronque), points en haut a gauche, blessure en
+   haut a droite, statut de match TOUJOURS en bas (jamais superpose aux points ni au nom). */
 .player-card-formation {
   width: 100%;
-  min-width: 150px;
+  min-width: 110px;
   aspect-ratio: 3 / 4;
-  padding: 10px;
-  gap: 6px;
+  padding: 8px;
+  gap: 4px;
   justify-content: space-between;
   align-items: stretch;
 }
@@ -794,22 +810,22 @@ body {
 }
 
 .pcf-points {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 900;
   color: #f97316;
   line-height: 1;
 }
 
 .player-card-formation .player-card-injury-badge {
-  width: 24px;
-  height: 24px;
-  font-size: 13px;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
 }
 
 .pcf-photo {
   flex: 1;
   min-height: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--c-111);
 }
@@ -829,7 +845,7 @@ body {
   justify-content: center;
   color: #ffffff;
   font-weight: 900;
-  font-size: 22px;
+  font-size: 16px;
   letter-spacing: 0.02em;
 }
 
@@ -852,7 +868,7 @@ body {
 }
 
 .pcf-pos {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   color: var(--c-666);
   text-transform: uppercase;
@@ -861,10 +877,10 @@ body {
 .pcf-status {
   width: 100%;
   text-align: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  padding: 3px 0;
-  border-radius: 6px;
+  padding: 2px 0;
+  border-radius: 5px;
 }
 
 .pcf-status-tonight {
@@ -879,10 +895,106 @@ body {
 
 @media (min-width: 768px) {
   .pcf-points {
-    font-size: 20px;
+    font-size: 16px;
   }
   .player-card-initials {
-    font-size: 26px;
+    font-size: 19px;
+  }
+}
+
+.locker-tier-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 11px;
+}
+
+.locker-tier-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.locker-tier-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 6px;
+  letter-spacing: -1px;
+  color: #1a1208;
+  font-weight: 900;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.locker-tier-dot-bronze { background: #a97142; }
+.locker-tier-dot-silver { background: #c7cdd6; }
+.locker-tier-dot-gold { background: #f6c445; box-shadow: 0 0 6px rgba(246,196,69,0.35); }
+.locker-tier-dot-elite { background: #f97316; color: #fff; box-shadow: 0 0 0 2px rgba(249,115,22,0.4); }
+
+.locker-tier-name {
+  color: var(--c-888);
+  font-weight: 700;
+}
+
+.locker-tier-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c-111);
+  color: var(--c-666);
+  cursor: pointer;
+  font-size: 11px;
+  border: 1px solid var(--c-222);
+}
+
+.locker-tier-info:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+.locker-tier-tooltip {
+  flex-basis: 100%;
+  margin-top: 2px;
+  background: var(--c-0d0d0d);
+  border: 1px solid var(--c-333);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--c-ccc);
+}
+
+.locker-skeleton-title {
+  height: 11px;
+  width: 70px;
+  border-radius: 4px;
+  background: var(--c-1a1a1a);
+  margin-bottom: 10px;
+}
+
+.locker-skeleton-card {
+  aspect-ratio: 3 / 4;
+  min-width: 110px;
+  border-radius: 10px;
+  background: var(--c-1a1a1a);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .locker-skeleton-title, .locker-skeleton-card {
+    animation: locker-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes locker-skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
 }
 

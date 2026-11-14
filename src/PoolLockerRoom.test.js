@@ -36,7 +36,7 @@ function makeRow(overrides) {
   };
 }
 
-test('buildFormation : regles classiques par defaut (9F/6D/2G), trios et paires avec placeholders', () => {
+test('buildFormation : regles classiques par defaut (9F/6D/2G) -- un seul groupe SANS etiquette par bloc (tous les joueurs comptent pareil)', () => {
   const rules = { poolType: 'classic', roster: { forwards: 9, defense: 6, goalies: 2, teamPicks: 1 } };
   const rows = [
     ...Array.from({ length: 7 }, (_, i) => makeRow({ ref_id: `f${i}`, label: `F${i}`, pos_group: 'F' })),
@@ -46,28 +46,37 @@ test('buildFormation : regles classiques par defaut (9F/6D/2G), trios et paires 
   ];
   const formation = buildFormation(rows, rules);
 
-  expect(formation.lines.length).toBe(3); // 9 slots / 3 par ligne
-  expect(formation.lines.flat().filter(Boolean).length).toBe(7);
-  expect(formation.lines.flat().filter(c => c === null).length).toBe(2); // 9 - 7 reels
+  expect(formation.isFantasy).toBe(false);
 
-  expect(formation.pairs.length).toBe(3); // 6 slots / 2 par paire
-  expect(formation.pairs.flat().filter(Boolean).length).toBe(4);
-  expect(formation.pairs.flat().filter(c => c === null).length).toBe(2);
+  expect(formation.lines.length).toBe(1); // pas de "Ligne 1/2/3" en classique : un seul groupe
+  expect(formation.lines[0].label).toBeNull();
+  expect(formation.lines[0].rows.length).toBe(9);
+  expect(formation.lines[0].rows.filter(Boolean).length).toBe(7);
+  expect(formation.lines[0].rows.filter(c => c === null).length).toBe(2); // 9 - 7 reels
 
+  expect(formation.pairs.length).toBe(1); // pas de "Paire 1/2/3" en classique
+  expect(formation.pairs[0].label).toBeNull();
+  expect(formation.pairs[0].rows.length).toBe(6);
+  expect(formation.pairs[0].rows.filter(Boolean).length).toBe(4);
+
+  expect(formation.goaliesLabel).toBeNull(); // pas de "Partant/Reserviste" en classique
   expect(formation.goalies.length).toBe(2);
   expect(formation.goalies.filter(Boolean).length).toBe(1);
+
+  expect(formation.counts).toEqual({ forward: 7, defense: 4, goalie: 1 });
+  expect(formation.required).toEqual({ forward: 9, defense: 6, goalie: 2 });
 
   expect(formation.bench).toEqual([]);
   expect(formation.ir).toEqual([]);
   expect(formation.teamPick?.ref_id).toBe('MTL');
 });
 
-test('buildFormation : alignement fantasy personnalise (C/LW/RW/D/G/UTIL/banc/IR)', () => {
+test('buildFormation : alignement fantasy personnalise -- un groupe PAR SLOT REEL (C/LW/RW/D/G), jamais une numerotation inventee', () => {
   const rules = { poolType: 'fantasy', roster: { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 } };
   const rows = [
     makeRow({ ref_id: 'c1', label: 'Centre', pos_group: 'F', current_slot: 'C' }),
     makeRow({ ref_id: 'lw1', label: 'Ailier G', pos_group: 'F', current_slot: 'LW' }),
-    makeRow({ ref_id: 'rw1', label: 'Ailier D', pos_group: 'F', current_slot: 'RW' }),
+    // RW et UTIL restent vides : doivent quand meme apparaitre comme groupes (padding a 1 slot).
     makeRow({ ref_id: 'd1', label: 'Def 1', pos_group: 'D', current_slot: 'D' }),
     makeRow({ ref_id: 'd2', label: 'Def 2', pos_group: 'D', current_slot: 'D' }),
     makeRow({ ref_id: 'g1', label: 'Gardien', pos_group: 'G', current_slot: 'G' }),
@@ -76,15 +85,20 @@ test('buildFormation : alignement fantasy personnalise (C/LW/RW/D/G/UTIL/banc/IR
   ];
   const formation = buildFormation(rows, rules);
 
-  // Slots avant : C+LW+RW+UTIL = 4 -> 3 reels + 1 vide, groupes par trios (1 ligne de 3 + 1 ligne de 1 pad a 3... )
-  const forwardCards = formation.lines.flat();
-  expect(forwardCards.filter(Boolean).length).toBe(3);
-  expect(forwardCards.length).toBe(4); // 1 ligne de 3 + 1 ligne contenant le 4e slot (vide)
+  expect(formation.isFantasy).toBe(true);
 
-  const defenseCards = formation.pairs.flat();
-  expect(defenseCards.filter(Boolean).length).toBe(2);
-  expect(defenseCards.length).toBe(2); // D:2 -> exactement 1 paire
+  // 4 groupes (C, LW, RW, UTIL), chacun son propre libelle et sa propre cible (1 slot chacun).
+  expect(formation.lines.map(g => g.label)).toEqual(['C', 'LW', 'RW', 'UTIL']);
+  expect(formation.lines.find(g => g.label === 'C').rows).toEqual([expect.objectContaining({ ref_id: 'c1' })]);
+  expect(formation.lines.find(g => g.label === 'LW').rows).toEqual([expect.objectContaining({ ref_id: 'lw1' })]);
+  expect(formation.lines.find(g => g.label === 'RW').rows).toEqual([null]);
+  expect(formation.lines.find(g => g.label === 'UTIL').rows).toEqual([null]);
 
+  expect(formation.pairs.map(g => g.label)).toEqual(['D']);
+  expect(formation.pairs[0].rows.filter(Boolean).length).toBe(2);
+  expect(formation.pairs[0].rows.length).toBe(2);
+
+  expect(formation.goaliesLabel).toBe('G');
   expect(formation.goalies.filter(Boolean).length).toBe(1);
 
   expect(formation.bench.map(r => r.ref_id)).toEqual(['bn1']);
@@ -179,25 +193,73 @@ test('PoolTeamHub : clic sur une carte ouvre FicheJoueurStats', async () => {
   expect(screen.queryByText('FICHE:Connor McDavid')).not.toBeInTheDocument();
 });
 
-test('PoolTeamHub : Formation affiche 3 blocs (Attaque/Defense/Gardiens) avec lignes/paires etiquetees', async () => {
+test('PoolTeamHub : Formation (pool classique) affiche 3 blocs avec un indicateur de places, SANS etiquette Ligne/Paire/Partant', async () => {
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
 
   expect(screen.getByText('Attaque')).toBeInTheDocument();
   expect(screen.getByText('Défense')).toBeInTheDocument();
   expect(screen.getByText('Gardiens')).toBeInTheDocument();
-  expect(screen.getByText(/Ligne 1/)).toBeInTheDocument();
-  expect(screen.getByText(/Partant/)).toBeInTheDocument();
-  expect(screen.getByText(/Réserviste/)).toBeInTheDocument();
 
-  // La repartition cote a cote (>=1024px) vs empilee (<1024px) est purement CSS (grille +
-  // media queries, voir .locker-board dans index.css) : jsdom n'execute pas de vrai moteur de
-  // rendu CSS, donc ce test verifie la structure DOM (3 blocs, meme ordre) sur laquelle cette
-  // mise en page CSS s'appuie -- le comportement visuel reel doit etre verifie dans un
-  // navigateur, pas ici.
+  // Indicateur discret "rempli/requis" sur chaque titre de bloc (2 attaquants/9 requis ici).
+  expect(screen.getByText('Attaque').closest('.locker-block-title')).toHaveTextContent('2/9');
+  expect(screen.getByText('Défense').closest('.locker-block-title')).toHaveTextContent('0/6');
+  expect(screen.getByText('Gardiens').closest('.locker-block-title')).toHaveTextContent('0/2');
+
+  // Aucune etiquette inventee en pool classique (tous les joueurs comptent pareil).
+  expect(screen.queryByText(/Ligne 1/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Paire 1/)).not.toBeInTheDocument();
+  expect(screen.queryByText('Partant')).not.toBeInTheDocument();
+  expect(screen.queryByText('Réserviste')).not.toBeInTheDocument();
+
+  // La repartition cote a cote (conteneur large) vs empilee (conteneur etroit) est purement
+  // CSS (container queries, voir .locker-board dans index.css) : jsdom n'execute pas de vrai
+  // moteur de rendu CSS, donc ce test verifie la structure DOM (3 blocs, meme ordre) sur
+  // laquelle cette mise en page CSS s'appuie -- le comportement visuel reel (aucun debordement
+  // a 1024/1180/1440/1920px) doit etre verifie dans un navigateur, pas ici.
   const board = document.querySelector('.locker-board');
   const blocs = Array.from(board.children).filter(el => el.classList.contains('locker-block'));
   expect(blocs.length).toBe(3);
+});
+
+test('PoolTeamHub : Formation (pool fantasy) affiche les VRAIS libelles de slot (C/LW/RW/D/G), jamais Ligne/Paire/Partant', async () => {
+  const rows = [
+    makeRow({ ref_id: 'c1', label: 'Centre Un', pos_group: 'F', current_slot: 'C' }),
+    makeRow({ ref_id: 'd1', label: 'Defenseur Un', pos_group: 'D', current_slot: 'D' }),
+    makeRow({ ref_id: 'g1', label: 'Gardien Un', pos_group: 'G', current_slot: 'G' }),
+  ];
+  render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('Formation')).toBeInTheDocument());
+
+  const groupLabels = Array.from(document.querySelectorAll('.locker-group-label')).map(el => el.textContent);
+  expect(groupLabels).toEqual(expect.arrayContaining(['C', 'LW', 'RW', 'UTIL', 'D', 'G']));
+
+  expect(screen.queryByText(/Ligne/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Paire/)).not.toBeInTheDocument();
+  expect(screen.queryByText('Partant')).not.toBeInTheDocument();
+  expect(screen.queryByText('Réserviste')).not.toBeInTheDocument();
+});
+
+test('PoolTeamHub : legende des paliers (bronze/argent/or/elite), avec infobulle accessible au focus', async () => {
+  render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
+  await waitFor(() => expect(screen.getByText('McDavid')).toBeInTheDocument());
+
+  expect(screen.getByText('Bronze')).toBeInTheDocument();
+  expect(screen.getByText('Argent')).toBeInTheDocument();
+  expect(screen.getByText('Or')).toBeInTheDocument();
+  expect(screen.getByText('Élite')).toBeInTheDocument();
+
+  // Chaque palier distinguable sans la couleur seule (nombre d'etoiles croissant).
+  const dots = document.querySelectorAll('.locker-tier-dot');
+  const starCounts = Array.from(dots).map(d => d.textContent.length);
+  expect(starCounts).toEqual([1, 2, 3, 4]);
+
+  const info = screen.getByLabelText(/Palier selon les points/);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  fireEvent.focus(info);
+  expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  fireEvent.blur(info);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 });
 
 test('PoolTeamHub : joueur blesse avec donnees affiche le badge et le detail, sans donnees reste propre', async () => {
@@ -255,7 +317,7 @@ const POOL_FANTASY = {
   rules: { poolType: 'fantasy', roster: { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 }, salaryCap: { enabled: false } },
 };
 
-test('PoolTeamHub : les 4 onglets affichent un compteur correct (habilles / actifs / banc+IR / anciens)', async () => {
+test('PoolTeamHub : aucun compteur sur Formation/Tableau, compteur uniquement sur Banc/IR et Anciens joueurs', async () => {
   const rows = [
     makeRow({ ref_id: 'c1', label: 'Centre Un', pos_group: 'F', current_slot: 'C' }),
     makeRow({ ref_id: 'lw1', label: 'Ailier Un', pos_group: 'F', current_slot: 'LW' }),
@@ -268,10 +330,10 @@ test('PoolTeamHub : les 4 onglets affichent un compteur correct (habilles / acti
   render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('Formation')).toBeInTheDocument());
 
-  // Formation : seuls les 4 joueurs HABILLES (C/LW/D/G) -- banc, IR et anciens en sont exclus.
-  expect(screen.getByText('Formation').closest('button')).toHaveTextContent('4');
-  // Tableau : tous les joueurs ACTIFS (habilles + banc + IR), anciens exclus.
-  expect(screen.getByText('Tableau').closest('button')).toHaveTextContent('6');
+  // Formation et Tableau : jamais de pastille de compteur sur l'onglet lui-meme.
+  expect(screen.getByText('Formation').closest('button').querySelector('.locker-tab-count')).toBeNull();
+  expect(screen.getByText('Tableau').closest('button').querySelector('.locker-tab-count')).toBeNull();
+
   // Banc/IR : visible (non vide) avec 1 banc + 1 IR = 2.
   expect(screen.getByText('Banc/IR')).toBeInTheDocument();
   expect(screen.getByText('Banc/IR').closest('button')).toHaveTextContent('2');
@@ -296,6 +358,41 @@ test('PoolTeamHub : onglet Banc/IR -- joueur sans photo affiche ses initiales, j
   fireEvent.error(img);
   expect(document.querySelector('.player-card-initials')).toBeInTheDocument();
   expect(screen.getByText('JD')).toBeInTheDocument();
+});
+
+test('PoolTeamHub : etat de chargement -- squelette affiche, pas de carte/onglet, pas de crash', () => {
+  render(<PoolTeamHub pool={POOL} member={MEMBER} rows={null} standingsRow={null} lang="fr" loading>table</PoolTeamHub>);
+  expect(document.querySelectorAll('.locker-skeleton-card').length).toBeGreaterThan(0);
+  expect(screen.queryByText('Formation')).not.toBeInTheDocument();
+  expect(screen.queryByText('McDavid')).not.toBeInTheDocument();
+});
+
+test('PoolTeamHub : etat vide -- message affiche, bandeau toujours visible, pas de crash', () => {
+  render(
+    <PoolTeamHub pool={POOL} member={MEMBER} rows={[]} standingsRow={null} lang="fr" emptyMessage="Aucun joueur">table</PoolTeamHub>
+  );
+  expect(screen.getByText('Aucun joueur')).toBeInTheDocument();
+  expect(document.querySelector('.locker-banner')).toBeInTheDocument();
+});
+
+// ===================== Mise en page : CSS proportionnelle, container queries =====================
+// jsdom ne rend pas de vraies mises en page CSS (pas de moteur de layout) : on ne peut donc pas
+// mesurer un debordement reel ici. On verifie a la place, en lisant le texte source de la
+// feuille de style, que le mecanisme employe est bien celui qui garantit l'absence de
+// debordement (container queries bornees par minmax(0, ...) plutot qu'un decoupage fixe en
+// pixels, et un conteneur de taille sur .locker-team-hub) -- un test de regression contre un
+// retour accidentel a `repeat(3, 1fr)`/`@media` qui recreerait le bogue de debordement.
+
+test('CSS : la formation utilise des container queries proportionnelles (minmax(0, ...)), pas une largeur fixe', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const css = fs.readFileSync(path.join(__dirname, 'index.css'), 'utf8');
+
+  expect(css).toMatch(/\.locker-team-hub\s*\{[^}]*container-type:\s*inline-size/);
+  expect(css).toMatch(/@container[^{]*\{\s*\.locker-board\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*3fr\)\s*minmax\(0,\s*2fr\)\s*minmax\(0,\s*2fr\)/);
+  // Les cartes ont un plancher/plafond (jamais une largeur fixe en pixels qui empecherait la
+  // grille de se comprimer et causerait un debordement dans un conteneur etroit).
+  expect(css).toMatch(/\.locker-group-cards\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(110px,\s*150px\)\)/);
 });
 
 // ===================== Export PNG ("Partager mon equipe") =====================

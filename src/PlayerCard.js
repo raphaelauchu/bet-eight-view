@@ -49,9 +49,9 @@ function splitNameTwoLines(label) {
 
 function formationNameFontSize(label) {
   const len = (label || '').length;
-  if (len > 20) return '10px';
-  if (len > 14) return '11.5px';
-  return '13px';
+  if (len > 20) return '8.5px';
+  if (len > 14) return '9.5px';
+  return '11px';
 }
 
 function initialsFromName(label) {
