@@ -4,36 +4,36 @@
   "team": "VAN",
   "position": "C",
   "season": 2027,
-  "lastUpdated": "2026-11-13T17:38:01.963566",
+  "lastUpdated": "2026-11-14T16:28:47.204693",
   "reg": {
-    "totalGames": 18,
+    "totalGames": 19,
     "szn": {
       "lowSlot": {
-        "shotsOnGoal": 10,
+        "shotsOnGoal": 11,
         "goals": 3,
-        "shootingPctg": 0.3,
-        "sogPercentile": 0.7024,
-        "goalsPercentile": 0.8948
+        "shootingPctg": 0.2727,
+        "sogPercentile": 0.7401,
+        "goalsPercentile": 0.8929
       },
       "crease": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.6925,
-        "goalsPercentile": 0.7421
+        "sogPercentile": 0.6905,
+        "goalsPercentile": 0.7401
       },
       "highSlot": {
         "shotsOnGoal": 4,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8214,
-        "goalsPercentile": 0.7143
+        "sogPercentile": 0.8175,
+        "goalsPercentile": 0.7103
       },
       "lCircle": {
-        "shotsOnGoal": 4,
+        "shotsOnGoal": 5,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8036,
+        "sogPercentile": 0.869,
         "goalsPercentile": 0.7738
       },
       "rCircle": {
@@ -47,7 +47,7 @@
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.5516,
+        "sogPercentile": 0.5496,
         "goalsPercentile": 0.9167
       },
       "lCorner": {
@@ -61,7 +61,7 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8373,
+        "sogPercentile": 0.8353,
         "goalsPercentile": 0.9246
       },
       "rCorner": {
@@ -103,14 +103,14 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.6806,
+        "sogPercentile": 0.6746,
         "goalsPercentile": 0.9425
       },
       "offNeutralZone": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.9504,
+        "sogPercentile": 0.9901,
         "goalsPercentile": 0.9623
       },
       "behindNet": {
@@ -121,28 +121,28 @@
         "goalsPercentile": 0.9881
       },
       "total": {
-        "shotsOnGoal": 31,
+        "shotsOnGoal": 34,
         "goals": 3,
-        "shootingPctg": 0.0968
+        "shootingPctg": 0.0882
       },
       "totals": {
         "all": {
-          "shotsOnGoal": 32,
+          "shotsOnGoal": 35,
           "goals": 3,
-          "shootingPctg": 0.0938,
-          "sogPercentile": 0.7044,
+          "shootingPctg": 0.0857,
+          "sogPercentile": 0.7599,
           "goalsPercentile": 0.631,
-          "sogLeagueAvg": 24.4425,
-          "goalsLeagueAvg": 3.2619
+          "sogLeagueAvg": 24.6389,
+          "goalsLeagueAvg": 3.2798
         },
         "high": {
-          "shotsOnGoal": 11,
+          "shotsOnGoal": 12,
           "goals": 3,
-          "shootingPctg": 0.2727,
-          "sogPercentile": 0.6865,
+          "shootingPctg": 0.25,
+          "sogPercentile": 0.7321,
           "goalsPercentile": 0.8313,
-          "sogLeagueAvg": 9.0476,
-          "goalsLeagueAvg": 1.8016
+          "sogLeagueAvg": 9.125,
+          "goalsLeagueAvg": 1.8135
         },
         "long": {
           "shotsOnGoal": 4,
@@ -150,17 +150,17 @@
           "shootingPctg": 0.0,
           "sogPercentile": 0.8829,
           "goalsPercentile": 0.9087,
-          "sogLeagueAvg": 2.0794,
+          "sogLeagueAvg": 2.0952,
           "goalsLeagueAvg": 0.0972
         },
         "mid": {
-          "shotsOnGoal": 8,
+          "shotsOnGoal": 9,
           "goals": 0,
           "shootingPctg": 0.0,
-          "sogPercentile": 0.6369,
-          "goalsPercentile": 0.5337,
-          "sogLeagueAvg": 7.7421,
-          "goalsLeagueAvg": 0.9563
+          "sogPercentile": 0.6806,
+          "goalsPercentile": 0.5298,
+          "sogLeagueAvg": 7.7917,
+          "goalsLeagueAvg": 0.9603
         }
       }
     },
