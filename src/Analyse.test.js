@@ -6,6 +6,7 @@ import {
   filtrerFaceAFace, formeSequence,
 } from './Analyses';
 import HockeyTicker from './HockeyTicker';
+import { _resetCacheSaisonCourante } from './season';
 
 jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn(), channel: jest.fn(), removeChannel: jest.fn() } }));
 const { supabase } = require('./supabase');
@@ -214,7 +215,8 @@ function mockQuery(result) {
 function mockFetch(url) {
   const u = String(url);
   let body = {};
-  if (u.includes('standings/now')) body = { standings: [] };
+  if (u.includes('standings-season')) body = { seasons: [{ id: 20262027 }] };
+  else if (u.includes('standings/now')) body = { standings: [] };
   else if (u.includes('search.d3.nhle.com')) body = [];
   else if (u.includes('/landing')) body = { firstName: { default: 'Nick' }, lastName: { default: 'Suzuki' }, position: 'C', currentTeamAbbrev: 'MTL' };
   else if (u.includes('game-log')) body = { gameLog: [] };
@@ -226,6 +228,7 @@ function mockFetch(url) {
 beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
+  _resetCacheSaisonCourante();
   global.fetch = jest.fn(mockFetch);
   supabase.from.mockImplementation((table) => {
     if (table === 'watchlist_items') return mockQuery({ data: [], error: null });

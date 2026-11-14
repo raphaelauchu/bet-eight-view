@@ -4,6 +4,7 @@ import HockeyTicker from './HockeyTicker';
 import Auth from './Auth';
 import Pricing from './Pricing';
 import Analyses, { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
+import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
@@ -655,6 +656,7 @@ const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 function PropsPage({ lang = 'en' }) {
   const t = getT(lang);
+  const seasonId = useSaisonCourante();
   const [props, setProps] = React.useState([]);
   const [chargement, setChargement] = React.useState(true);
   const [filtre, setFiltre] = React.useState('ALL');
@@ -667,7 +669,7 @@ function PropsPage({ lang = 'en' }) {
     return isProd ? '/api/nhl?path=' + encodeURIComponent('https://api-web.nhle.com/v1/' + path) : 'https://api-web.nhle.com/v1/' + path;
   };
 
-  React.useEffect(() => { chargerProps(); }, []);
+  React.useEffect(() => { chargerProps(); }, [seasonId]);
 
   async function chargerProps() {
     setChargement(true);
@@ -692,7 +694,7 @@ function PropsPage({ lang = 'en' }) {
         for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
           if (!abbrev) continue;
           try {
-            const res = await fetch(getUrl('roster/' + abbrev + '/20252026'));
+            const res = await fetch(getUrl('roster/' + abbrev + '/' + seasonId));
             const data = await res.json();
             (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F', matchId: match.id, away: match.awayTeam?.abbrev, home: match.homeTeam?.abbrev }));
             (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D', matchId: match.id, away: match.awayTeam?.abbrev, home: match.homeTeam?.abbrev }));
@@ -704,7 +706,7 @@ function PropsPage({ lang = 'en' }) {
         const batch = joueursDuJour.slice(i, i + 5);
         const batchRes = await Promise.all(batch.map(async (j) => {
           try {
-            const res = await fetch(getUrl('player/' + j.id + '/game-log/20252026/2'));
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/' + seasonId + '/2'));
             const data = await res.json();
             const log = (data.gameLog || []).slice(0, 20);
             if (log.length < 5) return null;

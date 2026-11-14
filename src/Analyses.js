@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
+import { useSaisonCourante, construireSaisonReg, construireSaisonPO, formatSaisonLabel, formatAnneeCourte, seasonIdDepuisDate } from './season';
 import { getCotesHockey, trouverCotesPourMatch, extraireCotesMatch } from './cotes';
 import { supabase } from './supabase';
 import { getT } from './i18n';
@@ -72,38 +73,9 @@ const LIGUES = [
   { id: 'nfl', label: 'NFL', disponible: false, logo: 'https://static.www.nfl.com/image/upload/v1554321393/league/nvfr7ogywskqrfaiu38m.svg', description: 'Ligue nationale de football' },
 ];
 
-// Saison de secours utilisee le temps que la saison courante soit detectee (voir useSaisonCourante), ou si la detection echoue.
-const SAISON_REG_2526 = { id: 'reg2526', seasonId: '20252026', gameType: 2, label: 'Saison régulière' };
-
-function construireSaisonReg(seasonId) { return { id: `reg-${seasonId}`, seasonId, gameType: 2, label: 'Saison régulière' }; }
-function construireSaisonPO(seasonId) { return { id: `po-${seasonId}`, seasonId, gameType: 3, label: 'Playoffs' }; }
-
-// standings/now reflete toujours la derniere saison avec des matchs joues : la saison en cours pendant
-// qu'elle est active, et la derniere saison terminee pendant la morte-saison (jusqu'au 1er match de la suivante).
-// Promesse partagee au niveau module pour ne declencher qu'un seul appel reseau par session, peu importe
-// combien de composants appellent useSaisonCourante().
-let _saisonCourantePromise = null;
-function chargerSaisonCourante() {
-  if (!_saisonCourantePromise) {
-    _saisonCourantePromise = fetch(getUrl('standings/now'))
-      .then(r => r.json())
-      .then(data => String(data.standings?.[0]?.seasonId || SAISON_REG_2526.seasonId))
-      .catch(() => SAISON_REG_2526.seasonId);
-  }
-  return _saisonCourantePromise;
-}
-
-// Renvoie le seasonId NHL "courant" detecte automatiquement (voir chargerSaisonCourante), avec la saison
-// de secours 20252026 le temps du chargement initial.
-function useSaisonCourante() {
-  const [seasonId, setSeasonId] = useState(SAISON_REG_2526.seasonId);
-  useEffect(() => {
-    let annule = false;
-    chargerSaisonCourante().then(s => { if (!annule) setSeasonId(s); });
-    return () => { annule = true; };
-  }, []);
-  return seasonId;
-}
+// Source de verite de la saison NHL courante : voir ./season.js (useSaisonCourante,
+// chargerSaisonCourante, construireSaisonReg/PO, formatSaisonLabel). Plus aucun seasonId ni
+// saison de secours ecrits en dur ici.
 
 // Premier match non termine (gameState != OFF/FINAL) au calendrier d'une equipe pour une saison donnee.
 async function trouverProchainMatchEquipe(abbrev, saisonId) {
@@ -143,7 +115,7 @@ function getStatsRestUrl(fullUrl) {
   return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
 }
 
-function buildCayenneExp({ seasonId = SAISON_REG_2526.seasonId, gameType, teamAbbrev, positionCode }) {
+function buildCayenneExp({ seasonId = seasonIdDepuisDate(), gameType, teamAbbrev, positionCode }) {
   let exp = `seasonId=${seasonId} and gameTypeId=${gameType}`;
   if (teamAbbrev && teamAbbrev !== 'ALL') exp += ` and teamId=${ABBREV_TO_TEAM_ID[teamAbbrev]}`;
   if (positionCode && positionCode !== 'ALL') exp += ` and positionCode="${positionCode}"`;
@@ -307,7 +279,7 @@ function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
       {estChaud && (
         <div style={{ position: 'absolute', top: '-7px', right: '-3px', backgroundColor: '#f97316', borderRadius: '8px', padding: '1px 5px', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>HOT</div>
       )}
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'var(--c-white)', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
       <div style={{ fontSize: '9px', color: 'var(--c-666)', marginBottom: '4px' }}>#{joueur.numero}</div>
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
@@ -332,7 +304,7 @@ function SectionGardien({ gardien, onSelect }) {
   if (!gardien) return null;
   return (
     <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${gardien.equipe}/${gardien.id}.png`} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
+      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${gardien.equipe}/${gardien.id}.png`} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
         <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '2px' }}>{gardien.nom}</div>
@@ -528,7 +500,7 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <span style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '999px', padding: '3px 7px', fontSize: '10px', fontWeight: '900', flexShrink: 0 }}>o{ligneMaison.ligne}</span>
-      <img src={`https://assets.nhle.com/mugs/nhl/${SAISON_REG_2526.seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
         <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>#{joueur.numero}</div>
@@ -556,6 +528,7 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
 // vrai game log de chaque joueur (getGameLogJoueur), calcule une ligne de reference par categorie et
 // la met en cache par categorie pour eviter de refetcher a chaque changement d'onglet.
 function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, onSelect, isMobile }) {
+  const seasonId = useSaisonCourante();
   const [categorieActive, setCategorieActive] = useState('SOG');
   const [cache, setCache] = useState({});
   const [enChargement, setEnChargement] = useState({});
@@ -575,7 +548,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
         const batch = tousJoueurs.slice(i, i + 5);
         const batchRes = await Promise.all(batch.map(async (j) => {
           try {
-            const gameLog = await getGameLogJoueur(j.id, SAISON_REG_2526.gameType, SAISON_REG_2526.seasonId);
+            const gameLog = await getGameLogJoueur(j.id, 2, seasonId);
             const ligneMaison = calcLigneMaison(gameLog, categorie.champ);
             return ligneMaison ? { id: j.id, ligneMaison } : null;
           } catch { return null; }
@@ -586,7 +559,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
       setEnChargement(prev => ({ ...prev, [categorieActive]: false }));
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorieActive, roster1, roster2]);
+  }, [categorieActive, roster1, roster2, seasonId]);
 
   const lignesCategorie = cache[categorieActive] || null;
   const chargementCategorie = !!enChargement[categorieActive];
@@ -972,18 +945,19 @@ function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
 }
 
 function OngletHomeStats({ onSelectJoueur }) {
+  const seasonId = useSaisonCourante();
   const [filtreType, setFiltreType] = useState('reg');
   const [filtreEquipe, setFiltreEquipe] = useState('ALL');
   const [chargement, setChargement] = useState(false);
   const [meneurs, setMeneurs] = useState({ points: [], goals: [], assists: [] });
 
-  useEffect(() => { chargerMeneurs(); }, []);
+  useEffect(() => { chargerMeneurs(); }, [seasonId]);
 
   async function chargerMeneurs() {
     setChargement(true);
     try {
       const gameType = filtreType === 'playoffs' ? 3 : 2;
-      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe });
+      const cayenneExp = buildCayenneExp({ seasonId, gameType, teamAbbrev: filtreEquipe });
       const fetchCat = (sort) => fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=${sort}&dir=DESC&start=0&limit=10`)).then(r => r.json());
       const [dPoints, dGoals, dAssists] = await Promise.all([fetchCat('points'), fetchCat('goals'), fetchCat('assists')]);
       const fmt = (d) => (d.data || []).map((j, i) => ({ rang: i + 1, id: j.playerId, nom: j.skaterFullName, equipe: j.teamAbbrevs, position: j.positionCode, points: j.points, goals: j.goals, assists: j.assists }));
@@ -992,10 +966,12 @@ function OngletHomeStats({ onSelectJoueur }) {
     setChargement(false);
   }
 
+  const labelAnnee = formatAnneeCourte(seasonId);
+
   return (
     <div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
-        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Année" value={labelAnnee} onChange={() => {}} options={[{ value: labelAnnee, label: labelAnnee }]} disabled />
         <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
         <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
         <button onClick={chargerMeneurs} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
@@ -1015,6 +991,7 @@ function OngletHomeStats({ onSelectJoueur }) {
 
 function OngletSkatersStats({ onSelectJoueur }) {
   const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
   const [filtreType, setFiltreType] = useState('reg');
   const [filtreEquipe, setFiltreEquipe] = useState('ALL');
   const [filtrePosition, setFiltrePosition] = useState('ALL');
@@ -1023,13 +1000,13 @@ function OngletSkatersStats({ onSelectJoueur }) {
   const [joueurs, setJoueurs] = useState([]);
   const [chargement, setChargement] = useState(false);
 
-  useEffect(() => { chargerSkaters(0); }, []);
+  useEffect(() => { chargerSkaters(0); }, [seasonId]);
 
   async function chargerSkaters(nouvellePage) {
     setChargement(true);
     try {
       const gameType = filtreType === 'playoffs' ? 3 : 2;
-      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe, positionCode: filtrePosition });
+      const cayenneExp = buildCayenneExp({ seasonId, gameType, teamAbbrev: filtreEquipe, positionCode: filtrePosition });
       const start = nouvellePage * 50;
       const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=points&dir=DESC&start=${start}&limit=50`));
       const data = await res.json();
@@ -1041,11 +1018,12 @@ function OngletSkatersStats({ onSelectJoueur }) {
   }
 
   const colonnes = isMobile ? '30px 32px 1fr 40px 34px 34px' : '36px 36px 1fr 56px 56px 40px 40px 40px 48px';
+  const labelAnnee = formatAnneeCourte(seasonId);
 
   return (
     <div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
-        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Année" value={labelAnnee} onChange={() => {}} options={[{ value: labelAnnee, label: labelAnnee }]} disabled />
         <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
         <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
         <FiltreSelect label="Position" value={filtrePosition} onChange={setFiltrePosition} options={OPTIONS_POSITION} />
@@ -1092,6 +1070,7 @@ function OngletSkatersStats({ onSelectJoueur }) {
 }
 
 function OngletGoaliesStats({ onSelectJoueur }) {
+  const seasonId = useSaisonCourante();
   const [filtreType, setFiltreType] = useState('reg');
   const [filtreEquipe, setFiltreEquipe] = useState('ALL');
   const [page, setPage] = useState(0);
@@ -1099,13 +1078,13 @@ function OngletGoaliesStats({ onSelectJoueur }) {
   const [gardiens, setGardiens] = useState([]);
   const [chargement, setChargement] = useState(false);
 
-  useEffect(() => { chargerGoalies(0); }, []);
+  useEffect(() => { chargerGoalies(0); }, [seasonId]);
 
   async function chargerGoalies(nouvellePage) {
     setChargement(true);
     try {
       const gameType = filtreType === 'playoffs' ? 3 : 2;
-      const cayenneExp = buildCayenneExp({ gameType, teamAbbrev: filtreEquipe });
+      const cayenneExp = buildCayenneExp({ seasonId, gameType, teamAbbrev: filtreEquipe });
       const start = nouvellePage * 50;
       const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/goalie/summary?cayenneExp=${encodeURIComponent(cayenneExp)}&sort=goalsAgainstAverage&dir=ASC&start=${start}&limit=50`));
       const data = await res.json();
@@ -1117,11 +1096,12 @@ function OngletGoaliesStats({ onSelectJoueur }) {
   }
 
   const colonnes = '36px 36px 1fr 56px 40px 56px 56px';
+  const labelAnnee = formatAnneeCourte(seasonId);
 
   return (
     <div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '18px' }}>
-        <FiltreSelect label="Année" value="2025-26" onChange={() => {}} options={[{ value: '2025-26', label: '2025-26' }]} disabled />
+        <FiltreSelect label="Année" value={labelAnnee} onChange={() => {}} options={[{ value: labelAnnee, label: labelAnnee }]} disabled />
         <FiltreSelect label="Type" value={filtreType} onChange={setFiltreType} options={OPTIONS_TYPE} />
         <FiltreSelect label="Équipe" value={filtreEquipe} onChange={setFiltreEquipe} options={OPTIONS_EQUIPES} />
         <button onClick={() => chargerGoalies(0)} style={{ padding: '9px 18px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Get Stats</button>
@@ -1165,6 +1145,7 @@ function OngletGoaliesStats({ onSelectJoueur }) {
 }
 
 function PageStatsJoueurs({ onSelectJoueur }) {
+  const seasonId = useSaisonCourante();
   const [matchsParJour, setMatchsParJour] = useState({});
   const [jourActif, setJourActif] = useState('');
   const [chargement, setChargement] = useState(true);
@@ -1181,7 +1162,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
 
   useEffect(() => {
     if (ongletJoueurs === 'props' && Object.keys(matchsParJour).length > 0) chargerProps();
-  }, [ongletJoueurs, matchsParJour]);
+  }, [ongletJoueurs, matchsParJour, seasonId]);
 
   async function chargerSemaine() {
     setChargement(true);
@@ -1213,7 +1194,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
         for (const abbrev of [match.awayTeam?.abbrev, match.homeTeam?.abbrev]) {
           if (!abbrev) continue;
           try {
-            const res = await fetch(getUrl('roster/' + abbrev + '/' + SAISON_REG_2526.seasonId));
+            const res = await fetch(getUrl('roster/' + abbrev + '/' + seasonId));
             const data = await res.json();
             (data.forwards || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'F' }));
             (data.defensemen || []).forEach(j => joueursDuJour.push({ ...j, equipe: abbrev, position: 'D' }));
@@ -1225,7 +1206,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
         const batch = joueursDuJour.slice(i, i + 5);
         const batchRes = await Promise.all(batch.map(async (j) => {
           try {
-            const res = await fetch(getUrl('player/' + j.id + '/game-log/' + SAISON_REG_2526.seasonId + '/' + SAISON_REG_2526.gameType));
+            const res = await fetch(getUrl('player/' + j.id + '/game-log/' + seasonId + '/2'));
             const data = await res.json();
             const log = (data.gameLog || []).slice(0, 20);
             if (log.length < 5) return null;
@@ -1380,7 +1361,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
 
 // Detecte automatiquement si les matchs disponibles sont en saison reguliere (gameType 2) ou en playoffs (gameType 3),
 // pour le seasonId courant (voir useSaisonCourante).
-function detecterSaisonMatchs(matchsParJour, seasonId = SAISON_REG_2526.seasonId) {
+function detecterSaisonMatchs(matchsParJour, seasonId = seasonIdDepuisDate()) {
   const premierMatch = Object.values(matchsParJour).flat()[0];
   return premierMatch?.gameType === 3 ? construireSaisonPO(seasonId) : construireSaisonReg(seasonId);
 }
@@ -1934,7 +1915,7 @@ function orangeParTirs(val) {
   return '#E65100';
 }
 
-function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = SAISON_REG_2526, isFavorite, onToggleFavorite, onSavePick }) {
+function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur, lineupDF, saison = construireSaisonReg(seasonIdDepuisDate()), isFavorite, onToggleFavorite, onSavePick }) {
   const isMobile = useIsMobile();
   const [ongletPeriode, setOngletPeriode] = useState('SZN');
   const [ongletShot, setOngletShot] = useState('SZN');
@@ -2867,10 +2848,15 @@ const getMatchsChart = () => {
         <p style={{ color: 'var(--c-666)', textAlign: 'center', padding: '40px 0' }}>Chargement...</p>
       ) : (
         <>
+          {statsAvancees?.gp === 0 && (
+            <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: '0 0 12px' }}>
+              Aucun match cette saison ({modeStats === 'playoffs' ? 'Séries' : 'Saison'} {formatAnneeCourte(seasonId)}).
+            </p>
+          )}
           {/* 1. STATS SAISON COMPLÈTE EN PREMIER */}
           {!isGardien && statsAvancees && (
             <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '14px' }}>
-             <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>{modeStats === 'playoffs' ? 'PLAYOFFS' : 'REGULAR SEASON'}</div>
+             <div style={{ color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '8px' }}>{(modeStats === 'playoffs' ? 'PLAYOFFS' : 'REGULAR SEASON') + ' · ' + formatAnneeCourte(seasonId)}</div>
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginBottom: '6px' }}>
                 {[['GOALS', statsAvancees.goals, '#f97316'], ['AST', statsAvancees.assists, 'white'], ['PTS', statsAvancees.points, 'white'], ['+/-', (statsAvancees.plusMinus ?? 0) >= 0 ? `+${statsAvancees.plusMinus}` : statsAvancees.plusMinus, (statsAvancees.plusMinus ?? 0) >= 0 ? '#f97316' : '#ef4444']].map(([l, v, c], i) => (
                   <div key={i} style={{ textAlign: 'center', padding: '8px 4px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '7px' }}>
@@ -4084,6 +4070,7 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
   const [statsAvancees, setStatsAvancees] = useState(null);
   const [carriere, setCarriere] = useState([]);
   const [dernierMatchs, setDernierMatchs] = useState([]);
+  const [aucunMatchSaison, setAucunMatchSaison] = useState(false);
   const [vue, setVue] = useState('saison'); // 'saison' | 'carriere'
   const seasonId = useSaisonCourante();
 
@@ -4156,6 +4143,7 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
       });
 
       const statsSaison = extraireStatsSaisonJoueur(data, seasonId, 2);
+      setAucunMatchSaison(statsSaison == null);
 
       if (isGardien) {
         setStatsAvancees({
@@ -4275,8 +4263,11 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
       {/* Stats saison complete */}
       {vue === 'saison' && (
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: pad, marginBottom: '16px' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>Saison régulière</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px' }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: '900', color: 'var(--c-white)' }}>{formatSaisonLabel(seasonId)}</h3>
+        {aucunMatchSaison && (
+          <p style={{ margin: '0 0 12px', fontSize: '12px', color: 'var(--c-666)' }}>Aucun match cette saison.</p>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '8px', marginTop: aucunMatchSaison ? 0 : '12px' }}>
           {(statsAvancees?.gardien
             ? [['GP', statsAvancees?.gp], ['W', statsAvancees?.wins], ['L', statsAvancees?.losses], ['GAA', statsAvancees?.gaa], ['SV%', statsAvancees?.svp], ['SO', statsAvancees?.shutouts]]
             : [['G', statsAvancees?.goals], ['A', statsAvancees?.assists], ['PTS', statsAvancees?.points], ['+/-', statsAvancees?.plusMinus], ['PPP', statsAvancees?.ppp], ['SOG', statsAvancees?.sog], ['HITS', statsAvancees?.hits], ['BLK', statsAvancees?.blocks], ['FOW%', statsAvancees?.fowPct], ['TOI', statsAvancees?.toi]]
@@ -4630,7 +4621,7 @@ function WSSearchBar({ theme, skaters, goalies, classement, onSelectPlayer, onSe
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               {r.type === 'player' ? (
-                <img src={`https://assets.nhle.com/mugs/nhl/20252026/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
+                <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
               ) : (
                 <img src={LOGOS_NHL[r.equipe]} alt={r.nom} style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
               )}
@@ -4718,10 +4709,11 @@ function SectionSkaters({ theme, titre, sousTitre, joueurs, onSelect, chargement
 }
 
 function SectionGardiens({ theme, parGAA, parSVP, onSelect, chargement }) {
+  const seasonId = useSaisonCourante();
   const [tri, setTri] = useState('gaa');
   const liste = tri === 'gaa' ? parGAA : parSVP;
   return (
-    <WSCard theme={theme} title="Gardiens" subtitle="Top 10 · saison régulière 2025-26">
+    <WSCard theme={theme} title="Gardiens" subtitle={`Top 10 · saison régulière ${formatAnneeCourte(seasonId)}`}>
       <div style={{ display: 'flex', gap: '8px', padding: '0 16px 12px' }}>
         {[['gaa', 'GAA'], ['svp', 'SV%']].map(([id, label]) => (
           <button key={id} onClick={() => setTri(id)} style={{ padding: '6px 14px', borderRadius: '100px', border: 'none', cursor: 'pointer', backgroundColor: tri === id ? theme.accent : theme.cardHover, color: tri === id ? 'white' : theme.textMuted, fontSize: '11.5px', fontWeight: '700' }}>{label}</button>
@@ -4900,7 +4892,7 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
         </div>
       </div>
 
-      <WSCard theme={theme} title="Saison 2025-26" subtitle="Statistiques de base et avancées">
+      <WSCard theme={theme} title={formatSaisonLabel(seasonId)} subtitle="Statistiques de base et avancées">
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: '10px', padding: '4px 16px 16px' }}>
           {(stats?.gardien
             ? [['PJ', stats?.gp], ['V', stats?.wins], ['D', stats?.losses], ['DP', stats?.otl], ['BL', stats?.shutouts], ['GAA', stats?.gaa], ['SV%', stats?.svp]]
@@ -5002,17 +4994,18 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
 
 function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
   const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
   const [avance, setAvance] = useState(null);
   const [chargement, setChargement] = useState(true);
   const abbrev = equipe?.teamAbbrev?.default || '';
   const nom = equipe?.teamName?.default || equipe?.teamCommonName?.default || abbrev;
 
-  useEffect(() => { chargerAvance(); }, [abbrev]);
+  useEffect(() => { chargerAvance(); }, [abbrev, seasonId]);
 
   async function chargerAvance() {
     setChargement(true);
     try {
-      const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+      const cayenne = encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`);
       const res = await fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/team/summary?cayenneExp=${cayenne}`));
       const data = await res.json();
       const found = (data.data || []).find(t =>
@@ -5049,7 +5042,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
         </div>
       </div>
 
-      <WSCard theme={theme} title="Statistiques d'équipe" subtitle="Saison régulière 2025-26 · avancées">
+      <WSCard theme={theme} title="Statistiques d'équipe" subtitle={`Saison régulière ${formatAnneeCourte(seasonId)} · avancées`}>
         {chargement ? <WSLoading theme={theme} /> : (
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: '10px', padding: '4px 16px 16px' }}>
             {[
@@ -5077,7 +5070,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
             key={j.playerId}
             theme={theme}
             rang={i + 1}
-            joueur={{ nom: j.skaterFullName, equipe: abbrev, photo: `https://assets.nhle.com/mugs/nhl/20252026/${abbrev}/${j.playerId}.png` }}
+            joueur={{ nom: j.skaterFullName, equipe: abbrev, photo: `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${abbrev}/${j.playerId}.png` }}
             valeur={j.points}
             label="PTS"
             sousLabel={`${j.goals}B ${j.assists}P`}
@@ -5091,6 +5084,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
 
 function StatsHub({ onLigueChange }) {
   const isMobile = useIsMobile();
+  const seasonId = useSaisonCourante();
   const [mode, toggleTheme] = useWSTheme();
   const theme = WS_THEME[mode];
   const [section, setSection] = useState('attaquants');
@@ -5102,12 +5096,12 @@ function StatsHub({ onLigueChange }) {
   const [equipeSelectionnee, setEquipeSelectionnee] = useState(null);
 
   useEffect(() => { if (onLigueChange) onLigueChange('nhl'); }, []);
-  useEffect(() => { chargerDonnees(); }, []);
+  useEffect(() => { chargerDonnees(); }, [seasonId]);
 
   async function chargerDonnees() {
     setChargement(true);
     try {
-      const cayenne = encodeURIComponent('seasonId=20252026 and gameTypeId=2');
+      const cayenne = encodeURIComponent(`seasonId=${seasonId} and gameTypeId=2`);
       const [p1, p2, p3, rGoalies, rStandings] = await Promise.all([
         fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=0&limit=100`)),
         fetch(getStatsRestUrl(`https://api.nhle.com/stats/rest/en/skater/summary?cayenneExp=${cayenne}&sort=points&dir=DESC&start=100&limit=100`)),
@@ -5123,7 +5117,7 @@ function StatsHub({ onLigueChange }) {
     setChargement(false);
   }
 
-  function photoJoueur(id, equipe) { return `https://assets.nhle.com/mugs/nhl/20252026/${equipe}/${id}.png`; }
+  function photoJoueur(id, equipe) { return `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${equipe}/${id}.png`; }
 
   const fmtSkater = (j) => {
     const eq = (j.teamAbbrevs || '').split(',')[0].trim();
@@ -5176,8 +5170,8 @@ function StatsHub({ onLigueChange }) {
             />
           )}
           <div style={{ maxWidth: '760px', margin: '0 auto', padding: isMobile ? '16px' : '32px' }}>
-            {section === 'attaquants' && <SectionSkaters theme={theme} titre="Attaquants" sousTitre="Top 10 pointeurs · saison régulière 2025-26" joueurs={attaquants} onSelect={setJoueurSelectionne} chargement={chargement} />}
-            {section === 'defenseurs' && <SectionSkaters theme={theme} titre="Défenseurs" sousTitre="Top 10 pointeurs · saison régulière 2025-26" joueurs={defenseurs} onSelect={setJoueurSelectionne} chargement={chargement} />}
+            {section === 'attaquants' && <SectionSkaters theme={theme} titre="Attaquants" sousTitre={`Top 10 pointeurs · saison régulière ${formatAnneeCourte(seasonId)}`} joueurs={attaquants} onSelect={setJoueurSelectionne} chargement={chargement} />}
+            {section === 'defenseurs' && <SectionSkaters theme={theme} titre="Défenseurs" sousTitre={`Top 10 pointeurs · saison régulière ${formatAnneeCourte(seasonId)}`} joueurs={defenseurs} onSelect={setJoueurSelectionne} chargement={chargement} />}
             {section === 'gardiens' && <SectionGardiens theme={theme} parGAA={gardiensGAA} parSVP={gardiensSVP} onSelect={setJoueurSelectionne} chargement={chargement} />}
             {section === 'equipes' && <SectionEquipes theme={theme} classement={classement} onSelect={setEquipeSelectionnee} chargement={chargement} />}
           </div>
@@ -5812,7 +5806,7 @@ function AnalyseSearchBar({ t, classement, seasonId, onOpenPlayer, onOpenTeam, o
                     return (
                       <div key={`p-${r.id}`} onClick={() => choisir(r)} onMouseEnter={() => setActiveIndex(idx)}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
-                        <img src={`https://assets.nhle.com/mugs/nhl/20252026/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
+                        <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</div>
                           <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{r.position} · {r.equipe}</div>
@@ -5957,7 +5951,7 @@ function WatchlistPanel({ t, watchlist, formeCache, onOpen, onRemove }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : `https://assets.nhle.com/mugs/nhl/20252026/${w.equipe || ''}/${w.ref_id}.png`}
+                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${w.equipe || ''}/${w.ref_id}.png`}
                   alt={w.label} style={{ width: '28px', height: '28px', borderRadius: w.kind === 'team' ? 0 : '50%', objectFit: w.kind === 'team' ? 'contain' : 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }}
                   onError={e => { e.target.style.display = 'none'; }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -6384,6 +6378,7 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur, pendingOpenPlay
         onBack={() => closeTab(tabKey(activeTab))}
         onSelectJoueur={(j) => openPlayerTab(j)}
         lineupDF={lineupDF}
+        saison={construireSaisonReg(seasonId)}
         isFavorite={isActiveFavorite}
         onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
         onSavePick={utilisateur?.id ? setSavePickCible : undefined}
