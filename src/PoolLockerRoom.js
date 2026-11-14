@@ -84,7 +84,7 @@ export function gameStatusForTeam(gamesToday, abbrev) {
   return null;
 }
 
-function useTodayGames() {
+export function useTodayGames() {
   const [games, setGames] = useState([]);
   useEffect(() => {
     let annule = false;
@@ -101,7 +101,7 @@ function useTodayGames() {
 // table n'existe pas encore (migration pas encore appliquee) ou toute autre erreur reseau, se
 // degrade silencieusement vers "aucune blessure affichee" -- ne doit jamais faire planter la
 // Vue vestiaire.
-function usePlayerInjuries(idsKey) {
+export function usePlayerInjuries(idsKey) {
   const [injuries, setInjuries] = useState({});
   useEffect(() => {
     const ids = idsKey ? idsKey.split(',').filter(Boolean) : [];

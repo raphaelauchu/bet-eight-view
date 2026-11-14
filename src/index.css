@@ -799,3 +799,18 @@ body {
     padding: 28px 24px 34px;
   }
 }
+
+/* Ecran d'echange (src/PoolTrades.js) : mon equipe / equipe du participant choisi, en deux
+   colonnes a partir d'iPad -- empilees verticalement sur mobile, jamais de scroll horizontal
+   (les grilles de PlayerCard a l'interieur passent elles-memes en flex-wrap). */
+.pool-trade-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .pool-trade-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}

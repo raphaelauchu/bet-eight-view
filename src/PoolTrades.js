@@ -15,9 +15,12 @@ import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
 import { validateTrade } from './poolRules';
 import {
-  useNhlPlayers, useNhlTeams, PlayerAvatar, TeamLogo, PlayerDetailModal,
-  calculerValeurIA, posReelToPickPosition, memberLabel, round1, headshotUrl,
+  useNhlPlayers, useNhlTeams, PlayerDetailModal,
+  calculerValeurIA, posReelToPickPosition, memberLabel,
+  buildQuotaRows, QuotaRowsDisplay,
 } from './PoolDraftRoom';
+import { useTodayGames, usePlayerInjuries, gameStatusForTeam } from './PoolLockerRoom';
+import PlayerCard, { computePlayerTier } from './PlayerCard';
 
 const card = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-161616)', padding: '16px' };
 const inputStyle = { width: '100%', padding: '10px 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' };
@@ -157,6 +160,23 @@ export function PoolTradesTab({ pool, members, utilisateur, lang, isCommissioner
   const partnerSalaryAfter = (partnerActive.reduce((s, r) => s + (Number(r.salary) || 0), 0)) - receivesItems.reduce((s, r) => s + (Number(r.salary) || 0), 0) + givesItems.reduce((s, r) => s + (Number(r.salary) || 0), 0);
   const capAmount = Number(pool.rules?.salaryCap?.amount) || 0;
 
+  // Badges blessure/en direct des deux cotes (un seul appel nhl_games mis en cache, reutilise
+  // de la Vue vestiaire). Compteurs de composition EN DIRECT (F/D/G selon rules.roster) : la
+  // meme logique que le repechage (buildQuotaRows), appliquee a la composition APRES echange.
+  const gamesToday = useTodayGames();
+  const injuriesKey = useMemo(() => [...myActive, ...partnerActive].filter(r => r.kind === 'player').map(r => String(r.ref_id)).join(','), [myActive, partnerActive]);
+  const injuries = usePlayerInjuries(injuriesKey);
+  const myQuotaAfter = useMemo(() => {
+    const removed = new Set(givesItems.map(itemKey));
+    const kept = myActive.filter(r => !removed.has(itemKey(r))).map(r => ({ position: r.pos_group }));
+    return buildQuotaRows(pool.rules, [...kept, ...receivesItems.map(r => ({ position: r.pos_group }))]);
+  }, [myActive, givesItems, receivesItems, pool.rules]);
+  const partnerQuotaAfter = useMemo(() => {
+    const removed = new Set(receivesItems.map(itemKey));
+    const kept = partnerActive.filter(r => !removed.has(itemKey(r))).map(r => ({ position: r.pos_group }));
+    return buildQuotaRows(pool.rules, [...kept, ...givesItems.map(r => ({ position: r.pos_group }))]);
+  }, [partnerActive, givesItems, receivesItems, pool.rules]);
+
   async function submitTrade() {
     setBusy(true); setError(''); setSuccessMsg('');
     const gives = givesItems.map(r => ({ kind: r.kind, player_id: r.ref_id }));
@@ -201,15 +221,19 @@ export function PoolTradesTab({ pool, members, utilisateur, lang, isCommissioner
             {otherMembers.map(m => <option key={m.id} value={m.id}>{memberLabel(m, pool.rules)}</option>)}
           </select>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div className="pool-trade-columns" style={{ marginBottom: '12px' }}>
             <div>
               <div style={{ fontSize: '11px', color: 'var(--c-666)', fontWeight: '700', marginBottom: '6px' }}>{t('pool_trades_my_roster')}</div>
-              <RosterCheckboxList rows={myActive} selected={givesIds} onToggle={k => toggle(setGivesIds, k)} capEnabled={capEnabled} seasonId={seasonId} onOpenDetail={setDetailTarget} />
+              <QuotaRowsDisplay rows={myQuotaAfter} t={t} />
+              <RosterCardGrid rows={myActive} selected={givesIds} onToggle={k => toggle(setGivesIds, k)} seasonId={seasonId} lang={lang} onOpenDetail={setDetailTarget} injuries={injuries} gamesToday={gamesToday} t={t} />
             </div>
             <div>
               <div style={{ fontSize: '11px', color: 'var(--c-666)', fontWeight: '700', marginBottom: '6px' }}>{t('pool_trades_their_roster')}</div>
               {partnerId ? (
-                <RosterCheckboxList rows={partnerActive} selected={receivesIds} onToggle={k => toggle(setReceivesIds, k)} capEnabled={capEnabled} seasonId={seasonId} onOpenDetail={setDetailTarget} />
+                <>
+                  <QuotaRowsDisplay rows={partnerQuotaAfter} t={t} />
+                  <RosterCardGrid rows={partnerActive} selected={receivesIds} onToggle={k => toggle(setReceivesIds, k)} seasonId={seasonId} lang={lang} onOpenDetail={setDetailTarget} injuries={injuries} gamesToday={gamesToday} t={t} />
+                </>
               ) : (
                 <div style={{ color: 'var(--c-555)', fontSize: '12px' }}>{t('pool_trades_pick_partner')}</div>
               )}
@@ -270,24 +294,27 @@ export function PoolTradesTab({ pool, members, utilisateur, lang, isCommissioner
   );
 }
 
-function RosterCheckboxList({ rows, selected, onToggle, capEnabled, seasonId, onOpenDetail }) {
+// Grille de PlayerCard (taille S) servant de selecteur pour l'echange : cliquer la carte ouvre
+// la fiche (PlayerDetailModal, deja utilisee par le repechage/les agents libres) ; le bouton
+// d'action Ajouter/Retirer bascule la selection. "allPoints" = distribution de points de CETTE
+// equipe (voir computePlayerTier), pour un palier visuel coherent avec la Vue vestiaire.
+function RosterCardGrid({ rows, selected, onToggle, seasonId, lang, onOpenDetail, injuries, gamesToday, t }) {
   if (rows.length === 0) return <div style={{ color: 'var(--c-333)', fontSize: '12px' }}>—</div>;
+  const allPoints = rows.map(r => Number(r.total_points) || 0);
   return (
-    <div style={{ maxHeight: '260px', overflowY: 'auto', border: '1px solid var(--c-161616)', borderRadius: '10px', padding: '6px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '320px', overflowY: 'auto', padding: '4px' }}>
       {rows.map(r => {
         const key = itemKey(r);
-        const isTeam = r.kind === 'team';
+        const isSel = selected.has(key);
         return (
-          <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 4px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={selected.has(key)} onChange={() => onToggle(key)} />
-            {isTeam ? <TeamLogo abbrev={r.ref_id} size={22} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={22} />}
-            <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS[r.pos_group], flexShrink: 0 }}>{r.pos_group}</span>
-            <span onClick={(e) => { e.preventDefault(); onOpenDetail({ kind: r.kind, id: r.ref_id, name: r.label, team: r.team_abbrev, posReel: r.pos_group === 'D' ? 'D' : r.pos_group === 'G' ? 'G' : 'C' }); }}
-              style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'underline', textDecorationColor: 'transparent' }}>
-              {r.label}
-            </span>
-            {capEnabled && r.salary > 0 && <span style={{ fontSize: '9px', color: 'var(--c-666)', flexShrink: 0 }}>{Number(r.salary).toLocaleString()} $</span>}
-          </label>
+          <PlayerCard key={key} row={r} size="S" seasonId={seasonId} lang={lang}
+            tier={computePlayerTier(r.total_points, allPoints)}
+            injury={injuries?.[String(r.ref_id)]}
+            gameStatus={gameStatusForTeam(gamesToday, r.team_abbrev)}
+            selected={isSel}
+            onOpen={() => onOpenDetail({ kind: r.kind, id: r.ref_id, name: r.label, team: r.team_abbrev, posReel: r.pos_group === 'D' ? 'D' : r.pos_group === 'G' ? 'G' : 'C' })}
+            actionLabel={isSel ? t('pool_trades_remove_btn') : t('pool_trades_add_btn')}
+            onAction={() => onToggle(key)} />
         );
       })}
     </div>
@@ -407,6 +434,8 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
   const [myClaims, setMyClaims] = useState([]);
   const [counters, setCounters] = useState(null);
   const [posFilter, setPosFilter] = useState('ALL');
+  const [injuredOnly, setInjuredOnly] = useState(false);
+  const [tonightOnly, setTonightOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [nbShown, setNbShown] = useState(50);
   const [pendingAdd, setPendingAdd] = useState(null);
@@ -444,6 +473,24 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [players, pool.rules]);
 
+  // Table player_injuries en entier (petite table -- seuls les joueurs blesses a un instant
+  // donne, voir supabase/migrations/20261112_player_injuries.sql) : plus simple et plus leger
+  // qu'une clause IN avec potentiellement des centaines d'agents libres. "Qui joue ce soir" :
+  // meme cache nhl_games que la Vue vestiaire (un seul appel).
+  const gamesToday = useTodayGames();
+  const [injuries, setInjuries] = useState({});
+  useEffect(() => {
+    let annule = false;
+    supabase.from('player_injuries').select('*').then(({ data, error: err }) => {
+      if (annule) return;
+      if (err) { setInjuries({}); return; }
+      const map = {};
+      (data || []).forEach(row => { map[row.player_id] = row; });
+      setInjuries(map);
+    }).catch(() => { if (!annule) setInjuries({}); });
+    return () => { annule = true; };
+  }, []);
+
   const filteredPlayers = useMemo(() => {
     if (!takenIds) return [];
     const q = search.trim().toLowerCase();
@@ -451,11 +498,13 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
       .filter(p => {
         if (takenIds.has(`player:${p.id}`)) return false;
         if (posFilter !== 'ALL' && posFilter !== 'TEAM' && posReelToPickPosition(p.posReel) !== posFilter) return false;
+        if (injuredOnly && !injuries[String(p.id)]) return false;
+        if (tonightOnly && !gameStatusForTeam(gamesToday, p.team)) return false;
         if (q && !p.name.toLowerCase().includes(q)) return false;
         return true;
       })
       .sort((a, b) => b.valeurIA - a.valeurIA);
-  }, [playersWithValue, posFilter, search, takenIds]);
+  }, [playersWithValue, posFilter, injuredOnly, tonightOnly, injuries, gamesToday, search, takenIds]);
 
   const filteredTeams = useMemo(() => {
     if (!takenIds) return [];
@@ -534,6 +583,18 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
                 </button>
               ))}
             </div>
+            {posFilter !== 'TEAM' && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button onClick={() => setInjuredOnly(v => !v)}
+                  style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: injuredOnly ? '#ef4444' : 'var(--c-111)', color: injuredOnly ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '700' }}>
+                  {t('pool_waivers_filter_injured')}
+                </button>
+                <button onClick={() => setTonightOnly(v => !v)}
+                  style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: tonightOnly ? '#f97316' : 'var(--c-111)', color: tonightOnly ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '700' }}>
+                  {t('pool_waivers_filter_tonight')}
+                </button>
+              </div>
+            )}
           </div>
 
           {error && <div style={{ fontSize: '12px', color: '#ef4444', marginBottom: '10px' }}>{error}</div>}
@@ -545,11 +606,14 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
             ) : filteredTeams.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('pool_draft_no_players_found')}</div>
             ) : (
-              filteredTeams.map(tm => (
-                <FreeAgentRow key={tm.abbrev} isTeam onOpenDetail={() => setDetailTarget({ kind: 'team', id: tm.abbrev, name: tm.name, rank: tm.rank })}
-                  content={<><TeamLogo abbrev={tm.abbrev} size={32} /><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{tm.name}</div><div style={{ fontSize: '10px', color: 'var(--c-555)' }}>{tm.abbrev}</div></div></>}
-                  onAdd={() => requestAdd(tm, 'team')} t={t} />
-              ))
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {filteredTeams.map(tm => (
+                  <PlayerCard key={tm.abbrev} size="S" lang={lang}
+                    row={{ kind: 'team', ref_id: tm.abbrev, label: tm.name, total_points: 0 }}
+                    onOpen={() => setDetailTarget({ kind: 'team', id: tm.abbrev, name: tm.name, rank: tm.rank })}
+                    actionLabel={t('pool_waivers_add_btn')} onAction={() => requestAdd(tm, 'team')} />
+                ))}
+              </div>
             )
           ) : playersLoading || !takenIds ? (
             <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-444)', fontSize: '13px' }}>{t('pool_draft_loading_players')}</div>
@@ -559,26 +623,22 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
             <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('pool_draft_no_players_found')}</div>
           ) : (
             <>
-              {filteredPlayers.slice(0, nbShown).map(j => {
-                const win = waiverWindowFor('player', j.id);
-                return (
-                  <FreeAgentRow key={j.id} onOpenDetail={() => setDetailTarget({ kind: 'player', id: j.id, name: j.name, team: j.team, posReel: j.posReel })}
-                    content={
-                      <>
-                        <PlayerAvatar src={headshotUrl(j.id, seasonId, j.team)} size={32} />
-                        <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[posReelToPickPosition(j.posReel)], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.name}</div>
-                          <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>
-                            {j.team} · {j.posGroup === 'goalie' ? `${j.wins}V` : `${j.points} PTS`}
-                            {win && <span style={{ color: '#f97316' }}> · {t('pool_waivers_until')} {new Date(win.available_at).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-US')}</span>}
-                          </div>
-                        </div>
-                      </>
-                    }
-                    onAdd={() => requestAdd(j, 'player')} t={t} />
-                );
-              })}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {filteredPlayers.slice(0, nbShown).map(j => {
+                  const win = waiverWindowFor('player', j.id);
+                  return (
+                    <div key={j.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      <PlayerCard size="S" lang={lang} seasonId={seasonId}
+                        row={{ kind: 'player', ref_id: j.id, label: j.name, pos_group: posReelToPickPosition(j.posReel), team_abbrev: j.team, total_points: j.valeurIA }}
+                        injury={injuries[String(j.id)]}
+                        gameStatus={gameStatusForTeam(gamesToday, j.team)}
+                        onOpen={() => setDetailTarget({ kind: 'player', id: j.id, name: j.name, team: j.team, posReel: j.posReel })}
+                        actionLabel={t('pool_waivers_add_btn')} onAction={() => requestAdd(j, 'player')} />
+                      {win && <div style={{ fontSize: '9px', color: '#f97316', textAlign: 'center' }}>{t('pool_waivers_until')} {new Date(win.available_at).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-US')}</div>}
+                    </div>
+                  );
+                })}
+              </div>
               {nbShown < filteredPlayers.length && (
                 <button onClick={() => setNbShown(n => n + 50)} style={{ ...btnSecondary, width: '100%' }}>{t('pool_draft_show_more')} ({filteredPlayers.length - nbShown})</button>
               )}
@@ -621,14 +681,4 @@ export function PoolWaiversTab({ pool, members, utilisateur, lang }) {
   );
 }
 
-function FreeAgentRow({ content, onAdd, onOpenDetail, isTeam, t }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px' }}>
-      <div onClick={onOpenDetail} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, cursor: 'pointer', minWidth: 0 }}>{content}</div>
-      <button onClick={onAdd} style={{ padding: '7px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: 'rgba(249,115,22,0.15)', color: '#f97316', fontSize: '11px', fontWeight: '700', flexShrink: 0 }}>
-        {t('pool_waivers_add_btn')}
-      </button>
-    </div>
-  );
-}
 

@@ -497,7 +497,7 @@ export function TeamRosterPanel({ pool, members, lang, viewedMemberId }) {
   return <MemberDetailPanel pool={pool} members={members} initialMemberId={viewedMemberId} lang={lang} />;
 }
 
-function buildQuotaRows(rules, memberPicks) {
+export function buildQuotaRows(rules, memberPicks) {
   if (rules.poolType === 'classic') {
     return [
       { pos: 'F', labelKey: 'pool_slot_forwards', used: memberPicks.filter(p => p.position === 'F').length, quota: computeRosterQuota(rules, 'F') },
@@ -513,7 +513,7 @@ function buildQuotaRows(rules, memberPicks) {
   ];
 }
 
-function QuotaRowsDisplay({ rows, t }) {
+export function QuotaRowsDisplay({ rows, t }) {
   return (
     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
       {rows.map(r => (
