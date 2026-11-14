@@ -305,6 +305,25 @@ export function computeRosterQuota(rules, position) {
   return 0;
 }
 
+// Postes "habilles" (sur la glace) par groupe F/D/G, au sens de la Vue vestiaire des pools :
+// pour un pool classique, le quota de rules.roster EST le nombre exige par poste (pas de banc).
+// Pour un pool fantasy, un attaquant/defenseur laisse au banc ou en IR n'est pas habille -- seuls
+// les postes actifs comptent (C/LW/RW/UTIL pour les attaquants, D pour les defenseurs, G pour les
+// gardiens). Utilise par l'ecran d'echange (PoolTrades.js) pour les compteurs de composition
+// APRES echange -- distinct de computeRosterQuota (qui lumpe F+D en un seul quota "patineurs"
+// pour les quotas de repechage fantasy, ou F et D ne sont pas repechable separement).
+export function rosterTargetsByPosGroup(rules) {
+  const r = rules?.roster || {};
+  if (rules?.poolType === 'classic') {
+    return { F: Number(r.forwards) || 0, D: Number(r.defense) || 0, G: Number(r.goalies) || 0 };
+  }
+  return {
+    F: (Number(r.C) || 0) + (Number(r.LW) || 0) + (Number(r.RW) || 0) + (Number(r.UTIL) || 0),
+    D: Number(r.D) || 0,
+    G: Number(r.G) || 0,
+  };
+}
+
 // order : tableau d'ids de membres (ordre fige au demarrage du draft) ; currentPick : 1-indexe.
 export function computeCurrentMemberId(order, currentPick, draftType) {
   const n = order?.length || 0;

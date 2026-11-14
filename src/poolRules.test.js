@@ -1,6 +1,6 @@
 import {
   validateTrade, defaultTradesForType, defaultRules, normalizeRules,
-  computePicksPerMember, computeRosterQuota, computeCurrentMemberId,
+  computePicksPerMember, computeRosterQuota, computeCurrentMemberId, rosterTargetsByPosGroup,
   mirrorSkaterPoints, mirrorGoaliePoints, mirrorTeamPoints, mirrorGameCountsForPeriod,
   mirrorEligibleSlots, sanitizeScoringValue, canScoringKeyBeNegative,
 } from './poolRules';
@@ -348,4 +348,21 @@ test('normalizeRules : reproduit puis corrige le bogue du switch "meme pointage"
   const fixed = normalizeRules(buggedRules);
   expect(fixed.scoring.forward.assists).toBe(7.6);
   expect(fixed.scoring.defense.assists).toBe(7.6);
+});
+
+// ===================== rosterTargetsByPosGroup (ecran d'echange) =====================
+
+test('rosterTargetsByPosGroup : pool classique par defaut -> 9F/6D/2G', () => {
+  const rules = defaultRules('classic');
+  expect(rosterTargetsByPosGroup(rules)).toEqual({ F: 9, D: 6, G: 2 });
+});
+
+test('rosterTargetsByPosGroup : pool classique personnalise', () => {
+  const rules = { poolType: 'classic', roster: { forwards: 12, defense: 8, goalies: 3 } };
+  expect(rosterTargetsByPosGroup(rules)).toEqual({ F: 12, D: 8, G: 3 });
+});
+
+test('rosterTargetsByPosGroup : pool fantasy -- seuls les postes actifs comptent (C/LW/RW/UTIL, D, G), pas le banc/IR', () => {
+  const rules = { poolType: 'fantasy', roster: { C: 1, LW: 1, RW: 1, D: 2, G: 1, UTIL: 1, bench: 3, ir: 1 } };
+  expect(rosterTargetsByPosGroup(rules)).toEqual({ F: 4, D: 2, G: 1 });
 });
