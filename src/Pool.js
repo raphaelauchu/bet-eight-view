@@ -798,6 +798,41 @@ function StartDraftButton({ isCommissioner, onStart, busy, error, t, variant = '
   );
 }
 
+// Historique du repechage : section repliable de l'Accueil (ex-Lobby), accessible une fois le
+// repechage termine (l'onglet Draft/salle de repechage disparait, voir tabsForPool). Reutilise
+// les picks deja charges par PoolLobby (pool_picks) et les membres deja charges -- aucune
+// nouvelle requete.
+function DraftHistorySection({ pool, members, picks, t }) {
+  const [ouvert, setOuvert] = useState(false);
+  if (picks.length === 0) return null;
+  const parPickNo = [...picks].sort((a, b) => (a.pick_no || 0) - (b.pick_no || 0));
+  return (
+    <div style={{ ...card, marginBottom: '16px' }}>
+      <button onClick={() => setOuvert(v => !v)} style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: '44px' }}>
+        <span style={sectionTitleStyle('var(--c-666)')}>{t('pool_home_draft_history_title')}</span>
+        <span style={{ fontSize: '12px', color: 'var(--c-666)' }}>{ouvert ? t('pool_home_draft_history_hide') : t('pool_home_draft_history_show')}</span>
+      </button>
+      {ouvert && (
+        <div style={{ marginTop: '10px', maxHeight: '420px', overflowY: 'auto' }}>
+          {parPickNo.map(p => {
+            const m = members.find(x => x.id === p.member_id);
+            return (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 4px', borderTop: '1px solid var(--c-111)' }}>
+                <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '28px' }}>{p.round ? `R${p.round}` : ''} #{p.pick_no ?? '—'}</span>
+                <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS_LOBBY[p.position] || 'var(--c-666)', minWidth: '28px' }}>{p.position}</span>
+                <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player_name}{p.nhl_team ? ` · ${p.nhl_team}` : ''}</span>
+                <span style={{ fontSize: '11px', color: 'var(--c-666)', whiteSpace: 'nowrap' }}>{m ? memberDisplayName(m, pool.rules, t) : '—'}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const POS_COLORS_LOBBY = { F: '#f97316', D: '#3b82f6', G: '#22c55e', TEAM: '#a78bfa' };
+
 function DeletePoolButton({ pool, t, onDeleted }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [typedName, setTypedName] = useState('');
@@ -861,11 +896,23 @@ function LeavePoolButton({ pool, t, onLeft }) {
   );
 }
 
-const LOBBY_TABS = ['lobby', 'draft', 'standings', 'team', 'trades', 'waivers', 'lineup', 'rules'];
-const ACTIVE_ONLY_TABS = ['standings', 'trades', 'waivers', 'lineup'];
+// Le repechage pilote toute la navigation : tant qu'il n'est pas termine ('setup'/'draft'),
+// seuls Lobby + Draft (salle de repechage) ont un sens -- rien a montrer dans Mon equipe /
+// Classement / Echanges / Agents libres sans alignement repeche. Une fois termine ('active'/
+// 'finished'), l'onglet Draft disparait (son historique devient une section de l'onglet
+// 'lobby', qui se relabellise "Accueil" -- meme id, pour que les deep-links existants
+// (ex. onOpen('draft')) continuent de fonctionner).
+const DRAFT_PENDING_STATUSES = ['setup', 'draft'];
+const PRE_DRAFT_TABS = ['lobby', 'draft'];
+const POST_DRAFT_TABS = ['lobby', 'standings', 'team', 'trades', 'waivers', 'lineup', 'rules'];
 const FANTASY_ONLY_TABS = ['lineup'];
 
-function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
+export function tabsForPool(pool) {
+  const base = DRAFT_PENDING_STATUSES.includes(pool.status) ? PRE_DRAFT_TABS : POST_DRAFT_TABS;
+  return base.filter(tab => !FANTASY_ONLY_TABS.includes(tab) || pool.rules.poolType === 'fantasy');
+}
+
+export function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEditRules, onPoolDeleted, onPoolLeft }) {
   const t = getT(lang);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -882,6 +929,11 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
 
   useEffect(() => {
     if (prevStatusRef.current === 'setup' && pool.status !== 'setup') setActiveTab('draft');
+    // Repechage qui vient de se terminer (le draft lui-meme amene toujours a 'active', jamais
+    // directement a 'finished') : l'onglet Draft disparait de la navigation, on revient a
+    // Accueil (meme id 'lobby') pour ne pas laisser l'utilisateur sur un onglet qui n'existe
+    // plus dans la barre.
+    else if (prevStatusRef.current === 'draft' && !DRAFT_PENDING_STATUSES.includes(pool.status)) setActiveTab('lobby');
     prevStatusRef.current = pool.status;
   }, [pool.status]);
 
@@ -917,6 +969,7 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
   }
 
   const isCommissioner = pool.owner_id === utilisateur.id;
+  const repechageTermine = !DRAFT_PENDING_STATUSES.includes(pool.status);
   const inviteLink = `${window.location.origin}/pool/join/${pool.invite_code}`;
   const myMember = members.find(m => m.user_id === utilisateur.id);
 
@@ -985,13 +1038,10 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
       {error && <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{t('pool_error_generic').replace('{erreur}', error)}</div>}
 
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', overflowX: 'auto' }}>
-        {LOBBY_TABS
-          .filter(tab => !ACTIVE_ONLY_TABS.includes(tab) || pool.status === 'active')
-          .filter(tab => !FANTASY_ONLY_TABS.includes(tab) || pool.rules.poolType === 'fantasy')
-          .map(tab => (
+        {tabsForPool(pool).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{ position: 'relative', padding: '9px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', backgroundColor: activeTab === tab ? '#f97316' : 'var(--c-111)', color: activeTab === tab ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: '700' }}>
-            {t(`pool_tab_${tab}`)}
+            {tab === 'lobby' ? (repechageTermine ? t('pool_tab_home') : t('pool_tab_lobby')) : t(`pool_tab_${tab}`)}
             {tab === 'trades' && tradesBadge > 0 && (
               <span style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: '#ef4444', color: 'white', borderRadius: '10px', fontSize: '10px', fontWeight: '800', padding: '1px 5px', minWidth: '16px', lineHeight: '14px' }}>
                 {tradesBadge}
@@ -1029,6 +1079,10 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
               </div>
             ))}
           </div>
+
+          {repechageTermine && (
+            <DraftHistorySection pool={pool} members={members} picks={picks} t={t} />
+          )}
 
           {pool.status === 'setup' && (
             <DraftOrderSection pool={pool} members={members} isCommissioner={isCommissioner} isMobile={isMobile} onReordered={chargerMembres} t={t} />
@@ -1070,24 +1124,24 @@ function PoolLobby({ pool, utilisateur, lang, isMobile, initialTab, onBack, onEd
         )
       )}
 
-      {activeTab === 'standings' && pool.status === 'active' && (
+      {activeTab === 'standings' && repechageTermine && (
         <PoolStandings pool={pool} members={members} utilisateur={utilisateur} lang={lang} isCommissioner={isCommissioner} />
       )}
 
-      {activeTab === 'team' && (
+      {activeTab === 'team' && repechageTermine && (
         <TeamRosterPanel pool={pool} members={members} lang={lang}
           viewedMemberId={myMember?.id || members[0]?.id} />
       )}
 
-      {activeTab === 'trades' && pool.status === 'active' && (
+      {activeTab === 'trades' && repechageTermine && (
         <PoolTradesTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} isCommissioner={isCommissioner} />
       )}
 
-      {activeTab === 'waivers' && pool.status === 'active' && (
+      {activeTab === 'waivers' && repechageTermine && (
         <PoolWaiversTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} />
       )}
 
-      {activeTab === 'lineup' && pool.status === 'active' && pool.rules.poolType === 'fantasy' && (
+      {activeTab === 'lineup' && repechageTermine && pool.rules.poolType === 'fantasy' && (
         <PoolLineupTab pool={pool} members={members} utilisateur={utilisateur} lang={lang} />
       )}
 

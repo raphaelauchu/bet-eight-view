@@ -505,7 +505,12 @@ body {
   gap: 8px;
 }
 
-.locker-card {
+/* ===================== PlayerCard (src/PlayerCard.js) : carte joueur unique =====================
+   Reutilisee dans la formation, les echanges, les agents libres, le repechage et les anciens
+   joueurs. Palier visuel (bronze/argent/or/elite) = bordure + legere lueur, jamais seulement
+   une couleur de texte (contraste). Les points du pool sont en haut a gauche (badge), les
+   badges blessure/en direct en haut a droite. */
+.player-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -516,39 +521,64 @@ body {
   padding: 10px 6px;
   border-radius: 12px;
   background: var(--c-111);
-  border: 1px solid var(--c-222);
+  border: 2px solid var(--c-222);
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.locker-card:hover {
+.player-card:hover {
   border-color: #f97316;
 }
 
-.locker-card-small {
+.player-card:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+.player-card-tier-silver { border-color: #c7cdd6; }
+.player-card-tier-gold { border-color: #f6c445; box-shadow: 0 0 10px rgba(246,196,69,0.18); }
+.player-card-tier-elite { border-color: #f97316; box-shadow: 0 0 14px rgba(249,115,22,0.32); }
+
+.player-card-S {
   width: 64px;
   padding: 7px 4px;
 }
 
-.locker-card-empty {
+.player-card-L {
+  width: 118px;
+  padding: 14px 10px;
+}
+
+.player-card-empty {
   cursor: default;
   border-style: dashed;
+  border-width: 1px;
   opacity: 0.5;
   color: var(--c-555);
 }
 
-.locker-card-placeholder-icon {
+.player-card-selected {
+  border-color: #f97316;
+  background: rgba(249,115,22,0.1);
+}
+
+.player-card-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.player-card-placeholder-icon {
   font-size: 16px;
   color: var(--c-444);
 }
 
-.locker-card-empty-label {
+.player-card-empty-label {
   font-size: 9px;
   color: var(--c-555);
 }
 
-.locker-card-name {
+.player-card-name {
   font-size: 11px;
   font-weight: 700;
   color: var(--c-white);
@@ -559,39 +589,81 @@ body {
   text-align: center;
 }
 
-.locker-card-pos {
+.player-card-L .player-card-name {
+  font-size: 13px;
+}
+
+.player-card-pos {
   font-size: 9px;
   font-weight: 700;
   color: var(--c-666);
   text-transform: uppercase;
 }
 
-.locker-card-points {
-  font-size: 14px;
+.player-card-points {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  min-width: 22px;
+  text-align: center;
+  font-size: 11px;
   font-weight: 900;
-  color: #f97316;
+  color: #ffffff;
+  background: #1a1a1a;
+  border: 2px solid #f97316;
+  border-radius: 999px;
+  padding: 1px 6px;
+  z-index: 2;
 }
 
-.locker-card-former {
+.player-card-action-btn {
+  margin-top: 4px;
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  background: #f97316;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.player-card-former {
   opacity: 0.85;
   border-color: rgba(239,68,68,0.25);
 }
 
-@keyframes locker-pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(249,115,22,0); }
-  30% { transform: scale(1.08); box-shadow: 0 0 14px rgba(249,115,22,0.55); }
-  100% { transform: scale(1); box-shadow: 0 0 0 rgba(249,115,22,0); }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes player-card-pulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .player-card-scored {
+    animation: player-card-pulse 1.4s ease;
+  }
 }
 
-.locker-card-scored {
-  animation: locker-pulse 1.4s ease;
-  border-color: #f97316;
+@media (prefers-reduced-motion: reduce) {
+  .player-card-scored {
+    border-color: #22c55e;
+  }
 }
 
-.locker-injury-badge {
+.player-card-badges {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  z-index: 2;
+}
+
+.player-card-injury-badge {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -602,12 +674,16 @@ body {
   justify-content: center;
   font-size: 11px;
   font-weight: 900;
-  z-index: 2;
   border: 2px solid var(--c-111);
   cursor: pointer;
 }
 
-.locker-injury-tooltip {
+.player-card-injury-badge:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+
+.player-card-injury-tooltip {
   position: absolute;
   top: 100%;
   left: 50%;
@@ -626,24 +702,20 @@ body {
   text-align: left;
 }
 
-.locker-game-badge {
-  position: absolute;
-  top: -6px;
-  left: -6px;
+.player-card-game-badge {
   font-size: 8px;
   font-weight: 800;
   padding: 2px 6px;
   border-radius: 999px;
   white-space: nowrap;
-  z-index: 2;
 }
 
-.locker-game-badge-live {
+.player-card-game-badge-live {
   background: #ef4444;
   color: white;
 }
 
-.locker-game-badge-tonight {
+.player-card-game-badge-tonight {
   background: rgba(249,115,22,0.18);
   color: #f97316;
 }
@@ -706,18 +778,22 @@ body {
 }
 
 @media (min-width: 768px) {
-  .locker-card {
+  .player-card-M {
     width: 96px;
     padding: 12px 8px;
   }
-  .locker-card-small {
+  .player-card-S {
     width: 76px;
   }
-  .locker-card-name {
+  .player-card-L {
+    width: 136px;
+    padding: 16px 12px;
+  }
+  .player-card-name {
     font-size: 12px;
   }
-  .locker-card-points {
-    font-size: 15px;
+  .player-card-points {
+    font-size: 12px;
   }
   .locker-rink {
     padding: 28px 24px 34px;

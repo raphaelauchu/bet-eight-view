@@ -691,6 +691,7 @@ const translations = {
 
     // Salle de draft en direct (Phase 2)
     pool_tab_lobby: 'Lobby',
+    pool_tab_home: 'Accueil',
     pool_tab_draft: 'Draft',
     pool_tab_standings: 'Classement',
     pool_tab_team: 'Mon équipe',
@@ -699,6 +700,19 @@ const translations = {
     pool_tab_lineup: 'Alignement',
     pool_tab_rules: 'Règles',
     pool_lobby_invite_closed: 'Les inscriptions sont fermées : le draft a commencé.',
+    pool_home_draft_history_title: 'Historique du repêchage',
+    pool_home_draft_history_show: 'Voir l\'historique du repêchage',
+    pool_home_draft_history_hide: 'Masquer l\'historique du repêchage',
+    pool_home_standings_title: 'Classement',
+    pool_home_upcoming_title: 'Prochains matchs de mes joueurs',
+    pool_home_upcoming_empty: 'Aucun match à venir pour tes joueurs dans les prochains jours.',
+    pool_home_activity_title: 'Fil d\'activité',
+    pool_home_activity_empty: 'Aucune activité récente.',
+    pool_home_activity_trade: 'Échange accepté',
+    pool_home_activity_add: 'Ajout d\'agent libre',
+    pool_home_activity_drop: 'Joueur laissé',
+    pool_home_activity_injury: 'Blessure',
+    pool_home_top3_title: 'Top 3',
 
     // Classement et pointage (Phase 3)
     pool_standings_total_points: 'Total',
@@ -1499,6 +1513,7 @@ const translations = {
 
     // Live draft room (Phase 2)
     pool_tab_lobby: 'Lobby',
+    pool_tab_home: 'Home',
     pool_tab_draft: 'Draft',
     pool_tab_standings: 'Standings',
     pool_tab_team: 'My Team',
@@ -1506,6 +1521,19 @@ const translations = {
     pool_tab_waivers: 'Free Agents',
     pool_tab_lineup: 'Lineup',
     pool_tab_rules: 'Rules',
+    pool_home_draft_history_title: 'Draft History',
+    pool_home_draft_history_show: 'Show draft history',
+    pool_home_draft_history_hide: 'Hide draft history',
+    pool_home_standings_title: 'Standings',
+    pool_home_upcoming_title: 'Upcoming games for my players',
+    pool_home_upcoming_empty: 'No upcoming games for your players in the next few days.',
+    pool_home_activity_title: 'Activity feed',
+    pool_home_activity_empty: 'No recent activity.',
+    pool_home_activity_trade: 'Trade accepted',
+    pool_home_activity_add: 'Free agent added',
+    pool_home_activity_drop: 'Player dropped',
+    pool_home_activity_injury: 'Injury',
+    pool_home_top3_title: 'Top 3',
     pool_lobby_invite_closed: 'Sign-ups are closed: the draft has started.',
 
     // Standings and scoring (Phase 3)

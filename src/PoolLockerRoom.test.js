@@ -177,14 +177,16 @@ test('PoolTeamHub : joueur blesse avec donnees affiche le badge et le detail, sa
   });
 
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={baseRows()} standingsRow={null} lang="fr">table</PoolTeamHub>);
-  await waitFor(() => expect(screen.getByLabelText(/Blessure : Injured Reserve/)).toBeInTheDocument());
+  await waitFor(() => expect(document.querySelector('.player-card-injury-badge')).toBeInTheDocument());
 
-  fireEvent.click(screen.getByLabelText(/Blessure : Injured Reserve/));
+  fireEvent.click(document.querySelector('.player-card-injury-badge'));
   expect(screen.getByText('Injured Reserve')).toBeInTheDocument();
   expect(screen.getByText('Haut du corps, retour estime dans 2 semaines.')).toBeInTheDocument();
 
-  // Suzuki n'a pas de ligne dans player_injuries : aucun badge pour lui, aucun crash.
-  expect(screen.queryAllByLabelText(/Blessure :/).length).toBe(1);
+  // Suzuki n'a pas de ligne dans player_injuries : un seul badge-blessure sur toute la page
+  // (la carte elle-meme porte aussi la mention dans son aria-label accessible, donc 2 elements
+  // au total pour McDavid -- jamais 2 joueurs distincts).
+  expect(document.querySelectorAll('.player-card-injury-badge').length).toBe(1);
 });
 
 test('PoolTeamHub : aucune blessure retournee (table absente/erreur) -- pas de badge, pas de crash', async () => {
@@ -204,7 +206,7 @@ test('PoolTeamHub : joueur echange visible dans "Anciens joueurs" avec ses point
   ];
   render(<PoolTeamHub pool={POOL} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('Anciens joueurs')).toBeInTheDocument());
-  const carte = screen.getByText('Joueur Echange').closest('.locker-card-former');
+  const carte = screen.getByText('Joueur Echange').closest('.player-card');
   expect(carte).toHaveTextContent('7');
 });
 

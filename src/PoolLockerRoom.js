@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { useSaisonCourante, LOGOS_NHL, FicheJoueurStats } from './Analyses';
-import { headshotUrl, TeamLogo, PlayerAvatar, round1, memberLabel, easternDateStr } from './PoolDraftRoom';
+import { headshotUrl, TeamLogo, round1, memberLabel, easternDateStr } from './PoolDraftRoom';
 import { teamGradient, teamColors } from './nhlTeamColors';
+import PlayerCard, { computePlayerTier } from './PlayerCard';
 
 // ===================== Vue vestiaire : composition de la formation (pure, testable) =====================
 // Deduit la formation sur glace a partir des lignes deja renvoyees par get_member_breakdown
@@ -125,84 +126,15 @@ const toggleBtnStyle = (active) => ({
   backgroundColor: active ? '#f97316' : 'var(--c-111)', color: active ? 'white' : 'var(--c-888)', minHeight: '44px',
 });
 
-// ===================== Carte joueur =====================
-
-function PoolPlayerCard({ row, seasonId, lang, injury, gameStatus, onOpen, small }) {
-  const t = getT(lang);
-  const [justScored, setJustScored] = useState(false);
-  const [showInjury, setShowInjury] = useState(false);
-  const prevPointsRef = useRef(row ? Number(row.total_points) || 0 : null);
-
-  useEffect(() => {
-    if (!row) return;
-    const current = Number(row.total_points) || 0;
-    const prev = prevPointsRef.current;
-    if (prev != null && current > prev) {
-      setJustScored(true);
-      const id = setTimeout(() => setJustScored(false), 1600);
-      prevPointsRef.current = current;
-      return () => clearTimeout(id);
-    }
-    prevPointsRef.current = current;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [row?.total_points]);
-
-  if (!row) {
-    return (
-      <div className={`locker-card locker-card-empty${small ? ' locker-card-small' : ''}`}>
-        <div className="locker-card-placeholder-icon">+</div>
-        <div className="locker-card-empty-label">{t('pool_locker_empty_slot')}</div>
-      </div>
-    );
-  }
-
-  const isTeam = row.kind === 'team';
-
-  return (
-    <div
-      className={`locker-card${justScored ? ' locker-card-scored' : ''}${small ? ' locker-card-small' : ''}`}
-      onClick={() => onOpen(row)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => { if (e.key === 'Enter') onOpen(row); }}
-    >
-      {injury && (
-        <span
-          className="locker-injury-badge"
-          role="button"
-          tabIndex={0}
-          aria-label={`${t('pool_locker_injury_prefix')} ${injury.status}`}
-          onClick={e => { e.stopPropagation(); setShowInjury(v => !v); }}
-          onMouseEnter={() => setShowInjury(true)}
-          onMouseLeave={() => setShowInjury(false)}
-        >+</span>
-      )}
-      {injury && showInjury && (
-        <div className="locker-injury-tooltip" onClick={e => e.stopPropagation()}>
-          <strong>{injury.status}</strong>
-          <div>{injury.description || t('pool_locker_injury_unknown_duration')}</div>
-        </div>
-      )}
-      {gameStatus && (
-        <span className={`locker-game-badge locker-game-badge-${gameStatus}`}>
-          {gameStatus === 'live' ? t('pool_locker_live_now') : t('pool_locker_playing_tonight')}
-        </span>
-      )}
-      {isTeam ? <TeamLogo abbrev={row.ref_id} size={small ? 32 : 44} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={small ? 32 : 44} />}
-      {!isTeam && row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={14} />}
-      <div className="locker-card-name">{row.label}</div>
-      {!isTeam && <div className="locker-card-pos">{row.pos_group}</div>}
-      <div className="locker-card-points">{round1(row.total_points)}</div>
-    </div>
-  );
-}
-
 // ===================== Zones de la glace =====================
+// La carte joueur elle-meme vit dans src/PlayerCard.js (composant unique reutilise par la
+// formation, les echanges, les agents libres, le repechage et les anciens joueurs).
 
-function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, onOpen }) {
+function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
   const t = getT(lang);
-  const card = (row, key) => (
-    <PoolPlayerCard key={key} row={row} seasonId={seasonId} lang={lang}
+  const card = (row, key, size = 'M') => (
+    <PlayerCard key={key} row={row} size={size} seasonId={seasonId} lang={lang}
+      tier={row ? computePlayerTier(row.total_points, allPoints) : undefined}
       injury={row ? injuries[String(row.ref_id)] : undefined}
       gameStatus={row ? gameStatusForTeam(gamesToday, row.team_abbrev) : null}
       onOpen={onOpen} />
@@ -236,10 +168,7 @@ function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, onO
             <div className="locker-reserve-group">
               <div className="locker-reserve-title">{t('pool_locker_bench_title')}</div>
               <div className="locker-line locker-line-wrap">
-                {formation.bench.map(row => (
-                  <PoolPlayerCard key={`${row.kind}:${row.ref_id}`} row={row} seasonId={seasonId} lang={lang}
-                    injury={injuries[String(row.ref_id)]} gameStatus={gameStatusForTeam(gamesToday, row.team_abbrev)} onOpen={onOpen} small />
-                ))}
+                {formation.bench.map(row => card(row, `${row.kind}:${row.ref_id}`, 'S'))}
               </div>
             </div>
           )}
@@ -247,10 +176,7 @@ function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, onO
             <div className="locker-reserve-group">
               <div className="locker-reserve-title">{t('pool_locker_ir_title')}</div>
               <div className="locker-line locker-line-wrap">
-                {formation.ir.map(row => (
-                  <PoolPlayerCard key={`${row.kind}:${row.ref_id}`} row={row} seasonId={seasonId} lang={lang}
-                    injury={injuries[String(row.ref_id)]} gameStatus={gameStatusForTeam(gamesToday, row.team_abbrev)} onOpen={onOpen} small />
-                ))}
+                {formation.ir.map(row => card(row, `${row.kind}:${row.ref_id}`, 'S'))}
               </div>
             </div>
           )}
@@ -260,7 +186,7 @@ function PoolIceFormation({ formation, seasonId, lang, gamesToday, injuries, onO
   );
 }
 
-function PoolFormerPlayers({ players, seasonId, lang, onOpen }) {
+function PoolFormerPlayers({ players, seasonId, lang, allPoints, onOpen }) {
   const t = getT(lang);
   return (
     <div className="locker-former-section">
@@ -268,12 +194,8 @@ function PoolFormerPlayers({ players, seasonId, lang, onOpen }) {
       <div className="locker-former-sub">{t('pool_locker_former_players_sub')}</div>
       <div className="locker-line locker-line-wrap">
         {players.map(row => (
-          <div key={`${row.kind}:${row.ref_id}`} className="locker-card locker-card-former" onClick={() => onOpen(row)} role="button" tabIndex={0}>
-            <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={36} />
-            {row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={14} />}
-            <div className="locker-card-name">{row.label}</div>
-            <div className="locker-card-points">{round1(row.total_points)}</div>
-          </div>
+          <PlayerCard key={`${row.kind}:${row.ref_id}`} row={row} size="S" seasonId={seasonId} lang={lang}
+            tier={computePlayerTier(row.total_points, allPoints)} onOpen={onOpen} className="player-card-former" />
         ))}
       </div>
     </div>
@@ -490,6 +412,9 @@ export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, 
   const rowsSafe = rows || [];
   const formation = useMemo(() => buildFormation(rowsSafe, pool.rules), [rowsSafe, pool.rules]);
   const formerPlayers = useMemo(() => buildFormerPlayers(rowsSafe), [rowsSafe]);
+  // Contexte de comparaison pour les paliers visuels (bronze/argent/or/elite) : tous les
+  // joueurs de CETTE equipe (actifs + anciens) -- relatif, jamais un seuil de points en dur.
+  const allPoints = useMemo(() => rowsSafe.filter(r => r.kind === 'player').map(r => Number(r.total_points) || 0), [rowsSafe]);
   const injuriesKey = useMemo(() => rowsSafe.filter(r => r.kind === 'player').map(r => String(r.ref_id)).join(','), [rowsSafe]);
   const injuries = usePlayerInjuries(injuriesKey);
 
@@ -517,9 +442,9 @@ export function PoolTeamHub({ pool, member, rows, standingsRow, lang, children, 
         <div style={{ color: 'var(--c-333)', fontSize: '12px', padding: '10px 0' }}>{emptyMessage}</div>
       ) : vue === 'formation' ? (
         <>
-          <PoolIceFormation formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} onOpen={openCard} />
+          <PoolIceFormation formation={formation} seasonId={seasonId} lang={lang} gamesToday={gamesToday} injuries={injuries} allPoints={allPoints} onOpen={openCard} />
           {formerPlayers.length > 0 && (
-            <PoolFormerPlayers players={formerPlayers} seasonId={seasonId} lang={lang} onOpen={openCard} />
+            <PoolFormerPlayers players={formerPlayers} seasonId={seasonId} lang={lang} allPoints={allPoints} onOpen={openCard} />
           )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
             <ShareButton pool={pool} member={member} rows={rowsSafe} standingsRow={standingsRow} lang={lang} seasonId={seasonId} teamAbbrev={formation.teamPick?.ref_id} />
