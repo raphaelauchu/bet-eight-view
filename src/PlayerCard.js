@@ -4,6 +4,7 @@ import { headshotUrl, TeamLogo, PlayerAvatar, round1 } from './PoolDraftRoom';
 import { teamColors } from './nhlTeamColors';
 import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
 import { TeamJersey } from './BrandAssets';
+import { useRosterNumber } from './rosterNumbers';
 
 // ===================== PlayerCard : carte joueur unique, reutilisee partout =====================
 // Formation (Vue vestiaire), echanges, agents libres, repechage, anciens joueurs -- un seul
@@ -66,12 +67,14 @@ function initialsFromName(label) {
 // Jamais de fantome gris : si la photo echoue (ou n'existe pas encore pour ce joueur), des
 // initiales sur la couleur reelle de son equipe LNH (nhlTeamColors.js) prennent sa place.
 // Formation du pool (B, voir brandAssetsConfig.js) : tant qu'aucune licence LNH/NHLPA n'existe,
-// jamais de photo ici -- un chandail aux couleurs de l'equipe avec les initiales du joueur
-// (aucun numero de chandail fiable n'est disponible pour les lignes de pool, voir PoolLockerRoom.js).
-function PlayerPhotoOrInitials({ src, label, teamAbbrev }) {
+// jamais de photo ici -- un chandail de dos aux couleurs de l'equipe avec le nom + le numero
+// reel du joueur (useRosterNumber, src/rosterNumbers.js -- MEME source que Analyses.js, un
+// seul fetch par equipe jamais par joueur). Numero pas encore connu : initiales en repli.
+function PlayerPhotoOrInitials({ src, label, teamAbbrev, playerId }) {
   const [failed, setFailed] = useState(false);
+  const number = useRosterNumber(teamAbbrev, playerId);
   if (!USE_LICENSED_NHL_ASSETS) {
-    return <TeamJersey teamAbbrev={teamAbbrev} label={initialsFromName(label)} size={64} className="player-card-photo-img" />;
+    return <TeamJersey teamAbbrev={teamAbbrev} name={label} number={number} size={64} className="player-card-photo-img" />;
   }
   if (!src || failed) {
     const colors = teamColors(teamAbbrev);
@@ -175,7 +178,7 @@ export default function PlayerCard({
         )}
 
         <div className="pcf-photo">
-          <PlayerPhotoOrInitials src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} label={row.label} teamAbbrev={row.team_abbrev} />
+          <PlayerPhotoOrInitials src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} label={row.label} teamAbbrev={row.team_abbrev} playerId={row.ref_id} />
         </div>
 
         <div className="pcf-name" style={{ fontSize: formationNameFontSize(row.label) }}>

@@ -9,7 +9,7 @@ import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetA
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import HockeyTicker from './HockeyTicker';
 import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
-import { playerAvatarUri, teamCrestUri } from './BrandAssets';
+import { playerAvatarUri, teamCrestUri, TeamJersey } from './BrandAssets';
 
 // ===================== Photos de joueurs et logos d'equipe (voir src/brandAssetsConfig.js) ===
 // Tant que USE_LICENSED_NHL_ASSETS est a false (aucune licence LNH/NHLPA), aucune URL ne pointe
@@ -290,7 +290,7 @@ function CarrouselMeneurs({ meneurs }) {
 }
  
 function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
-  const taille = isMobile ? '36px' : '44px';
+  const taille = isMobile ? 40 : 48;
   return (
     <div
       onClick={() => onSelect(joueur)}
@@ -301,9 +301,9 @@ function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
       {estChaud && (
         <div style={{ position: 'absolute', top: '-7px', right: '-3px', backgroundColor: '#f97316', borderRadius: '8px', padding: '1px 5px', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>HOT</div>
       )}
-      <img src={playerPhotoUrl(seasonIdDepuisDate(), joueur.equipe, joueur.id)} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
-      <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'var(--c-white)', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
-      <div style={{ fontSize: '9px', color: 'var(--c-666)', marginBottom: '4px' }}>#{joueur.numero}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4px' }}>
+        <TeamJersey teamAbbrev={joueur.equipe} name={joueur.nom} number={joueur.numero} size={taille} alt={joueur.nom} />
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: '900', color: joueur.goals != null ? '#f97316' : 'var(--c-444)' }}>{joueur.goals ?? '-'}</div>
@@ -326,7 +326,7 @@ function SectionGardien({ gardien, onSelect }) {
   if (!gardien) return null;
   return (
     <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-      <img src={playerPhotoUrl(seasonIdDepuisDate(), gardien.equipe, gardien.id, { goalie: true })} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
+      <TeamJersey teamAbbrev={gardien.equipe} name={gardien.nom} number={gardien.numero} size={44} alt={gardien.nom} />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
         <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '2px' }}>{gardien.nom}</div>
@@ -3310,13 +3310,14 @@ function useGardienPartant(adversaireAbbrev, seasonId) {
       ]);
       const [dataRoster, dataStats] = await Promise.all([resRoster.json(), resStats.json()]);
       const roster = [...(dataRoster.forwards || []), ...(dataRoster.defensemen || []), ...(dataRoster.goalies || [])]
-        .map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), position: j.positionCode || '', headshot: j.headshot }));
+        .map(j => ({ id: j.id, nom: `${j.firstName?.default || ''} ${j.lastName?.default || ''}`.trim(), position: j.positionCode || '', headshot: j.headshot, numero: j.sweaterNumber || '' }));
       const starter = trouverGardienPartant(roster, adversaireAbbrev, lineupDF);
       if (!starter) { setGardienPartant(null); setChargementGardien(false); return; }
       const statsStarter = (dataStats.goalies || []).find(g => g.playerId === starter.id) || null;
       setGardienPartant({
         id: starter.id,
         nom: starter.nom,
+        numero: starter.numero,
         gaa: statsStarter?.goalsAgainstAverage != null ? statsStarter.goalsAgainstAverage.toFixed(2) : '-',
         svp: statsStarter?.savePercentage != null ? (statsStarter.savePercentage * 100).toFixed(1) + '%' : '-',
         photo: playerPhotoUrl(seasonId, adversaireAbbrev, starter.id, { goalie: true }),

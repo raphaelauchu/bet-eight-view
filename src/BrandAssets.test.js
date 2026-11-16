@@ -9,6 +9,13 @@ import PlayerCard from './PlayerCard';
 
 jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 
+// PlayerCard (variant="formation") resout le numero de chandail via useRosterNumber
+// (src/rosterNumbers.js, roster/{abbrev}/current) -- jamais un appel reel ici : roster vide
+// simule (le joueur retombe sur ses initiales, comportement teste plus bas).
+beforeEach(() => {
+  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ forwards: [], defensemen: [], goalies: [] }) }));
+});
+
 // ===================== Interrupteur =====================
 // Ce fichier verifie le comportement "aucune licence LNH/NHLPA" (USE_LICENSED_NHL_ASSETS=false).
 // S'il echoue apres un changement de src/brandAssetsConfig.js, c'est le signal attendu : les
@@ -27,7 +34,7 @@ test('playerAvatarUri / jerseyAvatarUri / teamCrestUri : toujours un data: URI, 
     const helmet = playerAvatarUri(abbrev, { goalie: false });
     const mask = playerAvatarUri(abbrev, { goalie: true });
     const jersey = jerseyAvatarUri(abbrev, { number: 23 });
-    const jerseyInitials = jerseyAvatarUri(abbrev, { label: 'JD' });
+    const jerseyInitials = jerseyAvatarUri(abbrev, { name: 'Jean Dupont' });
     const crest = teamCrestUri(abbrev);
     [helmet, mask, jersey, jerseyInitials, crest].forEach(src => {
       expect(isDataUri(src)).toBe(true);
@@ -37,15 +44,26 @@ test('playerAvatarUri / jerseyAvatarUri / teamCrestUri : toujours un data: URI, 
 });
 
 test('jerseyAvatarUri : affiche le numero si fourni, sinon les initiales (jamais invente)', () => {
-  const withNumber = decodeURIComponent(jerseyAvatarUri('MTL', { number: 23, label: 'JD' }));
-  expect(withNumber).toContain('#23');
-  const withoutNumber = decodeURIComponent(jerseyAvatarUri('MTL', { label: 'JD' }));
+  const withNumber = decodeURIComponent(jerseyAvatarUri('MTL', { number: 23, name: 'Dupont' }));
+  expect(withNumber).toContain('>23<');
+  expect(withNumber).toContain('DUPONT');
+  const withoutNumber = decodeURIComponent(jerseyAvatarUri('MTL', { name: 'Jean Dupont' }));
+  // Nom de famille seul, initiales si pas de numero -- "JD", jamais "23".
+  expect(withoutNumber).toContain('DUPONT');
   expect(withoutNumber).toContain('>JD<');
 });
 
-test('teamCrestUri : contient l\'abreviation de l\'equipe en texte (repli "si la place est trop petite")', () => {
+test('jerseyAvatarUri : nom inconnu -> numero seul ; aucun des deux -> "?"', () => {
+  const numeroSeul = decodeURIComponent(jerseyAvatarUri('BOS', { number: 37 }));
+  expect(numeroSeul).toContain('>37<');
+  const aucun = decodeURIComponent(jerseyAvatarUri('EDM', {}));
+  expect(aucun).toContain('>?<');
+});
+
+test('teamCrestUri : chandail vue de face SANS texte (variante compacte, tres petits emplacements)', () => {
   const svg = decodeURIComponent(teamCrestUri('TOR'));
-  expect(svg).toContain('TOR');
+  expect(svg).not.toContain('<text');
+  expect(svg).not.toContain('TOR');
 });
 
 // ===================== Contraste AA du texte sur le chandail =====================
@@ -71,24 +89,21 @@ test('readableTextColor : contraste >= 4.5:1 (AA texte normal) pour chaque coule
 
 // ===================== Composants React =====================
 
-test('PlayerHelmet / TeamJersey / TeamCrest / PlayerAvatar : rendent un <img> data: sans domaine LNH', () => {
+test('PlayerHelmet / TeamJersey / TeamCrest / PlayerAvatar : rendent un <svg> inline (pas une image), sans domaine LNH', () => {
   const { container } = render(
     <>
       <PlayerHelmet teamAbbrev="MTL" />
       <PlayerHelmet teamAbbrev="MTL" goalie />
       <TeamJersey teamAbbrev="TOR" number={97} />
       <TeamCrest teamAbbrev="BOS" />
-      <PlayerAvatar teamAbbrev="EDM" variant="formation" label="CM" />
+      <PlayerAvatar teamAbbrev="EDM" variant="formation" name="Marchand" number={63} />
       <PlayerAvatar teamAbbrev="EDM" variant="card" />
     </>
   );
-  const imgs = container.querySelectorAll('img');
-  expect(imgs.length).toBe(6);
-  imgs.forEach(img => {
-    const src = img.getAttribute('src');
-    expect(isDataUri(src)).toBe(true);
-    expect(pointsToNhlDomain(src)).toBe(false);
-  });
+  // SVG inline dans le DOM (instruction 6), jamais un <img src="..."> pour ces composants.
+  expect(container.querySelectorAll('svg').length).toBe(6);
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
 });
 
 // ===================== Regression bout-en-bout : PlayerCard (les deux variantes) =====================
@@ -104,11 +119,14 @@ test('PlayerCard (variant="default") : aucune image chargee depuis un domaine LN
   imgs.forEach(img => expect(pointsToNhlDomain(img.getAttribute('src'))).toBe(false));
 });
 
-test('PlayerCard (variant="formation") : chandail aux initiales, aucune image LNH', () => {
+test('PlayerCard (variant="formation") : chandail SVG inline (numero inconnu -> initiales), aucune image LNH', () => {
   const { container } = render(<PlayerCard row={makeRow({ pos_group: 'G' })} variant="formation" lang="fr" seasonId="20262027" />);
-  const imgs = container.querySelectorAll('img');
-  expect(imgs.length).toBeGreaterThan(0);
-  imgs.forEach(img => expect(pointsToNhlDomain(img.getAttribute('src'))).toBe(false));
+  // Le chandail (photo) est desormais un <svg> inline (TeamJersey) ; le petit badge d'equipe
+  // (TeamLogo, pcf-footer) reste un <img> (data: URI, voir PoolDraftRoom.js), c'est attendu.
+  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
+  // "Nick Suzuki" sans numero connu (fetch de roster non resolu en test) -> initiales "NS".
+  expect(container.innerHTML).toContain('>NS<');
 });
 
 test('PlayerCard : logo d\'equipe (kind="team") -- aucune image LNH non plus', () => {

@@ -163,6 +163,9 @@ beforeEach(() => {
     if (table === 'player_injuries') return mockQuery({ data: [], error: null });
     return mockQuery({ data: [], error: null });
   });
+  // useRosterNumber (src/rosterNumbers.js, chandail de la formation) : roster vide simule,
+  // jamais un appel reseau reel dans les tests -- le joueur retombe sur ses initiales.
+  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ forwards: [], defensemen: [], goalies: [] }) }));
 });
 
 test('PoolTeamHub : bascule Formation/Tableau, le tableau existant reste accessible', async () => {
@@ -354,13 +357,14 @@ test('PoolTeamHub : onglet Banc/IR -- joueur affiche un chandail aux initiales (
   await waitFor(() => expect(screen.getByText('Banc/IR')).toBeInTheDocument());
   fireEvent.click(screen.getByText('Banc/IR'));
 
-  const img = document.querySelector('.player-card-photo-img');
-  expect(img).toBeInTheDocument();
   // Tant qu'aucune licence LNH/NHLPA n'existe (USE_LICENSED_NHL_ASSETS=false) : un chandail
-  // SVG dessine par Betrics (data:, jamais assets.nhle.com), initiales visibles dedans.
-  expect(img.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/);
-  expect(img.getAttribute('src')).not.toMatch(/nhle\.com/);
-  expect(decodeURIComponent(img.getAttribute('src'))).toContain('JD');
+  // SVG inline dessine par Betrics (jamais une image, jamais assets.nhle.com), initiales
+  // visibles dedans (numero de chandail non resolu dans ce test -- roster non mocke).
+  const svg = document.querySelector('.player-card-photo-img');
+  expect(svg).toBeInTheDocument();
+  expect(svg.tagName.toLowerCase()).toBe('svg');
+  expect(svg.innerHTML).not.toMatch(/nhle\.com/);
+  expect(svg.innerHTML).toContain('>JD<');
 });
 
 test('PoolTeamHub : etat de chargement -- squelette affiche, pas de carte/onglet, pas de crash', () => {
