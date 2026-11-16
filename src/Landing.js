@@ -438,7 +438,7 @@ function LandingFooter({ lang, onOpenLegal }) {
           <div className="landing-footer-links">
             <button type="button" onClick={() => onOpenLegal('terms')}>{t('landing_footer_legal_terms')}</button>
             <button type="button" onClick={() => onOpenLegal('privacy')}>{t('landing_footer_legal_privacy')}</button>
-            <a href="mailto:contact@betrics.app">{t('landing_footer_contact')}</a>
+            <a href="mailto:contact@betrics.ca">{t('landing_footer_contact')}</a>
           </div>
           <div className="landing-footer-copyright">{t('landing_footer_copyright')}</div>
         </div>

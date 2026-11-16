@@ -3,9 +3,10 @@
 // toBlob exige des images servies avec un en-tete CORS, qu'assets.nhle.com ne fournit pas) --
 // l'affichage normal (<img>) n'en a pas besoin. Liste blanche stricte : ne proxy jamais une
 // URL hors assets.nhle.com, pour ne pas devenir un proxy d'image ouvert.
+import { applyCors } from './_lib/cors.js';
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  applyCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { url } = req.query;

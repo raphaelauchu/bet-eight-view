@@ -285,7 +285,7 @@ const MAX_CATCHUP_DAYS = 14;
 //    lancer la synchro, limitee a la fenetre de pointage du pool.
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders(req) });
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -303,28 +303,28 @@ Deno.serve(async (req) => {
   if (body.pool_id) {
     // --- Mode commissaire ---
     const auth = await getAuthenticatedUser(req);
-    if (auth.error) return jsonResponse({ error: auth.error }, 401);
+    if (auth.error) return jsonResponse(req, { error: auth.error }, 401);
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: req.headers.get('Authorization')! } },
     });
     const { data: isCommish, error: commishErr } = await userClient.rpc('is_pool_commissioner', { p_pool_id: body.pool_id });
-    if (commishErr || !isCommish) return jsonResponse({ error: 'not_commissioner' }, 403);
+    if (commishErr || !isCommish) return jsonResponse(req, { error: 'not_commissioner' }, 403);
 
     const { data: poolRow, error: poolErr } = await userClient.from('pools').select('scoring_start_at').eq('id', body.pool_id).single();
-    if (poolErr || !poolRow?.scoring_start_at) return jsonResponse({ error: 'pool_not_active' }, 400);
+    if (poolErr || !poolRow?.scoring_start_at) return jsonResponse(req, { error: 'pool_not_active' }, 400);
     fromDate = easternDateStr(new Date(poolRow.scoring_start_at));
   } else {
     // --- Mode planifie : x-sync-secret doit correspondre EXACTEMENT a SYNC_CRON_SECRET ---
     if (!cronSecret || !providedSecret || !timingSafeEqual(providedSecret, cronSecret)) {
-      return jsonResponse({ error: 'unauthorized' }, 401);
+      return jsonResponse(req, { error: 'unauthorized' }, 401);
     }
   }
 
   // Les ecritures (upsert) exigent toujours la cle service_role pour contourner RLS, meme en
   // mode commissaire -- si elle est absente cote fonction, c'est une mauvaise configuration
   // Supabase (secret reserve non fourni), pas une question d'autorisation de l'appelant.
-  if (!serviceKey) return jsonResponse({ error: 'service_role_key_unavailable' }, 500);
+  if (!serviceKey) return jsonResponse(req, { error: 'service_role_key_unavailable' }, 500);
 
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -361,8 +361,8 @@ Deno.serve(async (req) => {
       if (waiversErr) waiversError = waiversErr.message;
     }
 
-    return jsonResponse({ success: true, datesSynced, ...summary, waiversError });
+    return jsonResponse(req, { success: true, datesSynced, ...summary, waiversError });
   } catch (err) {
-    return jsonResponse({ error: String((err as Error)?.message || err) }, 500);
+    return jsonResponse(req, { error: String((err as Error)?.message || err) }, 500);
   }
 });

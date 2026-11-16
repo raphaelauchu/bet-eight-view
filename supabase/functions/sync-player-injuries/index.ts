@@ -80,7 +80,7 @@ async function fetchNhlRosterNames(abbrev: string): Promise<RosterEntry[]> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -88,9 +88,9 @@ Deno.serve(async (req) => {
   const providedSecret = req.headers.get('x-sync-secret') || '';
 
   if (!cronSecret || !providedSecret || !timingSafeEqual(providedSecret, cronSecret)) {
-    return jsonResponse({ error: 'unauthorized' }, 401);
+    return jsonResponse(req, { error: 'unauthorized' }, 401);
   }
-  if (!serviceKey) return jsonResponse({ error: 'service_role_key_unavailable' }, 500);
+  if (!serviceKey) return jsonResponse(req, { error: 'service_role_key_unavailable' }, 500);
 
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -137,8 +137,8 @@ Deno.serve(async (req) => {
       if (insErr) throw new Error(`upsert: ${insErr.message}`);
     }
 
-    return jsonResponse({ success: true, teamsProcessed: teams.length, matched: matched.length, unmatched: unmatchedCount });
+    return jsonResponse(req, { success: true, teamsProcessed: teams.length, matched: matched.length, unmatched: unmatchedCount });
   } catch (err) {
-    return jsonResponse({ error: String((err as Error)?.message || err) }, 500);
+    return jsonResponse(req, { error: String((err as Error)?.message || err) }, 500);
   }
 });

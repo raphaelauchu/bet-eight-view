@@ -29,21 +29,21 @@ function equipeCorrespond(nomRecherche: string | null | undefined, team: any) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders(req) });
   }
 
   try {
     const { equipe, adversaire, date_match } = await req.json();
     if (!date_match || (!equipe && !adversaire)) {
-      return jsonResponse({ error: 'date_match et au moins une équipe sont requis' }, 400);
+      return jsonResponse(req, { error: 'date_match et au moins une équipe sont requis' }, 400);
     }
 
     const auth = await getAuthenticatedUser(req);
-    if (auth.error) return jsonResponse({ error: auth.error }, 401);
+    if (auth.error) return jsonResponse(req, { error: auth.error }, 401);
 
     const res = await fetch(`https://api-web.nhle.com/v1/schedule/${date_match}`);
     if (!res.ok) {
-      return jsonResponse({ error: 'Échec de la requête NHL schedule' }, 502);
+      return jsonResponse(req, { error: 'Échec de la requête NHL schedule' }, 502);
     }
     const data = await res.json();
     const games = data.gameWeek?.[0]?.games || [];
@@ -58,8 +58,8 @@ Deno.serve(async (req) => {
       equipeCorrespond(adversaire, g.awayTeam) || equipeCorrespond(adversaire, g.homeTeam)
     );
 
-    return jsonResponse({ success: true, game_id: match?.id ?? null });
+    return jsonResponse(req, { success: true, game_id: match?.id ?? null });
   } catch (err) {
-    return jsonResponse({ error: String(err) }, 500);
+    return jsonResponse(req, { error: String(err) }, 500);
   }
 });

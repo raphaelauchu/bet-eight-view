@@ -11,17 +11,17 @@ const SCOPE = 'Mail.Read offline_access';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders(req) });
   }
 
   try {
     const { code, redirect_uri } = await req.json();
     if (!code || !redirect_uri) {
-      return jsonResponse({ error: 'code et redirect_uri requis' }, 400);
+      return jsonResponse(req, { error: 'code et redirect_uri requis' }, 400);
     }
 
     const auth = await getAuthenticatedUser(req);
-    if (auth.error) return jsonResponse({ error: auth.error }, 401);
+    if (auth.error) return jsonResponse(req, { error: auth.error }, 401);
 
     const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
       method: 'POST',
@@ -37,13 +37,13 @@ Deno.serve(async (req) => {
     });
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok || !tokenData.access_token) {
-      return jsonResponse({ error: tokenData.error_description || tokenData.error || 'Échange de token Microsoft échoué' }, 400);
+      return jsonResponse(req, { error: tokenData.error_description || tokenData.error || 'Échange de token Microsoft échoué' }, 400);
     }
 
     await storeProviderTokens(auth.user.id, 'outlook', tokenData.access_token, tokenData.refresh_token);
 
-    return jsonResponse({ success: true });
+    return jsonResponse(req, { success: true });
   } catch (err) {
-    return jsonResponse({ error: String(err) }, 500);
+    return jsonResponse(req, { error: String(err) }, 500);
   }
 });

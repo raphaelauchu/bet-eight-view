@@ -37,21 +37,21 @@ Réponds uniquement avec l'objet JSON rempli, rien d'autre.`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders(req) });
   }
 
   try {
     const { image_base64, media_type } = await req.json();
     if (!image_base64 || !media_type) {
-      return jsonResponse({ error: 'image_base64 et media_type requis' }, 400);
+      return jsonResponse(req, { error: 'image_base64 et media_type requis' }, 400);
     }
 
     const auth = await getAuthenticatedUser(req);
-    if (auth.error) return jsonResponse({ error: auth.error }, 401);
+    if (auth.error) return jsonResponse(req, { error: auth.error }, 401);
 
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!anthropicKey) {
-      return jsonResponse({ error: "ANTHROPIC_API_KEY n'est pas configurée sur cette fonction" }, 500);
+      return jsonResponse(req, { error: "ANTHROPIC_API_KEY n'est pas configurée sur cette fonction" }, 500);
     }
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -76,18 +76,18 @@ Deno.serve(async (req) => {
 
     const data = await res.json();
     if (!res.ok) {
-      return jsonResponse({ error: data.error?.message || 'Erreur API Claude' }, 400);
+      return jsonResponse(req, { error: data.error?.message || 'Erreur API Claude' }, 400);
     }
 
     const texte = data.content?.[0]?.text || '';
     const jsonMatch = texte.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return jsonResponse({ error: "Impossible d'extraire les informations de ce screenshot" }, 400);
+      return jsonResponse(req, { error: "Impossible d'extraire les informations de ce screenshot" }, 400);
     }
 
     const extrait = JSON.parse(jsonMatch[0]);
-    return jsonResponse({ success: true, data: extrait });
+    return jsonResponse(req, { success: true, data: extrait });
   } catch (err) {
-    return jsonResponse({ error: String(err) }, 500);
+    return jsonResponse(req, { error: String(err) }, 500);
   }
 });
