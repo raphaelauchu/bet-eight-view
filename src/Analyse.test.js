@@ -125,7 +125,7 @@ test('buildMatchTab : construit un onglet "match" persistable a partir d\'un mat
   const tab = buildMatchTab(MATCH_BRUT);
   expect(tab.kind).toBe('match');
   expect(tab.id).toBe('2026020001');
-  expect(tab.nom).toBe('MTL @ TOR');
+  expect(tab.nom).toBe('MTL VS TOR');
   expect(tab.match.awayTeam.abbrev).toBe('MTL');
   expect(tab.match.homeTeam.abbrev).toBe('TOR');
 });
@@ -200,6 +200,17 @@ test('HockeyTicker : cliquer sur un match du bandeau appelle onSelectMatch avec 
   await waitFor(() => expect(screen.getAllByText('MTL').length).toBeGreaterThan(0));
   fireEvent.click(screen.getAllByText('MTL')[0].closest('div'));
   expect(onSelectMatch).toHaveBeenCalledWith(expect.objectContaining({ id: 2026020001 }));
+});
+
+test('HockeyTicker : aucune image (logo = texte), separateur "VS" (jamais "@"), equipes a domicile identifiables', async () => {
+  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ gameWeek: [{ games: [MATCH_BRUT] }] }) }));
+  const { container } = render(<HockeyTicker />);
+  await waitFor(() => expect(screen.getAllByText('MTL').length).toBeGreaterThan(0));
+  expect(container.querySelectorAll('img').length).toBe(0); // regle finale : logo d'equipe = texte seul, jamais une image
+  expect(container.innerHTML).not.toMatch(/assets\.nhle\.com/);
+  expect(screen.getAllByText('VS').length).toBeGreaterThan(0); // "@" remplace partout par "VS"
+  expect(container.innerHTML).not.toContain('>@<');
+  expect(screen.getAllByText('TOR')[0]).toHaveAttribute('title', 'À domicile'); // TOR = domicile dans MATCH_BRUT
 });
 
 // ===================== Composant : AnalysesFlux =====================
@@ -301,7 +312,7 @@ test('ouverture d\'un onglet match depuis le calendrier', async () => {
   await waitFor(() => expect(screen.getByText('Canadiens')).toBeInTheDocument());
   fireEvent.click(screen.getByText('Canadiens').closest('div[style*="cursor: pointer"]'));
 
-  await waitFor(() => expect(screen.getByText(/MTL @ TOR/)).toBeInTheDocument()); // libelle de l'onglet (span "🆚 MTL @ TOR")
+  await waitFor(() => expect(screen.getByText(/MTL VS TOR/)).toBeInTheDocument()); // libelle de l'onglet (span "🆚 MTL VS TOR")
 }, 15000);
 
 test('ajout/retrait de favori : le bouton etoile insere puis supprime dans watchlist_items', async () => {

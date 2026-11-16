@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useIsMobile, useSaisonCourante, LOGOS_NHL, playerPhotoUrl } from './Analyses';
+import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
+import { TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
 
 const POS_ORDER = ['F', 'D', 'G'];
 const POS_LABELS = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
@@ -859,10 +860,9 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = 'var(--c-222)'; }}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      <img src={playerPhotoUrl(seasonId, r.teamAbbrev, r.playerId, { goalie: r.positionCode === 'G' })} alt={r.name}
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0, pointerEvents: 'none' }}
-                        onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
-                      <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0, pointerEvents: 'none' }} onError={e => { e.target.style.display = 'none'; }} />
+                      {r.positionCode === 'G'
+                        ? <GoalieMask teamAbbrev={r.teamAbbrev} size={36} alt={r.name} />
+                        : <PlayerHelmet teamAbbrev={r.teamAbbrev} size={36} alt={r.name} />}
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{r.name}</div>
                         <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : 'var(--c-666)' }}>
@@ -906,8 +906,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
       {ajoutManuel && (
         <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid rgba(167,139,250,0.35)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-            <img src={ajoutManuel.equipe ? LOGOS_NHL[ajoutManuel.equipe] : undefined} alt={ajoutManuel.equipe || 'logo'}
-              style={{ width: '36px', height: '36px', objectFit: 'contain', backgroundColor: 'var(--c-111)', borderRadius: '8px', visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }} />
+            <div style={{ visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }}>
+              {ajoutManuel.positionCode === 'G'
+                ? <GoalieMask teamAbbrev={ajoutManuel.equipe} size={36} />
+                : <PlayerHelmet teamAbbrev={ajoutManuel.equipe} size={36} />}
+            </div>
             <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ajouter un joueur manuellement</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '12px' }}>
@@ -951,9 +954,9 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-              <img src={playerPhotoUrl(seasonId, choixEnAttente.equipe, choixEnAttente.id, { goalie: choixEnAttente.posReel === 'G' })} alt={choixEnAttente.nom}
-                style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
-                onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[choixEnAttente.equipe]; }} />
+              {choixEnAttente.posReel === 'G'
+                ? <GoalieMask teamAbbrev={choixEnAttente.equipe} size={48} alt={choixEnAttente.nom} />
+                : <PlayerHelmet teamAbbrev={choixEnAttente.equipe} size={48} alt={choixEnAttente.nom} />}
               <div>
                 <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{choixEnAttente.nom}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
@@ -1003,13 +1006,13 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 const disponible = estDisponible(j.id);
                 return (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                    <img src={playerPhotoUrl(seasonId, j.equipe, j.id, { goalie: j.posReel === 'G' })} alt={j.nom}
-                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
-                      onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[j.equipe]; }} />
+                    {j.posReel === 'G'
+                      ? <GoalieMask teamAbbrev={j.equipe} size={36} alt={j.nom} />
+                      : <PlayerHelmet teamAbbrev={j.equipe} size={36} alt={j.nom} />}
                     <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
                     <div style={{ flex: 1, minWidth: '100px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '14px', height: '14px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                        <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '11px' }} />
                         {j.nom}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>
@@ -1079,7 +1082,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     return (
                       <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid var(--c-161616)' }}>
                         <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '18px' }}>{j.pick}</span>
-                        <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                        <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '12px' }} />
                         <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', fontWeight: '700' }}>Équipe : {j.equipe}</span>
                         <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: 'var(--c-444)', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                       </div>
@@ -1196,7 +1199,7 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
           <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Équipe favorite</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px' }}>
             <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '20px' }}>#{j.pick}</span>
-            <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+            <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '15px' }} />
             <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{j.equipe}</span>
           </div>
         </div>

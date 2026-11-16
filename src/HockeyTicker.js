@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
-import { teamCrestUri } from './BrandAssets';
+import { TeamAbbrevText } from './BrandAssets';
 
-// Vraies URLs de logos LNH, conservees telles quelles -- utilisees uniquement si
-// USE_LICENSED_NHL_ASSETS repasse a true (voir derivation de LOGOS_NHL plus bas).
+// Vraies URLs de logos LNH : plus jamais utilisees comme image (regle finale -- logo d'equipe
+// = abreviation en texte seul, partout, voir TeamAbbrevText). Liste gardee ici telle quelle,
+// non utilisee pour le rendu, au cas ou une liste d'abreviations serait utile ailleurs.
 const LOGOS_NHL_REAL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
   'BUF': 'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',
@@ -39,13 +39,6 @@ const LOGOS_NHL_REAL = {
   'UTA': 'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',
   'PIT': 'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg',
 };
-
-// Badges d'equipe neutres (voir src/BrandAssets.js) tant qu'aucune licence n'existe -- voir
-// src/Analyses.js pour la meme derivation (dupliquee ici, ce fichier a toujours eu sa propre
-// copie locale de LOGOS_NHL plutot que de l'importer).
-const LOGOS_NHL = USE_LICENSED_NHL_ASSETS
-  ? LOGOS_NHL_REAL
-  : Object.fromEntries(Object.keys(LOGOS_NHL_REAL).map(abbrev => [abbrev, teamCrestUri(abbrev)]));
 
 function getDateAujourdhui() {
   const now = new Date();
@@ -127,8 +120,8 @@ function HockeyTicker({ onMatchsCharge, onSelectMatch }) {
               height: '52px',
               cursor: 'pointer',
             }}>
-              <img src={LOGOS_NHL[visiteur]} alt={visiteur} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-              <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{visiteur}</span>
+              <TeamAbbrevText teamAbbrev={visiteur} style={{ fontSize: '13px' }} />
+              <span style={{ fontSize: '12px', color: 'var(--c-666)', fontWeight: '700' }}>VS</span>
               {etat === 'LIVE' || etat === 'CRIT' ? (
                 <span style={{ fontSize: '13px', color: '#ef4444', fontWeight: 'bold' }}>
                   {scoreVis} - {scoreDom}
@@ -136,8 +129,7 @@ function HockeyTicker({ onMatchsCharge, onSelectMatch }) {
               ) : (
                 <span style={{ fontSize: '12px', color: '#6366f1' }}>{heure}</span>
               )}
-              <span style={{ fontSize: '13px', color: 'var(--c-ccc)' }}>{domicile}</span>
-              <img src={LOGOS_NHL[domicile]} alt={domicile} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+              <TeamAbbrevText teamAbbrev={domicile} style={{ fontSize: '13px' }} title="À domicile" />
             </div>
           );
         })}

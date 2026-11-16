@@ -250,7 +250,7 @@ export default function PlayerCard({
         </div>
       )}
 
-      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} size={photoSize} />}
+      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={photoSize} />}
       {!isTeam && row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={size === 'L' ? 18 : 14} />}
       <div className="player-card-name">{row.label}</div>
       {!isTeam && <div className="player-card-pos">{row.pos_group}</div>}

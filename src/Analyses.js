@@ -9,7 +9,7 @@ import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetA
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import HockeyTicker from './HockeyTicker';
 import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
-import { playerAvatarUri, teamCrestUri, TeamJersey } from './BrandAssets';
+import { playerAvatarUri, teamCrestUri, TeamJersey, TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
 
 // ===================== Photos de joueurs et logos d'equipe (voir src/brandAssetsConfig.js) ===
 // Tant que USE_LICENSED_NHL_ASSETS est a false (aucune licence LNH/NHLPA), aucune URL ne pointe
@@ -233,7 +233,7 @@ function CarrouselDivisions({ classement }) {
           {equipes.slice(0, 10).map((e, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : 'var(--c-1a1a1a)', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
               <span style={{ color: i < 3 ? '#f97316' : 'var(--c-555)', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
-              <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '24px', height: '24px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+              <TeamAbbrevText teamAbbrev={e.teamAbbrev?.default} style={{ fontSize: '13px' }} />
               <span style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}>{e.teamAbbrev?.default}</span>
               <span style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{e.points} pts</span>
             </div>
@@ -273,7 +273,7 @@ function CarrouselMeneurs({ meneurs }) {
             {cat.data.map((j, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: i === 0 ? 'rgba(249,115,22,0.1)' : 'var(--c-1a1a1a)', borderRadius: '8px', padding: '5px 12px', border: i === 0 ? '1px solid rgba(249,115,22,0.3)' : '1px solid transparent' }}>
                 <span style={{ color: i === 0 ? '#f97316' : 'var(--c-555)', fontWeight: 'bold', fontSize: '13px', width: '18px', textAlign: 'center' }}>{i + 1}</span>
-                <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} />
+                <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '14px' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{j.nom}</div>
                   <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{j.equipe} · {j.position}</div>
@@ -419,7 +419,7 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
     <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '18px', marginBottom: '18px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr', gap: '8px' }}>
         <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', border: '1px solid var(--c-222)', padding: '12px', textAlign: 'center' }}>
-          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={abbrev1} style={{ fontSize: '16px', marginBottom: '6px' }} />
           <div style={{ fontSize: '11px', color: 'var(--c-white)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom1}</div>
           <div style={{ marginBottom: '8px' }}>
             <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Moneyline</div>
@@ -436,7 +436,7 @@ function BlocCotesSportsbook({ donnees, abbrev1, abbrev2, nom1, nom2, dejaJoue }
           <div style={{ fontSize: '9px', color: 'var(--c-555)', fontWeight: 'bold', letterSpacing: '1px' }}>O/U</div>
         </div>
         <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '12px', border: '1px solid var(--c-222)', padding: '12px', textAlign: 'center' }}>
-          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '30px', height: '30px', objectFit: 'contain', marginBottom: '6px' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={abbrev2} style={{ fontSize: '16px', marginBottom: '6px' }} />
           <div style={{ fontSize: '11px', color: 'var(--c-white)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{nom2}</div>
           <div style={{ marginBottom: '8px' }}>
             <div style={{ fontSize: '9px', color: 'var(--c-555)', marginBottom: '2px' }}>Moneyline</div>
@@ -522,7 +522,9 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <span style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '999px', padding: '3px 7px', fontSize: '10px', fontWeight: '900', flexShrink: 0 }}>o{ligneMaison.ligne}</span>
-      <img src={playerPhotoUrl(seasonIdDepuisDate(), joueur.equipe, joueur.id)} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      {joueur.position === 'G'
+        ? <GoalieMask teamAbbrev={joueur.equipe} size={isMobile ? 32 : 38} alt={joueur.nom} />
+        : <PlayerHelmet teamAbbrev={joueur.equipe} size={isMobile ? 32 : 38} alt={joueur.nom} />}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
         <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>#{joueur.numero}</div>
@@ -595,7 +597,7 @@ function SectionLignesMaison({ roster1, roster2, abbrev1, abbrev2, nom1, nom2, o
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '6px', borderBottom: '2px solid #f97316' }}>
-          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '12px' }} />
           <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h3>
         </div>
         {avecLigne.length === 0 ? (
@@ -814,7 +816,7 @@ function AlignementEquipe({ abbrev, nom, logo, joueurs, onSelect, isMobile, line
   return (
     <div style={{ marginBottom: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '2px solid #f97316' }}>
-        <img src={logo} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '20px' }} />
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h3>
       </div>
       <div style={{ marginBottom: '14px' }}>
@@ -889,13 +891,13 @@ function CarteMatchJoueurs({ match, onOpenMatchup }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px', flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          <TeamAbbrevText teamAbbrev={abbrev1} style={{ fontSize: '15px' }} />
           <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</span>
         </div>
-        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>VS</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</span>
-          <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          <TeamAbbrevText teamAbbrev={abbrev2} style={{ fontSize: '15px' }} title="À domicile" />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -940,7 +942,7 @@ function ListeMeneurs({ titre, joueurs, statKey, onSelectJoueur }) {
         onMouseEnter={e => e.currentTarget.style.borderColor = '#f97316'}
         onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(249,115,22,0.3)'}
       >
-        <img src={LOGOS_NHL[premier.equipe]} alt={premier.equipe} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <TeamAbbrevText teamAbbrev={premier.equipe} style={{ fontSize: '31px' }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: '900', fontSize: '15px', color: 'var(--c-white)' }}>{premier.nom}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '12px' }}>{premier.equipe}</div>
@@ -1068,7 +1070,7 @@ function OngletSkatersStats({ onSelectJoueur }) {
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <span style={{ color: 'var(--c-555)' }}>{j.rang}</span>
-                <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '14px' }} />
                 <span style={{ color: 'var(--c-white)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
                 <span style={{ color: 'var(--c-888)' }}>{j.equipe}</span>
                 {!isMobile && <span style={{ color: 'var(--c-888)' }}>{j.position}</span>}
@@ -1145,7 +1147,7 @@ function OngletGoaliesStats({ onSelectJoueur }) {
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <span style={{ color: 'var(--c-555)' }}>{j.rang}</span>
-                <img src={LOGOS_NHL[j.equipe]} alt={j.equipe} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '14px' }} />
                 <span style={{ color: 'var(--c-white)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</span>
                 <span style={{ color: 'var(--c-888)' }}>{j.equipe}</span>
                 <span style={{ color: 'var(--c-888)' }}>{j.gp}</span>
@@ -1340,7 +1342,9 @@ function PageStatsJoueurs({ onSelectJoueur }) {
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-161616)'}
                 >
                   <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--c-555)', minWidth: '28px' }}>#{i+1}</div>
-                  <img src={playerPhotoUrl(seasonIdDepuisDate(), p.equipe, p.id)} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display='none'} />
+                  {p.position === 'G'
+                    ? <GoalieMask teamAbbrev={p.equipe} size={40} alt={p.nom} />
+                    : <PlayerHelmet teamAbbrev={p.equipe} size={40} alt={p.nom} />}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', marginBottom: '2px' }}>{p.nom}</div>
                     <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{p.equipe} · {p.position}</div>
@@ -1544,7 +1548,7 @@ function EquipesParDivision({ classement, onSelectEquipe }) {
                 onMouseEnter={ev => ev.currentTarget.style.borderColor = '#f97316'}
                 onMouseLeave={ev => ev.currentTarget.style.borderColor = 'var(--c-222)'}
               >
-                <img src={LOGOS_NHL[e.teamAbbrev?.default]} alt={e.teamAbbrev?.default} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={ev => ev.target.style.display = 'none'} />
+                <TeamAbbrevText teamAbbrev={e.teamAbbrev?.default} style={{ fontSize: '15px' }} />
                 <span style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}>{e.teamAbbrev?.default}</span>
                 <span style={{ fontSize: '13px', fontWeight: '900', color: '#f97316' }}>{e.points} pts</span>
               </div>
@@ -1814,19 +1818,19 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
       <div onClick={() => setOuvert(!ouvert)} style={{ padding: isMobile ? '12px 14px' : '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e1); }} />
+            <TeamAbbrevText teamAbbrev={abbrev1} style={{ fontSize: '17px', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e1); }} />
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev1 : nom1}</div>
               <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{wins1}W-{losses1}L-{otl1}OT</div>
             </div>
           </div>
-          <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>@</span>
+          <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '13px' }}>VS</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div>
               <div style={{ fontWeight: 'bold', fontSize: isMobile ? '13px' : '14px' }}>{isMobile ? abbrev2 : nom2}</div>
               <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{wins2}W-{losses2}L-{otl2}OT</div>
             </div>
-            <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '32px', height: '32px', objectFit: 'contain', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e2); }} />
+            <TeamAbbrevText teamAbbrev={abbrev2} style={{ fontSize: '17px', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); onSelectEquipe(e2); }} />
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
@@ -1849,7 +1853,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr' }}>
             <div onClick={e => { e.stopPropagation(); if (e1) onSelectEquipe(e1); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: 'var(--c-111)' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--c-111)'}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <img src={LOGOS_NHL[abbrev1]} alt={abbrev1} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <TeamAbbrevText teamAbbrev={abbrev1} style={{ fontSize: '26px' }} />
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--c-white)' }}>{isMobile ? abbrev1 : nom1}</div>
                   <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{wins1}V · {losses1}D · {otl1}DP</div>
@@ -1874,7 +1878,7 @@ function CarteMatchEquipesDetaille({ match, classement, onSelectEquipe }) {
  
             <div onClick={e => { e.stopPropagation(); if (e2) onSelectEquipe(e2); }} style={{ padding: isMobile ? '14px' : '20px', cursor: 'pointer', backgroundColor: 'var(--c-111)' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--c-111)'}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <img src={LOGOS_NHL[abbrev2]} alt={abbrev2} style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <TeamAbbrevText teamAbbrev={abbrev2} style={{ fontSize: '26px' }} />
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--c-white)' }}>{isMobile ? abbrev2 : nom2}</div>
                   <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{wins2}V · {losses2}D · {otl2}DP</div>
@@ -2245,7 +2249,7 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
       </div>
  
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px' }}>
-        <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+        <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: isMobile ? '33px' : '40px' }} />
         <div style={{ flex: 1 }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h2>
           <div style={{ color: 'var(--c-666)', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
@@ -2264,8 +2268,9 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
           <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', marginBottom: '2px' }}>PROCHAIN</div>
           {prochainMatch ? (
             <>
-              <img src={LOGOS_NHL[prochainMatch.abbrev]} alt={prochainMatch.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain', margin: '2px 0' }} onError={e => e.target.style.display = 'none'} />
-              <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{prochainMatch.domicile ? 'vs' : '@'} {prochainMatch.abbrev}</div>
+              <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>
+                VS <TeamAbbrevText teamAbbrev={prochainMatch.abbrev} style={{ fontSize: '13px' }} title={!prochainMatch.domicile ? 'À domicile' : undefined} />
+              </div>
               <div style={{ color: 'var(--c-555)', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
             </>
           ) : (
@@ -2832,14 +2837,14 @@ const getMatchsChart = () => {
   <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
 </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
-        <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px', objectFit: 'contain' }} />
+        <TeamAbbrevText teamAbbrev={joueur.equipe} style={{ fontSize: isMobile ? '33px' : '40px' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
           <div
             onClick={onSelectTeam ? () => onSelectTeam(joueur.equipe) : undefined}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '6px', cursor: onSelectTeam ? 'pointer' : 'default', minHeight: onSelectTeam ? '28px' : 'auto' }}
           >
-            <img src={LOGOS_NHL[joueur.equipe]} alt={joueur.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+            <TeamAbbrevText teamAbbrev={joueur.equipe} style={{ fontSize: '10px' }} />
             <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
           </div>
         </div>
@@ -2853,8 +2858,9 @@ const getMatchsChart = () => {
             <div style={{ color: 'var(--c-666)', fontSize: '9px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '2px' }}>MATCHUP</div>
             {prochainAdversaire ? (
               <>
-                <img src={LOGOS_NHL[prochainAdversaire.abbrev]} alt={prochainAdversaire.abbrev} style={{ width: '22px', height: '22px', objectFit: 'contain', margin: '2px 0' }} onError={e => e.target.style.display = 'none'} />
-                <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>{prochainAdversaire.domicile ? 'vs' : '@'} {prochainAdversaire.abbrev}</div>
+                <div style={{ color: '#f97316', fontSize: '13px', fontWeight: '900' }}>
+                  VS <TeamAbbrevText teamAbbrev={prochainAdversaire.abbrev} style={{ fontSize: '13px' }} title={!prochainAdversaire.domicile ? 'À domicile' : undefined} />
+                </div>
                 <div style={{ color: 'var(--c-555)', fontSize: '8px', marginTop: '1px' }}>{new Date(prochainAdversaire.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' })}</div>
               </>
             ) : (
@@ -3425,13 +3431,15 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={playerPhotoUrl(seasonId, joueur.equipe, joueur.id, { goalie: joueur.position === 'G' })} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          {joueur.position === 'G'
+            ? <GoalieMask teamAbbrev={joueur.equipe} size={56} alt={joueur.nom} />
+            : <PlayerHelmet teamAbbrev={joueur.equipe} size={56} alt={joueur.nom} />}
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
-        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>VS</div>
         <div style={{ textAlign: 'center', cursor: gardienPartant ? 'pointer' : 'default' }} onClick={selectionnerGardien}>
-          <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={adversaireAbbrev} style={{ fontSize: '31px' }} title={!prochainMatch?.domicile ? 'À domicile' : undefined} />
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>
             {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
@@ -3475,7 +3483,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <img src={gardienPartant.photo} alt={gardienPartant.nom} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[adversaireAbbrev]; e.target.style.objectFit = 'contain'; }} />
+              <GoalieMask teamAbbrev={adversaireAbbrev} size={48} alt={gardienPartant.nom} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: 'var(--c-white)', fontSize: '15px', fontWeight: '900' }}>{gardienPartant.nom}</div>
                 <div style={{ color: 'var(--c-666)', fontSize: '11px' }}>{adversaireAbbrev} · {gardienPartant.gamesStarted} départs cette saison</div>
@@ -3684,13 +3692,15 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={playerPhotoUrl(seasonId, joueur.equipe, joueur.id, { goalie: joueur.position === 'G' })} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          {joueur.position === 'G'
+            ? <GoalieMask teamAbbrev={joueur.equipe} size={56} alt={joueur.nom} />
+            : <PlayerHelmet teamAbbrev={joueur.equipe} size={56} alt={joueur.nom} />}
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
-        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>{prochainMatch?.domicile ? 'VS' : '@'}</div>
+        <div style={{ color: 'var(--c-444)', fontSize: '13px', fontWeight: '900' }}>VS</div>
         <div style={{ textAlign: 'center' }}>
-          <img src={LOGOS_NHL[adversaireAbbrev]} alt={adversaireAbbrev} style={{ width: '56px', height: '56px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={adversaireAbbrev} style={{ fontSize: '31px' }} title={!prochainMatch?.domicile ? 'À domicile' : undefined} />
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px' }}>{adversaireAbbrev}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>
             {prochainMatch?.gameDate ? new Date(prochainMatch.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}
@@ -3865,7 +3875,7 @@ function CategorieHistorique({ chargement, matchs, categorie, moyennePtsSaison, 
           >
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '12px', color: 'var(--c-white)', fontWeight: '600' }}>
-                {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
+                VS <span title={m.homeRoadFlag === 'H' ? undefined : 'À domicile'}>{m.opponentAbbrev}</span>
                 {m.resultatMatch && (
                   <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : 'var(--c-888)', fontWeight: '900', marginLeft: '6px' }}>
                     {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
@@ -3904,9 +3914,9 @@ function DetailMatchHistorique({ match, joueurNom, onBack }) {
       <button onClick={onBack} style={{ backgroundColor: 'transparent', color: 'var(--c-666)', border: '1px solid var(--c-333)', padding: '7px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', marginBottom: '16px' }}>Back</button>
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '20px', marginBottom: '14px', textAlign: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '10px' }}>
-          <img src={LOGOS_NHL[match.opponentAbbrev]} alt={match.opponentAbbrev} style={{ width: '48px', height: '48px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+          <TeamAbbrevText teamAbbrev={match.opponentAbbrev} style={{ fontSize: '26px' }} title={match.homeRoadFlag === 'H' ? undefined : 'À domicile'} />
           <div>
-            <div style={{ color: 'var(--c-white)', fontSize: '16px', fontWeight: '900' }}>{match.homeRoadFlag === 'H' ? 'vs' : '@'} {match.opponentAbbrev}</div>
+            <div style={{ color: 'var(--c-white)', fontSize: '16px', fontWeight: '900' }}>VS {match.opponentAbbrev}</div>
             <div style={{ color: 'var(--c-666)', fontSize: '11px', textTransform: 'capitalize' }}>{dateStr}</div>
           </div>
         </div>
@@ -4242,11 +4252,13 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
-        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '70px' : '86px', height: isMobile ? '70px' : '86px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display = 'none'} />
+        {infos?.position === 'G'
+          ? <GoalieMask teamAbbrev={infos?.equipe} size={isMobile ? 70 : 86} alt={infos?.nomComplet} />
+          : <PlayerHelmet teamAbbrev={infos?.equipe} size={isMobile ? 70 : 86} alt={infos?.nomComplet} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <TeamAbbrevText teamAbbrev={infos?.equipe} style={{ fontSize: '12px' }} />
             <span style={{ color: 'var(--c-666)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {infos?.position} · {infos?.nomEquipeComplet || infos?.equipe} ({infos?.equipe}) · #{infos?.numero}{infos?.main ? ` · ${formatMain(infos.main)}` : ''}
             </span>
@@ -4359,10 +4371,10 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {dernierMatchs.map((m, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-1a1a1a)', borderRadius: '10px', padding: '10px 12px' }}>
-                <img src={LOGOS_NHL[m.opponentAbbrev]} alt={m.opponentAbbrev} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <TeamAbbrevText teamAbbrev={m.opponentAbbrev} style={{ fontSize: '15px' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '12px', color: 'var(--c-white)', fontWeight: '600' }}>
-                    {m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}
+                    VS <span title={m.homeRoadFlag === 'H' ? undefined : 'À domicile'}>{m.opponentAbbrev}</span>
                     {m.scoreEquipe != null && (
                       <span style={{ color: m.resultatMatch === 'V' ? '#22c55e' : m.resultatMatch === 'D' ? '#ef4444' : 'var(--c-888)', fontWeight: '900', marginLeft: '6px' }}>
                         {m.resultatMatch} {m.scoreEquipe}-{m.scoreAdverse}
@@ -4438,7 +4450,7 @@ function BracketPlayoffs({ bracket }) {
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--c-333)', marginBottom: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={LOGOS_NHL[top?.abbrev]} alt={top?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <TeamAbbrevText teamAbbrev={top?.abbrev} style={{ fontSize: '11px' }} />
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.abbrev}</span>
           </div>
           <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.wins}</span>
@@ -4446,7 +4458,7 @@ function BracketPlayoffs({ bracket }) {
         <div style={{ height: '1px', backgroundColor: 'var(--c-222)', marginBottom: '4px' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={LOGOS_NHL[bot?.abbrev]} alt={bot?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <TeamAbbrevText teamAbbrev={bot?.abbrev} style={{ fontSize: '11px' }} />
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.abbrev}</span>
           </div>
           <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.wins}</span>
@@ -4565,7 +4577,7 @@ function WSCard({ theme, title, subtitle, children }) {
   );
 }
 
-function WSPlayerRow({ theme, rang, joueur, valeur, label, sousLabel, onClick }) {
+function WSPlayerRow({ theme, rang, joueur, valeur, label, sousLabel, onClick, goalie }) {
   return (
     <div
       onClick={onClick}
@@ -4574,12 +4586,9 @@ function WSPlayerRow({ theme, rang, joueur, valeur, label, sousLabel, onClick })
       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
     >
       <span style={{ width: '20px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: rang <= 3 ? theme.accent : theme.textFaint }}>{rang}</span>
-      <img
-        src={joueur.photo}
-        alt={joueur.nom}
-        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, border: `1px solid ${theme.cardBorder}`, flexShrink: 0 }}
-        onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[joueur.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.border = 'none'; }}
-      />
+      {goalie || joueur.position === 'G'
+        ? <GoalieMask teamAbbrev={joueur.equipe} size={42} alt={joueur.nom} />
+        : <PlayerHelmet teamAbbrev={joueur.equipe} size={42} alt={joueur.nom} />}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
         <div style={{ fontSize: '11.5px', color: theme.textMuted }}>{joueur.equipe}{sousLabel ? ` · ${sousLabel}` : ''}</div>
@@ -4739,7 +4748,7 @@ function SectionGardiens({ theme, parGAA, parSVP, onSelect, chargement }) {
       {chargement ? <WSLoading theme={theme} /> : liste.length === 0 ? <WSEmpty theme={theme} /> : (
         <div>
           {liste.map((g, i) => (
-            <WSPlayerRow key={g.id} theme={theme} rang={i + 1} joueur={g} valeur={tri === 'gaa' ? g.gaa : g.svp} label={tri === 'gaa' ? 'GAA' : 'SV%'} sousLabel={`${g.wins}V ${g.gp}PJ`} onClick={() => onSelect(g)} />
+            <WSPlayerRow key={g.id} theme={theme} rang={i + 1} joueur={g} goalie valeur={tri === 'gaa' ? g.gaa : g.svp} label={tri === 'gaa' ? 'GAA' : 'SV%'} sousLabel={`${g.wins}V ${g.gp}PJ`} onClick={() => onSelect(g)} />
           ))}
         </div>
       )}
@@ -4772,7 +4781,7 @@ function SectionEquipes({ theme, classement, onSelect, chargement }) {
                   onMouseLeave={ev => { ev.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
                   <span style={{ width: '20px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: i < 3 ? theme.accent : theme.textFaint }}>{i + 1}</span>
-                  <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '34px', height: '34px', objectFit: 'contain' }} onError={ev => { ev.target.style.display = 'none'; }} />
+                  <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '19px' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.teamName?.default || abbrev}</div>
                     <div style={{ fontSize: '11.5px', color: theme.textMuted }}>{e.wins ?? 0}-{e.losses ?? 0}-{e.otLosses ?? 0}</div>
@@ -4892,11 +4901,13 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
       <WSBackButton theme={theme} onClick={onBack} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <img src={infos?.headshot} alt={infos?.nomComplet} style={{ width: isMobile ? '76px' : '96px', height: isMobile ? '76px' : '96px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, border: `2px solid ${theme.cardBorder}` }} onError={e => { e.target.style.display = 'none'; }} />
+        {infos?.position === 'G'
+          ? <GoalieMask teamAbbrev={infos?.equipe} size={isMobile ? 76 : 96} alt={infos?.nomComplet} />
+          : <PlayerHelmet teamAbbrev={infos?.equipe} size={isMobile ? 76 : 96} alt={infos?.nomComplet} />}
         <div style={{ flex: 1, minWidth: '180px' }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{infos?.nomComplet}</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={infos?.teamLogo || LOGOS_NHL[infos?.equipe]} alt={infos?.equipe} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+            <TeamAbbrevText teamAbbrev={infos?.equipe} style={{ fontSize: '13px' }} />
             <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}{age != null ? ` · ${age} ans` : ''}</span>
           </div>
         </div>
@@ -4982,9 +4993,9 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 16px 16px' }}>
             {derniers.map((m, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: theme.cardHover, borderRadius: '12px', padding: '10px 14px' }}>
-                <img src={LOGOS_NHL[m.opponentAbbrev]} alt={m.opponentAbbrev} style={{ width: '26px', height: '26px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+                <TeamAbbrevText teamAbbrev={m.opponentAbbrev} style={{ fontSize: '14px' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '12.5px', color: theme.text, fontWeight: '600' }}>{m.homeRoadFlag === 'H' ? 'vs' : '@'} {m.opponentAbbrev}</div>
+                  <div style={{ fontSize: '12.5px', color: theme.text, fontWeight: '600' }}>VS <span title={m.homeRoadFlag === 'H' ? undefined : 'À domicile'}>{m.opponentAbbrev}</span></div>
                   <div style={{ fontSize: '10.5px', color: theme.textFaint }}>{m.gameDate ? new Date(m.gameDate + 'T12:00:00').toLocaleDateString('fr-CA', { month: 'short', day: 'numeric' }) : ''}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '11.5px', color: theme.textMuted, textAlign: 'center' }}>
@@ -5045,7 +5056,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
       <WSBackButton theme={theme} onClick={onBack} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '64px' : '80px', height: isMobile ? '64px' : '80px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+        <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: isMobile ? '35px' : '44px' }} />
         <div style={{ flex: 1, minWidth: '180px' }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{nom}</h2>
           <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>Division {equipe?.divisionName} · {equipe?.conferenceName}</span>
@@ -5356,7 +5367,7 @@ function buildMatchTab(match) {
   return {
     kind: 'match',
     id: String(match.id),
-    nom: `${awayAbbrev} @ ${homeAbbrev}`,
+    nom: `${awayAbbrev} VS ${homeAbbrev}`,
     match: {
       id: match.id,
       gameDate: match.gameDate,
@@ -5522,11 +5533,11 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
   const cardStyleLocal = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px', marginBottom: '14px' };
   const sectionTitleLocal = { color: 'var(--c-555)', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '10px', textTransform: 'uppercase' };
 
-  function equipeHeader(abbrev, nom, isFav, ml) {
+  function equipeHeader(abbrev, nom, isFav, ml, isHome) {
     return (
       <div style={{ flex: 1, textAlign: 'center', minWidth: 0 }}>
         <div onClick={() => onSelectTeam(abbrev)} style={{ cursor: 'pointer', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+          <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '24px' }} title={isHome ? 'À domicile' : undefined} />
           <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-white)' }}>{nom}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
@@ -5586,7 +5597,7 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-          <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '18px', height: '18px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+          <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '10px' }} />
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)' }}>{nom}</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '8px' }}>
@@ -5623,8 +5634,8 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         {equipeHeader(awayAbbrev, awayNom, isFavAway, mlAway)}
-        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '15px' }}>@</span>
-        {equipeHeader(homeAbbrev, homeNom, isFavHome, mlHome)}
+        <span style={{ color: 'var(--c-444)', fontWeight: 'bold', fontSize: '15px' }}>VS</span>
+        {equipeHeader(homeAbbrev, homeNom, isFavHome, mlHome, true)}
       </div>
 
       <div style={cardStyleLocal}>
@@ -5967,9 +5978,11 @@ function WatchlistPanel({ t, watchlist, formeCache, onOpen, onRemove }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : playerPhotoUrl(seasonIdDepuisDate(), w.equipe || '', w.ref_id)}
-                  alt={w.label} style={{ width: '28px', height: '28px', borderRadius: w.kind === 'team' ? 0 : '50%', objectFit: w.kind === 'team' ? 'contain' : 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }}
-                  onError={e => { e.target.style.display = 'none'; }} />
+                {w.kind === 'team'
+                  ? <TeamAbbrevText teamAbbrev={w.ref_id} style={{ fontSize: '14px', flexShrink: 0 }} />
+                  : (w.position === 'G'
+                    ? <GoalieMask teamAbbrev={w.equipe} size={28} alt={w.label} />
+                    : <PlayerHelmet teamAbbrev={w.equipe} size={28} alt={w.label} />)}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.label}</div>
                   <FormeRecenteStrip t={t} forme={formeCache[cacheKey]} />

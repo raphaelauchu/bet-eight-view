@@ -46,7 +46,7 @@ test('PlayerCard : points DANS CE POOL affiches, photo/nom/logo/position', () =>
   expect(screen.getByText('23.4')).toBeInTheDocument();
   expect(screen.getByText('Nick Suzuki')).toBeInTheDocument();
   expect(screen.getByText('F')).toBeInTheDocument();
-  expect(screen.getByAltText('MTL')).toBeInTheDocument();
+  expect(screen.getByText('MTL')).toBeInTheDocument();
 });
 
 test('PlayerCard : taille S/M/L -- classe CSS correspondante', () => {

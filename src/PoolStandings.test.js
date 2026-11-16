@@ -156,7 +156,7 @@ test('Classement : ecusson LNH (pool_roster_periods), nom du participant ET nom 
     return q;
   });
   await renderStandings();
-  expect(screen.getByAltText('MTL')).toBeInTheDocument(); // ecusson de Dave (rang 1)
+  expect(screen.getAllByText('MTL').length).toBeGreaterThan(0); // ecusson texte de Dave (rang 1)
   expect(screen.getByText('Dave')).toBeInTheDocument(); // nom du participant
   expect(screen.getByText('Equipe Dave')).toBeInTheDocument(); // nom d'equipe, affiche en plus
   expect(screen.getByText('-10')).toBeInTheDocument(); // ecart avec le premier (Alice, total_diff=10)

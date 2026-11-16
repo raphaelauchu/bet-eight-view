@@ -73,12 +73,19 @@ beforeEach(() => {
 test('fiche profil patineur : header NHL Edge, bio, stats de la saison en cours et bouton Analyser', async () => {
   global.fetch = buildMockFetch(LANDING_PATINEUR);
   const onAnalyser = jest.fn();
-  render(<FicheJoueurStats joueur={JOUEUR_PATINEUR} onBack={() => {}} onAnalyser={onAnalyser} />);
+  const { container } = render(<FicheJoueurStats joueur={JOUEUR_PATINEUR} onBack={() => {}} onAnalyser={onAnalyser} />);
 
   await waitFor(() => expect(screen.getByText('Nick Suzuki')).toBeInTheDocument());
 
   // En-tete : position, nom d'equipe complet + abreviation, numero, main.
   expect(screen.getByText(/C · Canadiens de Montréal \(MTL\) · #14 · G/)).toBeInTheDocument();
+
+  // Casque (PlayerHelmet, joueur de champ) en bonne et due forme dans l'en-tete -- jamais un
+  // <img> (ni cadre vide ni image cassee) et jamais une image hebergee sur un domaine LNH.
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  expect(container.innerHTML).not.toMatch(/assets\.nhle\.com/);
+  expect(screen.getByText('MTL')).toBeInTheDocument(); // abreviation d'equipe en texte (pas une image)
 
   // Bio.
   expect(screen.getByText("5'11\"")).toBeInTheDocument();
@@ -116,11 +123,16 @@ test('selecteur Carriere (patineur) : saison en cours en haut, +/- et PUN inclus
 
 test('fiche profil gardien : stats GAA/SV% de la saison en cours et tableau carriere PJ/V/MOY/%ARR/BL', async () => {
   global.fetch = buildMockFetch(LANDING_GARDIEN);
-  render(<FicheJoueurStats joueur={JOUEUR_GARDIEN} onBack={() => {}} />);
+  const { container } = render(<FicheJoueurStats joueur={JOUEUR_GARDIEN} onBack={() => {}} />);
   await waitFor(() => expect(screen.getByText('Jake Allen')).toBeInTheDocument());
 
   expect(screen.getByText('2.45')).toBeInTheDocument(); // GAA saison 2026-27 (pas 2.80, saison 2025-26)
   expect(screen.getByText('91.2%')).toBeInTheDocument(); // SV% saison 2026-27
+
+  // Masque de gardien (GoalieMask) dans l'en-tete -- jamais un <img>, jamais un domaine LNH.
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  expect(container.innerHTML).not.toMatch(/assets\.nhle\.com/);
 
   fireEvent.click(screen.getByText('Carrière'));
   ['Saison', 'Équipe', 'PJ', 'V', 'MOY', '%ARR', 'BL'].forEach(h => {

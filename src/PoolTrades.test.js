@@ -347,10 +347,14 @@ test('PoolTradesTab : contre-offre -- prerempli avec les memes joueurs, modifiab
 // ===================== Agents libres : filtres, blessures, remplacement =====================
 
 test('PoolWaiversTab : grille de PlayerCard avec filtre "Blesses" (player_injuries reel, jamais invente)', async () => {
-  render(<PoolWaiversTab pool={POOL} members={MEMBERS} utilisateur={{ id: 'u-moi' }} lang="fr" />);
+  const { container } = render(<PoolWaiversTab pool={POOL} members={MEMBERS} utilisateur={{ id: 'u-moi' }} lang="fr" />);
   await waitFor(() => expect(screen.getByText('Agent Libre Sain')).toBeInTheDocument());
   expect(screen.getByText('Agent Libre Blesse')).toBeInTheDocument();
   expect(screen.getByLabelText(/Blessure :/, { selector: 'span' })).toBeInTheDocument();
+
+  // Agents libres : vignette casque/masque (PlayerAvatar), jamais une photo/logo LNH.
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
 
   fireEvent.click(screen.getByText('Blessés'));
   expect(screen.queryByText('Agent Libre Sain')).not.toBeInTheDocument();

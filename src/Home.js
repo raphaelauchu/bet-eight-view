@@ -350,8 +350,8 @@ function TonightGamesCard({ t, loading, games, selectedDate, todayStr, onOpenTea
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>@</span>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{home}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>VS</span>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }} title="À domicile">{home}</span>
                 </div>
                 {isLive ? (
                   <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
@@ -751,8 +751,8 @@ function MobileHomeDashboard({ t, data, onGoToBets }) {
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
                     <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>@</span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{home}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>VS</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }} title="À domicile">{home}</span>
                   </div>
                   {isLive ? (
                     <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>

@@ -56,7 +56,7 @@ beforeEach(() => {
 
 test('PoolHomeDashboard : ecussons de tous les participants', async () => {
   render(<PoolHomeDashboard pool={POOL} members={MEMBERS} myMember={MY_MEMBER} lang="fr" />);
-  await waitFor(() => expect(screen.getAllByAltText('BOS').length).toBeGreaterThan(0)); // ecusson d'Alice
+  await waitFor(() => expect(screen.getAllByText('BOS').length).toBeGreaterThan(0)); // ecusson (texte) d'Alice
   expect(screen.getAllByText('Moi').length).toBeGreaterThan(0);
   expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
 });
@@ -69,7 +69,8 @@ test('PoolHomeDashboard : top 3 du classement', async () => {
 
 test('PoolHomeDashboard : prochains matchs de mes joueurs (MTL, via mon roster actif)', async () => {
   render(<PoolHomeDashboard pool={POOL} members={MEMBERS} myMember={MY_MEMBER} lang="fr" />);
-  await waitFor(() => expect(screen.getByText('TOR @ MTL')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getAllByText('TOR').length).toBeGreaterThan(0));
+  expect(screen.getAllByText('MTL').length).toBeGreaterThan(0);
 });
 
 test('PoolHomeDashboard : aucun match a venir -- etat vide propre', async () => {

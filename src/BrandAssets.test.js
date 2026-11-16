@@ -112,26 +112,29 @@ function makeRow(overrides) {
   return { kind: 'player', ref_id: '8480018', label: 'Nick Suzuki', pos_group: 'F', team_abbrev: 'MTL', total_points: 10, ...overrides };
 }
 
-test('PlayerCard (variant="default") : aucune image chargee depuis un domaine LNH', () => {
+test('PlayerCard (variant="default") : casque SVG inline, abreviation d\'equipe en texte, aucune image', () => {
   const { container } = render(<PlayerCard row={makeRow()} lang="fr" seasonId="20262027" />);
-  const imgs = container.querySelectorAll('img');
-  expect(imgs.length).toBeGreaterThan(0);
-  imgs.forEach(img => expect(pointsToNhlDomain(img.getAttribute('src'))).toBe(false));
+  // Casque (PlayerAvatar/PlayerHelmet) + logo d'equipe (TeamLogo/TeamAbbrevText) = jamais un <img>.
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  expect(container.innerHTML).toContain('>MTL<');
+  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
 });
 
 test('PlayerCard (variant="formation") : chandail SVG inline (numero inconnu -> initiales), aucune image LNH', () => {
   const { container } = render(<PlayerCard row={makeRow({ pos_group: 'G' })} variant="formation" lang="fr" seasonId="20262027" />);
-  // Le chandail (photo) est desormais un <svg> inline (TeamJersey) ; le petit badge d'equipe
-  // (TeamLogo, pcf-footer) reste un <img> (data: URI, voir PoolDraftRoom.js), c'est attendu.
+  // Le chandail (TeamJersey) et le petit badge d'equipe (TeamLogo/TeamAbbrevText) sont tous les
+  // deux du SVG/texte inline -- plus aucun <img> dans cette variante non plus.
+  expect(container.querySelectorAll('img').length).toBe(0);
   expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
   expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
   // "Nick Suzuki" sans numero connu (fetch de roster non resolu en test) -> initiales "NS".
   expect(container.innerHTML).toContain('>NS<');
 });
 
-test('PlayerCard : logo d\'equipe (kind="team") -- aucune image LNH non plus', () => {
+test('PlayerCard : logo d\'equipe (kind="team") -- abreviation en texte, aucune image', () => {
   const { container } = render(<PlayerCard row={{ kind: 'team', ref_id: 'MTL', label: 'MTL', total_points: 5 }} lang="fr" seasonId="20262027" />);
-  const imgs = container.querySelectorAll('img');
-  expect(imgs.length).toBeGreaterThan(0);
-  imgs.forEach(img => expect(pointsToNhlDomain(img.getAttribute('src'))).toBe(false));
+  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.innerHTML).toContain('>MTL<');
+  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
 });

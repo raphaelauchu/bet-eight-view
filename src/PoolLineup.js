@@ -15,7 +15,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { useIsMobile, useSaisonCourante } from './Analyses';
-import { useNhlPlayers, PlayerAvatar, TeamLogo, headshotUrl, memberLabel, round1 } from './PoolDraftRoom';
+import { useNhlPlayers, PlayerAvatar, TeamLogo, memberLabel, round1 } from './PoolDraftRoom';
 import { mirrorEligibleSlots } from './poolRules';
 
 const card = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-161616)', padding: '16px' };
@@ -71,7 +71,7 @@ function PlayerCard({ row, seasonId, lang, canEdit, isMobile, selected, onSelect
         border: selected ? '1px solid #f97316' : '1px solid var(--c-1a1a1a)',
         cursor: canEdit ? (isMobile ? 'pointer' : 'grab') : 'default',
       }}>
-      <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} size={28} />
+      <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={28} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>

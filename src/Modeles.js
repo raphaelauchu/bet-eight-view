@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getUrl } from './nhlApi';
-import { LOGOS_NHL, useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch } from './Analyses';
+import { useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch } from './Analyses';
+import { TeamAbbrevText, PlayerHelmet } from './BrandAssets';
 import { getModeles, filtrerMatchsPourModele, genererRecommandation, genererROISpecifique } from './modelesData';
 
 function CarteAccueil({ icone, titre, onClick }) {
@@ -175,10 +176,9 @@ function DetailModele({ modele, onBack, embedded }) {
         <div style={{ backgroundColor: 'rgba(249,115,22,0.06)', borderRadius: '14px', border: '1px solid rgba(249,115,22,0.35)', padding: isMobile ? '12px 14px' : '16px 20px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <span style={{ backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '900', letterSpacing: '0.5px', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>TOP PICK</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-            <img src={LOGOS_NHL[topPick.abbrevAway]} alt={topPick.abbrevAway} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: 'var(--c-666)', fontSize: '13px', fontWeight: 'bold' }}>@</span>
-            <img src={LOGOS_NHL[topPick.abbrevHome]} alt={topPick.abbrevHome} style={{ width: '28px', height: '28px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <span style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', marginLeft: '4px' }}>{topPick.abbrevAway} @ {topPick.abbrevHome}</span>
+            <TeamAbbrevText teamAbbrev={topPick.abbrevAway} style={{ fontSize: '14px' }} />
+            <span style={{ color: 'var(--c-666)', fontSize: '13px', fontWeight: 'bold' }}>VS</span>
+            <TeamAbbrevText teamAbbrev={topPick.abbrevHome} style={{ fontSize: '14px' }} title="À domicile" />
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: '16px', fontWeight: '900', color: '#f97316' }}>{topPick.favoriAbbrev} · {topPick.probFavori}%</div>
@@ -244,7 +244,7 @@ function DetailModele({ modele, onBack, embedded }) {
                   const label = date ? `${date.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' })} · ${date.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}` : '';
                   return (
                     <option key={m.id} value={m.id}>
-                      {m.awayTeam?.abbrev} @ {m.homeTeam?.abbrev} · {label}
+                      {m.awayTeam?.abbrev} VS {m.homeTeam?.abbrev} · {label}
                     </option>
                   );
                 })}
@@ -261,21 +261,21 @@ function DetailModele({ modele, onBack, embedded }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
             {modele.type === 'equipe' ? (
               <>
-                <img src={LOGOS_NHL[recommandation.abbrev]} alt={recommandation.abbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <TeamAbbrevText teamAbbrev={recommandation.abbrev} style={{ fontSize: '20px' }} />
                 <div>
                   <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>{recommandation.nom}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>{recommandation.domicile ? 'À domicile' : 'À l\'étranger'} · {matchSelectionne.awayTeam?.abbrev} @ {matchSelectionne.homeTeam?.abbrev}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>{recommandation.domicile ? 'À domicile' : 'À l\'étranger'} · {matchSelectionne.awayTeam?.abbrev} VS {matchSelectionne.homeTeam?.abbrev}</div>
                 </div>
               </>
             ) : (
               <>
-                <img src={LOGOS_NHL[recommandation.equipeCibleAbbrev]} alt={recommandation.equipeCibleAbbrev} style={{ width: '44px', height: '44px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+                <PlayerHelmet teamAbbrev={recommandation.equipeCibleAbbrev} size={44} alt={joueurRecommande?.nom} />
                 <div>
                   <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--c-white)' }}>
                     {chargementJoueur ? 'Chargement...' : (joueurRecommande?.nom || 'Joueur indisponible')}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--c-888)' }}>
-                    {joueurRecommande?.numero ? `#${joueurRecommande.numero} · ` : ''}{recommandation.equipeCibleAbbrev} · {matchSelectionne.awayTeam?.abbrev} @ {matchSelectionne.homeTeam?.abbrev}
+                    {joueurRecommande?.numero ? `#${joueurRecommande.numero} · ` : ''}{recommandation.equipeCibleAbbrev} · {matchSelectionne.awayTeam?.abbrev} VS {matchSelectionne.homeTeam?.abbrev}
                   </div>
                 </div>
               </>

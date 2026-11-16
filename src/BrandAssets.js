@@ -67,6 +67,33 @@ function resolveColors(teamAbbrev) {
   return teamColors(teamAbbrev);
 }
 
+// ===================== Logo d'equipe = texte seul (regle finale, partout) =====================
+// Plus aucune image/chandail pour representer une equipe (listes, bandeau des matchs,
+// classements, calendrier, playoffs, picks, watchlist...) -- seulement son abreviation, dans la
+// couleur principale de l'equipe SI le contraste est AA (>= 4.5:1) contre le fond sombre habituel
+// de l'app, sinon la couleur de texte normale du contexte (null : l'appelant garde son style).
+const APP_DARK_BG = '#111111';
+
+export function teamAbbrevColor(teamAbbrev, bgHex = APP_DARK_BG) {
+  const { primary } = resolveColors(teamAbbrev);
+  return contrastRatio(primary, bgHex) >= 4.5 ? primary : null;
+}
+
+export function TeamAbbrevText({ teamAbbrev, bg = APP_DARK_BG, style, className, onClick, title }) {
+  const color = teamAbbrevColor(teamAbbrev, bg);
+  const abbrev = (teamAbbrev || '').toUpperCase();
+  return (
+    <span
+      className={className}
+      title={title}
+      onClick={onClick}
+      style={{ fontWeight: 800, letterSpacing: '0.02em', ...(color ? { color } : {}), ...style }}
+    >
+      {abbrev}
+    </span>
+  );
+}
+
 // ===================== Logo "B" de Betrics =====================
 // Trace vectoriel fidele de public/logo512.png (potrace, puis normalise dans un cadre
 // 293.577535 x 265.564600 -- voir docs/avatar-previews/README si present) : 4 sous-chemins
@@ -120,7 +147,7 @@ function PlayerHelmetSvg({ teamAbbrev, size = 44, idPrefix, title, className }) 
   const gVisor = `h-visor-${idPrefix}`;
   const gShadow = `h-shadow-${idPrefix}`;
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
       <defs>
         <linearGradient id={gShell} x1="20%" y1="0%" x2="85%" y2="100%">
           <stop offset="0%" stopColor={shade(primary, 0.32)} />
@@ -204,7 +231,7 @@ function GoalieMaskSvg({ teamAbbrev, size = 44, idPrefix, title, className }) {
   const gShell = `m-shell-${idPrefix}`;
   const gShadow = `m-shadow-${idPrefix}`;
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
       <defs>
         <linearGradient id={gShell} x1="15%" y1="0%" x2="85%" y2="100%">
           <stop offset="0%" stopColor={shade(primary, 0.3)} />
@@ -304,7 +331,7 @@ function TeamJerseySvg({ teamAbbrev, name, number, size = 44, compact, idPrefix,
   const nameFontSize = fitFontSize(nameLabel, 58, 15, 8);
 
   return (
-    <svg viewBox="0 0 100 120" width={size} height={size * 1.2} role="img" aria-label={title || ''} className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width={size} height={size * 1.2} role="img" aria-label={title || ''} className={className}>
       <defs>
         <linearGradient id={gBody} x1="30%" y1="0%" x2="70%" y2="100%">
           <stop offset="0%" stopColor={shade(primary, 0.2)} />
@@ -369,7 +396,7 @@ function TeamCrestSvg({ teamAbbrev, size = 24, idPrefix, title, className }) {
   const { primary, secondary } = resolveColors(teamAbbrev);
   const gBody = `c-body-${idPrefix}`;
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
       <defs>
         <linearGradient id={gBody} x1="30%" y1="0%" x2="70%" y2="100%">
           <stop offset="0%" stopColor={shade(primary, 0.22)} />
@@ -392,6 +419,12 @@ export function PlayerHelmet({ teamAbbrev, goalie, size = 44, alt, className }) 
   return goalie
     ? <GoalieMaskSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />
     : <PlayerHelmetSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />;
+}
+
+// Alias explicite de PlayerHelmet (goalie=true) : rendu identique, nom plus clair quand
+// l'appelant connait deja la position (C · MTL · #14 -- G = masque, F/D = casque, voir rule C).
+export function GoalieMask({ teamAbbrev, size = 44, alt, className }) {
+  return <PlayerHelmet teamAbbrev={teamAbbrev} goalie size={size} alt={alt} className={className} />;
 }
 
 export function TeamJersey({ teamAbbrev, name, number, size = 44, compact, alt, className }) {

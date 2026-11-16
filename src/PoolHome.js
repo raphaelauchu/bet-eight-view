@@ -111,9 +111,8 @@ export function PoolHomeDashboard({ pool, members, myMember, lang }) {
         ) : upcoming.map(g => (
           <div key={g.game_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', borderTop: '1px solid var(--c-111)', fontSize: '12px' }}>
             <TeamLogo abbrev={g.away_abbrev} size={20} />
-            <span style={{ color: 'var(--c-666)' }}>@</span>
-            <TeamLogo abbrev={g.home_abbrev} size={20} />
-            <span style={{ color: 'var(--c-white)' }}>{g.away_abbrev} @ {g.home_abbrev}</span>
+            <span style={{ color: 'var(--c-666)' }}>VS</span>
+            <TeamLogo abbrev={g.home_abbrev} size={20} title="À domicile" />
             <span style={{ color: 'var(--c-666)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
               {new Date(g.game_date + 'T12:00:00').toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-US', { month: 'short', day: 'numeric' })}
             </span>
