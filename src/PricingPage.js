@@ -73,8 +73,8 @@ export default function PricingPage({ lang, onOpenAuth }) {
                 ].map(([key, free, elite]) => (
                   <tr key={key}>
                     <td>{t(key)}</td>
-                    <td>{free ? '✓' : '—'}</td>
-                    <td>{elite ? '✓' : '—'}</td>
+                    <td><span className={free ? 'ws-pricing-yes' : 'ws-pricing-no'}>{free ? '✓' : '—'}</span></td>
+                    <td><span className={elite ? 'ws-pricing-yes' : 'ws-pricing-no'}>{elite ? '✓' : '—'}</span></td>
                   </tr>
                 ))}
               </tbody>

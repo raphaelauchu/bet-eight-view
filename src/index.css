@@ -1681,16 +1681,18 @@ body {
    Conteneur ~1240px (voir docs/landing-inspiration.md), rayons imbriques degressifs et halo
    colore ancre a un coin derriere les captures produit, un seul style de bouton plein. */
 .landing-root {
-  --landing-bg: #070707;
-  --landing-bg-alt: #0a0a0a;
-  --landing-surface: #0d0d0d;
-  --landing-border: rgba(255,255,255,0.08);
-  --landing-border-strong: rgba(255,255,255,0.14);
-  --landing-text: #f5f5f5;
-  --landing-text-muted: #9a9aa0;
-  --landing-text-faint: #5c5c62;
-  --landing-orange: #f97316;
-  --landing-orange-strong: #fb923c;
+  /* Alias vers le bloc canonique (:root, voir plus bas dans ce fichier) : une seule source de
+     verite pour les couleurs de marque, partagee avec le theme .ws-* du reste du site public. */
+  --landing-bg: var(--ws-bg);
+  --landing-bg-alt: var(--ws-bg-alt);
+  --landing-surface: var(--ws-surface);
+  --landing-border: var(--ws-border);
+  --landing-border-strong: var(--ws-border-strong);
+  --landing-text: var(--ws-text);
+  --landing-text-muted: var(--ws-muted);
+  --landing-text-faint: var(--ws-text-faint);
+  --landing-orange: var(--ws-brand);
+  --landing-orange-strong: var(--ws-brand);
   --landing-container: 1240px;
   background: var(--landing-bg);
   color: var(--landing-text);
@@ -2120,26 +2122,30 @@ body {
   }
 }
 
-/* ===================== Theme clair "Wealthsimple-inspire" (accueil, Tarifs, outils, guide, legal) =====
-   Namespace separe de .landing-* (reserve a la page Pool, seule page publique qui garde le
-   theme sombre/energique) -- creme/blanc casse, texte quasi noir, UNE seule couleur d'accent
-   (orange existant de Betrics), serif en titre (Fraunces, voir public/index.html pour le
-   chargement Google Fonts), sans-serif en corps (Inter). Boutons primaires sobres (quasi-noir),
-   l'orange reserve aux touches discretes (focus, pastille "exemple", accents de lien). */
+/* ===================== Site public (accueil, Tarifs, outils, guide, legal, Pool) =====================
+   Branding Betrics D'ORIGINE, pas un theme invente : fond quasi-noir, texte quasi-blanc, UNE
+   seule couleur d'accent dominante (l'orange utilise partout dans l'app connectee -- logo,
+   boutons, etats actifs). Valeurs reprises telles quelles de src/App.js (logo/boutons/badges
+   #f97316, positif #22c55e, negatif #ef4444 -- voir .trade-composition-ok/bad plus haut dans ce
+   fichier) et de l'ancienne landing sombre (commit precedant la refonte claire -- .landing-root
+   ci-dessous, qui alias desormais ces memes variables pour n'avoir qu'UNE SEULE source de
+   verite). Structure, espacement et typographie (serif Fraunces + Inter) INCHANGES. */
 /* Variables globales (:root, pas seulement .ws-root) : le menu mobile se rend via un portail
    directement sur document.body (voir Navbar.js -- .ws-navbar utilise backdrop-filter, qui
    cree un bloc englobant pour les descendants position:fixed, d'ou le portail) et doit donc
    retrouver ces couleurs sans dependre d'un ancetre .ws-root. */
 :root {
-  --ws-bg: #FAF7F2;
-  --ws-bg-alt: #F3EEE6;
-  --ws-surface: #FFFFFF;
-  --ws-border: rgba(21,19,15,0.1);
-  --ws-border-strong: rgba(21,19,15,0.18);
-  --ws-text: #15130F;
-  --ws-text-muted: #5B564C;
-  --ws-text-faint: #8C8678;
-  --ws-accent: #f97316;
+  --ws-brand: #f97316;
+  --ws-bg: #070707;
+  --ws-bg-alt: #0a0a0a;
+  --ws-surface: #0d0d0d;
+  --ws-border: rgba(255,255,255,0.08);
+  --ws-border-strong: rgba(255,255,255,0.14);
+  --ws-text: #f5f5f5;
+  --ws-muted: #9a9aa0;
+  --ws-text-faint: #7a7a82;
+  --ws-positive: #22c55e;
+  --ws-negative: #ef4444;
   --ws-container: 1180px;
   --ws-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
   --ws-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -2188,7 +2194,7 @@ body {
 .ws-body {
   font-size: 17px;
   line-height: 1.7;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   margin: 0;
 }
 
@@ -2200,7 +2206,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ws-accent);
+  color: var(--ws-brand);
   margin-bottom: 18px;
 }
 
@@ -2209,7 +2215,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ws-accent);
+  background: var(--ws-brand);
 }
 
 .ws-link {
@@ -2228,7 +2234,7 @@ body {
 }
 
 .ws-link:hover {
-  text-decoration-color: var(--ws-accent);
+  text-decoration-color: var(--ws-brand);
 }
 
 .ws-section {
@@ -2267,14 +2273,17 @@ body {
   font-size: 15px;
 }
 
+/* Degrade de marque reutilise tel quel (voir ancienne landing sombre), reserve au bouton
+   principal -- seul endroit du site public avec un degrade, pas une surface pleine page. */
 .ws-btn-primary {
-  background: var(--ws-text);
-  color: var(--ws-bg);
+  background: linear-gradient(135deg, var(--ws-brand), #ea580c);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 0 0 rgba(249,115,22,0);
 }
 
 .ws-btn-primary:hover {
   transform: translateY(-1px);
-  background: #000000;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 24px rgba(249,115,22,0.35);
 }
 
 .ws-btn-ghost {
@@ -2285,7 +2294,7 @@ body {
 
 .ws-btn-ghost:hover {
   background: var(--ws-surface);
-  border-color: var(--ws-text);
+  border-color: rgba(255,255,255,0.3);
 }
 
 .ws-btn:disabled {
@@ -2295,7 +2304,7 @@ body {
 }
 
 .ws-btn:focus-visible {
-  outline: 2px solid var(--ws-accent);
+  outline: 2px solid var(--ws-brand);
   outline-offset: 2px;
 }
 
@@ -2307,7 +2316,7 @@ body {
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--ws-accent, #f97316);
+  color: var(--ws-brand, #f97316);
   background: rgba(249,115,22,0.1);
   border: 1px solid rgba(249,115,22,0.3);
   border-radius: 999px;
@@ -2315,8 +2324,20 @@ body {
 }
 
 /* ===================== Hero ===================== */
+/* Halo radial discret, repris de l'ancienne landing (.landing-hero::before) -- seul autre
+   endroit du site public (avec le bouton principal) a utiliser le degrade de marque. */
 .ws-hero {
   padding: clamp(64px, 12vw, 140px) 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.ws-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(249,115,22,0.09), transparent 70%);
+  pointer-events: none;
 }
 
 .ws-hero-copy {
@@ -2327,7 +2348,7 @@ body {
 .ws-hero-sub {
   font-size: 19px;
   line-height: 1.6;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   max-width: 540px;
   margin: 0 0 32px;
 }
@@ -2343,12 +2364,12 @@ body {
   margin-bottom: 0;
 }
 
-/* ===================== WindowFrame : cadre sobre type navigateur (theme clair) ===================== */
+/* ===================== WindowFrame : cadre sobre type navigateur ===================== */
 .ws-window-frame {
   border-radius: 12px;
   border: 1px solid var(--ws-border-strong);
   background: var(--ws-surface);
-  box-shadow: 0 16px 40px -24px rgba(21,19,15,0.25);
+  box-shadow: 0 16px 40px -24px rgba(0,0,0,0.5);
   overflow: hidden;
 }
 
@@ -2409,8 +2430,9 @@ body {
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #ffffff;
-  background: rgba(21,19,15,0.72);
+  color: var(--ws-brand);
+  background: rgba(249,115,22,0.16);
+  border: 1px solid rgba(249,115,22,0.4);
   border-radius: 999px;
   padding: 4px 10px;
 }
@@ -2435,7 +2457,7 @@ body {
 .ws-alt-desc {
   font-size: 16px;
   line-height: 1.7;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   margin: 0 0 20px;
 }
 
@@ -2452,7 +2474,7 @@ body {
   position: relative;
   padding-left: 18px;
   font-size: 15px;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
 }
 
 .ws-alt-list li::before {
@@ -2463,7 +2485,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ws-accent);
+  background: var(--ws-brand);
 }
 
 /* ===================== Pour qui ===================== */
@@ -2512,12 +2534,12 @@ body {
 }
 
 .ws-faq-question:focus-visible {
-  outline: 2px solid var(--ws-accent);
+  outline: 2px solid var(--ws-brand);
   outline-offset: -2px;
 }
 
 .ws-faq-caret {
-  color: var(--ws-accent);
+  color: var(--ws-brand);
   font-size: 18px;
   font-weight: 800;
   flex-shrink: 0;
@@ -2529,7 +2551,7 @@ body {
 
 .ws-faq-answer p {
   margin: 0;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   font-size: 15px;
   line-height: 1.7;
   max-width: 640px;
@@ -2573,7 +2595,7 @@ body {
 }
 
 .ws-footer-responsible strong {
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
 }
 
 .ws-footer-bottom {
@@ -2626,7 +2648,7 @@ body {
 }
 
 .ws-legal-body {
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   font-size: 15px;
   line-height: 1.7;
   margin-top: 16px;
@@ -2657,12 +2679,12 @@ body {
   }
 }
 
-/* ===================== Navbar (toujours claire, toutes pages publiques) ===================== */
+/* ===================== Navbar (chrome stable, toutes pages publiques) ===================== */
 .ws-navbar {
   position: sticky;
   top: 0;
   z-index: 200;
-  background: rgba(250,247,242,0.94);
+  background: rgba(7,7,7,0.92);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--ws-border);
 }
@@ -2707,7 +2729,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   font-size: 14px;
   font-weight: 500;
   font-family: var(--ws-sans);
@@ -2737,7 +2759,7 @@ body {
 .ws-lang-switch button {
   border: none;
   background: transparent;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   font-size: 12px;
   font-weight: 700;
   font-family: var(--ws-sans);
@@ -2748,8 +2770,8 @@ body {
 }
 
 .ws-lang-switch button[aria-pressed="true"] {
-  background: var(--ws-text);
-  color: var(--ws-bg);
+  background: var(--ws-brand);
+  color: #ffffff;
 }
 
 .ws-hamburger {
@@ -2770,7 +2792,7 @@ body {
   right: 0;
   background: var(--ws-surface);
   border-bottom: 1px solid var(--ws-border);
-  box-shadow: 0 24px 48px -32px rgba(21,19,15,0.3);
+  box-shadow: 0 24px 48px -32px rgba(0,0,0,0.6);
 }
 
 .ws-megamenu-grid {
@@ -2820,7 +2842,7 @@ body {
 .ws-megamenu-item-desc {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
 }
 
 .ws-soon-tag {
@@ -2829,7 +2851,7 @@ body {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ws-accent);
+  color: var(--ws-brand);
   background: rgba(249,115,22,0.1);
   border: 1px solid rgba(249,115,22,0.3);
   border-radius: 999px;
@@ -2852,7 +2874,7 @@ body {
   background: var(--ws-surface);
   border: 1px solid var(--ws-border);
   border-radius: 10px;
-  box-shadow: 0 16px 36px -20px rgba(21,19,15,0.3);
+  box-shadow: 0 16px 36px -20px rgba(0,0,0,0.6);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -2948,7 +2970,7 @@ body {
   border: none;
   cursor: pointer;
   text-align: left;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   font-size: 14px;
   font-family: var(--ws-sans);
   padding: 10px 14px;
@@ -2997,7 +3019,7 @@ body {
 }
 
 .ws-pricing-card-highlight {
-  border-color: var(--ws-text);
+  border-color: var(--ws-brand);
 }
 
 .ws-pricing-amount {
@@ -3010,7 +3032,7 @@ body {
 .ws-pricing-period {
   font-size: 14px;
   font-weight: 500;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
   margin-left: 4px;
 }
 
@@ -3032,14 +3054,14 @@ body {
   position: relative;
   padding-left: 20px;
   font-size: 14px;
-  color: var(--ws-text-muted);
+  color: var(--ws-muted);
 }
 
 .ws-pricing-list li::before {
   content: '✓';
   position: absolute;
   left: 0;
-  color: var(--ws-accent);
+  color: var(--ws-brand);
   font-weight: 700;
 }
 
@@ -3067,6 +3089,15 @@ body {
 .ws-pricing-table thead th {
   font-weight: 700;
   color: var(--ws-text);
+}
+
+.ws-pricing-yes {
+  color: var(--ws-positive);
+  font-weight: 700;
+}
+
+.ws-pricing-no {
+  color: var(--ws-text-faint);
 }
 
 /* ===================== Pages outils generiques + Guide ===================== */
@@ -3103,8 +3134,8 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--ws-text);
-  color: var(--ws-bg);
+  background: var(--ws-brand);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
