@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
-function Auth({ onConnexion, lang = 'en' }) {
+function Auth({ onConnexion, lang = 'en', initialMode = 'login' }) {
   const t = getT(lang);
-  const [mode, setMode] = useState('login'); // login | signup | forgot
+  const [mode, setMode] = useState(initialMode); // login | signup | forgot
   const [identifier, setIdentifier] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [email, setEmail] = useState('');
