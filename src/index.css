@@ -1767,20 +1767,6 @@ body {
   margin-bottom: 16px;
 }
 
-.landing-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #fdba74;
-  font-size: 13px;
-  font-weight: 600;
-  background: rgba(249,115,22,0.08);
-  border: 1px solid rgba(249,115,22,0.2);
-  border-radius: 999px;
-  padding: 6px 14px;
-  margin-bottom: 24px;
-}
-
 /* ===================== Boutons : une seule famille "pleine", le reste en lien/contour =====================
    Rayon ~10px (coherent avec le reste de l'app, pas une capsule complete) ; filet lumineux
    interieur discret sur le bouton principal, jamais d'aplat criard. */
@@ -1831,93 +1817,6 @@ body {
 .landing-btn:focus-visible {
   outline: 2px solid var(--landing-orange);
   outline-offset: 2px;
-}
-
-/* ===================== Nav : fixe, opaque, simple (pas de flou, pas de retrecissement) ===================== */
-.landing-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(7,7,7,0.92);
-  border-bottom: 1px solid var(--landing-border);
-}
-
-.landing-nav-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: 72px;
-}
-
-.landing-nav-left {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  min-width: 0;
-}
-
-.landing-brand, .landing-brand-static {
-  color: var(--landing-orange);
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.landing-brand-static { cursor: default; }
-
-.landing-nav-links {
-  display: flex;
-  gap: 20px;
-}
-
-.landing-nav-links button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--landing-text-muted);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 2px;
-  min-height: 44px;
-  transition: color 0.15s ease;
-}
-
-.landing-nav-links button:hover { color: var(--landing-text); }
-
-.landing-nav-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.landing-lang-switch {
-  display: flex;
-  background: var(--landing-surface);
-  border: 1px solid var(--landing-border);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.landing-lang-switch button {
-  border: none;
-  background: transparent;
-  color: var(--landing-text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 10px;
-  min-height: 32px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.landing-lang-switch button[aria-pressed="true"] {
-  background: var(--landing-orange);
-  color: #ffffff;
 }
 
 /* ===================== Hero ===================== */
@@ -2029,90 +1928,11 @@ body {
   color: var(--landing-border-strong);
 }
 
-/* ===================== Bande de confiance ===================== */
-.landing-trust-bar {
-  border-top: 1px solid var(--landing-border);
-  border-bottom: 1px solid var(--landing-border);
-  background: var(--landing-bg-alt);
-}
-
-.landing-trust-inner {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 32px;
-  padding: 20px 0;
-}
-
-.landing-trust-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--landing-text-muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.landing-trust-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--landing-orange);
-  flex-shrink: 0;
-}
-
-/* ===================== Fonctions (grille de cartes) ===================== */
-.landing-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.landing-feature-card {
-  background: var(--landing-surface);
-  border: 1px solid var(--landing-border);
-  border-radius: 16px;
-  padding: 24px;
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.landing-feature-card:hover {
-  border-color: rgba(249,115,22,0.3);
-  transform: translateY(-2px);
-}
-
 .landing-feature-desc {
   color: var(--landing-text-muted);
   font-size: 14px;
   line-height: 1.6;
   margin: 0 0 16px;
-}
-
-.landing-feature-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.landing-feature-list li {
-  color: var(--landing-text-muted);
-  font-size: 13px;
-  padding-left: 16px;
-  position: relative;
-}
-
-.landing-feature-list li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 7px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--landing-orange);
 }
 
 /* ===================== Blocs alternes image + texte ===================== */
@@ -2156,55 +1976,6 @@ body {
   border: 1px solid var(--landing-border);
   border-radius: 999px;
   padding: 6px 12px;
-}
-
-/* ===================== Pour commencer ===================== */
-.landing-start-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.landing-start-card {
-  background: var(--landing-surface);
-  border: 1px solid var(--landing-border);
-  border-radius: 16px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.landing-start-card .landing-btn {
-  margin-top: 16px;
-}
-
-/* ===================== Bientot ===================== */
-.landing-soon-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.landing-soon-card {
-  background: var(--landing-surface);
-  border: 1px dashed var(--landing-border-strong);
-  border-radius: 16px;
-  padding: 28px;
-}
-
-.landing-soon-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--landing-text-faint);
-  border: 1px solid var(--landing-border-strong);
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin-bottom: 14px;
 }
 
 /* ===================== FAQ (accordeon accessible) ===================== */
@@ -2294,89 +2065,6 @@ body {
   margin-top: 8px;
 }
 
-/* ===================== Pied de page ===================== */
-.landing-footer {
-  background: var(--landing-bg-alt);
-  border-top: 1px solid var(--landing-border);
-  padding: 48px 0 32px;
-}
-
-.landing-footer-responsible {
-  border-bottom: 1px solid var(--landing-border);
-  padding-bottom: 28px;
-  margin-bottom: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.landing-footer-responsible p {
-  margin: 0;
-  color: var(--landing-text-faint);
-  font-size: 12.5px;
-  line-height: 1.6;
-  max-width: 820px;
-}
-
-.landing-footer-responsible strong {
-  color: var(--landing-text-muted);
-}
-
-.landing-footer-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.landing-footer-tagline {
-  color: var(--landing-text-faint);
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.landing-footer-links {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.landing-footer-links button, .landing-footer-links a {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--landing-text-faint);
-  font-size: 13px;
-  text-decoration: none;
-  padding: 10px 0;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.landing-footer-links button:hover, .landing-footer-links a:hover {
-  color: var(--landing-text-muted);
-}
-
-.landing-footer-copyright {
-  color: var(--landing-text-faint);
-  font-size: 12px;
-}
-
-/* ===================== Pages legales simples ===================== */
-.landing-legal-page {
-  padding: 48px 24px 80px;
-  max-width: 720px;
-}
-
-.landing-legal-body {
-  color: var(--landing-text-muted);
-  font-size: 15px;
-  line-height: 1.7;
-  margin-top: 16px;
-}
-
 /* ===================== Reveal au defilement (sobre, une seule fois) ===================== */
 .landing-reveal {
   opacity: 0;
@@ -2402,15 +2090,8 @@ body {
 }
 
 /* ===================== Responsive =====================
-   Web large (>=1024px) : grilles pleines (4 colonnes fonctions, blocs cote a cote).
-   iPad (768-1023px) : grilles reduites, blocs alternes restent cote a cote mais plus serres.
+   Web large (>=1024px) : blocs alternes cote a cote. iPad (768-1023px) : idem, plus serre.
    Mobile (<768px) : tout s'empile, jamais de scroll horizontal. */
-@media (max-width: 1023px) {
-  .landing-feature-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 860px) {
   .landing-alt-inner {
     grid-template-columns: 1fr;
@@ -2427,27 +2108,1168 @@ body {
 }
 
 @media (max-width: 768px) {
-  .landing-nav-links {
-    display: none;
-  }
-  .landing-feature-grid {
-    grid-template-columns: 1fr;
-  }
-  .landing-start-grid, .landing-soon-grid {
-    grid-template-columns: 1fr;
-  }
   .landing-hero-actions {
     flex-direction: column;
     align-items: stretch;
-  }
-  .landing-footer-bottom {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 
 @media (min-width: 1920px) {
   .landing-root {
     --landing-container: 1280px;
+  }
+}
+
+/* ===================== Theme clair "Wealthsimple-inspire" (accueil, Tarifs, outils, guide, legal) =====
+   Namespace separe de .landing-* (reserve a la page Pool, seule page publique qui garde le
+   theme sombre/energique) -- creme/blanc casse, texte quasi noir, UNE seule couleur d'accent
+   (orange existant de Betrics), serif en titre (Fraunces, voir public/index.html pour le
+   chargement Google Fonts), sans-serif en corps (Inter). Boutons primaires sobres (quasi-noir),
+   l'orange reserve aux touches discretes (focus, pastille "exemple", accents de lien). */
+/* Variables globales (:root, pas seulement .ws-root) : le menu mobile se rend via un portail
+   directement sur document.body (voir Navbar.js -- .ws-navbar utilise backdrop-filter, qui
+   cree un bloc englobant pour les descendants position:fixed, d'ou le portail) et doit donc
+   retrouver ces couleurs sans dependre d'un ancetre .ws-root. */
+:root {
+  --ws-bg: #FAF7F2;
+  --ws-bg-alt: #F3EEE6;
+  --ws-surface: #FFFFFF;
+  --ws-border: rgba(21,19,15,0.1);
+  --ws-border-strong: rgba(21,19,15,0.18);
+  --ws-text: #15130F;
+  --ws-text-muted: #5B564C;
+  --ws-text-faint: #8C8678;
+  --ws-accent: #f97316;
+  --ws-container: 1180px;
+  --ws-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --ws-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+.ws-root {
+  background: var(--ws-bg);
+  color: var(--ws-text);
+  font-family: var(--ws-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.ws-container {
+  max-width: var(--ws-container);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ws-h1, .ws-h2, .ws-h3 {
+  font-family: var(--ws-serif);
+  font-weight: 600;
+  color: var(--ws-text);
+  margin: 0 0 20px;
+}
+
+.ws-h1 {
+  font-size: clamp(38px, 6.5vw, 80px);
+  letter-spacing: -0.015em;
+  line-height: 1.04;
+}
+
+.ws-h2 {
+  font-size: clamp(28px, 4.5vw, 48px);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.ws-h3 {
+  font-size: 21px;
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.ws-body {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ws-text-muted);
+  margin: 0;
+}
+
+.ws-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-accent);
+  margin-bottom: 18px;
+}
+
+.ws-kicker::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ws-accent);
+}
+
+.ws-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ws-text);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 2px;
+  min-height: 44px;
+  text-decoration: underline;
+  text-decoration-color: var(--ws-border-strong);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.ws-link:hover {
+  text-decoration-color: var(--ws-accent);
+}
+
+.ws-section {
+  padding: clamp(64px, 11vw, 160px) 0;
+}
+
+.ws-section-alt {
+  background: var(--ws-bg-alt);
+}
+
+.ws-section-head {
+  max-width: 640px;
+  margin: 0 0 clamp(36px, 5vw, 56px);
+}
+
+/* ===================== Boutons : un seul plein (quasi-noir), un seul contour ===================== */
+.ws-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--ws-sans);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.ws-btn-lg {
+  padding: 15px 30px;
+  font-size: 15px;
+}
+
+.ws-btn-primary {
+  background: var(--ws-text);
+  color: var(--ws-bg);
+}
+
+.ws-btn-primary:hover {
+  transform: translateY(-1px);
+  background: #000000;
+}
+
+.ws-btn-ghost {
+  background: transparent;
+  color: var(--ws-text);
+  border-color: var(--ws-border-strong);
+}
+
+.ws-btn-ghost:hover {
+  background: var(--ws-surface);
+  border-color: var(--ws-text);
+}
+
+.ws-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none !important;
+}
+
+.ws-btn:focus-visible {
+  outline: 2px solid var(--ws-accent);
+  outline-offset: 2px;
+}
+
+/* ===================== Pastille "exemple" (donnees fictives, toujours explicitement marquees) === */
+.ws-example-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ws-accent, #f97316);
+  background: rgba(249,115,22,0.1);
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ===================== Hero ===================== */
+.ws-hero {
+  padding: clamp(64px, 12vw, 140px) 0 0;
+}
+
+.ws-hero-copy {
+  max-width: 680px;
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+
+.ws-hero-sub {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ws-text-muted);
+  max-width: 540px;
+  margin: 0 0 32px;
+}
+
+.ws-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.ws-hero-shot-wrap {
+  margin-bottom: 0;
+}
+
+/* ===================== WindowFrame : cadre sobre type navigateur (theme clair) ===================== */
+.ws-window-frame {
+  border-radius: 12px;
+  border: 1px solid var(--ws-border-strong);
+  background: var(--ws-surface);
+  box-shadow: 0 16px 40px -24px rgba(21,19,15,0.25);
+  overflow: hidden;
+}
+
+.ws-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-window-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ws-border-strong);
+}
+
+.ws-window-body {
+  position: relative;
+  background: var(--ws-bg-alt);
+  overflow: hidden;
+}
+
+.ws-window-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ws-window-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ws-text-faint);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+}
+
+.ws-window-placeholder-icon {
+  font-size: 26px;
+  color: var(--ws-border-strong);
+}
+
+.ws-window-example-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: rgba(21,19,15,0.72);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ===================== Blocs alternes image + texte ===================== */
+.ws-alt-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 6vw, 88px);
+  align-items: center;
+}
+
+.ws-alt-reverse .ws-alt-inner {
+  direction: rtl;
+}
+
+.ws-alt-reverse .ws-alt-copy,
+.ws-alt-reverse .ws-alt-shot {
+  direction: ltr;
+}
+
+.ws-alt-desc {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ws-text-muted);
+  margin: 0 0 20px;
+}
+
+.ws-alt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-alt-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15px;
+  color: var(--ws-text-muted);
+}
+
+.ws-alt-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ws-accent);
+}
+
+/* ===================== Pour qui ===================== */
+.ws-forwho-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.ws-forwho-item {
+  border-top: 2px solid var(--ws-text);
+  padding-top: 20px;
+}
+
+/* ===================== FAQ (accordeon accessible) ===================== */
+.ws-faq-wrap {
+  max-width: 760px;
+}
+
+.ws-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ws-faq-item {
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ws-text);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--ws-sans);
+  text-align: left;
+  padding: 20px 2px;
+  min-height: 44px;
+}
+
+.ws-faq-question:focus-visible {
+  outline: 2px solid var(--ws-accent);
+  outline-offset: -2px;
+}
+
+.ws-faq-caret {
+  color: var(--ws-accent);
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ws-faq-answer {
+  padding: 0 2px 20px;
+}
+
+.ws-faq-answer p {
+  margin: 0;
+  color: var(--ws-text-muted);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ===================== CTA finale ===================== */
+.ws-final-inner {
+  text-align: left;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ws-final-inner .ws-btn {
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+/* ===================== Pied de page ===================== */
+.ws-footer {
+  border-top: 1px solid var(--ws-border);
+  padding: 48px 0 32px;
+}
+
+.ws-footer-responsible {
+  border-bottom: 1px solid var(--ws-border);
+  padding-bottom: 28px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ws-footer-responsible p {
+  margin: 0;
+  color: var(--ws-text-faint);
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-width: 820px;
+}
+
+.ws-footer-responsible strong {
+  color: var(--ws-text-muted);
+}
+
+.ws-footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.ws-footer-tagline {
+  color: var(--ws-text-faint);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.ws-footer-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.ws-footer-links button, .ws-footer-links a {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ws-text-faint);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 10px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--ws-sans);
+}
+
+.ws-footer-links button:hover, .ws-footer-links a:hover {
+  color: var(--ws-text);
+}
+
+.ws-footer-copyright {
+  color: var(--ws-text-faint);
+  font-size: 12px;
+}
+
+/* ===================== Pages legales simples ===================== */
+.ws-legal-page {
+  padding: 48px 24px 80px;
+  max-width: 720px;
+}
+
+.ws-legal-body {
+  color: var(--ws-text-muted);
+  font-size: 15px;
+  line-height: 1.7;
+  margin-top: 16px;
+  white-space: pre-line;
+}
+
+/* ===================== Reveal au defilement (sobre, une seule fois) ===================== */
+.ws-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.ws-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ws-reveal {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===================== Navbar (toujours claire, toutes pages publiques) ===================== */
+.ws-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(250,247,242,0.94);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 72px;
+}
+
+.ws-navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  min-width: 0;
+}
+
+.ws-brand, .ws-brand-static {
+  font-family: var(--ws-serif);
+  color: var(--ws-text);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ws-brand-static {
+  cursor: default;
+}
+
+.ws-navbar-links {
+  display: flex;
+  gap: 24px;
+}
+
+.ws-navbar-links button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ws-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--ws-sans);
+  padding: 8px 2px;
+  min-height: 44px;
+  transition: color 0.15s ease;
+}
+
+.ws-navbar-links button:hover, .ws-navbar-links button[aria-expanded="true"] {
+  color: var(--ws-text);
+}
+
+.ws-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ws-lang-switch {
+  display: flex;
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.ws-lang-switch button {
+  border: none;
+  background: transparent;
+  color: var(--ws-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--ws-sans);
+  padding: 6px 10px;
+  min-height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ws-lang-switch button[aria-pressed="true"] {
+  background: var(--ws-text);
+  color: var(--ws-bg);
+}
+
+.ws-hamburger {
+  display: none;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--ws-border-strong);
+  background: var(--ws-surface);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* ===================== Mega menu "Outils" (style OddsJam : liste groupee, titre + description) === */
+.ws-megamenu-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--ws-surface);
+  border-bottom: 1px solid var(--ws-border);
+  box-shadow: 0 24px 48px -32px rgba(21,19,15,0.3);
+}
+
+.ws-megamenu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  padding: 40px 24px;
+}
+
+.ws-megamenu-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-text-faint);
+  margin-bottom: 14px;
+}
+
+.ws-megamenu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+}
+
+.ws-megamenu-item:hover {
+  background: var(--ws-bg-alt);
+}
+
+.ws-megamenu-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ws-text);
+  font-family: var(--ws-sans);
+}
+
+.ws-megamenu-item-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ws-text-muted);
+}
+
+.ws-soon-tag {
+  display: inline-flex;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ws-accent);
+  background: rgba(249,115,22,0.1);
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.ws-soon-tag-lg {
+  font-size: 11px;
+  padding: 5px 12px;
+  margin-bottom: 20px;
+}
+
+/* ===================== Menu "Ressources" (simple) ===================== */
+.ws-resources-panel {
+  position: absolute;
+  right: 24px;
+  top: 100%;
+  margin-top: 1px;
+  min-width: 220px;
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 36px -20px rgba(21,19,15,0.3);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-resources-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ws-text);
+  font-size: 14px;
+  font-family: var(--ws-sans);
+  text-decoration: none;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 6px;
+}
+
+.ws-resources-item:hover {
+  background: var(--ws-bg-alt);
+}
+
+/* ===================== Menu mobile plein ecran ===================== */
+.ws-mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--ws-bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.ws-mobile-menu-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-mobile-close {
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--ws-text);
+}
+
+.ws-mobile-menu-body {
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ws-mobile-accordion {
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-mobile-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 16px 2px;
+  min-height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--ws-sans);
+  color: var(--ws-text);
+}
+
+.ws-mobile-accordion-panel {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 12px;
+}
+
+.ws-mobile-tool-link, .ws-mobile-top-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ws-text-muted);
+  font-size: 14px;
+  font-family: var(--ws-sans);
+  padding: 10px 14px;
+  min-height: 44px;
+}
+
+.ws-mobile-top-link {
+  border-bottom: 1px solid var(--ws-border);
+  color: var(--ws-text);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 16px 2px;
+}
+
+.ws-mobile-menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid var(--ws-border);
+}
+
+.ws-mobile-menu-footer .ws-btn {
+  flex: 1;
+}
+
+.ws-hide-mobile {
+  display: inline-flex;
+}
+
+/* ===================== Tarifs ===================== */
+.ws-pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 40px 0;
+}
+
+.ws-pricing-card {
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: 14px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-pricing-card-highlight {
+  border-color: var(--ws-text);
+}
+
+.ws-pricing-amount {
+  font-family: var(--ws-serif);
+  font-size: 36px;
+  font-weight: 600;
+  margin: 8px 0 12px;
+}
+
+.ws-pricing-period {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ws-text-muted);
+  margin-left: 4px;
+}
+
+.ws-pricing-card .ws-btn {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.ws-pricing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-pricing-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--ws-text-muted);
+}
+
+.ws-pricing-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--ws-accent);
+  font-weight: 700;
+}
+
+.ws-pricing-table-wrap {
+  overflow-x: auto;
+}
+
+.ws-pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ws-pricing-table th, .ws-pricing-table td {
+  text-align: center;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ws-border);
+}
+
+.ws-pricing-table th:first-child, .ws-pricing-table td:first-child {
+  text-align: left;
+  color: var(--ws-text);
+}
+
+.ws-pricing-table thead th {
+  font-weight: 700;
+  color: var(--ws-text);
+}
+
+/* ===================== Pages outils generiques + Guide ===================== */
+.ws-tool-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: center;
+}
+
+.ws-tool-soon-notice {
+  color: var(--ws-text-faint);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.ws-guide-list {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.ws-guide-step {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.ws-guide-step-number {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ws-text);
+  color: var(--ws-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ===================== Page Pool publique : extensions ponctuelles du theme sombre .landing-* === */
+.pool-showcase-formation-wrap {
+  position: relative;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.pool-showcase-example-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+}
+
+.pool-showcase-format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+
+.pool-showcase-format-card {
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pool-showcase-rules-list {
+  max-width: 820px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.pool-showcase-why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.pool-showcase-why-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 14px;
+  color: var(--landing-text-muted);
+  line-height: 1.5;
+}
+
+.pool-showcase-why-number {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(249,115,22,0.14);
+  color: var(--landing-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pool-showcase-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.pool-showcase-flow-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.pool-showcase-flow-number {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--landing-orange);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ===================== Responsive theme clair =====================
+   >=1024px : grilles pleines (mega menu 4 colonnes, blocs alternes cote a cote, 3 colonnes
+   Pour-qui/Pourquoi). 768-1023px (tablette) : mega menu 2 colonnes, Pour-qui/Pourquoi 2
+   colonnes, nav links + boutons desktop caches (hamburger). <768px (mobile, dont 390px) :
+   tout en 1 colonne, jamais de scroll horizontal. */
+@media (max-width: 1023px) {
+  .ws-navbar-links, .ws-hide-mobile {
+    display: none;
+  }
+  .ws-hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ws-megamenu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ws-forwho-grid, .pool-showcase-why-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .ws-alt-inner, .ws-tool-inner {
+    grid-template-columns: 1fr;
+  }
+  .ws-alt-reverse .ws-alt-inner {
+    direction: ltr;
+  }
+  .ws-alt-reverse .ws-alt-copy {
+    order: 1;
+  }
+  .ws-alt-reverse .ws-alt-shot {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .ws-forwho-grid, .pool-showcase-why-grid, .pool-showcase-format-grid, .ws-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  .ws-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .ws-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ws-final-inner .ws-btn {
+    align-self: stretch;
   }
 }

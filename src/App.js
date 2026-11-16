@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import Auth from './Auth';
-import Landing from './Landing';
+import PublicSite from './PublicSite';
 import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
 import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
@@ -1507,11 +1507,11 @@ function App() {
     );
   }
 
-  // App non connectée — landing page publique (voir src/Landing.js). La connexion/inscription
-  // (src/Auth.js) reste inchangee : seul le mode initial (login/signup) differe selon le
-  // bouton clique sur la landing.
+  // App non connectée — site public (accueil, Pool, Tarifs, outils, guide -- voir
+  // src/PublicSite.js). La connexion/inscription (src/Auth.js) reste inchangee : seul le mode
+  // initial (login/signup) differe selon le bouton clique.
   return (
-    <Landing
+    <PublicSite
       lang={lang}
       setLang={setLang}
       onOpenAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }}

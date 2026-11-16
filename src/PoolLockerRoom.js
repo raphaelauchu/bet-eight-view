@@ -204,7 +204,10 @@ function BlockTitle({ label, filled, required }) {
   );
 }
 
-function PoolIceBoard({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
+// Exporte en plus de l'usage interne (PoolTeamHub) : reutilise telle quelle par la page
+// publique Pool (src/PoolShowcase.js) pour afficher une formation d'EXEMPLE avec le vrai
+// composant de formation, sans dupliquer son rendu.
+export function PoolIceBoard({ formation, seasonId, lang, gamesToday, injuries, allPoints, onOpen }) {
   const t = getT(lang);
   const card = (row, key) => (
     <PlayerCard key={key} row={row} variant="formation" seasonId={seasonId} lang={lang}
