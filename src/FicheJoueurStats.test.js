@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { FicheJoueurStats } from './Analyses';
 import { _resetCacheSaisonCourante } from './season';
+import { _resetTeamRosterCache } from './rosterNumbers';
 
 // Saison "courante" utilisee par tous les tests : doit correspondre a ce que standings-season
 // renvoie ci-dessous (20262027), jamais a une saison figee en dur.
@@ -54,11 +55,12 @@ const LANDING_GARDIEN = {
   ],
 };
 
-function buildMockFetch(landing) {
+function buildMockFetch(landing, roster) {
   return jest.fn((url) => {
     const u = String(url);
     if (u.includes('standings-season')) return Promise.resolve({ json: () => Promise.resolve({ seasons: [{ id: SAISON_ACTUELLE }] }) });
     if (u.includes('/landing')) return Promise.resolve({ json: () => Promise.resolve(landing) });
+    if (u.includes('roster/')) return Promise.resolve({ json: () => Promise.resolve(roster || { forwards: [], defensemen: [], goalies: [] }) });
     if (u.includes('game-log')) return Promise.resolve({ json: () => Promise.resolve({ gameLog: [] }) });
     if (u.includes('skater/realtime')) return Promise.resolve({ json: () => Promise.resolve({ data: [{ hits: 4, blockedShots: 2 }] }) });
     return Promise.resolve({ json: () => Promise.resolve({}) });
@@ -68,6 +70,7 @@ function buildMockFetch(landing) {
 beforeEach(() => {
   jest.clearAllMocks();
   _resetCacheSaisonCourante();
+  _resetTeamRosterCache();
 });
 
 test('fiche profil patineur : header NHL Edge, bio, stats de la saison en cours et bouton Analyser', async () => {
@@ -77,15 +80,19 @@ test('fiche profil patineur : header NHL Edge, bio, stats de la saison en cours 
 
   await waitFor(() => expect(screen.getByText('Nick Suzuki')).toBeInTheDocument());
 
-  // En-tete : position, nom d'equipe complet + abreviation, numero, main.
-  expect(screen.getByText(/C · Canadiens de Montréal \(MTL\) · #14 · G/)).toBeInTheDocument();
+  // En-tete : position, abreviation d'equipe (une seule fois), numero, cote de tir -- jamais de
+  // repetition ("MTL · MTL"), jamais de "#" ou de lettre isolee orpheline.
+  expect(screen.getByText('C')).toBeInTheDocument();
+  expect(screen.getByText('#14')).toBeInTheDocument();
+  expect(screen.getByText('Gaucher')).toBeInTheDocument(); // shootsCatches 'L' -> libelle clair, jamais juste "G"
+  expect(screen.getAllByText('MTL')).toHaveLength(1); // pas de duplication du gros bloc + badge + texte
 
-  // Casque (PlayerHelmet, joueur de champ) en bonne et due forme dans l'en-tete -- jamais un
+  // Pas de gros bloc d'abreviation : icone de profil vide a la place (PlayerHelmet/GoalieMask,
+  // qui retombent sur BlankProfileIcon tant que USE_PLAYER_HELMET_ICONS est faux) -- jamais un
   // <img> (ni cadre vide ni image cassee) et jamais une image hebergee sur un domaine LNH.
   expect(container.querySelectorAll('img').length).toBe(0);
   expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
   expect(container.innerHTML).not.toMatch(/assets\.nhle\.com/);
-  expect(screen.getByText('MTL')).toBeInTheDocument(); // abreviation d'equipe en texte (pas une image)
 
   // Bio.
   expect(screen.getByText("5'11\"")).toBeInTheDocument();
@@ -102,6 +109,30 @@ test('fiche profil patineur : header NHL Edge, bio, stats de la saison en cours 
   // Bouton Analyser.
   fireEvent.click(screen.getByText('Analyser'));
   expect(onAnalyser).toHaveBeenCalledWith(JOUEUR_PATINEUR);
+});
+
+test('fiche profil patineur : numero absent de /landing -> repli sur le roster (jamais de "#" orphelin)', async () => {
+  const joueurSansNumero = { id: 8482109, nom: 'Lane Hutson', equipe: 'MTL', position: 'D' };
+  const landingSansNumero = { ...LANDING_PATINEUR, sweaterNumber: undefined, shootsCatches: undefined };
+  const roster = { forwards: [], defensemen: [{ id: 8482109, sweaterNumber: 48 }], goalies: [] };
+  global.fetch = buildMockFetch(landingSansNumero, roster);
+  render(<FicheJoueurStats joueur={joueurSansNumero} onBack={() => {}} />);
+  await waitFor(() => expect(screen.getByText('Nick Suzuki')).toBeInTheDocument()); // nom vient de /landing (firstName/lastName)
+
+  await waitFor(() => expect(screen.getByText('#48')).toBeInTheDocument()); // repli roster (sweaterNumber)
+  expect(screen.queryByText('#')).not.toBeInTheDocument();
+  expect(screen.queryByText(/^#$/)).not.toBeInTheDocument();
+});
+
+test('fiche profil patineur : numero introuvable partout -> aucun "#" affiche, aucune lettre orpheline pour le cote de tir', async () => {
+  const joueurSansNumero = { id: 8482999, nom: 'Joueur Sans Numero', equipe: 'MTL', position: 'D' };
+  const landingSansNumero = { firstName: { default: 'Joueur' }, lastName: { default: 'Sans Numero' }, position: 'D', currentTeamAbbrev: 'MTL', seasonTotals: [] };
+  global.fetch = buildMockFetch(landingSansNumero, { forwards: [], defensemen: [], goalies: [] });
+  const { container } = render(<FicheJoueurStats joueur={joueurSansNumero} onBack={() => {}} />);
+  await waitFor(() => expect(screen.getByText('Joueur Sans Numero')).toBeInTheDocument());
+
+  expect(container.textContent).not.toMatch(/#(?!\d)/); // aucun "#" sans chiffre derriere
+  expect(container.textContent).not.toMatch(/·\s*·/); // aucun separateur double/orphelin
 });
 
 test('selecteur Carriere (patineur) : saison en cours en haut, +/- et PUN inclus', async () => {

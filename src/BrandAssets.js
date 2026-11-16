@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { teamColors } from './nhlTeamColors';
+import { teamColors, hasKnownTeamColors } from './nhlTeamColors';
+import { USE_PLAYER_HELMET_ICONS } from './brandAssetsConfig';
 
 // ===================== Actifs visuels neutres (aucune photo/logo LNH) =====================
 // Tant que src/brandAssetsConfig.js (USE_LICENSED_NHL_ASSETS) reste a false, CHAQUE photo de
@@ -10,11 +11,12 @@ import { teamColors } from './nhlTeamColors';
 // seul logo autorise est le "B" de Betrics (trace fidele de public/logo512.png, voir
 // BETRICS_B_PATHS plus bas -- jamais redessine).
 //
-// Casque (PlayerHelmet) / masque (GoalieMask) pour les cartes, fiches, echanges, repechage,
-// listes (A). Chandail vu de dos avec nom + numero (TeamJersey) pour les alignements et la
-// formation du pool (B). Chandail vu de face, sans texte, pour les tres petits emplacements
-// (TeamCrest -- classements, calendrier) (D). Barres de recherche : aucune image (C, voir
-// Analyses.js).
+// Icone de profil vide (BlankProfileIcon, voir plus bas) pour les cartes, fiches, echanges,
+// repechage, listes (A) -- casque (PlayerHelmet) / masque (GoalieMask) abandonnes, geles
+// derriere USE_PLAYER_HELMET_ICONS (brandAssetsConfig.js), code conserve mais jamais affiche.
+// Chandail vu de dos avec nom + numero (TeamJersey) pour les alignements et la formation du pool
+// (B). Chandail vu de face, sans texte, pour les tres petits emplacements (TeamCrest --
+// classements, calendrier) (D). Barres de recherche : aucune image (C, voir Analyses.js).
 //
 // Chaque forme existe sous DEUX formes a partir de la MEME JSX (PlayerHelmetSvg/GoalieMaskSvg/
 // TeamJerseySvg, qui acceptent un `idPrefix` pour des id de degrade uniques) :
@@ -46,6 +48,29 @@ function shade(hex, amt) {
   const [r, g, b] = hexToRgb(hex);
   const f = (c) => (amt >= 0 ? c + (255 - c) * amt : c + c * amt);
   return rgbToHex([f(r), f(g), f(b)]);
+}
+
+// Melange lineaire hexA -> hexB (t=0 => hexA, t=1 => hexB) : utilise pour simuler a plat une
+// couleur "primary a faible opacite sur le fond sombre de l'app", sans vraie transparence SVG
+// (un hex calcule une fois pour toutes est plus simple a verifier en contraste AA).
+function blendHex(hexA, hexB, t) {
+  const a = hexToRgb(hexA);
+  const b = hexToRgb(hexB);
+  return rgbToHex([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
+}
+
+// Eclaircit `baseHex` par petits pas jusqu'a atteindre le contraste AA vise contre `bgHex`
+// (ou jusqu'a un plafond quasi-blanc) -- garantit AA tout en restant une teinte de `baseHex`.
+function lightenForContrast(baseHex, bgHex, minRatio) {
+  let amt = 0.4;
+  let color = shade(baseHex, amt);
+  let guard = 0;
+  while (contrastRatio(color, bgHex) < minRatio && amt < 0.97 && guard < 25) {
+    amt += 0.06;
+    color = shade(baseHex, amt);
+    guard++;
+  }
+  return color;
 }
 
 function contrastRatio(hexA, hexB) {
@@ -92,6 +117,42 @@ export function TeamAbbrevText({ teamAbbrev, bg = APP_DARK_BG, style, className,
       {abbrev}
     </span>
   );
+}
+
+// ===================== Icone de profil vide (regle finale -- remplace casque/masque) =========
+// Silhouette generique tete-et-epaules, SANS visage ni element de casque/masque, identique pour
+// attaquant/defenseur/gardien (aucune distinction de position). Fond du cercle : couleur
+// principale de l'equipe a faible opacite (simulee a plat via blendHex contre le fond sombre
+// habituel de l'app -- voir APP_DARK_BG) si l'equipe est connue, sinon un gris neutre Betrics.
+// Silhouette dans une teinte plus claire de cette meme couleur, eclaircie jusqu'au contraste AA
+// (>= 4.5:1) contre le fond du cercle (voir lightenForContrast).
+const BLANK_ICON_NEUTRAL_BG = '#2a2a2a';
+
+function BlankProfileIconSvg({ teamAbbrev, size = 44, idPrefix, title, className }) {
+  const known = hasKnownTeamColors(teamAbbrev);
+  const { primary } = resolveColors(teamAbbrev);
+  const circleBg = known ? blendHex(primary, APP_DARK_BG, 0.78) : BLANK_ICON_NEUTRAL_BG;
+  const silhouette = lightenForContrast(known ? primary : BLANK_ICON_NEUTRAL_BG, circleBg, 4.5);
+  const clipId = `pa-clip-${idPrefix}`;
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={title || ''} className={className}>
+      <defs>
+        <clipPath id={clipId}><circle cx="50" cy="50" r="50" /></clipPath>
+      </defs>
+      <circle cx="50" cy="50" r="50" fill={circleBg} />
+      <g clipPath={`url(#${clipId})`} fill={silhouette}>
+        <circle cx="50" cy="37" r="16" />
+        <path d="M17,100 C17,75 31,61 50,61 C69,61 83,75 83,100 Z" />
+      </g>
+    </svg>
+  );
+}
+
+// Icone de profil vide exportee directement (utile la ou aucun choix casque/masque n'a jamais
+// existe) -- PlayerHelmet/GoalieMask y basculent aussi tant que USE_PLAYER_HELMET_ICONS est faux.
+export function BlankProfileIcon({ teamAbbrev, size = 44, alt, className }) {
+  const id = useId();
+  return <BlankProfileIconSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />;
 }
 
 // ===================== Logo "B" de Betrics =====================
@@ -416,6 +477,11 @@ function TeamCrestSvg({ teamAbbrev, size = 24, idPrefix, title, className }) {
 // ===================== Composants React (rendu inline, polices de la page disponibles) =======
 export function PlayerHelmet({ teamAbbrev, goalie, size = 44, alt, className }) {
   const id = useId();
+  // Casque/masque abandonnes (regle finale) : icone de profil vide, identique pour toutes les
+  // positions. USE_PLAYER_HELMET_ICONS=true restaurerait l'ancien rendu sans rien reecrire.
+  if (!USE_PLAYER_HELMET_ICONS) {
+    return <BlankProfileIconSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />;
+  }
   return goalie
     ? <GoalieMaskSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />
     : <PlayerHelmetSvg teamAbbrev={teamAbbrev} size={size} idPrefix={id} title={alt} className={className} />;
@@ -460,6 +526,9 @@ export function PlayerAvatar({ teamAbbrev, goalie, variant = 'card', name, numbe
 
 // ===================== Generateurs de data: URI (export canvas uniquement, voir PoolLockerRoom) =
 export function playerAvatarUri(teamAbbrev, { goalie } = {}) {
+  if (!USE_PLAYER_HELMET_ICONS) {
+    return uriFromElement(<BlankProfileIconSvg teamAbbrev={teamAbbrev} size={100} idPrefix="x" />);
+  }
   const el = goalie
     ? <GoalieMaskSvg teamAbbrev={teamAbbrev} size={100} idPrefix="x" />
     : <PlayerHelmetSvg teamAbbrev={teamAbbrev} size={100} idPrefix="x" />;

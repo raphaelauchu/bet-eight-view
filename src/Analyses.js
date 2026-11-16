@@ -10,6 +10,7 @@ import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import HockeyTicker from './HockeyTicker';
 import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
 import { playerAvatarUri, teamCrestUri, TeamJersey, TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
+import { useRosterNumber } from './rosterNumbers';
 
 // ===================== Photos de joueurs et logos d'equipe (voir src/brandAssetsConfig.js) ===
 // Tant que USE_LICENSED_NHL_ASSETS est a false (aucune licence LNH/NHLPA), aucune URL ne pointe
@@ -2249,9 +2250,11 @@ function FicheEquipe({ equipe, equipeAdverse, classement, onBack, onSelectJoueur
       </div>
  
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '16px' }}>
-        <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: isMobile ? '33px' : '40px' }} />
         <div style={{ flex: 1 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h2 style={{ margin: 0, fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)' }}>{nom}</h2>
+            <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '13px' }} />
+          </div>
           <div style={{ color: 'var(--c-666)', fontSize: '12px', marginBottom: '6px' }}>Division {division}</div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ color: '#f97316', fontWeight: 'bold', fontSize: '14px' }}>{pts} pts</span>
@@ -2507,6 +2510,7 @@ function FicheJoueur({ joueur, onBack, onSelectTeam, isFavorite, onToggleFavorit
   const [prochainAdversaire, setProchainAdversaire] = useState(null);
   const [matchupOuvert, setMatchupOuvert] = useState(false);
   const [analyseAvanceeOuverte, setAnalyseAvanceeOuverte] = useState(false);
+  const [numeroLanding, setNumeroLanding] = useState('');
   const seasonId = useSaisonCourante();
 
   useEffect(() => {
@@ -2552,6 +2556,7 @@ function FicheJoueur({ joueur, onBack, onSelectTeam, isFavorite, onToggleFavorit
       const gameType = modeStats === 'playoffs' ? 3 : 2;
       const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
+      setNumeroLanding(data.sweaterNumber || '');
       const statsSaison = extraireStatsSaisonJoueur(data, seasonId, gameType);
       const isGardien = joueur.position === 'G';
 
@@ -2615,6 +2620,10 @@ function FicheJoueur({ joueur, onBack, onSelectTeam, isFavorite, onToggleFavorit
   }
 
   const isGardien = joueur.position === 'G';
+  // Repli numero : certains joueurs (ex. recrues) n'ont pas de sweaterNumber sur /landing --
+  // meme source que la formation du pool (roster/{equipe}/current), jamais invente.
+  const numeroRoster = useRosterNumber(joueur.equipe, joueur.id);
+  const numeroAffiche = numeroLanding || numeroRoster || joueur.numero || '';
   const gp = statsAvancees?.gp || 1;
   const sogSaison = statsAvancees?.sog || 0;
 
@@ -2837,15 +2846,20 @@ const getMatchsChart = () => {
   <button onClick={() => setModeStats('playoffs')} style={{ padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', backgroundColor: modeStats === 'playoffs' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: modeStats === 'playoffs' ? 'bold' : 'normal' }}>Playoffs</button>
 </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px' }}>
-        <TeamAbbrevText teamAbbrev={joueur.equipe} style={{ fontSize: isMobile ? '33px' : '40px' }} />
+        {isGardien
+          ? <GoalieMask teamAbbrev={joueur.equipe} size={isMobile ? 70 : 86} alt={joueur.nom} />
+          : <PlayerHelmet teamAbbrev={joueur.equipe} size={isMobile ? 70 : 86} alt={joueur.nom} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</h2>
           <div
             onClick={onSelectTeam ? () => onSelectTeam(joueur.equipe) : undefined}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '6px', cursor: onSelectTeam ? 'pointer' : 'default', minHeight: onSelectTeam ? '28px' : 'auto' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '6px', cursor: onSelectTeam ? 'pointer' : 'default', minHeight: onSelectTeam ? '28px' : 'auto', fontSize: '12px', color: 'var(--c-666)' }}
           >
-            <TeamAbbrevText teamAbbrev={joueur.equipe} style={{ fontSize: '10px' }} />
-            <span style={{ color: 'var(--c-666)', fontSize: '12px' }}>{joueur.position} · {joueur.equipe} · #{joueur.numero}</span>
+            {joueur.position && <span>{joueur.position}</span>}
+            {joueur.position && <span>·</span>}
+            <TeamAbbrevText teamAbbrev={joueur.equipe} style={{ fontSize: '12px' }} />
+            {numeroAffiche && <span>·</span>}
+            {numeroAffiche && <span>#{numeroAffiche}</span>}
           </div>
         </div>
         {!isGardien && (
@@ -4086,10 +4100,13 @@ function formatDraft(draftDetails) {
   return `${draftDetails.year} · Ronde ${draftDetails.round}, ${draftDetails.overallPick}e au total (${draftDetails.teamAbbrev})`;
 }
 
+// Libelle clair (jamais une lettre isolee comme "D"/"G", incomprehensible hors contexte --
+// a ne pas confondre avec la position C/D/G/LW/RW) ; absent/inconnu -> null, l'appelant
+// n'affiche alors rien du tout (pas de tiret orphelin).
 function formatMain(shootsCatches) {
-  if (shootsCatches === 'L') return 'G';
-  if (shootsCatches === 'R') return 'D';
-  return '-';
+  if (shootsCatches === 'L') return 'Gaucher';
+  if (shootsCatches === 'R') return 'Droitier';
+  return null;
 }
 
 // Fiche joueur pour l'onglet Search : infos bio, stats saison, carriere par saison, derniers matchs.
@@ -4104,6 +4121,11 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
   const [aucunMatchSaison, setAucunMatchSaison] = useState(false);
   const [vue, setVue] = useState('saison'); // 'saison' | 'carriere'
   const seasonId = useSaisonCourante();
+  // Repli numero : certains joueurs (ex. recrues) n'ont pas de sweaterNumber sur /landing --
+  // meme source que la formation du pool (roster/{equipe}/current), jamais invente.
+  const numeroRoster = useRosterNumber(infos?.equipe, joueur.id);
+  const numeroAffiche = infos?.numero || numeroRoster || joueur.numero || '';
+  const mainLabel = formatMain(infos?.main);
 
   useEffect(() => { chargerStats(); }, [joueur.id, seasonId]);
 
@@ -4158,12 +4180,10 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
       const eqActuelle = data.currentTeamAbbrev || joueur.equipe;
 
       setInfos({
-        headshot: playerPhotoUrl(seasonId, eqActuelle, joueur.id, { goalie: isGardien }),
-        teamLogo: LOGOS_NHL[eqActuelle],
         equipe: eqActuelle,
         nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
         position: data.position || joueur.position,
-        numero: data.sweaterNumber || joueur.numero,
+        numero: data.sweaterNumber || '',
         taille: data.heightInInches,
         poids: data.weightInPounds,
         naissance: data.birthDate,
@@ -4257,11 +4277,14 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
           : <PlayerHelmet teamAbbrev={infos?.equipe} size={isMobile ? 70 : 86} alt={infos?.nomComplet} />}
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: '0 0 3px', fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{infos?.nomComplet}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--c-666)' }}>
+            {infos?.position && <span>{infos.position}</span>}
+            {infos?.position && <span>·</span>}
             <TeamAbbrevText teamAbbrev={infos?.equipe} style={{ fontSize: '12px' }} />
-            <span style={{ color: 'var(--c-666)', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {infos?.position} · {infos?.nomEquipeComplet || infos?.equipe} ({infos?.equipe}) · #{infos?.numero}{infos?.main ? ` · ${formatMain(infos.main)}` : ''}
-            </span>
+            {numeroAffiche && <span>·</span>}
+            {numeroAffiche && <span>#{numeroAffiche}</span>}
+            {mainLabel && <span>·</span>}
+            {mainLabel && <span>{mainLabel}</span>}
           </div>
         </div>
       </div>
@@ -4805,6 +4828,10 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
   const [carriere, setCarriere] = useState([]);
   const [derniers, setDerniers] = useState([]);
   const seasonId = useSaisonCourante();
+  // Repli numero : certains joueurs (ex. recrues) n'ont pas de sweaterNumber sur /landing --
+  // meme source que la formation du pool (roster/{equipe}/current), jamais invente.
+  const numeroRoster = useRosterNumber(infos?.equipe, joueur.id);
+  const numeroAffiche = infos?.numero || numeroRoster || joueur.numero || '';
 
   useEffect(() => { chargerStats(); }, [joueur.id, seasonId]);
 
@@ -4817,12 +4844,10 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
       const eqActuelle = data.currentTeamAbbrev || joueur.equipe;
 
       setInfos({
-        headshot: playerPhotoUrl(seasonId, eqActuelle, joueur.id, { goalie: isGardien }),
-        teamLogo: LOGOS_NHL[eqActuelle],
         equipe: eqActuelle,
         nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
         position: data.position || joueur.position,
-        numero: data.sweaterNumber || joueur.numero,
+        numero: data.sweaterNumber || '',
         naissance: data.birthDate,
       });
 
@@ -4906,9 +4931,14 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
           : <PlayerHelmet teamAbbrev={infos?.equipe} size={isMobile ? 76 : 96} alt={infos?.nomComplet} />}
         <div style={{ flex: 1, minWidth: '180px' }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{infos?.nomComplet}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', fontSize: '13px', fontWeight: '600', color: theme.textMuted }}>
+            {infos?.position && <span>{infos.position}</span>}
+            {infos?.position && <span>·</span>}
             <TeamAbbrevText teamAbbrev={infos?.equipe} style={{ fontSize: '13px' }} />
-            <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>{infos?.position} · {infos?.equipe} · #{infos?.numero}{age != null ? ` · ${age} ans` : ''}</span>
+            {numeroAffiche && <span>·</span>}
+            {numeroAffiche && <span>#{numeroAffiche}</span>}
+            {age != null && <span>·</span>}
+            {age != null && <span>{age} ans</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -5056,9 +5086,11 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
       <WSBackButton theme={theme} onClick={onBack} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: isMobile ? '35px' : '44px' }} />
         <div style={{ flex: 1, minWidth: '180px' }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{nom}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h2 style={{ margin: 0, fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{nom}</h2>
+            <TeamAbbrevText teamAbbrev={abbrev} style={{ fontSize: '14px' }} />
+          </div>
           <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>Division {equipe?.divisionName} · {equipe?.conferenceName}</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>

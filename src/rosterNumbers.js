@@ -8,6 +8,12 @@ import { getUrl } from './nhlApi';
 // formation, echanges, repechage) et reutilise pour tous les joueurs de cette equipe.
 const teamRosterCache = new Map(); // teamAbbrev -> Promise<Map<playerId, sweaterNumber>>
 
+// Tests uniquement : vide le cache entre deux tests qui simulent des rosters differents pour
+// la meme equipe (sans ca, le premier mock gagnerait pour tous les tests suivants du fichier).
+export function _resetTeamRosterCache() {
+  teamRosterCache.clear();
+}
+
 function fetchTeamNumbers(teamAbbrev) {
   if (!teamRosterCache.has(teamAbbrev)) {
     const promise = fetch(getUrl(`roster/${teamAbbrev}/current`))

@@ -4,6 +4,7 @@ import { getT } from './i18n';
 import { getUrl } from './nhlApi';
 import { useIsMobile, useSaisonCourante, LOGOS_NHL, playerPhotoUrl } from './Analyses';
 import { TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
+import { useRosterNumber } from './rosterNumbers';
 import {
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId, PICK_POSITIONS,
   currentSeasonLabelFromSeasonId, POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS,
@@ -312,6 +313,10 @@ export function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, ca
   const [infos, setInfos] = useState(null);
   const [career, setCareer] = useState([]);
   const [notFound, setNotFound] = useState(false);
+  // Repli numero : certains joueurs (ex. recrues) n'ont pas de sweaterNumber sur /landing --
+  // meme source que la formation du pool (roster/{equipe}/current), jamais invente.
+  const numeroRoster = useRosterNumber(infos?.team || target.team, target.id);
+  const numeroAffiche = infos?.number || numeroRoster || target.numero || '';
 
   useEffect(() => {
     if (isTeam || isManualPlayer) return;
@@ -362,9 +367,12 @@ export function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, ca
             <PlayerAvatar teamAbbrev={!isManualPlayer ? (infos?.team || target.team) : null} goalie={(infos?.position || target.posReel) === 'G'} size={64} alt={infos?.fullName || target.name} />
             <div>
               <div style={{ fontSize: '17px', fontWeight: '800', color: 'var(--c-white)' }}>{infos?.fullName || target.name}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--c-666)' }}>
-                {infos?.team && <TeamLogo abbrev={infos.team} size={16} />}
-                <span>{infos?.position || target.posReel} · {infos?.team || target.team}{infos?.number ? ` · #${infos.number}` : ''}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--c-666)' }}>
+                {(infos?.position || target.posReel) && <span>{infos?.position || target.posReel}</span>}
+                {(infos?.position || target.posReel) && <span>·</span>}
+                <TeamLogo abbrev={infos?.team || target.team} size={16} />
+                {numeroAffiche && <span>·</span>}
+                {numeroAffiche && <span>#{numeroAffiche}</span>}
               </div>
               {(age != null || infos?.heightCm) && (
                 <div style={{ fontSize: '11px', color: 'var(--c-555)', marginTop: '2px' }}>

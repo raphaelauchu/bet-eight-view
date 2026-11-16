@@ -50,3 +50,10 @@ export function teamGradient(abbrev) {
 export function teamColors(abbrev) {
   return NHL_TEAM_COLORS[abbrev] || BETRICS_NEUTRAL_COLORS;
 }
+
+// true si `abbrev` correspond a une vraie equipe LNH connue (donc a de vraies couleurs de
+// marque) -- false pour un abbrev vide/inconnu, auquel cas l'appelant doit utiliser un gris
+// neutre Betrics plutot que le repli BETRICS_NEUTRAL_COLORS (qui n'est pas un gris).
+export function hasKnownTeamColors(abbrev) {
+  return !!NHL_TEAM_COLORS[abbrev];
+}
