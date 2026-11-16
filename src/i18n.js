@@ -1062,6 +1062,7 @@ const translations = {
 
     landing_footer_tagline: 'Analyse de paris sportifs LNH.',
     landing_footer_disclaimer: 'Betrics est un outil d\'analyse. Nous ne plaçons pas de paris et ne sommes pas un bookmaker. Aucune information sur ce site ne garantit un gain.',
+    landing_footer_nhl_disclaimer: 'Betrics n\'est affilié ni à la LNH ni à l\'Association des joueurs de la LNH (NHLPA), et n\'est pas endossé par eux. Les noms de joueurs et d\'équipes sont utilisés à titre informatif.',
     landing_footer_age: 'Le jeu est réservé aux personnes majeures : 18 ans et plus au Québec, en Alberta et au Manitoba ; 19 ans et plus dans le reste du Canada.',
     landing_footer_help_intro: 'Besoin d\'aide avec le jeu ?',
     landing_footer_help_name: 'Jeu : aide et référence',
@@ -1076,6 +1077,8 @@ const translations = {
     landing_legal_terms_body: 'Cette page sera complétée prochainement avec nos conditions d\'utilisation détaillées. Pour toute question en attendant, écris-nous via la page de contact.',
     landing_legal_privacy_title: 'Politique de confidentialité',
     landing_legal_privacy_body: 'Cette page sera complétée prochainement avec notre politique de confidentialité détaillée. Tes données servent uniquement à faire fonctionner ton compte Betrics et ne sont jamais revendues. Pour toute question en attendant, écris-nous via la page de contact.',
+    landing_legal_nhl_title: 'Marques et affiliation',
+    landing_legal_nhl_body: 'Betrics n\'est affilié ni à la LNH ni à l\'Association des joueurs de la LNH (NHLPA), et n\'est pas endossé par eux. Les noms de joueurs et d\'équipes sont utilisés à titre informatif. Tant qu\'aucune licence n\'existe, aucune photo de joueur ni logo d\'équipe officiel n\'est affiché sur Betrics : des casques, chandails et badges génériques dessinés par Betrics les remplacent partout dans l\'application.',
   },
 
   en: {
@@ -2141,6 +2144,7 @@ const translations = {
 
     landing_footer_tagline: 'NHL sports betting analysis.',
     landing_footer_disclaimer: 'Betrics is an analysis tool. We do not place bets and are not a sportsbook. Nothing on this site guarantees a win.',
+    landing_footer_nhl_disclaimer: 'Betrics is not affiliated with, nor endorsed by, the NHL or the National Hockey League Players\' Association (NHLPA). Player and team names are used for informational purposes only.',
     landing_footer_age: 'Gambling is restricted to legal age: 18+ in Quebec, Alberta and Manitoba; 19+ in the rest of Canada.',
     landing_footer_help_intro: 'Need help with gambling?',
     landing_footer_help_name: 'Gambling: Help and Referral',
@@ -2155,6 +2159,8 @@ const translations = {
     landing_legal_terms_body: 'This page will be completed soon with our detailed terms of use. For any question in the meantime, reach us via the contact page.',
     landing_legal_privacy_title: 'Privacy policy',
     landing_legal_privacy_body: 'This page will be completed soon with our detailed privacy policy. Your data is only used to run your Betrics account and is never sold. For any question in the meantime, reach us via the contact page.',
+    landing_legal_nhl_title: 'Trademarks and affiliation',
+    landing_legal_nhl_body: 'Betrics is not affiliated with, nor endorsed by, the NHL or the National Hockey League Players\' Association (NHLPA). Player and team names are used for informational purposes only. Until a license exists, no player photo or official team logo is shown on Betrics: generic helmets, jerseys and badges designed by Betrics replace them everywhere in the app.',
   },
 };
 

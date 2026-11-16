@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
+import { useIsMobile, useSaisonCourante, LOGOS_NHL, playerPhotoUrl } from './Analyses';
 
 const POS_ORDER = ['F', 'D', 'G'];
 const POS_LABELS = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
@@ -859,7 +859,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = 'var(--c-222)'; }}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${r.teamAbbrev}/${r.playerId}.png`} alt={r.name}
+                      <img src={playerPhotoUrl(seasonId, r.teamAbbrev, r.playerId, { goalie: r.positionCode === 'G' })} alt={r.name}
                         style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0, pointerEvents: 'none' }}
                         onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[r.teamAbbrev]; }} />
                       <img src={LOGOS_NHL[r.teamAbbrev]} alt={r.teamAbbrev} style={{ width: '20px', height: '20px', objectFit: 'contain', flexShrink: 0, pointerEvents: 'none' }} onError={e => { e.target.style.display = 'none'; }} />
@@ -951,7 +951,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-              <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${choixEnAttente.equipe}/${choixEnAttente.id}.png`} alt={choixEnAttente.nom}
+              <img src={playerPhotoUrl(seasonId, choixEnAttente.equipe, choixEnAttente.id, { goalie: choixEnAttente.posReel === 'G' })} alt={choixEnAttente.nom}
                 style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
                 onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[choixEnAttente.equipe]; }} />
               <div>
@@ -1003,7 +1003,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 const disponible = estDisponible(j.id);
                 return (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                    <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${j.equipe}/${j.id}.png`} alt={j.nom}
+                    <img src={playerPhotoUrl(seasonId, j.equipe, j.id, { goalie: j.posReel === 'G' })} alt={j.nom}
                       style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', flexShrink: 0 }}
                       onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[j.equipe]; }} />
                     <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>

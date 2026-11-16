@@ -8,7 +8,19 @@ import { getT } from './i18n';
 import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetAutoForm';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import HockeyTicker from './HockeyTicker';
- 
+import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
+import { playerAvatarUri, teamCrestUri } from './BrandAssets';
+
+// ===================== Photos de joueurs et logos d'equipe (voir src/brandAssetsConfig.js) ===
+// Tant que USE_LICENSED_NHL_ASSETS est a false (aucune licence LNH/NHLPA), aucune URL ne pointe
+// vers assets.nhle.com : playerPhotoUrl() et LOGOS_NHL (plus bas) retombent sur des casques /
+// badges dessines par Betrics (src/BrandAssets.js). L'ancien code (URLs reelles) reste
+// present dans les deux branches, jamais supprime.
+export function playerPhotoUrl(seasonId, teamAbbrev, playerId, { goalie } = {}) {
+  if (USE_LICENSED_NHL_ASSETS) return `https://assets.nhle.com/mugs/nhl/${seasonId}/${teamAbbrev || 'current'}/${playerId}.png`;
+  return playerAvatarUri(teamAbbrev, { goalie });
+}
+
 const NHL_ABBREV_TO_SLUG = {
   'ANA': 'anaheim-ducks', 'BOS': 'boston-bruins', 'BUF': 'buffalo-sabres',
   'CGY': 'calgary-flames', 'CAR': 'carolina-hurricanes', 'CHI': 'chicago-blackhawks',
@@ -33,7 +45,9 @@ function useLineupsDailyFaceoff() {
   }, []);
   return lineups;
 }
-const LOGOS_NHL = {
+// Vraies URLs de logos LNH, conservees telles quelles -- utilisees uniquement si
+// USE_LICENSED_NHL_ASSETS repasse a true (voir derivation de LOGOS_NHL plus bas).
+const LOGOS_NHL_REAL = {
   'BOS': 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg',
   'BUF': 'https://assets.nhle.com/logos/nhl/svg/BUF_light.svg',
   'DET': 'https://assets.nhle.com/logos/nhl/svg/DET_light.svg',
@@ -67,7 +81,15 @@ const LOGOS_NHL = {
   'UTA': 'https://assets.nhle.com/logos/nhl/svg/UTA_light.svg',
   'PIT': 'https://assets.nhle.com/logos/nhl/svg/PIT_light.svg',
 };
- 
+
+// Badges d'equipe neutres (voir src/BrandAssets.js) tant qu'aucune licence n'existe -- meme
+// forme (objet abbrev -> URL d'image) que LOGOS_NHL_REAL, donc chaque usage existant de
+// LOGOS_NHL[abbrev] (dizaines d'endroits : matchups, classements, calendrier, recherche...)
+// devient automatiquement sans image LNH, sans modifier ces usages un par un.
+const LOGOS_NHL = USE_LICENSED_NHL_ASSETS
+  ? LOGOS_NHL_REAL
+  : Object.fromEntries(Object.keys(LOGOS_NHL_REAL).map(abbrev => [abbrev, teamCrestUri(abbrev)]));
+
 const LIGUES = [
   { id: 'nhl', label: 'NHL', disponible: true, logo: 'https://assets.nhle.com/logos/nhl/svg/NHL_light.svg', description: 'Ligue nationale de hockey' },
   { id: 'nfl', label: 'NFL', disponible: false, logo: 'https://static.www.nfl.com/image/upload/v1554321393/league/nvfr7ogywskqrfaiu38m.svg', description: 'Ligue nationale de football' },
@@ -279,7 +301,7 @@ function CarteJoueurLigne({ joueur, onSelect, estChaud, isMobile }) {
       {estChaud && (
         <div style={{ position: 'absolute', top: '-7px', right: '-3px', backgroundColor: '#f97316', borderRadius: '8px', padding: '1px 5px', fontSize: '8px', fontWeight: 'bold', color: 'white' }}>HOT</div>
       )}
-      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <img src={playerPhotoUrl(seasonIdDepuisDate(), joueur.equipe, joueur.id)} alt={joueur.nom} style={{ width: taille, height: taille, borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)', marginBottom: '4px' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ fontSize: isMobile ? '9px' : '11px', fontWeight: 'bold', color: 'var(--c-white)', marginBottom: '2px', lineHeight: '1.2' }}>{joueur.nom.split(' ').pop()}</div>
       <div style={{ fontSize: '9px', color: 'var(--c-666)', marginBottom: '4px' }}>#{joueur.numero}</div>
       <div style={{ display: 'flex', justifyContent: 'space-around' }}>
@@ -304,7 +326,7 @@ function SectionGardien({ gardien, onSelect }) {
   if (!gardien) return null;
   return (
     <div onClick={() => onSelect(gardien)} style={{ backgroundColor: 'rgba(249,115,22,0.05)', borderRadius: '12px', border: '1px solid rgba(249,115,22,0.2)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${gardien.equipe}/${gardien.id}.png`} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
+      <img src={playerPhotoUrl(seasonIdDepuisDate(), gardien.equipe, gardien.id, { goalie: true })} alt={gardien.nom} style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-111)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[gardien.equipe]; }} />
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '10px', color: '#f97316', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gardien partant</div>
         <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-white)', marginBottom: '2px' }}>{gardien.nom}</div>
@@ -500,7 +522,7 @@ function CarteLigneMaison({ joueur, ligneMaison, couleurCategorie, onSelect, isM
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-222)'}
     >
       <span style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.4)', borderRadius: '999px', padding: '3px 7px', fontSize: '10px', fontWeight: '900', flexShrink: 0 }}>o{ligneMaison.ligne}</span>
-      <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+      <img src={playerPhotoUrl(seasonIdDepuisDate(), joueur.equipe, joueur.id)} alt={joueur.nom} style={{ width: isMobile ? '32px' : '38px', height: isMobile ? '32px' : '38px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.style.backgroundColor = 'transparent'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 'bold', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
         <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>#{joueur.numero}</div>
@@ -1275,7 +1297,6 @@ function PageStatsJoueurs({ onSelectJoueur }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-222)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={LOGOS_NHL[j.teamAbbrev]} alt={j.teamAbbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{j.name}</div>
                   <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{j.teamAbbrev} · {j.positionCode}</div>
@@ -1319,7 +1340,7 @@ function PageStatsJoueurs({ onSelectJoueur }) {
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--c-161616)'}
                 >
                   <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--c-555)', minWidth: '28px' }}>#{i+1}</div>
-                  <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display='none'} />
+                  <img src={playerPhotoUrl(seasonIdDepuisDate(), p.equipe, p.id)} alt={p.nom} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => e.target.style.display='none'} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', marginBottom: '2px' }}>{p.nom}</div>
                     <div style={{ fontSize: '12px', color: 'var(--c-555)' }}>{p.equipe} · {p.position}</div>
@@ -1464,7 +1485,6 @@ function PageStatsJoueursAnalyses({ onSelectJoueur }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-222)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={LOGOS_NHL[j.teamAbbrev]} alt={j.teamAbbrev} style={{ width: '36px', height: '36px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
                 <div>
                   <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{j.name}</div>
                   <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{j.teamAbbrev} · {j.positionCode}</div>
@@ -3299,7 +3319,7 @@ function useGardienPartant(adversaireAbbrev, seasonId) {
         nom: starter.nom,
         gaa: statsStarter?.goalsAgainstAverage != null ? statsStarter.goalsAgainstAverage.toFixed(2) : '-',
         svp: statsStarter?.savePercentage != null ? (statsStarter.savePercentage * 100).toFixed(1) + '%' : '-',
-        photo: starter.headshot || statsStarter?.headshot,
+        photo: playerPhotoUrl(seasonId, adversaireAbbrev, starter.id, { goalie: true }),
         gamesStarted: statsStarter?.gamesStarted || 0,
       });
     } catch (err) { console.error(err); setGardienPartant(null); }
@@ -3404,7 +3424,7 @@ function FicheMatchup({ joueur, adversaireAbbrev, prochainMatch, moyennePtsSaiso
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <img src={playerPhotoUrl(seasonId, joueur.equipe, joueur.id, { goalie: joueur.position === 'G' })} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
@@ -3663,7 +3683,7 @@ function FicheAnalyseAvancee({ joueur, adversaireAbbrev, prochainMatch, moyenneP
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '14px' : '24px', marginBottom: '14px', backgroundColor: 'var(--c-111)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '18px' }}>
         <div style={{ textAlign: 'center' }}>
-          <img src={`https://assets.nhle.com/mugs/nhl/${seasonId}/${joueur.equipe}/${joueur.id}.png`} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
+          <img src={playerPhotoUrl(seasonId, joueur.equipe, joueur.id, { goalie: joueur.position === 'G' })} alt={joueur.nom} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)' }} onError={e => { e.target.onerror = null; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; e.target.src = LOGOS_NHL[joueur.equipe]; }} />
           <div style={{ color: 'var(--c-white)', fontSize: '12px', fontWeight: '700', marginTop: '6px', maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{joueur.nom}</div>
           <div style={{ color: 'var(--c-666)', fontSize: '10px' }}>{joueur.equipe}</div>
         </div>
@@ -4124,11 +4144,12 @@ function FicheJoueurStats({ joueur, onBack, onAnalyser }) {
       const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
       const isGardien = (data.position || joueur.position) === 'G';
+      const eqActuelle = data.currentTeamAbbrev || joueur.equipe;
 
       setInfos({
-        headshot: data.headshot,
-        teamLogo: data.teamLogo,
-        equipe: data.currentTeamAbbrev || joueur.equipe,
+        headshot: playerPhotoUrl(seasonId, eqActuelle, joueur.id, { goalie: isGardien }),
+        teamLogo: LOGOS_NHL[eqActuelle],
+        equipe: eqActuelle,
         nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
         position: data.position || joueur.position,
         numero: data.sweaterNumber || joueur.numero,
@@ -4416,7 +4437,7 @@ function BracketPlayoffs({ bracket }) {
       <div style={{ backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--c-333)', marginBottom: '5px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', opacity: gagne && gagne !== top?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={top?.logo} alt={top?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <img src={LOGOS_NHL[top?.abbrev]} alt={top?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.abbrev}</span>
           </div>
           <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === top?.id ? '#f97316' : 'white' }}>{top?.wins}</span>
@@ -4424,7 +4445,7 @@ function BracketPlayoffs({ bracket }) {
         <div style={{ height: '1px', backgroundColor: 'var(--c-222)', marginBottom: '4px' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: gagne && gagne !== bot?.id ? 0.4 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <img src={bot?.logo} alt={bot?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            <img src={LOGOS_NHL[bot?.abbrev]} alt={bot?.abbrev} style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
             <span style={{ fontWeight: 'bold', fontSize: '13px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.abbrev}</span>
           </div>
           <span style={{ fontWeight: '900', fontSize: '16px', color: gagne === bot?.id ? '#f97316' : 'white' }}>{bot?.wins}</span>
@@ -4620,11 +4641,6 @@ function WSSearchBar({ theme, skaters, goalies, classement, onSelectPlayer, onSe
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = theme.cardHover; }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              {r.type === 'player' ? (
-                <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', backgroundColor: theme.cardHover, flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
-              ) : (
-                <img src={LOGOS_NHL[r.equipe]} alt={r.nom} style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: '600', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</div>
                 <div style={{ fontSize: '11px', color: theme.textFaint }}>{r.type === 'player' ? `${r.sousTitre} · ${r.equipe}` : r.sousTitre}</div>
@@ -4755,7 +4771,7 @@ function SectionEquipes({ theme, classement, onSelect, chargement }) {
                   onMouseLeave={ev => { ev.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
                   <span style={{ width: '20px', textAlign: 'center', fontSize: '13px', fontWeight: '700', color: i < 3 ? theme.accent : theme.textFaint }}>{i + 1}</span>
-                  <img src={e.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '34px', height: '34px', objectFit: 'contain' }} onError={ev => { ev.target.style.display = 'none'; }} />
+                  <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '34px', height: '34px', objectFit: 'contain' }} onError={ev => { ev.target.style.display = 'none'; }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '14px', fontWeight: '700', color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.teamName?.default || abbrev}</div>
                     <div style={{ fontSize: '11.5px', color: theme.textMuted }}>{e.wins ?? 0}-{e.losses ?? 0}-{e.otLosses ?? 0}</div>
@@ -4788,11 +4804,12 @@ function FicheJoueurWS({ theme, joueur, onBack }) {
       const res = await fetch(getUrl(`player/${joueur.id}/landing`));
       const data = await res.json();
       const isGardien = (data.position || joueur.position) === 'G';
+      const eqActuelle = data.currentTeamAbbrev || joueur.equipe;
 
       setInfos({
-        headshot: data.headshot,
-        teamLogo: data.teamLogo,
-        equipe: data.currentTeamAbbrev || joueur.equipe,
+        headshot: playerPhotoUrl(seasonId, eqActuelle, joueur.id, { goalie: isGardien }),
+        teamLogo: LOGOS_NHL[eqActuelle],
+        equipe: eqActuelle,
         nomComplet: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || joueur.nom,
         position: data.position || joueur.position,
         numero: data.sweaterNumber || joueur.numero,
@@ -5027,7 +5044,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
       <WSBackButton theme={theme} onClick={onBack} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '18px', backgroundColor: theme.card, border: `1px solid ${theme.cardBorder}`, borderRadius: '20px', padding: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <img src={equipe?.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '64px' : '80px', height: isMobile ? '64px' : '80px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
+        <img src={LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: isMobile ? '64px' : '80px', height: isMobile ? '64px' : '80px', objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
         <div style={{ flex: 1, minWidth: '180px' }}>
           <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? '20px' : '26px', fontWeight: '900', color: theme.text, letterSpacing: '-0.5px' }}>{nom}</h2>
           <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: '600' }}>Division {equipe?.divisionName} · {equipe?.conferenceName}</span>
@@ -5070,7 +5087,7 @@ function FicheEquipeWS({ theme, equipe, skaters, onBack, onSelectPlayer }) {
             key={j.playerId}
             theme={theme}
             rang={i + 1}
-            joueur={{ nom: j.skaterFullName, equipe: abbrev, photo: `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${abbrev}/${j.playerId}.png` }}
+            joueur={{ nom: j.skaterFullName, equipe: abbrev, photo: playerPhotoUrl(seasonIdDepuisDate(), abbrev, j.playerId) }}
             valeur={j.points}
             label="PTS"
             sousLabel={`${j.goals}B ${j.assists}P`}
@@ -5117,7 +5134,7 @@ function StatsHub({ onLigueChange }) {
     setChargement(false);
   }
 
-  function photoJoueur(id, equipe) { return `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${equipe}/${id}.png`; }
+  function photoJoueur(id, equipe, goalie) { return playerPhotoUrl(seasonIdDepuisDate(), equipe, id, { goalie }); }
 
   const fmtSkater = (j) => {
     const eq = (j.teamAbbrevs || '').split(',')[0].trim();
@@ -5128,7 +5145,7 @@ function StatsHub({ onLigueChange }) {
 
   const fmtGardien = (g) => {
     const eq = (g.teamAbbrevs || '').split(',')[0].trim();
-    return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', gp: g.gamesPlayed, wins: g.wins, goalsAgainstAverage: g.goalsAgainstAverage, savePct: g.savePct, gaa: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-', svp: g.savePct != null ? (g.savePct * 100).toFixed(1) + '%' : '-', photo: photoJoueur(g.playerId, eq) };
+    return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', gp: g.gamesPlayed, wins: g.wins, goalsAgainstAverage: g.goalsAgainstAverage, savePct: g.savePct, gaa: g.goalsAgainstAverage != null ? g.goalsAgainstAverage.toFixed(2) : '-', svp: g.savePct != null ? (g.savePct * 100).toFixed(1) + '%' : '-', photo: photoJoueur(g.playerId, eq, true) };
   };
   const goaliesFiltres = goalies.filter(g => (g.gamesPlayed || 0) >= 3).map(fmtGardien);
   const gardiensGAA = [...goaliesFiltres].sort((a, b) => a.goalsAgainstAverage - b.goalsAgainstAverage).slice(0, 10);
@@ -5806,7 +5823,6 @@ function AnalyseSearchBar({ t, classement, seasonId, onOpenPlayer, onOpenTeam, o
                     return (
                       <div key={`p-${r.id}`} onClick={() => choisir(r)} onMouseEnter={() => setActiveIndex(idx)}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
-                        <img src={`https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${r.equipe}/${r.id}.png`} alt={r.nom} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.onerror = null; e.target.src = LOGOS_NHL[r.equipe] || ''; e.target.style.objectFit = 'contain'; e.target.style.borderRadius = '0'; }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nom}</div>
                           <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{r.position} · {r.equipe}</div>
@@ -5825,7 +5841,6 @@ function AnalyseSearchBar({ t, classement, seasonId, onOpenPlayer, onOpenTeam, o
                       <div key={`e-${r.id}`} onMouseEnter={() => setActiveIndex(idx)}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px', minHeight: '44px', backgroundColor: activeIndex === idx ? 'var(--c-1a1a1a)' : 'transparent' }}>
                         <div onClick={() => choisir(r)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, cursor: 'pointer' }}>
-                          <img src={LOGOS_NHL[r.id]} alt={r.id} style={{ width: '28px', height: '28px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
                           <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{r.nom}</div>
                         </div>
                         {onOpenUpcomingMatch && (
@@ -5951,7 +5966,7 @@ function WatchlistPanel({ t, watchlist, formeCache, onOpen, onRemove }) {
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
-                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : `https://assets.nhle.com/mugs/nhl/${seasonIdDepuisDate()}/${w.equipe || ''}/${w.ref_id}.png`}
+                <img src={w.kind === 'team' ? LOGOS_NHL[w.ref_id] : playerPhotoUrl(seasonIdDepuisDate(), w.equipe || '', w.ref_id)}
                   alt={w.label} style={{ width: '28px', height: '28px', borderRadius: w.kind === 'team' ? 0 : '50%', objectFit: w.kind === 'team' ? 'contain' : 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }}
                   onError={e => { e.target.style.display = 'none'; }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -6489,7 +6504,7 @@ async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
     return tries.map(g => {
       const eq = (g.teamAbbrevs || '').split(',')[0].trim();
       const svp = g.savePct != null ? (g.savePct * 100).toFixed(1) : '-';
-      return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${g.playerId}.png`, statText: `${g.wins ?? 0}V · ${g.losses ?? 0}D · ${g.shutouts ?? 0}BL · ${svp}%` };
+      return { id: g.playerId, nom: g.goalieFullName, equipe: eq, position: 'G', numero: '', photo: playerPhotoUrl(seasonId, eq, g.playerId, { goalie: true }), statText: `${g.wins ?? 0}V · ${g.losses ?? 0}D · ${g.shutouts ?? 0}BL · ${svp}%` };
     });
   }
   const cayenneExp = buildCayenneExp({ seasonId, gameType: 2, teamAbbrev });
@@ -6506,7 +6521,7 @@ async function fetchClassementPosition(categorie, teamAbbrev, seasonId) {
   }
   const tous = (data.data || []).map(j => {
     const eq = (j.teamAbbrevs || '').split(',')[0].trim();
-    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: `https://assets.nhle.com/mugs/nhl/${seasonId}/${eq}/${j.playerId}.png`, statText: `${j.goals ?? 0}B · ${j.assists ?? 0}P · ${j.points ?? 0}PTS` };
+    return { id: j.playerId, nom: j.skaterFullName, equipe: eq, position: j.positionCode, numero: '', photo: playerPhotoUrl(seasonId, eq, j.playerId), statText: `${j.goals ?? 0}B · ${j.assists ?? 0}P · ${j.points ?? 0}PTS` };
   });
   return categorie === 'defenseurs' ? tous.filter(j => j.position === 'D') : tous.filter(j => j.position !== 'D');
 }
@@ -6621,7 +6636,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
       : j.positionCode !== 'D' && j.positionCode !== 'G';
     const eqOk = equipeFiltre === 'ALL' || j.teamAbbrev === equipeFiltre;
     return posOk && eqOk;
-  }).map(j => ({ id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '', photo: `https://assets.nhle.com/mugs/${j.playerId}.png` })) : [];
+  }).map(j => ({ id: j.playerId, nom: j.name, equipe: j.teamAbbrev, position: j.positionCode, numero: j.sweaterNumber || '', photo: playerPhotoUrl(seasonIdDepuisDate(), j.teamAbbrev, j.playerId, { goalie: j.positionCode === 'G' }) })) : [];
 
   const q = query.trim().toLowerCase();
   const equipesParDivision = categorie === 'equipes'
@@ -6648,7 +6663,6 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
     >
       {rang != null && <div style={{ width: '20px', textAlign: 'center', color: 'var(--c-555)', fontWeight: '700', fontSize: '13px', flexShrink: 0 }}>{rang}</div>}
-      <img src={j.photo} alt={j.nom} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.nom}</div>
         <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{j.equipe}{j.position ? ` · ${j.position}` : ''}</div>
@@ -6668,7 +6682,6 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
         onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'}
         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
       >
-        <img src={s.teamLogo || LOGOS_NHL[abbrev]} alt={abbrev} style={{ width: '32px', height: '32px', objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nom}</div>
           <div style={{ fontSize: '12px', color: 'var(--c-666)' }}>{s.wins ?? 0}-{s.losses ?? 0}-{s.otLosses ?? 0}</div>

@@ -9,6 +9,7 @@ jest.mock('./Analyses', () => ({
   useIsMobile: () => false,
   useSaisonCourante: () => '20262027',
   LOGOS_NHL: {},
+  playerPhotoUrl: jest.fn(() => 'data:image/svg+xml,mock'),
   FicheJoueurStats: () => null,
 }));
 jest.mock('./PoolDraftRoom', () => {

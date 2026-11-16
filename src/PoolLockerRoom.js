@@ -427,6 +427,9 @@ function PoolTeamBanner({ pool, member, rows, standingsRow, teamPick, lang }) {
 
 function imageProxyUrl(nhlUrl) {
   if (!nhlUrl) return nhlUrl;
+  // data: (casque/chandail dessines par Betrics, voir BrandAssets.js) : deja inline, jamais
+  // de probleme CORS pour <canvas> -- ne jamais faire transiter par le proxy d'image LNH.
+  if (nhlUrl.startsWith('data:')) return nhlUrl;
   const estEnProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('github.dev');
   return estEnProduction ? `/api/nhl-image?url=${encodeURIComponent(nhlUrl)}` : nhlUrl;
 }
@@ -497,7 +500,7 @@ export async function exportLockerRoomImage({ pool, member, rows, standingsRow, 
     ctx.fillStyle = 'rgba(255,255,255,0.05)';
     ctx.fillRect(padding, y - 22, width - padding * 2, rowH - 8);
 
-    const headshot = await loadImageSafe(imageProxyUrl(headshotUrl(r.ref_id, seasonId, r.team_abbrev)));
+    const headshot = await loadImageSafe(imageProxyUrl(headshotUrl(r.ref_id, seasonId, r.team_abbrev, r.pos_group)));
     if (headshot) {
       ctx.save();
       ctx.beginPath();

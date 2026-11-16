@@ -190,7 +190,7 @@ function TradeSlotFilled({ row, seasonId, capEnabled, onOpen, onRemove }) {
   return (
     <div className="trade-slot trade-slot-filled">
       <button type="button" className="trade-slot-main" onClick={() => onOpen(row)}>
-        {isTeam ? <TeamLogo abbrev={row.ref_id} size={28} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={28} />}
+        {isTeam ? <TeamLogo abbrev={row.ref_id} size={28} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} size={28} />}
         <span className="trade-slot-pos" style={{ color: POS_COLORS[row.pos_group] }}>{row.pos_group}</span>
         <span className="trade-slot-name">{row.label}</span>
         {!isTeam && row.team_abbrev && <span className="trade-slot-team">{row.team_abbrev}</span>}
@@ -322,7 +322,7 @@ function TradePlayerPickerModal({ rows, excludeKeys, elsewhereKeys, injuries, ga
             const gameStatus = gameStatusForTeam(gamesToday, r.team_abbrev);
             return (
               <button type="button" key={key} disabled={disabled} className="trade-picker-row" onClick={() => !disabled && onPick(r)}>
-                {r.kind === 'team' ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={24} />}
+                {r.kind === 'team' ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev, r.pos_group)} size={24} />}
                 <span className="trade-picker-pos" style={{ color: POS_COLORS[r.pos_group] }}>{r.pos_group}</span>
                 <span className="trade-picker-name">{r.label}</span>
                 {injury && <span className="trade-picker-injury-dot" aria-label={`${t('pool_locker_injury_prefix')} ${injury.status}`} />}

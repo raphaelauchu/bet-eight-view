@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getT } from './i18n';
 import { headshotUrl, TeamLogo, PlayerAvatar, round1 } from './PoolDraftRoom';
 import { teamColors } from './nhlTeamColors';
+import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
+import { TeamJersey } from './BrandAssets';
 
 // ===================== PlayerCard : carte joueur unique, reutilisee partout =====================
 // Formation (Vue vestiaire), echanges, agents libres, repechage, anciens joueurs -- un seul
@@ -63,8 +65,14 @@ function initialsFromName(label) {
 
 // Jamais de fantome gris : si la photo echoue (ou n'existe pas encore pour ce joueur), des
 // initiales sur la couleur reelle de son equipe LNH (nhlTeamColors.js) prennent sa place.
+// Formation du pool (B, voir brandAssetsConfig.js) : tant qu'aucune licence LNH/NHLPA n'existe,
+// jamais de photo ici -- un chandail aux couleurs de l'equipe avec les initiales du joueur
+// (aucun numero de chandail fiable n'est disponible pour les lignes de pool, voir PoolLockerRoom.js).
 function PlayerPhotoOrInitials({ src, label, teamAbbrev }) {
   const [failed, setFailed] = useState(false);
+  if (!USE_LICENSED_NHL_ASSETS) {
+    return <TeamJersey teamAbbrev={teamAbbrev} label={initialsFromName(label)} size={64} className="player-card-photo-img" />;
+  }
   if (!src || failed) {
     const colors = teamColors(teamAbbrev);
     return (
@@ -167,7 +175,7 @@ export default function PlayerCard({
         )}
 
         <div className="pcf-photo">
-          <PlayerPhotoOrInitials src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} label={row.label} teamAbbrev={row.team_abbrev} />
+          <PlayerPhotoOrInitials src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} label={row.label} teamAbbrev={row.team_abbrev} />
         </div>
 
         <div className="pcf-name" style={{ fontSize: formationNameFontSize(row.label) }}>
@@ -239,7 +247,7 @@ export default function PlayerCard({
         </div>
       )}
 
-      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev)} size={photoSize} />}
+      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} size={photoSize} />}
       {!isTeam && row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={size === 'L' ? 18 : 14} />}
       <div className="player-card-name">{row.label}</div>
       {!isTeam && <div className="player-card-pos">{row.pos_group}</div>}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import Auth from './Auth';
 import PublicSite from './PublicSite';
-import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
+import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide, playerPhotoUrl } from './Analyses';
 import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
@@ -541,7 +541,7 @@ function PropsPage({ lang = 'en' }) {
             <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-333)', minWidth: '24px', textAlign: 'center' }}>#{i+1}</div>
 
             {/* Photo */}
-            <img src={'https://assets.nhle.com/mugs/' + p.id + '.png'} alt={p.nom}
+            <img src={playerPhotoUrl(seasonId, p.equipe, p.id)} alt={p.nom}
               style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'var(--c-1a1a1a)', border: '2px solid var(--c-222)', flexShrink: 0 }}
               onError={e => { e.target.style.display='none'; }} />
 

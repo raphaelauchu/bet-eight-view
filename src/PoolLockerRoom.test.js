@@ -8,6 +8,7 @@ jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }
 jest.mock('./Analyses', () => ({
   useSaisonCourante: () => '20262027',
   LOGOS_NHL: { MTL: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg' },
+  playerPhotoUrl: jest.fn(() => 'data:image/svg+xml,mock'),
   FicheJoueurStats: ({ joueur, onBack }) => (
     <div>
       <span>FICHE:{joueur.nom}</span>
@@ -347,7 +348,7 @@ test('PoolTeamHub : onglet Banc/IR masque pour un pool classique (toujours vide)
   expect(screen.queryByText('Banc/IR')).not.toBeInTheDocument();
 });
 
-test('PoolTeamHub : onglet Banc/IR -- joueur sans photo affiche ses initiales, jamais un fantome', async () => {
+test('PoolTeamHub : onglet Banc/IR -- joueur affiche un chandail aux initiales (jamais une photo/logo LNH)', async () => {
   const rows = [makeRow({ ref_id: 'bn1', label: 'Jean Dupont', pos_group: 'F', current_slot: 'BN', team_abbrev: 'MTL' })];
   render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('Banc/IR')).toBeInTheDocument());
@@ -355,9 +356,11 @@ test('PoolTeamHub : onglet Banc/IR -- joueur sans photo affiche ses initiales, j
 
   const img = document.querySelector('.player-card-photo-img');
   expect(img).toBeInTheDocument();
-  fireEvent.error(img);
-  expect(document.querySelector('.player-card-initials')).toBeInTheDocument();
-  expect(screen.getByText('JD')).toBeInTheDocument();
+  // Tant qu'aucune licence LNH/NHLPA n'existe (USE_LICENSED_NHL_ASSETS=false) : un chandail
+  // SVG dessine par Betrics (data:, jamais assets.nhle.com), initiales visibles dedans.
+  expect(img.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/);
+  expect(img.getAttribute('src')).not.toMatch(/nhle\.com/);
+  expect(decodeURIComponent(img.getAttribute('src'))).toContain('JD');
 });
 
 test('PoolTeamHub : etat de chargement -- squelette affiche, pas de carte/onglet, pas de crash', () => {

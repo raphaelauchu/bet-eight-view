@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
-import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
+import { useIsMobile, useSaisonCourante, LOGOS_NHL, playerPhotoUrl } from './Analyses';
 import {
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId, PICK_POSITIONS,
   currentSeasonLabelFromSeasonId, POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS,
@@ -44,8 +44,10 @@ function getStatsUrl(fullUrl) {
   return estEnProduction ? `/api/nhl?path=${encodeURIComponent(fullUrl)}` : fullUrl;
 }
 
-export function headshotUrl(playerId, seasonId, team) {
-  return `https://assets.nhle.com/mugs/nhl/${seasonId}/${team || 'current'}/${playerId}.png`;
+// posGroup optionnel ('F'|'D'|'G') : choisit le casque (skater) ou le masque de gardien quand
+// aucune licence LNH/NHLPA n'existe (voir src/brandAssetsConfig.js, src/BrandAssets.js).
+export function headshotUrl(playerId, seasonId, team, posGroup) {
+  return playerPhotoUrl(seasonId, team, playerId, { goalie: posGroup === 'G' });
 }
 
 function calcAge(birthDate) {
@@ -322,10 +324,11 @@ export function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, ca
         if (!res.ok) throw new Error('not found');
         const data = await res.json();
         if (cancelled) return;
+        const eqActuelle = data.currentTeamAbbrev || target.team;
         setInfos({
-          headshot: data.headshot,
-          teamLogo: data.teamLogo,
-          team: data.currentTeamAbbrev || target.team,
+          headshot: headshotUrl(target.id, seasonId, eqActuelle, data.position || target.posReel),
+          teamLogo: LOGOS_NHL[eqActuelle],
+          team: eqActuelle,
           fullName: `${data.firstName?.default || ''} ${data.lastName?.default || ''}`.trim() || target.name,
           position: data.position || target.posReel,
           number: data.sweaterNumber,
@@ -803,7 +806,7 @@ function TopScorersBlock({ pool, lang, rows, showAll, setShowAll }) {
               {list.map(r => (
                 <tr key={r.ref_id} style={{ borderTop: '1px solid var(--c-161616)' }}>
                   <td style={{ padding: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={26} />
+                    <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev, r.pos_group)} size={26} />
                     <TeamLogo abbrev={r.team_abbrev} size={16} />
                     <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>{r.label}</span>
                   </td>
@@ -1010,7 +1013,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
               <tr key={`${r.kind}:${r.ref_id}`} style={{ borderTop: '1px solid var(--c-161616)', backgroundColor: isTraded ? 'rgba(239,68,68,0.06)' : 'transparent', opacity: isBenched ? 0.55 : 1 }}>
                 <td style={stickyFirstCellStyle('var(--c-0d0d0d)')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev)} size={24} />}
+                    {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar src={headshotUrl(r.ref_id, seasonId, r.team_abbrev, r.pos_group)} size={24} />}
                     {!isTeam && r.team_abbrev && <TeamLogo abbrev={r.team_abbrev} size={14} />}
                     <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       {r.label}{r.pick_no ? <span style={{ color: 'var(--c-555)', fontWeight: '400' }}> (#{r.pick_no})</span> : ''}

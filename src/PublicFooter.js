@@ -15,6 +15,7 @@ export default function PublicFooter({ lang, onOpenLegal }) {
       <div className="ws-container">
         <div className="ws-footer-responsible">
           <p>{t('landing_footer_disclaimer')}</p>
+          <p>{t('landing_footer_nhl_disclaimer')}</p>
           <p>{t('landing_footer_age')}</p>
           <p>
             {t('landing_footer_help_intro')}{' '}
