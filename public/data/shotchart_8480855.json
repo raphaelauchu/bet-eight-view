@@ -4,9 +4,9 @@
   "team": "UTA",
   "position": "C",
   "season": 2027,
-  "lastUpdated": "2026-11-16T20:09:47.449681",
+  "lastUpdated": "2026-11-17T19:05:48.579320",
   "reg": {
-    "totalGames": 21,
+    "totalGames": 22,
     "szn": {
       "lowSlot": {
         "shotsOnGoal": 8,
@@ -33,14 +33,14 @@
         "shotsOnGoal": 2,
         "goals": 1,
         "shootingPctg": 0.5,
-        "sogPercentile": 0.585,
+        "sogPercentile": 0.5791,
         "goalsPercentile": 0.9368
       },
       "rCircle": {
         "shotsOnGoal": 3,
         "goals": 1,
         "shootingPctg": 0.3333,
-        "sogPercentile": 0.7036,
+        "sogPercentile": 0.6976,
         "goalsPercentile": 0.9407
       },
       "lNetSide": {
@@ -61,35 +61,35 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8281,
-        "goalsPercentile": 0.9249
+        "sogPercentile": 0.8261,
+        "goalsPercentile": 0.9229
       },
       "rCorner": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 1.0,
+        "sogPercentile": 0.998,
         "goalsPercentile": 0.998
       },
       "lPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8221,
+        "sogPercentile": 0.8182,
         "goalsPercentile": 0.9723
       },
       "rPoint": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.5751,
+        "sogPercentile": 0.5711,
         "goalsPercentile": 0.9704
       },
       "centerPoint": {
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8043,
+        "sogPercentile": 0.8024,
         "goalsPercentile": 0.9565
       },
       "outsideL": {
@@ -103,14 +103,14 @@
         "shotsOnGoal": 1,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.664,
+        "sogPercentile": 0.6601,
         "goalsPercentile": 0.9387
       },
       "offNeutralZone": {
         "shotsOnGoal": 0,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.5909,
+        "sogPercentile": 0.5889,
         "goalsPercentile": 0.9625
       },
       "behindNet": {
@@ -118,7 +118,7 @@
         "goals": 0,
         "shootingPctg": 0.0,
         "sogPercentile": 0.749,
-        "goalsPercentile": 0.9881
+        "goalsPercentile": 0.9862
       },
       "total": {
         "shotsOnGoal": 24,
@@ -130,37 +130,37 @@
           "shotsOnGoal": 24,
           "goals": 3,
           "shootingPctg": 0.125,
-          "sogPercentile": 0.5059,
-          "goalsPercentile": 0.6008,
-          "sogLeagueAvg": 26.0672,
-          "goalsLeagueAvg": 3.4743
+          "sogPercentile": 0.5,
+          "goalsPercentile": 0.5968,
+          "sogLeagueAvg": 26.2134,
+          "goalsLeagueAvg": 3.4901
         },
         "high": {
           "shotsOnGoal": 9,
           "goals": 1,
           "shootingPctg": 0.1111,
           "sogPercentile": 0.5395,
-          "goalsPercentile": 0.5158,
-          "sogLeagueAvg": 9.6166,
-          "goalsLeagueAvg": 1.917
+          "goalsPercentile": 0.5138,
+          "sogLeagueAvg": 9.666,
+          "goalsLeagueAvg": 1.9249
         },
         "long": {
           "shotsOnGoal": 2,
           "goals": 0,
           "shootingPctg": 0.0,
-          "sogPercentile": 0.666,
+          "sogPercentile": 0.664,
           "goalsPercentile": 0.9012,
-          "sogLeagueAvg": 2.2233,
+          "sogLeagueAvg": 2.2411,
           "goalsLeagueAvg": 0.1047
         },
         "mid": {
           "shotsOnGoal": 5,
           "goals": 2,
           "shootingPctg": 0.4,
-          "sogPercentile": 0.4387,
-          "goalsPercentile": 0.8538,
-          "sogLeagueAvg": 8.2846,
-          "goalsLeagueAvg": 1.0237
+          "sogPercentile": 0.4368,
+          "goalsPercentile": 0.8518,
+          "sogLeagueAvg": 8.336,
+          "goalsLeagueAvg": 1.0277
         }
       }
     },
