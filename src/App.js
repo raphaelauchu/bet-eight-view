@@ -166,7 +166,7 @@ function IconExpand({ color = 'currentColor', size = 16 }) {
 // ouverture/fermeture au toucher, pas au survol qui n'existe pas sur mobile). `extraItems`
 // (optionnel) : entrees supplementaires inserees avant "Parametres" (ex. Modeles, Admin sur
 // mobile, qui n'ont pas de place dans la bottom nav a 6 icones).
-function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up', isMobile = false, extraItems = [] }) {
+export function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up', isMobile = false, extraItems = [], isAdmin = false, onGoToAdmin }) {
   const [ouvert, setOuvert] = useState(false);
   const [sousMenu, setSousMenu] = useState(null); // 'apparence' | 'langue' | null
   const ref = React.useRef(null);
@@ -242,6 +242,17 @@ function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, set
         {displayName && <div style={{ color: 'var(--c-666)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{utilisateur?.email}</div>}
       </div>
 
+      {isAdmin && (
+        <>
+          <button onClick={() => { onGoToAdmin(); fermer(); }} style={itemStyle}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+            <IconShield color="var(--c-888)" size={16} />
+            <span>{t('menu_admin')}</span>
+          </button>
+          <div style={{ height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '4px 0' }} />
+        </>
+      )}
+
       <LigneSousMenu cle="apparence" icon={<IconAppearance color="var(--c-888)" size={16} />} label={t('menu_appearance')}>
         <OptionRadio actif={themePref === 'light'} label={t('theme_light')} onClick={() => setThemePref('light')} />
         <OptionRadio actif={themePref === 'dark'} label={t('theme_dark')} onClick={() => setThemePref('dark')} />
@@ -305,7 +316,7 @@ function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, set
 // seulement, tooltip au survol ET au focus clavier (:focus-within) a droite de l'icone active.
 export const SIDEBAR_WIDTH_COMPACT = 60;
 
-function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
+export function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, isAdmin, onGoToAdmin }) {
   function SidebarButton({ tab, size }) {
     const badge = tab.badge > 0 ? tab.badge : null;
     return (
@@ -340,7 +351,7 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
         {tabsSecondaires.map(tab => <SidebarButton key={tab.id} tab={tab} size={18} />)}
       </div>
       <div className="sb-item">
-        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" />
+        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" isAdmin={isAdmin} onGoToAdmin={onGoToAdmin} />
       </div>
     </div>
   );
@@ -423,7 +434,7 @@ function IconMoreDots({ color = 'currentColor', size = 18 }) {
 // qu'il arrive. Le contenu compense avec un padding-top egal a MOBILE_TOPBAR_HEIGHT (voir App()).
 export const MOBILE_TOPBAR_HEIGHT = 54;
 
-export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
+export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, isAdmin, onGoToAdmin }) {
   const [moreOuvert, setMoreOuvert] = useState(false);
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)', boxSizing: 'border-box' }}>
@@ -443,6 +454,7 @@ export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, ut
           utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
           themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
           onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} isMobile
+          isAdmin={isAdmin} onGoToAdmin={onGoToAdmin}
         />
       </div>
 
@@ -558,7 +570,6 @@ function AdminPage() {
   );
 }
 
-const ADMIN_EMAILS = ['raphael.auch@outlook.com', 'mick31laf@gmail.com'];
 
 
 function PropsPage({ lang = 'en' }) {
@@ -1544,7 +1555,13 @@ function App() {
     return 'home';
   });
   const [utilisateur, setUtilisateur] = useState(null);
-  const isAdmin = utilisateur && ADMIN_EMAILS.includes(utilisateur.email);
+  // Verification d'admin cote base de donnees (profiles.is_admin, voir migration
+  // 20261119_2_profiles_is_admin.sql) -- jamais une liste d'emails codee en dur cote client
+  // (visible dans le bundle JS, ne protegeait rien reellement). Faux par defaut tant que le
+  // profil n'a pas charge : un admin voit la mention Admin apparaitre apres un court instant,
+  // jamais un non-admin ne la voit, meme furtivement.
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [profilCharge, setProfilCharge] = useState(false);
   const [showAuth, setShowAuth] = useState(() => !!poolJoinCode);
   const [authMode, setAuthMode] = useState('login');
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
@@ -1576,14 +1593,27 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); return; }
-    supabase.from('profiles').select('avatar_url, username, first_name, last_name').eq('id', utilisateur.id).single()
+    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setProfilCharge(false); return; }
+    setProfilCharge(false);
+    supabase.from('profiles').select('avatar_url, username, first_name, last_name, is_admin').eq('id', utilisateur.id).single()
       .then(({ data }) => {
         setAvatarUrl(data?.avatar_url || null);
         const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
         setDisplayName(nomComplet || '');
-      });
+        setIsAdmin(!!data?.is_admin);
+        setProfilCharge(true);
+      })
+      .catch(() => setProfilCharge(true));
   }, [utilisateur?.id]);
+
+  // Refuse l'acces direct a l'URL/au parametre admin (?admin=betrics2026) a un non-admin : des
+  // que le profil a charge (profilCharge), si la page est 'admin' sans is_admin, on redirige
+  // immediatement vers l'accueil -- AdminPage lui-meme n'est jamais rendu pour un non-admin (voir
+  // plus bas, le rendu conditionnel exige aussi isAdmin), ceci evite seulement de rester bloque
+  // sur un onglet vide.
+  useEffect(() => {
+    if (page === 'admin' && profilCharge && !isAdmin) setPage('home');
+  }, [page, profilCharge, isAdmin]);
 
   async function handleDeconnexion() {
     await supabase.auth.signOut();
@@ -1615,14 +1645,16 @@ function App() {
       { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
+    // Admin n'est plus dans cette liste (retire de la sidebar ET de la feuille "..." mobile) --
+    // reachable uniquement depuis le menu de profil (voir ProfileMenuButton isAdmin/onGoToAdmin),
+    // tout en haut, admin seulement.
     const tabsSecondaires = [
       { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
-      ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
     ];
     // Bottom nav mobile : 4 onglets seulement (Accueil/Recherche/Analyses/Modeles), icones
-    // seules. Pool/Paris/Bankroll/Admin passent par le bouton "..." de la top bar mobile
+    // seules. Pool/Paris/Bankroll passent par le bouton "..." de la top bar mobile
     // (MoreSheet, reutilise tabsSecondaires tel quel -- meme contenu que la sidebar desktop).
     const tabsMobile = tabsPrincipaux;
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
@@ -1672,7 +1704,9 @@ function App() {
     ) : page === 'pooldraft' ? (
       <PoolHub utilisateur={utilisateur} lang={lang} openPoolId={pendingOpenPoolId} onConsumedOpenPoolId={() => setPendingOpenPoolId(null)} />
     ) : page === 'admin' ? (
-      <AdminPage />
+      // isAdmin verifie cote base de donnees (profiles.is_admin) -- jamais rendu pour un
+      // non-admin, meme avant que le useEffect de redirection plus haut ait eu le temps de jouer.
+      isAdmin ? <AdminPage /> : null
     ) : page === 'stats' ? (
       <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
         pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />
@@ -1695,6 +1729,7 @@ function App() {
             tabsPrincipaux={tabsPrincipaux} tabsSecondaires={tabsSecondaires} activeId={activeId} onSelectTab={handleSelectTab}
             utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+            isAdmin={isAdmin} onGoToAdmin={() => setPage('admin')}
           />
         )}
 
@@ -1705,6 +1740,7 @@ function App() {
             utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
             themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+            isAdmin={isAdmin} onGoToAdmin={() => setPage('admin')}
           />
         )}
 
