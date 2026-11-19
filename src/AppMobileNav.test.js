@@ -12,17 +12,20 @@ const TABS = [
   { id: 'home', label: 'Accueil', Icon },
   { id: 'search', label: 'Recherche', Icon },
   { id: 'stats', label: 'Analyses', Icon, badge: 2 },
-  { id: 'props', label: 'Modèles', Icon },
+  { id: 'pooldraft', label: 'Pool', Icon },
 ];
 
 const noop = () => {};
 
-test('BottomNav : 4 onglets seulement, icones sans libelle visible, clic appelle onSelectTab', () => {
+test('BottomNav : 4 onglets Accueil/Recherche/Analyses/Pool (plus de Modeles), icones sans libelle visible, clic appelle onSelectTab', () => {
   const onSelectTab = jest.fn();
   render(<BottomNav tabs={TABS} activeId="stats" onSelectTab={onSelectTab} />);
 
   const boutons = screen.getAllByRole('button');
   expect(boutons).toHaveLength(4);
+  const libelles = boutons.map(b => b.getAttribute('aria-label'));
+  expect(libelles).toEqual(['Accueil', 'Recherche', 'Analyses', 'Pool']);
+  expect(screen.queryByLabelText('Modèles')).not.toBeInTheDocument();
   // Pas de libelle texte visible (icones seules) : seul l'aria-label porte le nom.
   expect(screen.queryByText('Accueil')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Accueil')).toBeInTheDocument();
@@ -51,6 +54,19 @@ test('MoreSheet : liste les sections secondaires avec icone + libelle, ferme et 
   fireEvent.click(screen.getByText('Bankroll'));
   expect(onSelectTab).toHaveBeenCalledWith(tabsSecondaires[2]);
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test('MoreSheet mobile (contenu reel) : Paris/Bankroll seulement -- Pool a quitte cette feuille pour la bottom nav', () => {
+  const tabsSecondairesMobile = [
+    { id: 'bets', label: 'Paris', Icon },
+    { id: 'bankroll', label: 'Bankroll', Icon },
+  ];
+  render(<MoreSheet tabs={tabsSecondairesMobile} onSelectTab={noop} onClose={noop} t={t} />);
+
+  expect(screen.getByText('Paris')).toBeInTheDocument();
+  expect(screen.getByText('Bankroll')).toBeInTheDocument();
+  expect(screen.queryByText('Pool')).not.toBeInTheDocument();
+  expect(screen.queryByText('Admin')).not.toBeInTheDocument();
 });
 
 function renderTopBar(overrides = {}) {
@@ -171,7 +187,6 @@ const TABS_PRINCIPAUX = [
   { id: 'home', label: 'Accueil', Icon },
   { id: 'search', label: 'Recherche', Icon },
   { id: 'stats', label: 'Analyses', Icon },
-  { id: 'props', label: 'Modèles', Icon },
 ];
 const TABS_SECONDAIRES = [
   { id: 'pooldraft', label: 'Pool', Icon },
@@ -191,10 +206,11 @@ function renderSidebar(overrides = {}) {
   );
 }
 
-test('AppSidebar : ordre Accueil/Recherche/Analyses/Modeles puis Pool/Paris/Bankroll, pas de "Admin" dans la liste', () => {
+test('AppSidebar : ordre Accueil/Recherche/Analyses puis Pool/Paris/Bankroll, pas de "Modeles" ni "Admin" dans la liste', () => {
   renderSidebar();
   const libelles = screen.getAllByRole('button').map(b => b.getAttribute('aria-label')).filter(Boolean).filter(l => l !== 'Betrics');
-  expect(libelles).toEqual(['Accueil', 'Recherche', 'Analyses', 'Modèles', 'Pool', 'Paris', 'Bankroll', 'Réglages']);
+  expect(libelles).toEqual(['Accueil', 'Recherche', 'Analyses', 'Pool', 'Paris', 'Bankroll', 'Réglages']);
+  expect(screen.queryByLabelText('Modèles')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Admin')).not.toBeInTheDocument();
 });
 

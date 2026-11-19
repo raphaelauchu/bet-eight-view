@@ -95,14 +95,6 @@ function IconDraft({ color = 'currentColor', size = 20 }) {
   );
 }
 
-function IconStar({ color = 'currentColor', size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
-    </svg>
-  );
-}
-
 function IconChevronRight({ color = 'currentColor', size = 14, style }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
@@ -463,6 +455,20 @@ export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, ut
       )}
     </div>
   );
+}
+
+// Dernier sous-onglet utilise dans Analyses (Matchs/Modeles, voir le controle segmente dans
+// App()) -- try/catch systematique, meme convention que readHideAmounts/writeHideAmounts
+// (src/Home.js) : jamais bloquant si localStorage est indisponible, juste perdu pour la
+// session suivante (repli silencieux sur "matchs").
+const STATS_SOUS_ONGLET_KEY = 'betrics_stats_sous_onglet';
+
+function lireStatsSousOnglet() {
+  try { return window.localStorage.getItem(STATS_SOUS_ONGLET_KEY) === 'modeles' ? 'modeles' : 'matchs'; } catch { return 'matchs'; }
+}
+
+function ecrireStatsSousOnglet(valeur) {
+  try { window.localStorage.setItem(STATS_SOUS_ONGLET_KEY, valeur); } catch { /* ignore */ }
 }
 
 function AdminPage() {
@@ -1550,10 +1556,25 @@ function App() {
     : null;
   const [page, setPage] = useState(() => {
     if (window.location.search.includes('admin=betrics2026')) return 'admin';
-    if (new URLSearchParams(window.location.search).get('page') === 'profile') return 'profile';
+    const pageParam = new URLSearchParams(window.location.search).get('page');
+    if (pageParam === 'profile') return 'profile';
+    // Ancienne route des Modeles (liens/signets/menus existants) : redirige vers Analyses, le
+    // sous-onglet Modeles est selectionne par l'initialiseur de statsSousOnglet ci-dessous.
+    if (pageParam === 'props') return 'stats';
     if (poolJoinCode) return 'pooldraft';
     return 'home';
   });
+  // Analyses fusionne desormais Matchs (ex-"Analyses") et Modeles en un seul onglet de nav avec
+  // un controle segmente interne (voir plus bas, pres du selecteur NHL/NFL) -- "Modeles" n'est
+  // plus une page/un onglet de navigation a part entiere. ?page=props reste un alias qui ouvre
+  // directement le sous-onglet Modeles (voir l'initialiseur de `page` ci-dessus).
+  const [statsSousOnglet, setStatsSousOnglet] = useState(() => (
+    new URLSearchParams(window.location.search).get('page') === 'props' ? 'modeles' : lireStatsSousOnglet()
+  ));
+  function choisirStatsSousOnglet(valeur) {
+    setStatsSousOnglet(valeur);
+    ecrireStatsSousOnglet(valeur);
+  }
   const [utilisateur, setUtilisateur] = useState(null);
   // Verification d'admin cote base de donnees (profiles.is_admin, voir migration
   // 20261119_2_profiles_is_admin.sql) -- jamais une liste d'emails codee en dur cote client
@@ -1615,6 +1636,12 @@ function App() {
     if (page === 'admin' && profilCharge && !isAdmin) setPage('home');
   }, [page, profilCharge, isAdmin]);
 
+  // Filet de securite pour toute reference interne qui pointerait encore vers l'ancienne page
+  // Modeles ('props') -- redirige vers Analyses > Modeles, jamais de rendu pour cet etat.
+  useEffect(() => {
+    if (page === 'props') { setStatsSousOnglet('modeles'); ecrireStatsSousOnglet('modeles'); setPage('stats'); }
+  }, [page]);
+
   async function handleDeconnexion() {
     await supabase.auth.signOut();
     setUtilisateur(null);
@@ -1639,24 +1666,30 @@ function App() {
   // App connectée : sidebar gauche fixe (desktop/tablette) ou bottom nav (mobile)
   if (utilisateur) {
     const t = getT(lang);
+    // Modeles n'est plus un onglet de navigation a part entiere (fusionne dans Analyses, voir le
+    // controle segmente Matchs/Modeles plus bas) -- plus d'icone etoile ni d'id 'props' ici.
     const tabsPrincipaux = [
       { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
       { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
       { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
-      { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
-    // Admin n'est plus dans cette liste (retire de la sidebar ET de la feuille "..." mobile) --
-    // reachable uniquement depuis le menu de profil (voir ProfileMenuButton isAdmin/onGoToAdmin),
-    // tout en haut, admin seulement.
+    // Sidebar desktop/iPad, 2e groupe (sous le separateur). Admin n'est plus dans cette liste
+    // (retire de la sidebar ET de la feuille "..." mobile) -- reachable uniquement depuis le menu
+    // de profil (voir ProfileMenuButton isAdmin/onGoToAdmin), tout en haut, admin seulement.
     const tabsSecondaires = [
       { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
     ];
-    // Bottom nav mobile : 4 onglets seulement (Accueil/Recherche/Analyses/Modeles), icones
-    // seules. Pool/Paris/Bankroll passent par le bouton "..." de la top bar mobile
-    // (MoreSheet, reutilise tabsSecondaires tel quel -- meme contenu que la sidebar desktop).
-    const tabsMobile = tabsPrincipaux;
+    // Bottom nav mobile : 4 onglets (Accueil/Recherche/Analyses/Pool desormais -- Pool quitte la
+    // feuille "..." pour la bottom nav). La feuille "..." mobile n'a donc plus que Paris/Bankroll
+    // (tabsSecondairesMobile, distincte de tabsSecondaires qui reste Pool/Paris/Bankroll pour la
+    // sidebar desktop).
+    const tabsMobile = [...tabsPrincipaux, { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft }];
+    const tabsSecondairesMobile = [
+      { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
+      { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
+    ];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 
     function handleSelectTab(tab) {
@@ -1669,7 +1702,7 @@ function App() {
     // Titre affiche au centre de la top bar mobile (pas d'equivalent desktop, la sidebar n'a pas
     // de titre de page -- le contenu de chaque page porte deja son propre h1/h2).
     const titresPage = {
-      home: t('nav_tab_home'), stats: t('nav_tab_analyses'), props: t('nav_tab_models'),
+      home: t('nav_tab_home'), stats: t('nav_tab_analyses'),
       profile: t('menu_settings'), bets: t('menu_bets'), bankroll: t('menu_bankroll'),
       performance: t('perf_title'), pooldraft: t('nav_tab_pool'), admin: t('menu_admin'),
     };
@@ -1708,14 +1741,20 @@ function App() {
       // non-admin, meme avant que le useEffect de redirection plus haut ait eu le temps de jouer.
       isAdmin ? <AdminPage /> : null
     ) : page === 'stats' ? (
-      <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
-        pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />
-    ) : page === 'props' ? (
-      <ModelesFlux />
+      // Analyses fusionne Matchs (contenu historique d'AnalysesFlux) et Modeles (ex-page a part,
+      // ModelesFlux intact) derriere un controle segmente -- voir plus bas, pres du selecteur
+      // NHL/NFL. Chaque composant reste monte/demonte entierement au changement d'onglet (pas de
+      // rendu simultane), comme avant quand c'etaient deux pages separees.
+      statsSousOnglet === 'modeles' ? (
+        <ModelesFlux />
+      ) : (
+        <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
+          pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />
+      )
     ) : (
       <HomeDashboard
         utilisateur={utilisateur} lang={lang}
-        onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
+        onGoToProps={() => { choisirStatsSousOnglet('modeles'); setPage('stats'); }} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
         onGoToPerformance={(periode) => { setPendingInsightsPeriod(periode || 'all'); setPage('performance'); }}
         onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
       />
@@ -1736,7 +1775,7 @@ function App() {
         {isMobile && (
           <MobileTopBar
             title={pageTitle} onGoHome={() => handleSelectTab({ id: 'home' })}
-            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
+            tabsSecondaires={tabsSecondairesMobile} onSelectTab={handleSelectTab}
             utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
             themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
@@ -1752,11 +1791,23 @@ function App() {
           />
         )}
 
-        {/* Selecteur de ligue - visible sur l'onglet Analyses */}
+        {/* Selecteur de ligue + controle segmente Matchs/Modeles - visible sur l'onglet Analyses.
+            Modeles (ex-page a part) vit desormais ici, memorise dans localStorage (voir
+            statsSousOnglet) -- jamais de changement de page, juste un changement d'onglet local. */}
         {page === 'stats' && !joueurFicheGlobal && !equipeFicheGlobal && (
-          <div style={{ display: 'flex', gap: '8px', padding: '10px 20px', borderBottom: '1px solid var(--c-161616)' }}>
-            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
-            <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-222)', color: 'var(--c-555)', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', padding: '10px 20px', borderBottom: '1px solid var(--c-161616)' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: '#f97316', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>NHL</div>
+              <div style={{ padding: '6px 16px', borderRadius: '20px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-222)', color: 'var(--c-555)', fontSize: '12px', cursor: 'not-allowed' }}>NFL · Bientôt</div>
+            </div>
+            <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '10px', padding: '3px', border: '1px solid var(--c-161616)' }}>
+              {[['matchs', t('analyses_tab_matches')], ['modeles', t('nav_tab_models')]].map(([cle, libelle]) => (
+                <button key={cle} onClick={() => choisirStatsSousOnglet(cle)}
+                  style={{ padding: '7px 18px', minHeight: '38px', boxSizing: 'border-box', borderRadius: '7px', border: 'none', cursor: 'pointer', backgroundColor: statsSousOnglet === cle ? '#f97316' : 'transparent', color: statsSousOnglet === cle ? 'white' : 'var(--c-555)', fontSize: '12.5px', fontWeight: statsSousOnglet === cle ? '700' : '600' }}>
+                  {libelle}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
