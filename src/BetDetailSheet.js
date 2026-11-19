@@ -46,7 +46,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
         match: d.match || '',
         type_pari: d.type_pari || BET_TYPES[0].value,
         selection: d.selection || '',
-        bookmaker: BOOKMAKERS_SUPPORTES.includes(d.bookmaker) ? d.bookmaker : BOOKMAKERS_SUPPORTES[0],
+        bookmaker: BOOKMAKERS_SUPPORTES.includes(d.bookmaker) ? d.bookmaker : '',
         mise: d.mise ?? '',
         cote: d.cote ?? '',
         date_pari: d.date_pari ? d.date_pari.slice(0, 10) : '',
@@ -77,7 +77,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
           match: formManuel.match,
           type_pari: formManuel.type_pari,
           selection: formManuel.selection || null,
-          bookmaker: formManuel.bookmaker,
+          bookmaker: formManuel.bookmaker || null,
           mise: parseFloat(formManuel.mise),
           cote: parseFloat(formManuel.cote),
           date_pari: formManuel.date_pari || null,
@@ -162,6 +162,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
             <div>
               <div style={labelStyle}>Bookmaker</div>
               <select style={champStyle} value={formManuel.bookmaker} onChange={e => setFormManuel({ ...formManuel, bookmaker: e.target.value })}>
+                <option value="">{t('import_field_bookmaker_none')}</option>
                 {BOOKMAKERS_SUPPORTES.map(b => <option key={b}>{b}</option>)}
               </select>
             </div>

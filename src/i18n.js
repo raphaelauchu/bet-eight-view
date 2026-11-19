@@ -264,6 +264,7 @@ const translations = {
     import_error_unsupported_image: 'Format d\'image non supporté. Essaie un JPG ou PNG.',
     import_error_analyze: 'Erreur lors de l\'analyse : {erreur}',
     import_field_bookmaker: 'Bookmaker',
+    import_field_bookmaker_none: 'Non spécifié',
     import_field_player_team: 'Joueur / Équipe',
     import_field_bet_type: 'Type de bet',
     import_field_stat: 'Stat pariée',
@@ -1213,6 +1214,16 @@ const translations = {
     sportsbook_statut_regule_qc: 'Réglementé au Québec',
     sportsbook_statut_gris_qc: 'Hors réglementation au Québec',
     sportsbook_statut_gris_qc_tooltip: 'Ce site n\'est pas autorisé par Loto-Québec. Les protections provinciales ne s\'appliquent pas.',
+
+    // "Ajouter un sportsbook" (liste d'attente, src/SportsbookWaitlist.js)
+    sportsbook_add_cta: 'Ajouter un sportsbook',
+    sportsbook_add_title: 'Ajouter un sportsbook',
+    sportsbook_intro: 'La connexion automatique à ces sportsbooks arrive bientôt. Inscris-toi pour être prévenu dès que c\'est prêt — aucun mot de passe requis, aucune connexion réelle pour l\'instant.',
+    sportsbook_coming_soon: 'Bientôt disponible',
+    sportsbook_notify_me: 'Me prévenir',
+    sportsbook_notified: 'Tu seras prévenu',
+    sportsbook_error: 'Une erreur est survenue, réessaie.',
+
     profile_province_title: 'Province',
     profile_province_sub: 'Utilisée pour afficher les sites de paris autorisés dans votre région dans le comparateur de cotes.',
     profile_province_choisir: 'Choisir votre province',
@@ -1483,6 +1494,7 @@ const translations = {
     import_error_unsupported_image: 'Unsupported image format. Try a JPG or PNG.',
     import_error_analyze: 'Error during analysis: {erreur}',
     import_field_bookmaker: 'Bookmaker',
+    import_field_bookmaker_none: 'Not specified',
     import_field_player_team: 'Player / Team',
     import_field_bet_type: 'Bet type',
     import_field_stat: 'Stat bet on',
@@ -2432,6 +2444,16 @@ const translations = {
     sportsbook_statut_regule_qc: 'Regulated in Quebec',
     sportsbook_statut_gris_qc: 'Not regulated in Quebec',
     sportsbook_statut_gris_qc_tooltip: 'This site is not authorized by Loto-Québec. Provincial protections do not apply.',
+
+    // "Add a sportsbook" (waitlist, src/SportsbookWaitlist.js)
+    sportsbook_add_cta: 'Add a sportsbook',
+    sportsbook_add_title: 'Add a sportsbook',
+    sportsbook_intro: 'Automatic syncing with these sportsbooks is coming soon. Sign up to get notified when it\'s ready — no password required, no real connection yet.',
+    sportsbook_coming_soon: 'Coming soon',
+    sportsbook_notify_me: 'Notify me',
+    sportsbook_notified: 'You\'ll be notified',
+    sportsbook_error: 'Something went wrong, try again.',
+
     profile_province_title: 'Province',
     profile_province_sub: 'Used to show the betting sites authorized in your region in the odds comparator.',
     profile_province_choisir: 'Choose your province',

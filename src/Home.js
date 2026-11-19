@@ -8,6 +8,7 @@ import { titreBetAuto } from './Dashboard';
 import { WealthsimpleChart } from './WealthsimpleChart';
 import { useFavorisData, IconExpand, IconFilter, IconStarFilled, TablePicks, TableWatchlist, EtatVideFavoris } from './Favoris';
 import { ShareStatsButton } from './ShareStats';
+import { AddSportsbookButton, SportsbookWaitlistSheet } from './SportsbookWaitlist';
 
 // ===================== Persistance locale (masquer les montants) =====================
 // try/catch systematique : localStorage peut etre indisponible (navigation privee, quota
@@ -180,11 +181,17 @@ function EmptyState({ icon = '—', title, sub, cta, onCta }) {
 
 // ===================== Bandeau d'accueil + bankroll (colonne principale) =====================
 
-function GreetingBanner({ t, displayName }) {
+// `onAddSportsbook` optionnel : quand fourni, affiche le bouton "Ajouter un sportsbook" (style
+// Wealthsimple "Add account") sur la meme ligne -- pilule + texte sur desktop (mobile=false),
+// rond "+" seul sur mobile (mobile=true). Voir src/SportsbookWaitlist.js.
+function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
   return (
-    <div>
-      <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t(greetingKey())}</p>
-      <h2 style={{ margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: mobile ? 'center' : 'flex-end', gap: '12px' }}>
+      <div>
+        <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t(greetingKey())}</p>
+        <h2 style={{ margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
+      </div>
+      {onAddSportsbook && <AddSportsbookButton t={t} mobile={mobile} onClick={onAddSportsbook} />}
     </div>
   );
 }
@@ -696,6 +703,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [sportsbookOuvert, setSportsbookOuvert] = useState(false);
 
   function toggleHideAmounts() {
     setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; });
@@ -718,7 +726,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
         .home-eye-btn:hover { background-color: var(--c-1a1a1a); }
       `}</style>
 
-      <GreetingBanner t={t} displayName={displayName} />
+      <GreetingBanner t={t} displayName={displayName} onAddSportsbook={() => setSportsbookOuvert(true)} mobile={false} />
 
       <div className="home-grid">
         <div className="home-main-col">
@@ -740,6 +748,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
       </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
+      {sportsbookOuvert && <SportsbookWaitlistSheet t={t} utilisateur={utilisateur} onClose={() => setSportsbookOuvert(false)} />}
     </div>
   );
 }
@@ -759,6 +768,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [sportsbookOuvert, setSportsbookOuvert] = useState(false);
 
   function toggleHideAmounts() {
     setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; });
@@ -780,7 +790,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
         .home-eye-btn { background: none; border: none; padding: 6px; margin-top: -6px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
       `}</style>
 
-      <GreetingBanner t={t} displayName={displayName} />
+      <GreetingBanner t={t} displayName={displayName} onAddSportsbook={() => setSportsbookOuvert(true)} mobile />
 
       <BankrollHeroChart
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
@@ -790,6 +800,8 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
 
       <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
 
+      <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
+
       <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
       <TonightGamesCard t={t} lang={lang} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
@@ -798,13 +810,12 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
 
       <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
 
-      <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
-
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 12px' }}>
         <img src="/logo192.png" alt="Betrics" className="home-logo-anim" style={{ width: '56px', height: '56px', borderRadius: '16px' }} />
       </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
+      {sportsbookOuvert && <SportsbookWaitlistSheet t={t} utilisateur={utilisateur} onClose={() => setSportsbookOuvert(false)} />}
     </div>
   );
 }

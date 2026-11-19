@@ -14,7 +14,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
   const [erreur, setErreur] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
-    bookmaker: BOOKMAKERS_SUPPORTES[0],
+    bookmaker: '', // sportsbook d'origine : optionnel, pas de choix impose par defaut
     joueur_ou_equipe: '',
     type_bet: TYPES_BET[0],
     stat_pariee: STAT_VALEURS[0],
@@ -44,7 +44,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
       const extrait = data.data || {};
       setForm(f => ({
         ...f,
-        bookmaker: BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : BOOKMAKERS_SUPPORTES[0],
+        bookmaker: BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : '',
         joueur_ou_equipe: extrait.joueur_ou_equipe || '',
         type_bet: TYPE_BET_DEPUIS_IA[extrait.type_bet] || TYPES_BET[0],
         stat_pariee: mapperStatDepuisIA(extrait.stat_pariee) || STAT_VALEURS[0],

@@ -31,7 +31,10 @@ export const labelStyle = { color: '#555', fontSize: '12px', marginBottom: '6px'
 export function formDepuisBetAuto(data) {
   const estTotal = data.type_bet === 'Total';
   return {
-    bookmaker: BOOKMAKERS_SUPPORTES.includes(data.bookmaker) ? data.bookmaker : BOOKMAKERS_SUPPORTES[0],
+    // Optionnel (voir le champ "sportsbook d'origine") : une valeur existante mais non reconnue
+    // n'est PAS forcee vers un choix arbitraire, elle retombe sur "non specifie" plutot que de
+    // faire semblant qu'un bookmaker precis a ete selectionne.
+    bookmaker: BOOKMAKERS_SUPPORTES.includes(data.bookmaker) ? data.bookmaker : '',
     type_bet: TYPES_BET.includes(data.type_bet) ? data.type_bet : TYPES_BET[0],
     joueur_ou_equipe: data.joueur_nom || '',
     stat_pariee: !estTotal ? (mapperStatDepuisIA(data.stat_type) || STAT_VALEURS[0]) : STAT_VALEURS[0],
@@ -55,7 +58,7 @@ export function champsDBDepuisForm(form, t) {
     ? (form.over_under === 'under' ? 'Under' : 'Over')
     : null;
   return {
-    bookmaker: form.bookmaker,
+    bookmaker: form.bookmaker || null,
     type_bet: form.type_bet,
     joueur_nom: form.type_bet === 'Prop joueur' || form.type_bet === 'Parlay' ? (form.joueur_ou_equipe || null) : null,
     equipe: form.equipe || null,
@@ -93,6 +96,7 @@ export function BetAutoForm({ form, setForm, t }) {
       <div>
         <div style={labelStyle}>{t('import_field_bookmaker')}</div>
         <select style={champStyle} value={form.bookmaker} onChange={e => setForm({ ...form, bookmaker: e.target.value })}>
+          <option value="">{t('import_field_bookmaker_none')}</option>
           {BOOKMAKERS_SUPPORTES.map(b => <option key={b}>{b}</option>)}
         </select>
       </div>
