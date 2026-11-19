@@ -4,6 +4,7 @@ import { getT } from './i18n';
 import { readHideAmounts, MaskedDots } from './Home';
 import { titreBetAuto } from './Dashboard';
 import { DropdownPill } from './DropdownPill';
+import { ShareStatsButton } from './ShareStats';
 
 // Page "Aperçu de la performance" (style Wealthsimple "Performance insights"), ouverte depuis
 // le bloc Bankroll de l'accueil (clic sur la ligne de variation, voir BankrollHeroChart dans
@@ -188,17 +189,20 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'var(--c-ccc)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: '6px 2px', minHeight: '44px' }}>
           <IconBack /> {t('back_btn').replace('← ', '')}
         </button>
-        <DropdownPill
-          label={t('perf_scope_label')}
-          value={portee}
-          onChange={setPortee}
-          groups={[
-            { options: [{ value: 'all', label: t('perf_scope_all') }] },
-            ...(bookmakersDisponibles.length > 0 ? [{ titre: t('perf_scope_group_bookmaker'), options: bookmakersDisponibles.map(bm => ({ value: `book:${bm}`, label: bm })) }] : []),
-            { titre: t('perf_scope_group_sport'), options: [{ value: 'sport:nhl', label: t('perf_scope_sport_nhl') }] },
-            ...(typesDisponibles.length > 0 ? [{ titre: t('perf_scope_group_type'), options: typesDisponibles.map(ty => ({ value: `type:${ty}`, label: labelTypePari(ty, t) })) }] : []),
-          ]}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShareStatsButton t={t} lang={lang} bets={tousLesParis} bankroll={bankroll} />
+          <DropdownPill
+            label={t('perf_scope_label')}
+            value={portee}
+            onChange={setPortee}
+            groups={[
+              { options: [{ value: 'all', label: t('perf_scope_all') }] },
+              ...(bookmakersDisponibles.length > 0 ? [{ titre: t('perf_scope_group_bookmaker'), options: bookmakersDisponibles.map(bm => ({ value: `book:${bm}`, label: bm })) }] : []),
+              { titre: t('perf_scope_group_sport'), options: [{ value: 'sport:nhl', label: t('perf_scope_sport_nhl') }] },
+              ...(typesDisponibles.length > 0 ? [{ titre: t('perf_scope_group_type'), options: typesDisponibles.map(ty => ({ value: `type:${ty}`, label: labelTypePari(ty, t) })) }] : []),
+            ]}
+          />
+        </div>
       </div>
 
       <h1 style={{ margin: '0 0 6px', fontSize: 'clamp(24px, 3vw, 30px)', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--c-white)' }}>{t('perf_title')}</h1>

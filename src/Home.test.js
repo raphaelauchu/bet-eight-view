@@ -284,6 +284,17 @@ test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stat
   expect(screen.getByText('Paris actifs')).toBeInTheDocument();
 });
 
+test('desktop/tablette : le bouton Partager mes stats ouvre la feuille de partage depuis le bloc Bankroll', async () => {
+  writeHideAmounts(false);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('Partager mes statistiques'));
+  expect(screen.getByText('Partager')).toBeInTheDocument();
+  expect(screen.getByText('Performance')).toBeInTheDocument();
+  expect(screen.getByText('Résumé')).toBeInTheDocument();
+});
+
 test('desktop/tablette : bouton oeil masque/affiche le montant de la bankroll avec des points, pas du texte', async () => {
   writeHideAmounts(false);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
@@ -343,6 +354,11 @@ test('mobile : une seule colonne qui reutilise les memes cartes que desktop, dan
   // Plus aucune trace de l'ancienne mise en page mobile (Kelly, "Bon retour" generique)
   expect(screen.queryByText('Bon retour')).not.toBeInTheDocument();
   expect(screen.queryByText(/Mise Kelly/)).not.toBeInTheDocument();
+  // Logo Betrics anime tout en bas de la page (voir .home-logo-anim, index.css -- animation
+  // geree en CSS pure, desactivee sous prefers-reduced-motion)
+  expect(screen.getByAltText('Betrics')).toHaveClass('home-logo-anim');
+  // Bouton Partager mes stats, disponible aussi sur mobile (dans le bloc Bankroll)
+  expect(screen.getByLabelText('Partager mes statistiques')).toBeInTheDocument();
 });
 
 test('mobile : le bouton "Aperçu de la performance" (ligne de variation) appelle onGoToPerformance', async () => {

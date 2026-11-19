@@ -356,41 +356,96 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
 // l'accessibilite), 6 onglets + bouton de profil (feuille du bas, voir ProfileMenuButton
 // isMobile=true) en 7e position. Cibles tactiles >=44px (zone cliquable des boutons, pas
 // seulement l'icone). Marge basse tenant compte de l'encoche iOS (env(safe-area-inset-bottom)).
-function BottomNav({ tabs, activeId, onSelectTab, profileSlot }) {
+// Barre du bas mobile : 4 onglets seulement desormais (Accueil/Recherche/Analyses/Modeles --
+// Pool/Paris/Bankroll/Admin passent par le bouton "..." de la top bar, voir MoreSheet plus bas).
+// Style Wealthsimple : chaque onglet est sa propre pilule flottante arrondie, fond clair
+// (teinte orange translucide) sous l'onglet actif, icone seule (pas de libelle visible).
+export function BottomNav({ tabs, activeId, onSelectTab }) {
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
-      <div style={{ margin: '0 10px', marginBottom: 'max(20px, calc(10px + env(safe-area-inset-bottom)))', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '6px 2px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+      <div style={{ margin: '0 16px', marginBottom: 'max(20px, calc(10px + env(safe-area-inset-bottom)))', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '24px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '8px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => onSelectTab(tab)} aria-label={tab.label} aria-current={activeId === tab.id ? 'page' : undefined}
-            style={{ flex: 1, minHeight: '44px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}>
-            <span style={{ position: 'relative' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={21} />
+            style={{ flex: 1, minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}>
+            <span style={{
+              position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '48px', height: '40px', borderRadius: '20px',
+              backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.16)' : 'transparent',
+              transition: 'background-color 0.15s ease',
+            }}>
+              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-666)'} size={21} />
               {tab.badge > 0 && (
-                <span style={{ position: 'absolute', top: '-4px', right: '-8px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{tab.badge}</span>
+                <span style={{ position: 'absolute', top: '0px', right: '2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{tab.badge}</span>
               )}
             </span>
-            {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316' }} />}
           </button>
         ))}
-        {profileSlot && (
-          <div style={{ flex: 1, minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {profileSlot}
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-// Top bar mobile : uniquement le vrai logo Betrics (meme image que le favicon/la sidebar
-// desktop), cliquable vers l'accueil. Plus de "..." (Pool/Paris/Bankroll sont desormais dans la
-// bottom nav) ni de bouton de profil ici (deplace dans la bottom nav, voir BottomNav ci-dessus).
-function MobileTopBar({ onGoHome }) {
+// Feuille du bas listant les sections secondaires (Pool/Paris/Bankroll/Admin), ouverte par le
+// bouton "..." de la top bar mobile -- meme contenu que tabsSecondaires de la sidebar desktop.
+export function MoreSheet({ tabs, onSelectTab, onClose, t }) {
   return (
-    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 16px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
-      <button onClick={onGoHome} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxHeight: '75vh', overflowY: 'auto', backgroundColor: 'var(--c-111)', borderRadius: '20px 20px 0 0', border: '1px solid var(--c-222)', borderBottom: 'none', padding: '8px 10px calc(14px + env(safe-area-inset-bottom))' }}>
+        <div style={{ width: '36px', height: '4px', borderRadius: '3px', backgroundColor: 'var(--c-333)', margin: '8px auto 10px' }} />
+        <div style={{ padding: '2px 6px 12px', fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{t('nav_more_title')}</div>
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => { onSelectTab(tab); onClose(); }}
+            style={{ width: '100%', minHeight: '44px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'none', border: 'none', borderRadius: '10px', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <tab.Icon color="var(--c-888)" size={18} />
+            <span style={{ fontSize: '14px', color: 'var(--c-white)', fontWeight: '600' }}>{tab.label}</span>
+            {tab.badge > 0 && (
+              <span style={{ marginLeft: 'auto', backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '800', borderRadius: '10px', minWidth: '17px', height: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{tab.badge}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IconMoreDots({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+    </svg>
+  );
+}
+
+// Top bar mobile, style Wealthsimple : logo Betrics a gauche (cliquable vers l'accueil), titre
+// de la page au centre, "..." (sections secondaires, voir MoreSheet) + avatar de profil rond a
+// droite (feuille du bas, voir ProfileMenuButton isMobile). Le profil n'est donc plus dans la
+// bottom nav (voir BottomNav ci-dessus, reduite a 4 onglets).
+export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
+  const [moreOuvert, setMoreOuvert] = useState(false);
+  return (
+    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
+      <button onClick={onGoHome} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifySelf: 'start' }}>
         <img src="/logo192.png" alt="" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
       </button>
+
+      <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)', letterSpacing: '-0.2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{title}</span>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', justifySelf: 'end' }}>
+        {tabsSecondaires.length > 0 && (
+          <button onClick={() => setMoreOuvert(true)} aria-label={t('nav_more_title')} style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <IconMoreDots color="var(--c-888)" size={17} />
+          </button>
+        )}
+        <ProfileMenuButton
+          utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
+          themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
+          onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} isMobile
+        />
+      </div>
+
+      {moreOuvert && (
+        <MoreSheet tabs={tabsSecondaires} onSelectTab={onSelectTab} onClose={() => setMoreOuvert(false)} t={t} />
+      )}
     </div>
   );
 }
@@ -1563,22 +1618,10 @@ function App() {
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
       ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
     ];
-    // Bottom nav mobile : Accueil/Recherche/Analyses/Pool/Paris/Bankroll (6 icones, pas de
-    // libelle visible) + bouton de profil en 7e position (voir profileSlot plus bas). "Modeles"
-    // et "Admin" n'ont pas de place dans ces 6 icones : reachables via le menu de profil mobile
-    // (extraItems, voir ProfileMenuButton) plutot que perdus.
-    const tabsMobile = [
-      { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
-      { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
-      { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
-      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
-      { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
-      { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
-    ];
-    const extraItemsProfilMobile = [
-      { icon: <IconStar color="var(--c-888)" size={16} />, label: t('nav_tab_models'), onClick: () => setPage('props') },
-      ...(isAdmin ? [{ icon: <IconShield color="var(--c-888)" size={16} />, label: t('menu_admin'), onClick: () => setPage('admin') }] : []),
-    ];
+    // Bottom nav mobile : 4 onglets seulement (Accueil/Recherche/Analyses/Modeles), icones
+    // seules. Pool/Paris/Bankroll/Admin passent par le bouton "..." de la top bar mobile
+    // (MoreSheet, reutilise tabsSecondaires tel quel -- meme contenu que la sidebar desktop).
+    const tabsMobile = tabsPrincipaux;
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 
     function handleSelectTab(tab) {
@@ -1587,6 +1630,19 @@ function App() {
       setEquipeFicheGlobal(null);
       setPage(tab.id);
     }
+
+    // Titre affiche au centre de la top bar mobile (pas d'equivalent desktop, la sidebar n'a pas
+    // de titre de page -- le contenu de chaque page porte deja son propre h1/h2).
+    const titresPage = {
+      home: t('nav_tab_home'), stats: t('nav_tab_analyses'), props: t('nav_tab_models'),
+      profile: t('menu_settings'), bets: t('menu_bets'), bankroll: t('menu_bankroll'),
+      performance: t('perf_title'), pooldraft: t('nav_tab_pool'), admin: t('menu_admin'),
+    };
+    const pageTitle = joueurFicheGlobal
+      ? (joueurFicheGlobal.nom || t('nav_tab_search'))
+      : equipeFicheGlobal
+      ? (equipeFicheGlobal.equipe?.teamName?.default || equipeFicheGlobal.equipe?.teamAbbrev?.default || t('nav_tab_search'))
+      : (titresPage[page] || t('nav_tab_home'));
 
     const contenuPrincipal = joueurFicheGlobal ? (
       <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '900px', margin: '0 auto' }}>
@@ -1640,7 +1696,13 @@ function App() {
         )}
 
         {isMobile && (
-          <MobileTopBar onGoHome={() => handleSelectTab({ id: 'home' })} />
+          <MobileTopBar
+            title={pageTitle} onGoHome={() => handleSelectTab({ id: 'home' })}
+            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
+            utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
+            themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
+            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+          />
         )}
 
         {showRecherche && (
@@ -1668,17 +1730,7 @@ function App() {
         </div>
 
         {isMobile && (
-          <BottomNav
-            tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab}
-            profileSlot={(
-              <ProfileMenuButton
-                utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
-                themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
-                onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
-                isMobile extraItems={extraItemsProfilMobile}
-              />
-            )}
-          />
+          <BottomNav tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab} />
         )}
       </div>
     );

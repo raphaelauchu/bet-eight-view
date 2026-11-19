@@ -6,6 +6,7 @@ import { useIsMobile, getDateStr } from './Analyses';
 import { titreBetAuto } from './Dashboard';
 import { WealthsimpleChart } from './WealthsimpleChart';
 import { useFavorisData, IconExpand, IconFilter, IconStarFilled, TablePicks, TableWatchlist, EtatVideFavoris } from './Favoris';
+import { ShareStatsButton } from './ShareStats';
 
 // ===================== Persistance locale (masquer les montants) =====================
 // try/catch systematique : localStorage peut etre indisponible (navigation privee, quota
@@ -218,7 +219,7 @@ function miseTotalePourPeriode(parisTraites, periode) {
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
 // Toujours affichee (meme a $0.00 sans aucun pari) -- jamais masquee faute de donnees.
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, parisTraites, betsLoading }) {
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, parisTraites, betsLoading, betsPourPartage }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
   const [hoverPoint, setHoverPoint] = useState(null);
@@ -253,7 +254,10 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
 
   return (
     <div>
-      <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
+        <ShareStatsButton t={t} lang={lang} bets={betsPourPartage} bankroll={bankroll} />
+      </div>
 
       {chargementValeur || grandeValeurTexte == null ? (
         <SkeletonBlock height={56} width="60%" />
@@ -684,7 +688,7 @@ function ComingSoonOverlay({ t, onClose }) {
 function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
     displayName, bankroll, bankrollLoading, parisTraites,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
+    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   } = data;
 
@@ -719,7 +723,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
           <BankrollHeroChart
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
             hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-            parisTraites={parisTraites} betsLoading={betsLoading}
+            parisTraites={parisTraites} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
           />
           <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
           <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
@@ -747,7 +751,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
 function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
     displayName, bankroll, bankrollLoading, parisTraites,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
+    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   } = data;
 
@@ -779,7 +783,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       <BankrollHeroChart
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
         hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-        parisTraites={parisTraites} betsLoading={betsLoading}
+        parisTraites={parisTraites} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
       />
 
       <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
@@ -793,6 +797,10 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
 
       <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
+
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 12px' }}>
+        <img src="/logo192.png" alt="Betrics" className="home-logo-anim" style={{ width: '56px', height: '56px', borderRadius: '16px' }} />
+      </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
     </div>
@@ -871,9 +879,15 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     return new Date(b.date || 0) - new Date(a.date || 0);
   }).slice(0, 3);
 
+  // Paris unifies (paris + bets_auto, avec type_bet) pour la carte de partage (src/ShareStats.js)
+  // -- meme fusion que PerformanceInsights.js (tousLesParis), independante des series du
+  // graphique de BankrollHeroChart (qui ne lit que `paris`, historique).
+  const betsPourPartage = paris.map(p => ({ date: p.date_pari, profit: Number(p.profit) || 0, mise: Number(p.mise) || 0, statut: p.statut, type: null }))
+    .concat(betsAuto.map(b => ({ date: b.verified_at || b.created_at, profit: Number(b.resultat) || 0, mise: Number(b.mise) || 0, statut: b.statut === 'pending' ? 'actif' : b.statut, type: b.type_bet || null })));
+
   const sharedData = {
     displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
+    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   };
 

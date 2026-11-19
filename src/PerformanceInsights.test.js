@@ -122,6 +122,15 @@ test('le lien "Voir le tableau" ouvre une modale avec les colonnes attendues et 
   expect(screen.getByText('Exporter CSV')).toBeInTheDocument();
 });
 
+test('bouton Partager mes stats ouvre la feuille de partage', async () => {
+  mockDonnees({ bankroll: 1000, transactions: TRANSACTIONS_EXEMPLE, betsAuto: BETS_AUTO_EXEMPLE });
+  render(<PerformanceInsights utilisateur={{ id: 'u1' }} lang="fr" onBack={noop} initialPeriod="all" />);
+  await waitFor(() => expect(screen.getByText('Aperçu de la performance')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('Partager mes statistiques'));
+  expect(screen.getByText('Partager')).toBeInTheDocument();
+});
+
 test('bouton Retour appelle onBack', async () => {
   mockDonnees({ bankroll: 0, transactions: [], paris: [], betsAuto: [] });
   const onBack = jest.fn();

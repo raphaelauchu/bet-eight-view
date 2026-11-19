@@ -39,6 +39,7 @@ const translations = {
     nav_tab_models: 'Modèles',
     nav_tab_search: 'Recherche',
     nav_tab_pool: 'Pool',
+    nav_more_title: 'Plus',
 
     // Analyse (espace de travail unifie equipe/joueur, style TradingView)
     analyse_search_placeholder: 'Rechercher un joueur ou une équipe…',
@@ -337,6 +338,18 @@ const translations = {
     perf_type_prop: 'Prop joueur',
     perf_type_total: 'Total',
     perf_type_parlay: 'Parlay',
+
+    // Partager mes stats (story Instagram/Facebook, src/ShareStats.js)
+    share_button_aria: 'Partager mes statistiques',
+    share_title: 'Partager',
+    share_cta_share: 'Partager',
+    share_cta_download: 'Télécharger',
+    share_template_performance: 'Performance',
+    share_template_summary: 'Résumé',
+    share_best_type: 'Meilleur type de pari',
+    share_bet_count: 'Paris',
+    share_footer_responsible: 'Jeu responsable 18+',
+
     perf_title: 'Aperçu de la performance',
     perf_currency: 'CAD',
     perf_net_deposits: 'Dépôts nets',
@@ -1245,6 +1258,7 @@ const translations = {
     nav_tab_models: 'Models',
     nav_tab_search: 'Search',
     nav_tab_pool: 'Pool',
+    nav_more_title: 'More',
 
     // Analyse (unified team/player workspace, TradingView-style)
     analyse_search_placeholder: 'Search a player or a team…',
@@ -1543,6 +1557,18 @@ const translations = {
     perf_type_prop: 'Player prop',
     perf_type_total: 'Total',
     perf_type_parlay: 'Parlay',
+
+    // Share my stats (Instagram/Facebook story, src/ShareStats.js)
+    share_button_aria: 'Share my stats',
+    share_title: 'Share',
+    share_cta_share: 'Share',
+    share_cta_download: 'Download',
+    share_template_performance: 'Performance',
+    share_template_summary: 'Summary',
+    share_best_type: 'Best bet type',
+    share_bet_count: 'Bets',
+    share_footer_responsible: 'Please play responsibly 18+',
+
     perf_title: 'Performance insights',
     perf_currency: 'CAD',
     perf_net_deposits: 'Net deposits',
