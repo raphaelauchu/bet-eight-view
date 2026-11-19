@@ -123,7 +123,7 @@ function CardSkeleton({ lines = 3 }) {
 
 // Remplace un montant sensible quand hideAmounts est actif : 5 petits points gris arrondis
 // (pas de texte/emoji), avec un libelle accessible pour les lecteurs d'ecran.
-function MaskedDots({ t, count = 5, size = 5 }) {
+export function MaskedDots({ t, count = 5, size = 5 }) {
   return (
     <span aria-label={t('home_amounts_hidden')} style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.max(3, Math.round(size / 2))}px`, verticalAlign: 'middle' }}>
       {Array.from({ length: count }).map((_, i) => (
@@ -192,7 +192,7 @@ const PERIOD_SUFFIX_KEYS = {
 // graphique (et le point survole, le cas echeant) -- JAMAIS la grande valeur elle-meme en mode
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToBankroll, parisTraites, betsLoading }) {
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, parisTraites, betsLoading }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
   const [hoverPoint, setHoverPoint] = useState(null);
@@ -252,13 +252,12 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
 
       {!chargementValeur && (hideAmounts || texteVariation) && (
         <div style={{ marginBottom: '22px' }}>
-          {hideAmounts ? (
-            <button onClick={onGoToBankroll} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--c-666)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', textAlign: 'left' }}>
-              {t('home_performance_insights')}
-            </button>
-          ) : (
-            <div style={{ fontSize: '14px', fontWeight: '800', color: couleur }}>{texteVariation}</div>
-          )}
+          <button
+            onClick={() => onGoToPerformance(period)}
+            style={{ background: 'none', border: 'none', padding: 0, fontSize: '14px', fontWeight: hideAmounts ? '600' : '800', color: hideAmounts ? 'var(--c-666)' : couleur, cursor: 'pointer', textAlign: 'left' }}
+          >
+            {hideAmounts ? t('home_performance_insights') : texteVariation}
+          </button>
         </div>
       )}
 
@@ -624,7 +623,7 @@ function ComingSoonOverlay({ t, onClose }) {
 
 // ===================== Mise en page tablette/web (>=768px) =====================
 
-function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToBankroll, onOpenTeamFiche }) {
+function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
     displayName, bankroll, bankrollLoading, parisTraites,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
@@ -661,7 +660,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToBa
         <div className="home-main-col">
           <BankrollHeroChart
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
-            hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToBankroll={onGoToBankroll}
+            hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
             parisTraites={parisTraites} betsLoading={betsLoading}
           />
           <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
@@ -918,7 +917,7 @@ function MobileHomeDashboard({ t, data, onGoToBets }) {
 
 // ===================== Composant principal : donnees partagees + choix de mise en page =====================
 
-export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToBankroll, onOpenTeamFiche, lang = 'en' }) {
+export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToPerformance, onOpenTeamFiche, lang = 'en' }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
 
@@ -1003,7 +1002,7 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     <DesktopHomeDashboard
       t={t} lang={lang} utilisateur={utilisateur} data={sharedData}
       onGoToBets={onGoToBets}
-      onGoToBankroll={onGoToBankroll || (() => {})}
+      onGoToPerformance={onGoToPerformance || (() => {})}
       onOpenTeamFiche={onOpenTeamFiche || (() => {})}
     />
   );

@@ -8,6 +8,7 @@ import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
+import { PerformanceInsights } from './PerformanceInsights';
 import { WealthsimpleChart } from './WealthsimpleChart';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
@@ -1481,6 +1482,7 @@ function App() {
   const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
   const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
   const [pendingOpenPlayer, setPendingOpenPlayer] = useState(null);
+  const [pendingInsightsPeriod, setPendingInsightsPeriod] = useState('all');
   const isMobile = useIsMobile();
   // Appele sans condition (regle des hooks) : utilisateur peut passer de null a connecte entre
   // deux rendus, un hook appele seulement dans la branche "if (utilisateur)" plus bas
@@ -1573,6 +1575,8 @@ function App() {
       <Dashboard lang={lang} />
     ) : page === 'bankroll' ? (
       <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
+    ) : page === 'performance' ? (
+      <PerformanceInsights utilisateur={utilisateur} lang={lang} onBack={() => setPage('home')} initialPeriod={pendingInsightsPeriod} />
     ) : page === 'pooldraft' ? (
       <PoolHub utilisateur={utilisateur} lang={lang} openPoolId={pendingOpenPoolId} onConsumedOpenPoolId={() => setPendingOpenPoolId(null)} />
     ) : page === 'admin' ? (
@@ -1586,7 +1590,7 @@ function App() {
       <HomeDashboard
         utilisateur={utilisateur} lang={lang}
         onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
-        onGoToBankroll={() => setPage('bankroll')}
+        onGoToPerformance={(periode) => { setPendingInsightsPeriod(periode || 'all'); setPage('performance'); }}
         onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
       />
     );

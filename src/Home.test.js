@@ -204,16 +204,38 @@ test('desktop/tablette : les boutons de periode changent le suffixe du texte de 
   await waitFor(() => expect(screen.getByText(/depuis le début/)).toBeInTheDocument());
 });
 
-test('desktop/tablette : solde masque affiche "Aperçu de la performance" cliquable vers la page Bankroll', async () => {
+test('desktop/tablette : solde masque affiche "Aperçu de la performance" cliquable vers la page Aperçu de la performance, periode courante transmise', async () => {
   writeHideAmounts(false);
-  const onGoToBankroll = jest.fn();
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToBankroll={onGoToBankroll} onOpenTeamFiche={noop} />);
+  const onGoToPerformance = jest.fn();
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPerformance={onGoToPerformance} onOpenTeamFiche={noop} />);
   await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
 
   fireEvent.click(screen.getByLabelText('Masquer le solde'));
   const lien = screen.getByText('Aperçu de la performance →');
   fireEvent.click(lien);
-  expect(onGoToBankroll).toHaveBeenCalledTimes(1);
+  expect(onGoToPerformance).toHaveBeenCalledTimes(1);
+  expect(onGoToPerformance).toHaveBeenCalledWith('1m'); // periode par defaut du graphique
+});
+
+test('desktop/tablette : solde visible -- la ligne de variation est aussi cliquable vers Aperçu de la performance', async () => {
+  writeHideAmounts(false);
+  const onGoToPerformance = jest.fn();
+  supabase.from.mockImplementation((table) => {
+    if (table === 'paris') {
+      return mockQuery({
+        data: [
+          { id: 'p1', statut: 'gagne', profit: 10, mise: 20, date_pari: new Date().toISOString() },
+          { id: 'p2', statut: 'perdu', profit: -5, mise: 20, date_pari: new Date().toISOString() },
+        ], error: null,
+      });
+    }
+    return mockQuery(tableResult(table));
+  });
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPerformance={onGoToPerformance} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText(/ce mois/)).toBeInTheDocument());
+
+  fireEvent.click(screen.getByText(/ce mois/));
+  expect(onGoToPerformance).toHaveBeenCalledWith('1m');
 });
 
 test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stats seulement', async () => {

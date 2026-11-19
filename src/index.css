@@ -221,6 +221,40 @@ body {
   min-height: 44px;
 }
 
+/* ===================== Aperçu de la performance (src/PerformanceInsights.js) =====================
+   Page unique (pas de mise en page desktop/mobile distincte) : conteneur centre, grilles de
+   cartes qui s'empilent en 1 colonne sous 640px. */
+.perf-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.perf-stats-grid, .perf-two-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.perf-stats-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.perf-two-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 640px) {
+  .perf-stats-grid, .perf-two-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 900px) {
+  .perf-page {
+    padding: 32px 24px 56px;
+  }
+}
+
 /* ===================== Bankroll =====================
    <768px (mobile) : INCHANGE.
    768-1199px (iPad) : .bankroll-grid, 2 colonnes 65%/35%.
