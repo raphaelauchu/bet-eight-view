@@ -10,6 +10,7 @@ import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
+import { PROVINCES } from './sportsbooksConfig';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 
@@ -593,6 +594,8 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const fileInputRef = React.useRef(null);
   const [emailConnections, setEmailConnections] = React.useState([]);
   const [savingBookmakers, setSavingBookmakers] = React.useState(false);
+  const [province, setProvince] = React.useState('');
+  const [savingProvince, setSavingProvince] = React.useState(false);
   const connexionGmail = emailConnections.find(c => c.provider === 'gmail') || null;
   const connexionOutlook = emailConnections.find(c => c.provider === 'outlook') || null;
   const connexionPrincipale = connexionGmail || connexionOutlook || null;
@@ -601,8 +604,8 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
 
   async function chargerProfil() {
     try {
-      const { data } = await supabase.from('profiles').select('username, avatar_url, first_name, last_name').eq('id', utilisateur.id).single();
-      if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); setFirstName(data.first_name || ''); setLastName(data.last_name || ''); }
+      const { data } = await supabase.from('profiles').select('username, avatar_url, first_name, last_name, province').eq('id', utilisateur.id).single();
+      if (data) { setUsername(data.username || ''); setOriginalUsername(data.username || ''); setAvatarUrl(data.avatar_url || null); setFirstName(data.first_name || ''); setLastName(data.last_name || ''); setProvince(data.province || ''); }
     } catch {}
   }
 
@@ -677,6 +680,15 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
       setEmailConnections(emailConnections.map(c => ({ ...c, bookmakers: maj })));
     } catch {}
     setSavingBookmakers(false);
+  }
+
+  async function sauvegarderProvince(nouvelleProvince) {
+    setProvince(nouvelleProvince);
+    setSavingProvince(true);
+    try {
+      await supabase.from('profiles').upsert({ id: utilisateur.id, province: nouvelleProvince, updated_at: new Date().toISOString() });
+    } catch {}
+    setSavingProvince(false);
   }
 
   async function sauvegarderProfil() {
@@ -867,6 +879,21 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           <label style={{ display: 'block', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Email</label>
           <div style={{ padding: '12px 14px', backgroundColor: 'var(--c-080808)', border: '1px solid var(--c-161616)', borderRadius: '12px', color: 'var(--c-444)', fontSize: '15px' }}>{utilisateur?.email}</div>
         </div>
+      </div>
+
+      {/* Province — utilisee par le comparateur de cotes LNH pour determiner les sites et statuts reglementaires a afficher */}
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid var(--c-161616)', marginBottom: '24px' }}>
+        <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('profile_province_title')}</p>
+        <p style={{ margin: '0 0 12px', color: 'var(--c-444)', fontSize: '12px', lineHeight: '1.5' }}>{t('profile_province_sub')}</p>
+        <select
+          value={province}
+          onChange={e => sauvegarderProvince(e.target.value)}
+          disabled={savingProvince}
+          style={{ width: '100%', padding: '12px 14px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '15px', boxSizing: 'border-box', outline: 'none' }}
+        >
+          <option value="" disabled>{t('profile_province_choisir')}</option>
+          {PROVINCES.map(p => <option key={p} value={p}>{t(`comparateur_province_${p}`)}</option>)}
+        </select>
       </div>
 
       <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid var(--c-161616)', marginBottom: '24px' }}>

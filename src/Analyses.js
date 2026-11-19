@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { getUrl, getSOGParPeriode, calcSOGPeriode, getGameLogJoueur, calcStatsPeriode, getHitsBlocksParMatch, getShotChartData } from './nhlApi';
 import { useSaisonCourante, construireSaisonReg, construireSaisonPO, formatSaisonLabel, formatAnneeCourte, seasonIdDepuisDate } from './season';
-import { getCotesHockey, trouverCotesPourMatch, extraireCotesMatch } from './cotes';
+import { getCotesHockey, trouverCotesPourMatch, extraireCotesMatch, getCotesLastUpdated } from './cotes';
+import { ComparateurCotesLNH } from './LineShopping';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { BetAutoForm, champsDBDepuisForm, TYPES_BET, STAT_VALEURS } from './BetAutoForm';
@@ -5475,7 +5476,7 @@ const TENDANCE_PERIODES = ['L5', 'L10', 'SZN'];
 // periode, historique face-a-face saison, domicile/exterieur, blesses (etat vide -- aucune
 // source de donnees), puis le contenu existant (cotes complètes/gardiens/lignes maison) via
 // ApercuMatchup, reutilise tel quel.
-function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTeam, onSelectJoueur, onBack, watchlist, onToggleFavorite, onSavePick }) {
+function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTeam, onSelectJoueur, onBack, watchlist, onToggleFavorite, onSavePick, utilisateur, lang }) {
   const isMobile = useIsMobile();
   const match = matchTab.match;
   const awayAbbrev = match.awayTeam?.abbrev;
@@ -5490,6 +5491,8 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
   const [gamesHome, setGamesHome] = useState(null);
   const [periode, setPeriode] = useState('L10');
   const [statsSzn, setStatsSzn] = useState(null); // { [abbrev]: { powerPlayPct, penaltyKillPct } }
+  const [coteMatchBrut, setCoteMatchBrut] = useState(null); // match brut (tous bookmakers), pour ComparateurCotesLNH
+  const [cotesFetchedAt, setCotesFetchedAt] = useState(null);
 
   useEffect(() => {
     let annule = false;
@@ -5497,7 +5500,9 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
       if (annule) return;
       const trouve = trouverCotesPourMatch(data, awayNom, homeNom);
       setCotes(trouve ? extraireCotesMatch(trouve) : null);
-    }).catch(() => { if (!annule) setCotes(null); });
+      setCoteMatchBrut(trouve);
+      setCotesFetchedAt(getCotesLastUpdated(data));
+    }).catch(() => { if (!annule) { setCotes(null); setCoteMatchBrut(null); setCotesFetchedAt(null); } });
     return () => { annule = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awayAbbrev, homeAbbrev]);
@@ -5735,6 +5740,16 @@ function MatchupPanel({ t, matchTab, classement, lineupDF, seasonId, onSelectTea
       </div>
 
       <ApercuMatchup match={match} lineupDF={lineupDF} onSelectJoueur={onSelectJoueur} onBack={onBack} />
+
+      <ComparateurCotesLNH
+        matchBrut={coteMatchBrut}
+        nom1={awayNom}
+        nom2={homeNom}
+        dejaJoue={match.gameState === 'FINAL' || match.gameState === 'OFF'}
+        utilisateur={utilisateur}
+        lang={lang}
+        cotesFetchedAt={cotesFetchedAt}
+      />
     </div>
   );
 }
@@ -6426,6 +6441,8 @@ function AnalysesFlux({ onLigueChange, lang = 'en', utilisateur, pendingOpenPlay
         watchlist={watchlist}
         onToggleFavorite={utilisateur?.id ? toggleFavorite : undefined}
         onSavePick={utilisateur?.id ? setSavePickCible : undefined}
+        utilisateur={utilisateur}
+        lang={lang}
       />
     );
   } else {

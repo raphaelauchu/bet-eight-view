@@ -1,18 +1,29 @@
-const API_KEY = process.env.REACT_APP_ODDS_API_KEY;
-const BASE_URL = 'https://api.the-odds-api.com/v4';
+import { supabase } from './supabase';
+import { SPORTSBOOKS } from './sportsbooksConfig';
 
+// Les cotes passent par l'Edge Function nhl-odds-cache (voir supabase/functions/) plutot que
+// par un appel direct a The Odds API depuis le navigateur : la cle API reste cote serveur et
+// le resultat est mis en cache (5 min) pour tous les utilisateurs/composants qui le demandent
+// en meme temps (voir audit de la source dans le resume de la tache qui a introduit ce cache).
 export async function getCotesHockey() {
   try {
-    const response = await fetch(
-      `${BASE_URL}/sports/icehockey_nhl/odds/?apiKey=${API_KEY}&regions=us,eu&markets=h2h,spreads,totals&bookmakers=bet365,betway,draftkings,fanduel`
-    );
-    const data = await response.json();
-    if (Array.isArray(data)) return data;
-    return [];
+    const { data: payload, error } = await supabase.functions.invoke('nhl-odds-cache');
+    if (error) throw error;
+    const cotes = Array.isArray(payload?.data) ? payload.data : [];
+    cotes._fetchedAt = payload?.fetchedAt || null;
+    return cotes;
   } catch (err) {
     console.error('Erreur cotes:', err);
-    return [];
+    const vide = [];
+    vide._fetchedAt = null;
+    return vide;
   }
+}
+
+// Horodatage de la derniere mise a jour des cotes retournees par getCotesHockey(), fourni par
+// le cache serveur (nhl-odds-cache). null si aucune cote n'a pu etre chargee.
+export function getCotesLastUpdated(cotes) {
+  return (cotes && cotes._fetchedAt) || null;
 }
 
 // Retrouve, dans la liste renvoyée par getCotesHockey(), le match correspondant à une paire
@@ -61,4 +72,36 @@ export function trouverMeilleureCote(match) {
     });
   });
   return meilleureCote;
+}
+
+// Extrait, pour un match de getCotesHockey(), les cotes de CHAQUE sportsbook connu de
+// sportsbooksConfig.js qui possede une correspondance dans la source (oddsApiBookmakerKey non
+// null). Utilise par le comparateur multi-sites (src/LineShopping.js), par opposition a
+// extraireCotesMatch() qui ne retourne que le premier bookmaker trouve. Un sportsbook absent
+// du resultat (bet99, Sports Interaction) n'est pas fourni par The Odds API pour la LNH --
+// aucune cote inventee ou scrapee pour ces sites.
+export function extraireComparaisonCotes(match) {
+  if (!match?.bookmakers?.length) return {};
+  const parSportsbook = {};
+  SPORTSBOOKS.forEach(sb => {
+    if (!sb.oddsApiBookmakerKey) return;
+    const bk = match.bookmakers.find(b => b.key === sb.oddsApiBookmakerKey);
+    if (!bk) return;
+    const marche = key => bk.markets?.find(m => m.key === key)?.outcomes || null;
+    parSportsbook[sb.id] = {
+      moneyline: marche('h2h'),
+      spread: marche('spreads'),
+      total: marche('totals'),
+      lastUpdate: bk.last_update || null,
+    };
+  });
+  return parSportsbook;
+}
+
+// Conversion cote decimale (format de The Odds API) -> cote americaine, pour l'affichage
+// "format americain avec equivalent decimal" du comparateur. Retourne null si non convertible.
+export function decimalToAmerican(decimal) {
+  if (typeof decimal !== 'number' || !Number.isFinite(decimal) || decimal <= 1) return null;
+  const americain = decimal >= 2 ? (decimal - 1) * 100 : -100 / (decimal - 1);
+  return Math.round(americain);
 }
