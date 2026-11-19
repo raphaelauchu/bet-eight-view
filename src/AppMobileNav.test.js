@@ -187,9 +187,9 @@ const TABS_PRINCIPAUX = [
   { id: 'home', label: 'Accueil', Icon },
   { id: 'search', label: 'Recherche', Icon },
   { id: 'stats', label: 'Analyses', Icon },
+  { id: 'pooldraft', label: 'Pool', Icon },
 ];
 const TABS_SECONDAIRES = [
-  { id: 'pooldraft', label: 'Pool', Icon },
   { id: 'bets', label: 'Paris', Icon },
   { id: 'bankroll', label: 'Bankroll', Icon },
 ];
@@ -206,19 +206,30 @@ function renderSidebar(overrides = {}) {
   );
 }
 
-test('AppSidebar : ordre Accueil/Recherche/Analyses puis Pool/Paris/Bankroll, pas de "Modeles" ni "Admin" dans la liste', () => {
-  renderSidebar();
+test('AppSidebar : ordre Accueil/Recherche/Analyses/Pool puis Paris/Bankroll, pas de "Modeles" ni "Admin" dans la liste', () => {
+  const { container } = renderSidebar();
   const libelles = screen.getAllByRole('button').map(b => b.getAttribute('aria-label')).filter(Boolean).filter(l => l !== 'Betrics');
   expect(libelles).toEqual(['Accueil', 'Recherche', 'Analyses', 'Pool', 'Paris', 'Bankroll', 'Réglages']);
   expect(screen.queryByLabelText('Modèles')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Admin')).not.toBeInTheDocument();
+
+  // Pool est dans le meme groupe qu'Accueil/Recherche/Analyses (aucun separateur entre Analyses
+  // et Pool) -- le seul separateur de la sidebar se trouve juste avant Paris.
+  const separateur = container.querySelector('div[style*="width: 28px"]');
+  expect(separateur).toBeInTheDocument();
+  const boutonPool = screen.getByLabelText('Pool');
+  const boutonParis = screen.getByLabelText('Paris');
+  // eslint-disable-next-line no-bitwise
+  expect(boutonPool.compareDocumentPosition(separateur) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // eslint-disable-next-line no-bitwise
+  expect(separateur.compareDocumentPosition(boutonParis) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
-test('MoreSheet : "Admin" n\'apparait plus dans la feuille "..." (Pool/Paris/Bankroll seulement)', () => {
+test('MoreSheet : "Admin" n\'apparait plus dans la feuille "..." (Paris/Bankroll seulement, Pool est dans la bottom nav)', () => {
   render(<MoreSheet tabs={TABS_SECONDAIRES} onSelectTab={noop} onClose={noop} t={t} />);
-  expect(screen.getByText('Pool')).toBeInTheDocument();
   expect(screen.getByText('Paris')).toBeInTheDocument();
   expect(screen.getByText('Bankroll')).toBeInTheDocument();
+  expect(screen.queryByText('Pool')).not.toBeInTheDocument();
   expect(screen.queryByText('Admin')).not.toBeInTheDocument();
 });
 

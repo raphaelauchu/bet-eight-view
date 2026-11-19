@@ -84,13 +84,13 @@ function IconSearch({ color = 'currentColor', size = 20 }) {
   );
 }
 
-function IconDraft({ color = 'currentColor', size = 20 }) {
+// Icone de Pool : etoile (ex-icone de "Modeles", desormais fusionne dans Analyses -- voir le
+// controle segmente Matchs/Modeles) -- meme icone partout ou Pool apparait dans la navigation
+// (sidebar desktop/iPad, bottom nav mobile).
+function IconStar({ color = 'currentColor', size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="3" width="16" height="18" rx="2" />
-      <path d="M9 8h6" />
-      <path d="M9 12h6" />
-      <path d="M9 16h3" />
+      <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
     </svg>
   );
 }
@@ -1667,29 +1667,28 @@ function App() {
   if (utilisateur) {
     const t = getT(lang);
     // Modeles n'est plus un onglet de navigation a part entiere (fusionne dans Analyses, voir le
-    // controle segmente Matchs/Modeles plus bas) -- plus d'icone etoile ni d'id 'props' ici.
+    // controle segmente Matchs/Modeles plus bas). Pool rejoint ce premier groupe (icone etoile,
+    // ex-icone de Modeles) directement sous Analyses, sans separateur entre les deux -- le
+    // separateur existant (voir AppSidebar) ne s'affiche qu'entre ce groupe et tabsSecondaires,
+    // donc seulement entre Pool et Paris desormais.
     const tabsPrincipaux = [
       { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
       { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
       { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
+      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconStar },
     ];
-    // Sidebar desktop/iPad, 2e groupe (sous le separateur). Admin n'est plus dans cette liste
-    // (retire de la sidebar ET de la feuille "..." mobile) -- reachable uniquement depuis le menu
-    // de profil (voir ProfileMenuButton isAdmin/onGoToAdmin), tout en haut, admin seulement.
+    // Sidebar desktop/iPad, 2e groupe (sous le separateur, maintenant juste Paris/Bankroll).
+    // Reutilise tel quel pour la feuille "..." mobile (meme contenu desormais que Pool a
+    // rejoint tabsPrincipaux pour les deux). Admin n'est plus dans cette liste (retire de la
+    // sidebar ET de la feuille "..." mobile) -- reachable uniquement depuis le menu de profil
+    // (voir ProfileMenuButton isAdmin/onGoToAdmin), tout en haut, admin seulement.
     const tabsSecondaires = [
-      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
     ];
-    // Bottom nav mobile : 4 onglets (Accueil/Recherche/Analyses/Pool desormais -- Pool quitte la
-    // feuille "..." pour la bottom nav). La feuille "..." mobile n'a donc plus que Paris/Bankroll
-    // (tabsSecondairesMobile, distincte de tabsSecondaires qui reste Pool/Paris/Bankroll pour la
-    // sidebar desktop).
-    const tabsMobile = [...tabsPrincipaux, { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft }];
-    const tabsSecondairesMobile = [
-      { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
-      { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
-    ];
+    // Bottom nav mobile : 4 onglets Accueil/Recherche/Analyses/Pool -- identique a tabsPrincipaux
+    // maintenant que Pool y est inclus.
+    const tabsMobile = tabsPrincipaux;
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 
     function handleSelectTab(tab) {
@@ -1775,7 +1774,7 @@ function App() {
         {isMobile && (
           <MobileTopBar
             title={pageTitle} onGoHome={() => handleSelectTab({ id: 'home' })}
-            tabsSecondaires={tabsSecondairesMobile} onSelectTab={handleSelectTab}
+            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
             utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
             themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}

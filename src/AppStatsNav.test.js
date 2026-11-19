@@ -23,10 +23,12 @@ jest.mock('./Analyses', () => ({
   FicheEquipeWS: () => null,
   WS_THEME: { dark: {}, light: {} },
   useWSTheme: () => ['dark', jest.fn(), 'system', jest.fn()],
-  useIsMobile: () => false,
+  useIsMobile: jest.fn(() => false),
 }));
 jest.mock('./Modeles', () => () => <div>MODELES_STUB</div>);
 jest.mock('./Home', () => ({ HomeDashboard: () => <div>HOME_STUB</div> }));
+
+const { useIsMobile } = require('./Analyses');
 
 const UTILISATEUR = { id: 'u1', email: 'alex@example.com' };
 
@@ -47,6 +49,7 @@ function mockConnecte({ isAdmin = false } = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  useIsMobile.mockReturnValue(false); // repli deterministe (desktop) entre les tests
   window.history.pushState({}, '', '/');
   try { window.localStorage.clear(); } catch { /* ignore */ }
 });
@@ -101,4 +104,50 @@ test('plus d\'onglet "Models" dans la navigation principale (fusionne dans Analy
   render(<App />);
   await waitFor(() => expect(screen.getByLabelText('Analyses')).toBeInTheDocument());
   expect(screen.queryByLabelText('Models')).not.toBeInTheDocument();
+});
+
+// ===================== Pool : icone etoile, position sous Analyses =====================
+
+test('sidebar desktop : Pool utilise l\'icone etoile (ex-icone de Modeles), directement sous Analyses, avant Paris/Bankroll', async () => {
+  mockConnecte();
+  const { container } = render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('Pool')).toBeInTheDocument());
+
+  // Meme icone (chemin SVG) que l'ancienne icone de "Modeles" -- plus son ancienne icone
+  // (rectangle + lignes "draft").
+  const boutonPool = screen.getByLabelText('Pool');
+  expect(boutonPool.querySelector('svg path[d^="M12 2.5"]')).toBeInTheDocument();
+  expect(boutonPool.querySelector('svg rect')).not.toBeInTheDocument();
+
+  // Ordre : Home, Search, Analyses, Pool, puis Bets, Bankroll, Settings (lang par defaut de
+  // App() = 'en', voir les autres tests de ce fichier).
+  const libelles = screen.getAllByRole('button').map(b => b.getAttribute('aria-label')).filter(Boolean).filter(l => l !== 'Betrics');
+  expect(libelles).toEqual(['Home', 'Search', 'Analyses', 'Pool', 'Bets', 'Bankroll', 'Settings']);
+
+  // Un seul separateur dans la sidebar, place juste avant Paris (donc apres Pool, pas apres
+  // Analyses) : aucun separateur entre Analyses et Pool.
+  const separateur = container.querySelector('div[style*="width: 28px"]');
+  expect(separateur).toBeInTheDocument();
+  // eslint-disable-next-line no-bitwise
+  expect(boutonPool.compareDocumentPosition(separateur) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // eslint-disable-next-line no-bitwise
+  expect(separateur.compareDocumentPosition(screen.getByLabelText('Bets')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test('bottom nav mobile : Pool utilise la meme icone etoile, en 4e position (Home/Search/Analyses/Pool)', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('Pool')).toBeInTheDocument());
+
+  const libelles = screen.getAllByRole('button').map(b => b.getAttribute('aria-label')).filter(l => ['Home', 'Search', 'Analyses', 'Pool'].includes(l));
+  expect(libelles).toEqual(['Home', 'Search', 'Analyses', 'Pool']);
+
+  const boutonPool = screen.getByLabelText('Pool');
+  expect(boutonPool.querySelector('svg path[d^="M12 2.5"]')).toBeInTheDocument();
+
+  // La feuille "..." mobile ne liste plus que Bets/Bankroll (Pool n'y est plus).
+  fireEvent.click(screen.getByLabelText('More'));
+  expect(screen.getByText('Bets')).toBeInTheDocument();
+  expect(screen.getByText('Bankroll')).toBeInTheDocument();
 });
