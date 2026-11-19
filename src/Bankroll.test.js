@@ -38,7 +38,7 @@ const noop = () => {};
 // ===================== iPad/web (>=768px) : colonne principale (graphique + historique) et
 // colonne droite (solde, depot/retrait) =====================
 
-test('iPad/web : solde et bouton nouvelle transaction dans la colonne droite, evolution et transactions dans la colonne principale', async () => {
+test('iPad/web : solde + graphique fusionnes dans la colonne principale, nouvelle transaction dans la colonne droite', async () => {
   render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
   await waitFor(() => expect(document.body.textContent).toContain('$500'));
   expect(screen.getByText('+ Nouvelle transaction')).toBeInTheDocument();
@@ -46,6 +46,8 @@ test('iPad/web : solde et bouton nouvelle transaction dans la colonne droite, ev
   // Nouveau graphique Wealthsimple : bascule Valeur/Rendement + selecteurs de periode
   expect(screen.getByText('Rendement')).toBeInTheDocument();
   expect(screen.getByText('TOUT')).toBeInTheDocument();
+  // Aucune transaction dans ce mock : ligne plate pointillee + message discret (pas de grand vide)
+  expect(screen.getByText('Ajoute des transactions pour voir ton évolution')).toBeInTheDocument();
 });
 
 // ===================== Mobile (<768px) : INCHANGE, une seule colonne =====================

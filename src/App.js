@@ -8,7 +8,7 @@ import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
-import { FavorisPage } from './Favoris';
+import { WealthsimpleChart } from './WealthsimpleChart';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { PROVINCES } from './sportsbooksConfig';
@@ -142,14 +142,6 @@ function IconLogout({ color = 'currentColor', size = 16 }) {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
-    </svg>
-  );
-}
-
-function IconHeart({ color = 'currentColor', size = 20 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.8 8.6c0 4-5 7.4-8.8 10-3.8-2.6-8.8-6-8.8-10a4.6 4.6 0 0 1 8.8-2 4.6 4.6 0 0 1 8.8 2Z" />
     </svg>
   );
 }
@@ -306,7 +298,9 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
         .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
         .sb-item:hover .sb-tooltip, .sb-item:focus-within .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
       `}</style>
-      <div aria-hidden="true" style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px', textAlign: 'center' }}>B</div>
+      <button onClick={() => onSelectTab({ id: 'home' })} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, marginBottom: '22px', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
+        <img src="/logo192.png" alt="" style={{ width: '32px', height: '32px', borderRadius: '9px' }} />
+      </button>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, alignItems: 'center' }}>
         {tabsPrincipaux.map(tab => <SidebarButton key={tab.id} tab={tab} size={20} />)}
         {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '8px 0' }} />}
@@ -1070,26 +1064,11 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
 
 const PERIODES_BANKROLL_CHART = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
 
-// Graphique d'evolution de la bankroll, style Wealthsimple : grande valeur (survolee ou
-// derniere) + variation coloree en haut, courbe lisse (Catmull-Rom) avec degrade sous la ligne,
-// curseur interactif (survol = valeur/date a cet instant), selecteurs de periode sous le
-// graphique, bascule Valeur/Rendement. Reutilise seulement les donnees deja calculees par
-// BankrollPage (seriePoints = meme cumul depot(+)/retrait(-) qu'avant, juste horodate) -- gere
-// sa propre fenetre de periode, independante du filtre de la liste de transactions plus bas.
-function BankrollChart({ t, lang, seriePoints, valeurActuelle = 0 }) {
-  const [periode, setPeriode] = useState('all');
-  const [modeRendement, setModeRendement] = useState(false);
-  const [hoverIndex, setHoverIndex] = useState(null);
-  const svgRef = React.useRef(null);
-
-  const libellesPeriode = {
-    '1d': t('bank_period_1d'), '1w': t('bank_period_1w'), '1m': t('bank_period_1m'),
-    '3m': t('bank_period_3m'), '6m': t('bank_period_6m'), 'ytd': t('bank_period_ytd'),
-    '1y': t('bank_period_1y'), 'all': t('bank_period_all'),
-  };
-
+// Filtre une serie [{date,value}] par periode ; 'ytd' = annee civile en cours (dynamique, pas
+// une duree fixe comme les autres).
+function filtrerParPeriode(points, periode) {
   const maintenant = new Date();
-  const pointsPeriode = seriePoints.filter(p => {
+  return points.filter(p => {
     if (!p.date) return true;
     if (periode === 'all') return true;
     const d = new Date(p.date);
@@ -1097,109 +1076,36 @@ function BankrollChart({ t, lang, seriePoints, valeurActuelle = 0 }) {
     const joursParPeriode = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
     return (maintenant - d) / 86400000 <= joursParPeriode[periode];
   });
+}
 
-  const valeurs = pointsPeriode.map(p => p.value);
-  const base = valeurs.length ? valeurs[0] : 0;
-  const serieAffichee = modeRendement
-    ? valeurs.map(v => (base !== 0 ? ((v - base) / Math.abs(base)) * 100 : 0))
-    : valeurs;
+// Graphique d'evolution de la bankroll (courbe partagee WealthsimpleChart) : gere sa propre
+// fenetre de periode et son mode Valeur/Rendement, independants du filtre de la liste de
+// transactions plus bas. Memes donnees/calcul (seriePoints = cumul depot(+)/retrait(-)) qu'avant.
+function BankrollChartSection({ t, lang, seriePoints, valeurActuelle = 0 }) {
+  const [periode, setPeriode] = useState('all');
+  const [modeRendement, setModeRendement] = useState(false);
 
-  const H = 110, W = 600;
-  const maxVal = Math.max(...serieAffichee, 1);
-  const minVal = Math.min(...serieAffichee, 0);
-  const range = (maxVal - minVal) || 1;
-  const coords = serieAffichee.map((v, i) => ({
-    x: serieAffichee.length === 1 ? W / 2 : (i / (serieAffichee.length - 1)) * W,
-    y: H - ((v - minVal) / range) * H,
-  }));
-
-  // Chemin lisse (Catmull-Rom convertie en courbes de Bezier cubiques).
-  function cheminLisse(pts) {
-    if (pts.length < 2) return '';
-    let d = `M ${pts[0].x},${pts[0].y}`;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[i === 0 ? i : i - 1];
-      const p1 = pts[i];
-      const p2 = pts[i + 1];
-      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
-      const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
-      d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-    }
-    return d;
-  }
-  const lignePath = cheminLisse(coords);
-  const airePath = coords.length > 1 ? `${lignePath} L ${coords[coords.length - 1].x},${H} L ${coords[0].x},${H} Z` : '';
-
-  const variation = serieAffichee.length > 1 ? serieAffichee[serieAffichee.length - 1] - serieAffichee[0] : 0;
-  const hausse = variation >= 0;
-  const couleur = hausse ? '#22c55e' : '#ef4444';
-
-  const pointSurvol = hoverIndex != null ? pointsPeriode[hoverIndex] : null;
-  const valeurSurvolee = hoverIndex != null ? serieAffichee[hoverIndex] : (serieAffichee.length ? serieAffichee[serieAffichee.length - 1] : (modeRendement ? 0 : valeurActuelle));
-  const dateSurvolee = pointSurvol ? pointSurvol.date : pointsPeriode[pointsPeriode.length - 1]?.date;
-
-  function onMouseMove(e) {
-    if (!svgRef.current || coords.length === 0) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const xSvg = ((e.clientX - rect.left) / rect.width) * W;
-    let plusProche = 0, meilleureDist = Infinity;
-    coords.forEach((c, i) => { const dist = Math.abs(c.x - xSvg); if (dist < meilleureDist) { meilleureDist = dist; plusProche = i; } });
-    setHoverIndex(plusProche);
-  }
+  const pointsPeriode = filtrerParPeriode(seriePoints, periode);
+  const base = pointsPeriode.length ? pointsPeriode[0].value : 0;
+  const pointsAffiches = modeRendement
+    ? pointsPeriode.map(p => ({ date: p.date, value: base !== 0 ? ((p.value - base) / Math.abs(base)) * 100 : 0 }))
+    : pointsPeriode;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <div style={{ fontSize: '26px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-1px' }}>
-            {modeRendement
-              ? `${valeurSurvolee >= 0 ? '+' : ''}${valeurSurvolee.toFixed(1)}%`
-              : `$${valeurSurvolee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--c-666)', marginTop: '2px' }}>
-            {dateSurvolee ? new Date(dateSurvolee).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-            {serieAffichee.length > 1 && (
-              <> · <span style={{ color: couleur, fontWeight: '700' }}>{hausse ? '+' : ''}{modeRendement ? `${variation.toFixed(1)}%` : `$${variation.toFixed(2)}`}</span></>
-            )}
-          </div>
-        </div>
-        <button onClick={() => setModeRendement(m => !m)} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-ccc)', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}>
-          {modeRendement ? t('bank_toggle_value') : t('bank_toggle_return')}
-        </button>
-      </div>
-
-      {coords.length > 1 ? (
-        <svg ref={svgRef} width="100%" height={H + 8} viewBox={`0 0 ${W} ${H + 8}`} preserveAspectRatio="none"
-          onMouseMove={onMouseMove} onMouseLeave={() => setHoverIndex(null)} style={{ cursor: 'crosshair', overflow: 'visible', display: 'block' }}>
-          <defs>
-            <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={couleur} stopOpacity="0.22" />
-              <stop offset="100%" stopColor={couleur} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={airePath} fill="url(#bkGrad)" stroke="none" />
-          <path d={lignePath} fill="none" stroke={couleur} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          {hoverIndex != null && coords[hoverIndex] && (
-            <>
-              <line x1={coords[hoverIndex].x} y1="0" x2={coords[hoverIndex].x} y2={H} stroke="var(--c-333)" strokeWidth="1" strokeDasharray="3 3" />
-              <circle cx={coords[hoverIndex].x} cy={coords[hoverIndex].y} r="3.5" fill={couleur} stroke="var(--c-080808)" strokeWidth="1.5" />
-            </>
-          )}
-        </svg>
-      ) : (
-        <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
-      )}
-
-      <div style={{ display: 'flex', gap: '4px', marginTop: '10px', flexWrap: 'wrap' }}>
-        {PERIODES_BANKROLL_CHART.map(p => (
-          <button key={p} onClick={() => { setPeriode(p); setHoverIndex(null); }}
-            style={{ padding: '4px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: periode === p ? '#f97316' : 'var(--c-1a1a1a)', color: periode === p ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
-            {libellesPeriode[p]}
-          </button>
-        ))}
-      </div>
-    </div>
+    <WealthsimpleChart
+      t={t} lang={lang}
+      points={pointsAffiches}
+      periods={PERIODES_BANKROLL_CHART.map(p => ({ key: p, label: t(`bank_period_${p}`) }))}
+      period={periode} onSelectPeriod={setPeriode}
+      modeOptions={[{ key: 'value', label: t('bank_toggle_value') }, { key: 'return', label: t('bank_toggle_return') }]}
+      mode={modeRendement ? 'return' : 'value'}
+      onSelectMode={(m) => setModeRendement(m === 'return')}
+      isPercent={modeRendement}
+      valeurActuelle={valeurActuelle}
+      emptyLabel={t('bank_empty_chart')}
+      gradientId="bkGrad"
+      showHeader={false}
+    />
   );
 }
 
@@ -1299,8 +1205,8 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const profitReel = totalRetire - totalDepose + profitParis;
 
   // Serie complete (toutes les transactions, cumul chronologique) pour le graphique --
-  // BankrollChart gere sa propre fenetre de periode (independante du filtre de la liste de
-  // transactions plus bas) ; meme calcul cumulatif depot(+)/retrait(-) qu'avant.
+  // BankrollChartSection gere sa propre fenetre de periode (independante du filtre de la liste
+  // de transactions plus bas) ; meme calcul cumulatif depot(+)/retrait(-) qu'avant.
   const transactionsSorted = [...transactions].sort((a, b) => new Date(a.date_transaction) - new Date(b.date_transaction));
   let cumulGraph = 0;
   const seriePointsBankroll = transactionsSorted.map(tx => {
@@ -1364,7 +1270,7 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const chartAndTotals = (
     <>
       <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px 14px 10px', border: '1px solid var(--c-1a1a1a)' }}>
-        <BankrollChart t={t} lang={lang} seriePoints={seriePointsBankroll} valeurActuelle={bankroll || 0} />
+        <BankrollChartSection t={t} lang={lang} seriePoints={seriePointsBankroll} valeurActuelle={bankroll || 0} />
       </div>
 
       <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
@@ -1514,16 +1420,14 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
     <div className="bankroll-grid" style={{ fontFamily: '-apple-system, sans-serif' }}>
       <div className="bankroll-main-col">
         {headerBlock}
-        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '20px', border: '1px solid var(--c-161616)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {chartAndTotals}
+        <div style={{ position: 'relative', borderRadius: '20px', padding: '20px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
+          {decorativeCircle}
+          {balanceAndStats}
+          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>{chartAndTotals}</div>
         </div>
         {filtersAndListBlock}
       </div>
       <div className="bankroll-side-col">
-        <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
-          {decorativeCircle}
-          {balanceAndStats}
-        </div>
         {newTxBlock}
       </div>
     </div>
@@ -1639,7 +1543,6 @@ function App() {
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
       ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
-      { id: 'favoris', label: t('nav_tab_favoris'), Icon: IconHeart },
       { id: 'profile', label: t('menu_settings'), Icon: IconGear },
     ];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
@@ -1675,8 +1578,6 @@ function App() {
       <PoolHub utilisateur={utilisateur} lang={lang} openPoolId={pendingOpenPoolId} onConsumedOpenPoolId={() => setPendingOpenPoolId(null)} />
     ) : page === 'admin' ? (
       <AdminPage />
-    ) : page === 'favoris' ? (
-      <FavorisPage utilisateur={utilisateur} lang={lang} />
     ) : page === 'stats' ? (
       <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
         pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />

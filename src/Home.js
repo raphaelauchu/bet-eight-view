@@ -4,6 +4,8 @@ import { getT } from './i18n';
 import { getUrl } from './nhlApi';
 import { useIsMobile, getDateStr } from './Analyses';
 import { titreBetAuto } from './Dashboard';
+import { WealthsimpleChart } from './WealthsimpleChart';
+import { useFavorisData, IconExpand, IconFilter, IconStarFilled, TablePicks, TableWatchlist, EtatVideFavoris } from './Favoris';
 
 // ===================== Persistance locale (masquer les montants) =====================
 // try/catch systematique : localStorage peut etre indisponible (navigation privee, quota
@@ -78,32 +80,32 @@ const CHART_PERIOD_DAYS = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y
 
 // Donnees de la courbe de profit pour une periode/un mode donnes. mode='value' -> profit
 // cumulatif ($) ; mode='return' -> rendement cumulatif (%) = profit cumulatif / mise cumulee.
+// period='ytd' -> annee civile en cours (dynamique, contrairement aux autres periodes qui sont
+// des durees fixes). dates[i] correspond a values[i], pour l'affichage (survol) du graphique.
 export function computeChartSeries(parisTraites, period, mode) {
   const now = new Date();
-  const days = CHART_PERIOD_DAYS[period] ?? CHART_PERIOD_DAYS['1m'];
+  const days = period === 'ytd'
+    ? (now - new Date(now.getFullYear(), 0, 1)) / 86400000
+    : (CHART_PERIOD_DAYS[period] ?? CHART_PERIOD_DAYS['1m']);
   const filtered = (parisTraites || [])
     .filter(p => p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= days)
     .sort((a, b) => new Date(a.date_pari) - new Date(b.date_pari));
 
   let cumulProfit = 0;
   let cumulStake = 0;
+  const dates = [];
   const values = filtered.map(p => {
     cumulProfit += Number(p.profit) || 0;
     cumulStake += Number(p.mise) || 0;
+    dates.push(p.date_pari);
     return mode === 'return' ? (cumulStake > 0 ? (cumulProfit / cumulStake) * 100 : 0) : cumulProfit;
   });
-  return { values, finalValue: values.length ? values[values.length - 1] : 0 };
+  return { values, dates, finalValue: values.length ? values[values.length - 1] : 0 };
 }
 
 // ===================== Styles partages (meme langage visuel que le reste de l'app) =====================
 
 const cardStyle = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)' };
-const heroCardStyle = { position: 'relative', borderRadius: '24px', padding: '28px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' };
-const chipBase = { padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700' };
-
-function chip(active) {
-  return { ...chipBase, backgroundColor: active ? '#f97316' : 'var(--c-1a1a1a)', color: active ? 'white' : 'var(--c-555)' };
-}
 
 // ===================== Skeleton / etats vides generiques =====================
 
@@ -145,12 +147,21 @@ function GreetingBanner({ t, displayName }) {
   );
 }
 
-function BankrollHero({ t, bankroll, loading, changeAmount, changePercent, hideAmounts, onToggleHide }) {
+// ===================== Bankroll + courbe de profit fusionnees (un seul bloc, sans cadre) =====================
+
+const CHART_PERIODS = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
+
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, changeAmount, changePercent, hideAmounts, onToggleHide, parisTraites, betsLoading }) {
+  const [period, setPeriod] = useState('1m');
+  const [mode, setMode] = useState('value');
   const display = bankroll != null ? bankroll.toFixed(2) : null;
   const changePositive = changeAmount >= 0;
+
+  const { values, dates } = useMemo(() => computeChartSeries(parisTraites, period, mode), [parisTraites, period, mode]);
+  const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
+
   return (
-    <div style={heroCardStyle}>
-      <div style={{ position: 'absolute', top: -40, right: -40, width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
         <button
@@ -163,97 +174,35 @@ function BankrollHero({ t, bankroll, loading, changeAmount, changePercent, hideA
         </button>
       </div>
 
-      {loading || display == null ? (
+      {bankrollLoading || display == null ? (
         <SkeletonBlock height={56} width="60%" />
       ) : (
-        <h1 style={{ margin: '10px 0 8px', fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
+        <h1 style={{ margin: '10px 0 6px', fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
           {hideAmounts ? t('home_amounts_hidden') : `$${display}`}
         </h1>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_today_change')}</span>
-        {!loading && (
-          <span style={{ fontSize: '14px', fontWeight: '800', color: changePositive ? '#22c55e' : '#ef4444' }}>
-            {hideAmounts
-              ? t('home_amounts_hidden')
-              : `${changePositive ? '+' : ''}$${changeAmount.toFixed(2)} (${changePositive ? '+' : ''}${changePercent.toFixed(1)}%)`}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ===================== Graphique de profit (agrandi, bascule Valeur/Rendement) =====================
-
-const CHART_PERIODS = ['1d', '1w', '1m', '3m', '6m', '1y', 'all'];
-
-function ProfitChartCard({ t, parisTraites, loading }) {
-  const [period, setPeriod] = useState('1m');
-  const [mode, setMode] = useState('value');
-
-  const { values, finalValue } = useMemo(() => computeChartSeries(parisTraites, period, mode), [parisTraites, period, mode]);
-
-  const H = 100, W = 400;
-  const maxVal = Math.max(...values, mode === 'return' ? 1 : 1);
-  const minVal = Math.min(...values, 0);
-  const range = maxVal - minVal || 1;
-  const points = values.map((v, i) => {
-    const x = values.length === 1 ? W / 2 : (i / (values.length - 1)) * W;
-    const y = H - ((v - minVal) / range) * H;
-    return `${x},${y}`;
-  }).join(' ');
-  const positive = finalValue >= 0;
-
-  return (
-    <div style={cardStyle}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--c-555)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
-          {!loading && (
-            <span style={{ fontSize: '15px', fontWeight: '800', color: positive ? '#22c55e' : '#ef4444' }}>
-              {mode === 'value' ? `${positive ? '+' : ''}$${finalValue.toFixed(2)}` : `${positive ? '+' : ''}${finalValue.toFixed(1)}%`}
-            </span>
-          )}
+      {!bankrollLoading && (
+        <div style={{ fontSize: '14px', fontWeight: '800', color: changePositive ? '#22c55e' : '#ef4444', marginBottom: '22px' }}>
+          {hideAmounts
+            ? t('home_amounts_hidden')
+            : `${changePositive ? '+' : ''}$${changeAmount.toFixed(2)} (${changePositive ? '+' : ''}${changePercent.toFixed(1)}%) ${t('home_today_suffix')}`}
         </div>
-        <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '10px', padding: '3px' }}>
-          {['value', 'return'].map(m => (
-            <button key={m} className="home-chip" onClick={() => setMode(m)} style={chip(mode === m)}>
-              {t(m === 'value' ? 'home_chart_mode_value' : 'home_chart_mode_return')}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
-        {CHART_PERIODS.map(p => (
-          <button key={p} className="home-chip" onClick={() => setPeriod(p)} style={chip(period === p)}>
-            {t(`home_chart_period_${p === 'all' ? 'all' : p}`)}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <SkeletonBlock height={340} />
-      ) : values.length > 1 ? (
-        <div style={{ height: 'clamp(320px, 30vw, 380px)' }}>
-          <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="homeProfitGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={positive ? '#22c55e' : '#ef4444'} stopOpacity="0.35" />
-                <stop offset="100%" stopColor={positive ? '#22c55e' : '#ef4444'} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <polyline points={`0,${H} ${points} ${W},${H}`} fill="url(#homeProfitGrad)" stroke="none" />
-            <polyline points={points} fill="none" stroke={positive ? '#22c55e' : '#ef4444'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="var(--c-333)" strokeWidth="0.5" strokeDasharray="4,4" />
-          </svg>
-        </div>
-      ) : (
-        <div style={{ height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color: 'var(--c-333)', fontSize: '13px' }}>{t('home_no_bets_period')}</span>
-        </div>
+      {betsLoading ? <SkeletonBlock height={160} /> : (
+        <WealthsimpleChart
+          t={t} lang={lang}
+          points={points}
+          periods={CHART_PERIODS.map(p => ({ key: p, label: t(`home_chart_period_${p}`) }))}
+          period={period} onSelectPeriod={setPeriod}
+          modeOptions={[{ key: 'value', label: t('home_chart_mode_value') }, { key: 'return', label: t('home_chart_mode_return') }]}
+          mode={mode} onSelectMode={setMode}
+          isPercent={mode === 'return'}
+          emptyLabel={t('home_no_bets_period')}
+          hauteur={150}
+          showHeader={false}
+        />
       )}
     </div>
   );
@@ -323,8 +272,10 @@ function RecentBetsCard({ t, loading, recentCombines, onSeeAll }) {
 
 // ===================== Colonne de droite : matchs + calendrier =====================
 
-function TonightGamesCard({ t, loading, games, selectedDate, todayStr, onOpenTeam }) {
-  const title = selectedDate === todayStr ? t('home_tonight') : `${t('home_games_on')} ${selectedDate}`;
+function TonightGamesCard({ t, lang, loading, games, selectedDate, todayStr, onOpenTeam }) {
+  const title = selectedDate === todayStr
+    ? t('home_tonight')
+    : `${t('home_games_on')} ${new Date(selectedDate + 'T12:00:00').toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'short' })}`;
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -401,13 +352,128 @@ function WeekCalendarCard({ t, loading, week, selectedDate, onSelectDate }) {
   );
 }
 
-// ===================== Favoris (aucun systeme existant : etat vide uniquement) =====================
+// ===================== Holdings/Watchlist (style Wealthsimple) : Picks + Watchlist =====================
+// Branche sur les vraies donnees watchlist_items/saved_picks (src/Favoris.js, useFavorisData)
+// -- avant cette carte disait juste "pas encore disponible", desormais lecture + retrait reels.
+// Ajouter un favori ou "placer" un pick reste une action du contexte Analyses (match/joueur).
 
-function FavoritesCard({ t }) {
+function SegmentTabsFavoris({ onglet, setOnglet, t }) {
+  function TabBtn({ k, label }) {
+    const actif = onglet === k;
+    return (
+      <button onClick={() => setOnglet(k)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 6px', fontSize: '14px', fontWeight: actif ? '800' : '600', color: actif ? 'var(--c-white)' : 'var(--c-555)', borderBottom: actif ? '2px solid #f97316' : '2px solid transparent' }}>
+        {label}
+      </button>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', gap: '16px' }}>
+      <TabBtn k="picks" label={t('favoris_tab_picks')} />
+      <TabBtn k="watchlist" label={t('favoris_tab_watchlist')} />
+    </div>
+  );
+}
+
+function filtrerParRecherche(items, libelleFn, recherche) {
+  if (!recherche) return items;
+  const q = recherche.toLowerCase();
+  return items.filter(x => libelleFn(x).toLowerCase().includes(q));
+}
+
+function iconBtnStyle(actif) {
+  return { background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: actif ? 'rgba(249,115,22,0.1)' : 'transparent' };
+}
+
+function LignePick({ p }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: '1px solid var(--c-111)' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.label}</div>
+        <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{p.market || '—'}{p.line != null ? ` ${p.line}` : ''}</div>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{p.odds ?? '—'}</div>
+        {p.planned_stake != null && <div style={{ fontSize: '11px', color: 'var(--c-555)' }}>${p.planned_stake}</div>}
+      </div>
+    </div>
+  );
+}
+
+function LigneWatchlist({ w, libelle, t, onRemove }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: '1px solid var(--c-111)' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{libelle(w)}</div>
+        <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{w.kind === 'team' ? t('favoris_type_equipe') : t('favoris_type_joueur')}</div>
+      </div>
+      <button onClick={() => onRemove(w)} aria-label={t('favoris_retirer')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0 }}>
+        <IconStarFilled />
+      </button>
+    </div>
+  );
+}
+
+function HoldingsModal({ t, lang, onglet, setOnglet, picks, watchlist, libelle, onRemovePick, onRemoveWatchlist, chargement, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', border: '1px solid var(--c-222)', padding: '20px', maxWidth: '1000px', width: '100%', maxHeight: '85vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+          <SegmentTabsFavoris onglet={onglet} setOnglet={setOnglet} t={t} />
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-888)', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>{t('favoris_retour')}</button>
+        </div>
+        {onglet === 'picks'
+          ? <TablePicks t={t} lang={lang} picks={picks} onRemove={onRemovePick} chargement={chargement} />
+          : <TableWatchlist t={t} lang={lang} items={watchlist} libelle={libelle} onRemove={onRemoveWatchlist} chargement={chargement} />}
+      </div>
+    </div>
+  );
+}
+
+function HoldingsWatchlistCard({ t, lang, utilisateur }) {
+  const { watchlist, savedPicks, chargement, libelleWatchlist, retirerWatchlist, retirerPick } = useFavorisData(utilisateur);
+  const [onglet, setOnglet] = useState('picks');
+  const [agrandi, setAgrandi] = useState(false);
+  const [filtreOuvert, setFiltreOuvert] = useState(false);
+  const [recherche, setRecherche] = useState('');
+
+  const picksFiltres = filtrerParRecherche(savedPicks, p => p.label || '', recherche);
+  const watchlistFiltree = filtrerParRecherche(watchlist, libelleWatchlist, recherche);
+
   return (
     <div style={cardStyle}>
-      <h3 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_favorites_title')}</h3>
-      <EmptyState icon="⭐" sub={t('home_favorites_empty')} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+        <SegmentTabsFavoris onglet={onglet} setOnglet={setOnglet} t={t} />
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button onClick={() => setFiltreOuvert(o => !o)} aria-label={t('favoris_filtrer')} style={iconBtnStyle(filtreOuvert)}>
+            <IconFilter color={filtreOuvert ? '#f97316' : 'var(--c-888)'} />
+          </button>
+          <button onClick={() => setAgrandi(true)} aria-label={t('favoris_agrandir')} style={iconBtnStyle(false)}>
+            <IconExpand color="var(--c-888)" />
+          </button>
+        </div>
+      </div>
+
+      {filtreOuvert && (
+        <input value={recherche} onChange={e => setRecherche(e.target.value)} placeholder={t('favoris_filtrer_placeholder')}
+          style={{ width: '100%', marginTop: '12px', padding: '8px 12px', backgroundColor: 'var(--c-0a0a0a)', border: '1px solid var(--c-1a1a1a)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '12px', boxSizing: 'border-box', outline: 'none' }} />
+      )}
+
+      <div style={{ marginTop: '6px' }}>
+        {chargement ? (
+          <EtatVideFavoris texte={t('favoris_chargement')} />
+        ) : onglet === 'picks' ? (
+          picksFiltres.length === 0 ? <EtatVideFavoris texte={t('favoris_picks_vide')} /> : picksFiltres.map(p => <LignePick key={p.id} p={p} />)
+        ) : (
+          watchlistFiltree.length === 0 ? <EtatVideFavoris texte={t('favoris_watchlist_vide')} /> : watchlistFiltree.map(w => <LigneWatchlist key={w.id} w={w} libelle={libelleWatchlist} t={t} onRemove={retirerWatchlist} />)
+        )}
+      </div>
+
+      {agrandi && (
+        <HoldingsModal t={t} lang={lang} onglet={onglet} setOnglet={setOnglet}
+          picks={savedPicks} watchlist={watchlist} libelle={libelleWatchlist}
+          onRemovePick={retirerPick} onRemoveWatchlist={retirerWatchlist}
+          chargement={chargement} onClose={() => setAgrandi(false)} />
+      )}
     </div>
   );
 }
@@ -481,7 +547,7 @@ function ComingSoonOverlay({ t, onClose }) {
 
 // ===================== Mise en page tablette/web (>=768px) =====================
 
-function DesktopHomeDashboard({ t, data, onGoToBets, onOpenTeamFiche }) {
+function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onOpenTeamFiche }) {
   const {
     displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
@@ -523,20 +589,20 @@ function DesktopHomeDashboard({ t, data, onGoToBets, onOpenTeamFiche }) {
 
       <div className="home-main-col">
         <GreetingBanner t={t} displayName={displayName} />
-        <BankrollHero
-          t={t} bankroll={bankroll} loading={bankrollLoading}
+        <BankrollHeroChart
+          t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
           changeAmount={changeAmount} changePercent={changePercent}
           hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts}
+          parisTraites={parisTraites} betsLoading={betsLoading}
         />
-        <ProfitChartCard t={t} parisTraites={parisTraites} loading={betsLoading} />
         <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} bestStreak={bestStreak} />
         <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} />
       </div>
 
       <div className="home-side-col">
-        <TonightGamesCard t={t} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
         <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <FavoritesCard t={t} />
+        <TonightGamesCard t={t} lang={lang} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
+        <HoldingsWatchlistCard t={t} lang={lang} utilisateur={utilisateur} />
         <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
       </div>
 
@@ -865,7 +931,7 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   }
   return (
     <DesktopHomeDashboard
-      t={t} data={sharedData}
+      t={t} lang={lang} utilisateur={utilisateur} data={sharedData}
       onGoToBets={onGoToBets}
       onOpenTeamFiche={onOpenTeamFiche || (() => {})}
     />

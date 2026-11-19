@@ -1,22 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import { getT } from './i18n';
 import { getUrl } from './nhlApi';
 
-// Page "Favoris" (sidebar), style Wealthsimple Watchlist/Holdings : deux onglets commutables
-// (Picks/Watchlist) sans changement de page, plus une vue agrandie plein ecran avec tableau.
-// Reutilise les memes tables Supabase que l'onglet Analyses (watchlist_items/saved_picks, voir
-// AnalysesFlux dans src/Analyses.js) mais avec sa propre lecture/realtime -- cette page est en
-// LECTURE + retrait seulement : ajouter un favori ou "placer" un pick reste une action du
-// contexte Analyses (match/joueur), pas dupliquee ici pour ne pas diverger de cette logique.
+// Donnees partagees Picks (saved_picks) / Watchlist (watchlist_items), utilisees par la carte
+// "Holdings/Watchlist" de l'accueil (src/Home.js, HoldingsWatchlistCard) et sa vue agrandie.
+// Reutilise les memes tables que l'onglet Analyses (voir AnalysesFlux dans src/Analyses.js)
+// mais avec sa propre lecture/realtime -- LECTURE + retrait seulement : ajouter un favori ou
+// "placer" un pick reste une action du contexte Analyses (match/joueur), pas dupliquee ici
+// pour ne pas diverger de cette logique.
 
-function IconExpand({ color = 'currentColor', size = 16 }) {
+export function IconExpand({ color = 'currentColor', size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 3H5a2 2 0 0 0-2 2v3" />
       <path d="M16 3h3a2 2 0 0 1 2 2v3" />
       <path d="M21 16v3a2 2 0 0 1-2 2h-3" />
       <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
+
+export function IconFilter({ color = 'currentColor', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5h16" />
+      <path d="M7 12h10" />
+      <path d="M10 19h4" />
+    </svg>
+  );
+}
+
+export function IconStarFilled({ color = '#f97316', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="1">
+      <path d="M12 2.5 15.1 8.9l7.05 1.02-5.1 4.97 1.2 7.02L12 18.4l-6.25 3.5 1.2-7.02-5.1-4.97 7.05-1.02Z" />
     </svg>
   );
 }
@@ -29,7 +46,7 @@ async function resolverNomJoueur(id) {
   } catch { return { nom: String(id) }; }
 }
 
-function useFavorisData(utilisateur) {
+export function useFavorisData(utilisateur) {
   const [watchlist, setWatchlist] = useState([]);
   const [savedPicks, setSavedPicks] = useState([]);
   const [classement, setClassement] = useState([]);
@@ -101,63 +118,16 @@ function useFavorisData(utilisateur) {
   return { watchlist, savedPicks, chargement, libelleWatchlist, retirerWatchlist, retirerPick };
 }
 
-function EtatVide({ texte }) {
-  return <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '13px', padding: '28px 10px' }}>{texte}</div>;
-}
-
-function LigneCompacte({ gauche, droite, onRemove, labelRemove }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 6px', borderRadius: '10px' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-      <div style={{ minWidth: 0 }}>{gauche}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-        {droite}
-        <button onClick={onRemove} aria-label={labelRemove} style={{ background: 'none', border: 'none', color: 'var(--c-555)', cursor: 'pointer', fontSize: '13px', padding: '4px' }}>✕</button>
-      </div>
-    </div>
-  );
-}
-
-function ListePicksCompacte({ t, picks, onRemove, chargement }) {
-  if (chargement) return <EtatVide texte={t('favoris_chargement')} />;
-  if (picks.length === 0) return <EtatVide texte={t('favoris_picks_vide')} />;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      {picks.map(p => (
-        <LigneCompacte key={p.id} onRemove={() => onRemove(p.id)} labelRemove={t('favoris_retirer')}
-          gauche={(
-            <>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.label}</div>
-              <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{p.market || '—'}{p.odds != null ? ` · ${p.odds}` : ''}{p.planned_stake != null ? ` · $${p.planned_stake}` : ''}</div>
-            </>
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ListeWatchlistCompacte({ t, items, libelle, onRemove, chargement }) {
-  if (chargement) return <EtatVide texte={t('favoris_chargement')} />;
-  if (items.length === 0) return <EtatVide texte={t('favoris_watchlist_vide')} />;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      {items.map(w => (
-        <LigneCompacte key={w.id} onRemove={() => onRemove(w)} labelRemove={t('favoris_retirer')}
-          gauche={<div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{libelle(w)}</div>}
-          droite={<span style={{ fontSize: '11px', color: 'var(--c-666)' }}>{w.kind === 'team' ? t('favoris_type_equipe') : t('favoris_type_joueur')}</span>}
-        />
-      ))}
-    </div>
-  );
-}
-
 const styleTh = { textAlign: 'left', fontSize: '11px', color: 'var(--c-555)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 12px', borderBottom: '1px solid var(--c-1a1a1a)', whiteSpace: 'nowrap' };
 const styleTd = { padding: '12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' };
 
-function TablePicks({ t, lang, picks, onRemove, chargement }) {
-  if (chargement) return <EtatVide texte={t('favoris_chargement')} />;
-  if (picks.length === 0) return <EtatVide texte={t('favoris_picks_vide')} />;
+export function EtatVideFavoris({ texte }) {
+  return <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '13px', padding: '28px 10px' }}>{texte}</div>;
+}
+
+export function TablePicks({ t, lang, picks, onRemove, chargement }) {
+  if (chargement) return <EtatVideFavoris texte={t('favoris_chargement')} />;
+  if (picks.length === 0) return <EtatVideFavoris texte={t('favoris_picks_vide')} />;
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '680px' }}>
@@ -192,9 +162,9 @@ function TablePicks({ t, lang, picks, onRemove, chargement }) {
   );
 }
 
-function TableWatchlist({ t, lang, items, libelle, onRemove, chargement }) {
-  if (chargement) return <EtatVide texte={t('favoris_chargement')} />;
-  if (items.length === 0) return <EtatVide texte={t('favoris_watchlist_vide')} />;
+export function TableWatchlist({ t, lang, items, libelle, onRemove, chargement }) {
+  if (chargement) return <EtatVideFavoris texte={t('favoris_chargement')} />;
+  if (items.length === 0) return <EtatVideFavoris texte={t('favoris_watchlist_vide')} />;
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '420px' }}>
@@ -217,56 +187,6 @@ function TableWatchlist({ t, lang, items, libelle, onRemove, chargement }) {
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-export function FavorisPage({ utilisateur, lang }) {
-  const t = getT(lang);
-  const { watchlist, savedPicks, chargement, libelleWatchlist, retirerWatchlist, retirerPick } = useFavorisData(utilisateur);
-  const [onglet, setOnglet] = useState('picks'); // 'picks' | 'watchlist'
-  const [agrandi, setAgrandi] = useState(false);
-
-  const styleCarte = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '16px' };
-  const styleSegment = (actif) => ({ padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '700', backgroundColor: actif ? '#f97316' : 'transparent', color: actif ? 'white' : 'var(--c-888)' });
-
-  function Segmente() {
-    return (
-      <div style={{ display: 'inline-flex', backgroundColor: 'var(--c-111)', borderRadius: '24px', padding: '4px', gap: '4px' }}>
-        <button style={styleSegment(onglet === 'picks')} onClick={() => setOnglet('picks')}>{t('favoris_tab_picks')}</button>
-        <button style={styleSegment(onglet === 'watchlist')} onClick={() => setOnglet('watchlist')}>{t('favoris_tab_watchlist')}</button>
-      </div>
-    );
-  }
-
-  if (agrandi) {
-    return (
-      <div style={{ padding: '24px 28px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-          <button onClick={() => setAgrandi(false)} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '13px', fontWeight: '700', cursor: 'pointer', padding: 0 }}>{t('favoris_retour')}</button>
-          <Segmente />
-        </div>
-        {onglet === 'picks'
-          ? <TablePicks t={t} lang={lang} picks={savedPicks} onRemove={retirerPick} chargement={chargement} />
-          : <TableWatchlist t={t} lang={lang} items={watchlist} libelle={libelleWatchlist} onRemove={retirerWatchlist} chargement={chargement} />}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding: '24px 28px', maxWidth: '640px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: 'var(--c-white)' }}>{t('nav_tab_favoris')}</h2>
-        <button onClick={() => setAgrandi(true)} aria-label={t('favoris_agrandir')} style={{ background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <IconExpand color="var(--c-888)" />
-        </button>
-      </div>
-      <div style={{ marginBottom: '16px' }}><Segmente /></div>
-      <div style={styleCarte}>
-        {onglet === 'picks'
-          ? <ListePicksCompacte t={t} picks={savedPicks} onRemove={retirerPick} chargement={chargement} />
-          : <ListeWatchlistCompacte t={t} items={watchlist} libelle={libelleWatchlist} onRemove={retirerWatchlist} chargement={chargement} />}
-      </div>
     </div>
   );
 }

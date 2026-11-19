@@ -9,7 +9,7 @@ jest.mock('./Analyses', () => ({
   getDateStr: (d) => d.toISOString().slice(0, 10),
 }));
 
-jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
+jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn(), channel: jest.fn(), removeChannel: jest.fn() } }));
 
 const { useIsMobile } = require('./Analyses');
 const { supabase } = require('./supabase');
@@ -102,20 +102,47 @@ beforeEach(() => {
   useIsMobile.mockReturnValue(false);
   supabase.from.mockImplementation((table) => mockQuery(tableResult(table)));
   supabase.rpc.mockResolvedValue({ data: [], error: null });
-  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ gameWeek: [] }) }));
+  supabase.channel.mockImplementation(() => ({ on: () => ({ subscribe: () => ({}) }) }));
+  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ gameWeek: [], standings: [] }) }));
 });
 
 const noop = () => {};
 
-test('desktop/tablette : etats vides affiches pour favoris, calendrier, matchs et idees quand aucune donnee', async () => {
+test('desktop/tablette : etats vides affiches pour holdings/watchlist, calendrier, matchs et idees quand aucune donnee', async () => {
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
-  await waitFor(() => expect(screen.getByText(/suivi des joueurs et équipes favoris/i)).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('Aucun pick sauvegardé pour le moment.')).toBeInTheDocument());
   await waitFor(() => expect(screen.getByText('Aucun match')).toBeInTheDocument()); // calendrier vide
   expect(screen.getByText('Aucun match ce jour')).toBeInTheDocument(); // carte matchs vide
   await waitFor(() => expect(screen.getByText(/Pas assez de matchs récents/)).toBeInTheDocument());
   expect(screen.getByText(/EV \/ Arbitrage/)).toBeInTheDocument(); // carte Elite toujours visible
   expect(screen.getByText('Elite')).toBeInTheDocument();
+});
+
+test('desktop/tablette : le calendrier est affiche avant la carte des matchs du jour', async () => {
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('Calendrier')).toBeInTheDocument());
+  const titres = screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
+  expect(titres.indexOf('Calendrier')).toBeLessThan(titres.indexOf('Matchs ce soir'));
+});
+
+test('desktop/tablette : Picks/Watchlist bascule sans changer de page et branche la vraie donnee watchlist', async () => {
+  supabase.from.mockImplementation((table) => {
+    if (table === 'watchlist_items') return mockQuery({ data: [{ id: 'w1', kind: 'team', ref_id: 'MTL', created_at: '2026-01-01T00:00:00Z' }], error: null });
+    return mockQuery(tableResult(table));
+  });
+  global.fetch = jest.fn((url) => {
+    if (String(url).includes('standings/now')) {
+      return Promise.resolve({ json: () => Promise.resolve({ standings: [{ teamAbbrev: { default: 'MTL' }, teamName: { default: 'Canadiens de Montréal' } }] }) });
+    }
+    return Promise.resolve({ json: () => Promise.resolve({ gameWeek: [] }) });
+  });
+
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('Aucun pick sauvegardé pour le moment.')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByText('Watchlist'));
+  await waitFor(() => expect(screen.getByText('Canadiens de Montréal')).toBeInTheDocument());
 });
 
 // La section "Mes pools" a ete retiree de l'accueil (redesign navigation Wealthsimple) --

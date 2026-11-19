@@ -39,7 +39,6 @@ const translations = {
     nav_tab_models: 'Modèles',
     nav_tab_search: 'Recherche',
     nav_tab_pool: 'Pool',
-    nav_tab_favoris: 'Favoris',
 
     // Analyse (espace de travail unifie equipe/joueur, style TradingView)
     analyse_search_placeholder: 'Rechercher un joueur ou une équipe…',
@@ -117,11 +116,13 @@ const translations = {
     lang_francais: 'Français',
     lang_english: 'English',
 
-    // Favoris (Picks / Watchlist, sidebar) — src/Favoris.js
+    // Favoris (Picks / Watchlist) — carte Holdings/Watchlist de l'accueil, src/Favoris.js
     favoris_tab_picks: 'Picks',
     favoris_tab_watchlist: 'Watchlist',
     favoris_retour: '← Retour',
     favoris_agrandir: 'Agrandir',
+    favoris_filtrer: 'Filtrer',
+    favoris_filtrer_placeholder: 'Rechercher...',
     favoris_retirer: 'Retirer',
     favoris_chargement: 'Chargement...',
     favoris_picks_vide: 'Aucun pick sauvegardé pour le moment.',
@@ -166,6 +167,7 @@ const translations = {
     home_greeting_afternoon: 'Bon après-midi',
     home_greeting_evening: 'Bonsoir',
     home_today_change: "Variation du jour",
+    home_today_suffix: "aujourd'hui",
     home_hide_amounts: 'Masquer les montants',
     home_show_amounts: 'Afficher les montants',
     home_amounts_hidden: '•••••',
@@ -174,6 +176,7 @@ const translations = {
     home_chart_period_1m: '1M',
     home_chart_period_3m: '3M',
     home_chart_period_6m: '6M',
+    home_chart_period_ytd: 'YTD',
     home_chart_period_1y: '1A',
     home_chart_period_all: 'Tout',
     home_chart_mode_value: 'Valeur',
@@ -188,8 +191,6 @@ const translations = {
     home_calendar_games_count: '{n} matchs',
     home_calendar_no_games: 'Aucun match',
     home_no_games_day: 'Aucun match ce jour',
-    home_favorites_title: 'Favoris',
-    home_favorites_empty: "Le suivi des joueurs et équipes favoris n'est pas encore disponible.",
     home_ideas_title: 'Idées du jour',
     home_idea_hot_player_title: 'Joueur chaud',
     home_idea_hot_player_body: '{nom} ({equipe}) cumule {pts} points sur les 7 derniers jours.',
@@ -1189,7 +1190,6 @@ const translations = {
     nav_tab_models: 'Models',
     nav_tab_search: 'Search',
     nav_tab_pool: 'Pool',
-    nav_tab_favoris: 'Favorites',
 
     // Analyse (unified team/player workspace, TradingView-style)
     analyse_search_placeholder: 'Search a player or a team…',
@@ -1267,11 +1267,13 @@ const translations = {
     lang_francais: 'Français',
     lang_english: 'English',
 
-    // Favoris (Picks / Watchlist, sidebar) — src/Favoris.js
+    // Favoris (Picks / Watchlist) — Holdings/Watchlist card on the home page, src/Favoris.js
     favoris_tab_picks: 'Picks',
     favoris_tab_watchlist: 'Watchlist',
     favoris_retour: '← Back',
     favoris_agrandir: 'Expand',
+    favoris_filtrer: 'Filter',
+    favoris_filtrer_placeholder: 'Search...',
     favoris_retirer: 'Remove',
     favoris_chargement: 'Loading...',
     favoris_picks_vide: 'No saved picks yet.',
@@ -1316,6 +1318,7 @@ const translations = {
     home_greeting_afternoon: 'Good afternoon',
     home_greeting_evening: 'Good evening',
     home_today_change: "Today's change",
+    home_today_suffix: "today",
     home_hide_amounts: 'Hide amounts',
     home_show_amounts: 'Show amounts',
     home_amounts_hidden: '•••••',
@@ -1324,6 +1327,7 @@ const translations = {
     home_chart_period_1m: '1M',
     home_chart_period_3m: '3M',
     home_chart_period_6m: '6M',
+    home_chart_period_ytd: 'YTD',
     home_chart_period_1y: '1Y',
     home_chart_period_all: 'All',
     home_chart_mode_value: 'Value',
@@ -1338,8 +1342,6 @@ const translations = {
     home_calendar_games_count: '{n} games',
     home_calendar_no_games: 'No games',
     home_no_games_day: 'No games this day',
-    home_favorites_title: 'Favorites',
-    home_favorites_empty: 'Following favorite players and teams isn\'t available yet.',
     home_ideas_title: "Today's Ideas",
     home_idea_hot_player_title: 'Hot Player',
     home_idea_hot_player_body: '{nom} ({equipe}) has {pts} points over the last 7 days.',
