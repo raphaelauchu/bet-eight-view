@@ -57,13 +57,28 @@ export function WealthsimpleChart({
     onHoverChange?.(index != null ? points[index] : null);
   }
 
-  function onMouseMove(e) {
-    if (!svgRef.current || coords.length === 0) return;
+  function plusProcheDe(clientX) {
     const rect = svgRef.current.getBoundingClientRect();
-    const xSvg = ((e.clientX - rect.left) / rect.width) * W;
+    const xSvg = ((clientX - rect.left) / rect.width) * W;
     let plusProche = 0, meilleureDist = Infinity;
     coords.forEach((c, i) => { const dist = Math.abs(c.x - xSvg); if (dist < meilleureDist) { meilleureDist = dist; plusProche = i; } });
-    signalerSurvol(plusProche);
+    return plusProche;
+  }
+
+  function onMouseMove(e) {
+    if (!svgRef.current || coords.length === 0) return;
+    signalerSurvol(plusProcheDe(e.clientX));
+  }
+
+  // Curseur au toucher (glisser le doigt) : meme logique que la souris, sur touchstart ET
+  // touchmove pour que le point le plus proche s'affiche des le premier contact, pas seulement
+  // apres un deplacement. touchAction:'none' (sur le <svg>) remplace preventDefault() -- les
+  // gestionnaires React sont attaches en passive par defaut, preventDefault() y est sans effet.
+  function onTouchMoveOuStart(e) {
+    if (!svgRef.current || coords.length === 0) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    signalerSurvol(plusProcheDe(touch.clientX));
   }
 
   const gid = gradientId || `wsGrad${Math.random().toString(36).slice(2)}`;
@@ -74,7 +89,9 @@ export function WealthsimpleChart({
     <div>
       {coords.length > 1 ? (
         <svg ref={svgRef} width="100%" height={H + 20} viewBox={`0 0 ${W} ${H + 20}`} preserveAspectRatio="none"
-          onMouseMove={onMouseMove} onMouseLeave={() => signalerSurvol(null)} style={{ cursor: 'crosshair', overflow: 'visible', display: 'block' }}>
+          onMouseMove={onMouseMove} onMouseLeave={() => signalerSurvol(null)}
+          onTouchStart={onTouchMoveOuStart} onTouchMove={onTouchMoveOuStart} onTouchEnd={() => signalerSurvol(null)}
+          style={{ cursor: 'crosshair', overflow: 'visible', display: 'block', touchAction: 'none' }}>
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity="0.22" />

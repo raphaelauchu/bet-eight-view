@@ -12,6 +12,8 @@ import HockeyTicker from './HockeyTicker';
 import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
 import { playerAvatarUri, teamCrestUri, TeamJersey, TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
 import { useRosterNumber } from './rosterNumbers';
+import { useIsMobile, useIsDesktopWide } from './useIsMobile';
+import { DropdownPill } from './DropdownPill';
 
 // ===================== Photos de joueurs et logos d'equipe (voir src/brandAssetsConfig.js) ===
 // Tant que USE_LICENSED_NHL_ASSETS est a false (aucune licence LNH/NHLPA), aucune URL ne pointe
@@ -165,31 +167,6 @@ function SelecteurSaisonDiscret({ saison, onChange }) {
   );
 }
  
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  useEffect(() => {
-    const handle = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handle);
-    return () => window.removeEventListener('resize', handle);
-  }, []);
-  return isMobile;
-}
-
-// >= 1200px ("web" dans la grille responsive de l'accueil) : utilise pour choisir entre une
-// barre laterale compacte (icones seules, 768-1199px) et une barre laterale large
-// (icones + libelles, >=1200px). La repartition des colonnes de la grille elle-meme n'a pas
-// besoin de JS (CSS + media queries), seul ce choix structurel (afficher ou non le texte des
-// libelles) en a besoin.
-function useIsDesktopWide() {
-  const [isDesktopWide, setIsDesktopWide] = useState(window.innerWidth >= 1200);
-  useEffect(() => {
-    const handle = () => setIsDesktopWide(window.innerWidth >= 1200);
-    window.addEventListener('resize', handle);
-    return () => window.removeEventListener('resize', handle);
-  }, []);
-  return isDesktopWide;
-}
-
 function getDateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -916,14 +893,7 @@ function FiltreSelect({ label, value, onChange, options, disabled }) {
   return (
     <div>
       <label style={{ display: 'block', fontSize: '10px', color: 'var(--c-666)', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
-      <select
-        value={value}
-        disabled={disabled}
-        onChange={e => onChange(e.target.value)}
-        style={{ padding: '8px 10px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '12px', outline: 'none', minWidth: '140px' }}
-      >
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
+      <DropdownPill label={label} value={value} onChange={onChange} options={options} disabled={disabled} />
     </div>
   );
 }
@@ -6796,7 +6766,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
         <div style={{ display: 'flex', gap: '8px', padding: '14px 20px 0', flexWrap: 'wrap' }}>
           {pills.map(p => (
             <button key={p.id} onClick={() => setCategorie(categorie === p.id ? null : p.id)}
-              style={{ padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: categorie === p.id ? '#f97316' : 'var(--c-1a1a1a)', color: categorie === p.id ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: categorie === p.id ? '700' : '500' }}
+              style={{ padding: '9px 16px', minHeight: '44px', boxSizing: 'border-box', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: categorie === p.id ? '#f97316' : 'var(--c-1a1a1a)', color: categorie === p.id ? 'white' : 'var(--c-888)', fontSize: '13px', fontWeight: categorie === p.id ? '700' : '500' }}
             >
               {p.label}
             </button>
@@ -6806,12 +6776,12 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
         {/* Sous-filtre equipe (32 equipes NHL), seulement pour Attaquants/Defenseurs/Gardiens */}
         {categorie && categorie !== 'equipes' && (
           <div style={{ padding: '10px 20px 0' }}>
-            <select value={equipeFiltre} onChange={e => setEquipeFiltre(e.target.value)}
-              style={{ padding: '8px 12px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-2a2a2a)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '13px', outline: 'none' }}
-            >
-              <option value="ALL">Toutes les équipes</option>
-              {Object.keys(LOGOS_NHL).sort().map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
+            <DropdownPill
+              label="Toutes les équipes"
+              value={equipeFiltre}
+              onChange={setEquipeFiltre}
+              options={[{ value: 'ALL', label: 'Toutes les équipes' }, ...Object.keys(LOGOS_NHL).sort().map(a => ({ value: a, label: a }))]}
+            />
           </div>
         )}
 

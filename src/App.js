@@ -102,17 +102,9 @@ function IconStar({ color = 'currentColor', size = 20 }) {
   );
 }
 
-function IconMore({ color = 'currentColor', size = 20 }) {
+function IconChevronRight({ color = 'currentColor', size = 14, style }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-    </svg>
-  );
-}
-
-function IconChevronRight({ color = 'currentColor', size = 14 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
       <path d="m9 6 6 6-6 6" />
     </svg>
   );
@@ -168,28 +160,46 @@ function IconExpand({ color = 'currentColor', size = 16 }) {
 
 // Bouton avatar utilisateur + popup (nom, Apparence, Langue, Parametres, Deconnexion), style
 // Wealthsimple : Apparence/Langue ouvrent un sous-menu a cote (radio sur le choix actif) plutot
-// que des boutons inline. Reutilise dans la sidebar desktop et la top bar mobile.
-function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up' }) {
+// que des boutons inline. Reutilise dans la sidebar desktop (popup flottant) et, en feuille du
+// bas plein ecran, par la bottom nav mobile (isMobile=true -- sous-menus en accordeon tactile,
+// ouverture/fermeture au toucher, pas au survol qui n'existe pas sur mobile). `extraItems`
+// (optionnel) : entrees supplementaires inserees avant "Parametres" (ex. Modeles, Admin sur
+// mobile, qui n'ont pas de place dans la bottom nav a 6 icones).
+function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up', isMobile = false, extraItems = [] }) {
   const [ouvert, setOuvert] = useState(false);
   const [sousMenu, setSousMenu] = useState(null); // 'apparence' | 'langue' | null
   const ref = React.useRef(null);
 
   useEffect(() => {
-    if (!ouvert) return;
+    if (!ouvert || isMobile) return; // mobile : fermeture via le fond (backdrop), pas de mousedown globale
     function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) { setOuvert(false); setSousMenu(null); } }
     document.addEventListener('mousedown', onClickDehors);
     return () => document.removeEventListener('mousedown', onClickDehors);
-  }, [ouvert]);
+  }, [ouvert, isMobile]);
+
+  function fermer() { setOuvert(false); setSousMenu(null); }
 
   const nomAffiche = displayName || utilisateur?.email || '?';
   const initiale = nomAffiche.charAt(0).toUpperCase();
-  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' };
+  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', minHeight: isMobile ? '44px' : 'auto', boxSizing: 'border-box' };
   // La sidebar ancre son popup a gauche (popupPosition="up") : le sous-menu s'ouvre a droite.
   // La top bar mobile ancre le sien a droite (popupPosition="down") : le sous-menu s'ouvre a gauche pour rester a l'ecran.
   const sousMenuAGauche = popupPosition === 'down';
 
   function LigneSousMenu({ cle, icon, label, children }) {
     const actif = sousMenu === cle;
+    if (isMobile) {
+      return (
+        <div>
+          <button onClick={() => setSousMenu(m => (m === cle ? null : cle))} style={itemStyle}>
+            {icon}
+            <span style={{ flex: 1 }}>{label}</span>
+            <IconChevronRight color="var(--c-666)" size={14} style={{ transform: actif ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
+          </button>
+          {actif && <div style={{ paddingLeft: '30px', display: 'flex', flexDirection: 'column', gap: '2px' }}>{children}</div>}
+        </div>
+      );
+    }
     return (
       <div style={{ position: 'relative' }}
         onMouseEnter={() => setSousMenu(cle)}
@@ -224,45 +234,72 @@ function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, set
     );
   }
 
+  const corpsMenu = (
+    <>
+      <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
+        <div style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche}</div>
+        {displayName && <div style={{ color: 'var(--c-666)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{utilisateur?.email}</div>}
+      </div>
+
+      <LigneSousMenu cle="apparence" icon={<IconAppearance color="var(--c-888)" size={16} />} label={t('menu_appearance')}>
+        <OptionRadio actif={themePref === 'light'} label={t('theme_light')} onClick={() => setThemePref('light')} />
+        <OptionRadio actif={themePref === 'dark'} label={t('theme_dark')} onClick={() => setThemePref('dark')} />
+        <OptionRadio actif={themePref === 'system'} label={t('theme_system')} onClick={() => setThemePref('system')} />
+      </LigneSousMenu>
+
+      <LigneSousMenu cle="langue" icon={<IconLanguage color="var(--c-888)" size={16} />} label={t('menu_language')}>
+        <OptionRadio actif={lang === 'fr'} label={t('lang_francais')} onClick={() => setLang('fr')} />
+        <OptionRadio actif={lang === 'en'} label={t('lang_english')} onClick={() => setLang('en')} />
+      </LigneSousMenu>
+
+      {extraItems.map((item, i) => (
+        <button key={i} onClick={() => { item.onClick(); fermer(); }} style={itemStyle}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+          {item.icon}
+          <span>{item.label}</span>
+        </button>
+      ))}
+
+      <button onClick={() => { onGoToProfile(); fermer(); }} style={itemStyle}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+        <IconGear color="var(--c-888)" size={16} />
+        <span>{t('menu_settings')}</span>
+      </button>
+
+      <div style={{ height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '4px 0' }} />
+      <button onClick={() => { onLogout(); fermer(); }} style={{ ...itemStyle, color: '#ef4444' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+        <IconLogout color="#ef4444" size={16} />
+        <span>{t('menu_signout')}</span>
+      </button>
+    </>
+  );
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOuvert(o => !o)} aria-label={t('menu_settings')} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', fontWeight: '900', fontSize: '14px', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <button onClick={() => setOuvert(o => !o)} aria-label={t('menu_settings')} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', fontWeight: '900', fontSize: '14px', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initiale}
       </button>
-      {ouvert && (
+
+      {ouvert && isMobile && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }} onClick={fermer}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxHeight: '80vh', overflowY: 'auto', backgroundColor: 'var(--c-111)', borderRadius: '20px 20px 0 0', border: '1px solid var(--c-222)', borderBottom: 'none', padding: '8px 8px calc(14px + env(safe-area-inset-bottom))' }}
+          >
+            <div style={{ width: '36px', height: '4px', borderRadius: '3px', backgroundColor: 'var(--c-333)', margin: '8px auto 10px' }} />
+            {corpsMenu}
+          </div>
+        </div>
+      )}
+
+      {ouvert && !isMobile && (
         <div style={{
           position: 'absolute', [popupPosition === 'up' ? 'bottom' : 'top']: '46px',
           left: popupPosition === 'up' ? '0' : 'auto', right: popupPosition === 'up' ? 'auto' : '0',
           backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '8px', minWidth: '200px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400,
         }}>
-          <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
-            <div style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche}</div>
-            {displayName && <div style={{ color: 'var(--c-666)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{utilisateur?.email}</div>}
-          </div>
-
-          <LigneSousMenu cle="apparence" icon={<IconAppearance color="var(--c-888)" size={16} />} label={t('menu_appearance')}>
-            <OptionRadio actif={themePref === 'light'} label={t('theme_light')} onClick={() => setThemePref('light')} />
-            <OptionRadio actif={themePref === 'dark'} label={t('theme_dark')} onClick={() => setThemePref('dark')} />
-            <OptionRadio actif={themePref === 'system'} label={t('theme_system')} onClick={() => setThemePref('system')} />
-          </LigneSousMenu>
-
-          <LigneSousMenu cle="langue" icon={<IconLanguage color="var(--c-888)" size={16} />} label={t('menu_language')}>
-            <OptionRadio actif={lang === 'fr'} label={t('lang_francais')} onClick={() => setLang('fr')} />
-            <OptionRadio actif={lang === 'en'} label={t('lang_english')} onClick={() => setLang('en')} />
-          </LigneSousMenu>
-
-          <button onClick={() => { onGoToProfile(); setOuvert(false); setSousMenu(null); }} style={itemStyle}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-            <IconGear color="var(--c-888)" size={16} />
-            <span>{t('menu_settings')}</span>
-          </button>
-
-          <div style={{ height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '4px 0' }} />
-          <button onClick={onLogout} style={{ ...itemStyle, color: '#ef4444' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-            <IconLogout color="#ef4444" size={16} />
-            <span>{t('menu_signout')}</span>
-          </button>
+          {corpsMenu}
         </div>
       )}
     </div>
@@ -315,64 +352,45 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
 }
 
 // Navigation du bas (mobile <768px) : 4 onglets seulement (pas Pool).
-function BottomNav({ tabs, activeId, onSelectTab }) {
+// Barre du bas mobile : icones seules (pas de libelle visible, voir aria-label pour
+// l'accessibilite), 6 onglets + bouton de profil (feuille du bas, voir ProfileMenuButton
+// isMobile=true) en 7e position. Cibles tactiles >=44px (zone cliquable des boutons, pas
+// seulement l'icone). Marge basse tenant compte de l'encoche iOS (env(safe-area-inset-bottom)).
+function BottomNav({ tabs, activeId, onSelectTab, profileSlot }) {
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
-      <div style={{ margin: '0 16px 20px', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '8px 0', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+      <div style={{ margin: '0 10px', marginBottom: 'max(20px, calc(10px + env(safe-area-inset-bottom)))', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '20px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '6px 2px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
         {tabs.map(tab => (
-          <button key={tab.id} onClick={() => onSelectTab(tab)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0', position: 'relative' }}>
+          <button key={tab.id} onClick={() => onSelectTab(tab)} aria-label={tab.label} aria-current={activeId === tab.id ? 'page' : undefined}
+            style={{ flex: 1, minHeight: '44px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', position: 'relative' }}>
             <span style={{ position: 'relative' }}>
-              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={20} />
+              <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-444)'} size={21} />
               {tab.badge > 0 && (
                 <span style={{ position: 'absolute', top: '-4px', right: '-8px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{tab.badge}</span>
               )}
             </span>
-            <span style={{ fontSize: '10px', fontWeight: activeId === tab.id ? '600' : '400', color: activeId === tab.id ? '#f97316' : 'var(--c-444)', letterSpacing: '0.3px', transition: 'color 0.2s' }}>{tab.label}</span>
-            {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316', marginTop: '1px' }} />}
+            {activeId === tab.id && <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#f97316' }} />}
           </button>
         ))}
+        {profileSlot && (
+          <div style={{ flex: 1, minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {profileSlot}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Top bar mobile : marque + acces rapide (Pool/Paris/Bankroll/Admin, absents de la bottom nav) + profil.
-function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
-  const [menuOuvert, setMenuOuvert] = useState(false);
-  const ref = React.useRef(null);
-
-  useEffect(() => {
-    if (!menuOuvert) return;
-    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setMenuOuvert(false); }
-    document.addEventListener('mousedown', onClickDehors);
-    return () => document.removeEventListener('mousedown', onClickDehors);
-  }, [menuOuvert]);
-
+// Top bar mobile : uniquement le vrai logo Betrics (meme image que le favicon/la sidebar
+// desktop), cliquable vers l'accueil. Plus de "..." (Pool/Paris/Bankroll sont desormais dans la
+// bottom nav) ni de bouton de profil ici (deplace dans la bottom nav, voir BottomNav ci-dessus).
+function MobileTopBar({ onGoHome }) {
   return (
-    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
-      <h1 style={{ color: '#f97316', margin: 0, fontSize: '18px', fontWeight: '900', letterSpacing: '-0.5px' }}>Betrics</h1>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {tabsSecondaires.length > 0 && (
-          <div ref={ref} style={{ position: 'relative' }}>
-            <button onClick={() => setMenuOuvert(o => !o)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IconMore color="var(--c-888)" size={16} />
-            </button>
-            {menuOuvert && (
-              <div style={{ position: 'absolute', top: '40px', right: 0, backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '6px', minWidth: '170px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400 }}>
-                {tabsSecondaires.map(tab => (
-                  <button key={tab.id} onClick={() => { onSelectTab(tab); setMenuOuvert(false); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                    <tab.Icon color="var(--c-888)" size={16} />
-                    <span style={{ fontSize: '13px', color: 'var(--c-white)' }}>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="down" />
-      </div>
+    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 16px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
+      <button onClick={onGoHome} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+        <img src="/logo192.png" alt="" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
+      </button>
     </div>
   );
 }
@@ -1539,12 +1557,27 @@ function App() {
       { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
       { id: 'props', label: t('nav_tab_models'), Icon: IconStar },
     ];
-    const tabsMobile = tabsPrincipaux;
     const tabsSecondaires = [
       { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
       ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
+    ];
+    // Bottom nav mobile : Accueil/Recherche/Analyses/Pool/Paris/Bankroll (6 icones, pas de
+    // libelle visible) + bouton de profil en 7e position (voir profileSlot plus bas). "Modeles"
+    // et "Admin" n'ont pas de place dans ces 6 icones : reachables via le menu de profil mobile
+    // (extraItems, voir ProfileMenuButton) plutot que perdus.
+    const tabsMobile = [
+      { id: 'home', label: t('nav_tab_home'), Icon: IconHome },
+      { id: 'search', label: t('nav_tab_search'), Icon: IconSearch },
+      { id: 'stats', label: t('nav_tab_analyses'), Icon: IconBarChart, badge: savedPicksCount },
+      { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
+      { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
+      { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
+    ];
+    const extraItemsProfilMobile = [
+      { icon: <IconStar color="var(--c-888)" size={16} />, label: t('nav_tab_models'), onClick: () => setPage('props') },
+      ...(isAdmin ? [{ icon: <IconShield color="var(--c-888)" size={16} />, label: t('menu_admin'), onClick: () => setPage('admin') }] : []),
     ];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 
@@ -1596,7 +1629,7 @@ function App() {
     );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? '80px' : 0 }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : 0 }}>
 
         {!isMobile && (
           <AppSidebar
@@ -1607,11 +1640,7 @@ function App() {
         )}
 
         {isMobile && (
-          <MobileTopBar
-            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
-            utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
-            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
-          />
+          <MobileTopBar onGoHome={() => handleSelectTab({ id: 'home' })} />
         )}
 
         {showRecherche && (
@@ -1639,7 +1668,17 @@ function App() {
         </div>
 
         {isMobile && (
-          <BottomNav tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab} />
+          <BottomNav
+            tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab}
+            profileSlot={(
+              <ProfileMenuButton
+                utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
+                themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
+                onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
+                isMobile extraItems={extraItemsProfilMobile}
+              />
+            )}
+          />
         )}
       </div>
     );

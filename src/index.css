@@ -137,6 +137,18 @@ body {
   min-height: 36px; /* chips de periode/onglets : zone tactile elargie via padding, pas la hauteur de la puce elle-meme */
 }
 
+/* Accueil mobile (<768px) : une seule colonne (MobileHomeDashboard, Home.js) qui reutilise les
+   memes cartes que desktop/tablette -- memes regles de zone tactile >=44px. */
+.home-mobile button, .home-mobile [role="button"] {
+  min-height: 44px;
+}
+.home-mobile button.home-eye-btn {
+  min-height: 32px;
+}
+.home-mobile button.home-chip {
+  min-height: 36px;
+}
+
 /* ===================== Analyse (espace de travail unifie equipe/joueur) =====================
    <768px (mobile) : .analyse-shell-mobile, une seule colonne (recherche + onglets + fiche) ;
    liste de suivi et paris a faire deviennent des tiroirs (AnalyseDrawer, geres en JS).
@@ -227,7 +239,7 @@ body {
 .perf-page {
   max-width: 860px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  padding: 24px 20px calc(48px + env(safe-area-inset-bottom));
 }
 
 .perf-stats-grid, .perf-two-grid {

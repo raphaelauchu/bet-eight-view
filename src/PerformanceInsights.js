@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { readHideAmounts, MaskedDots } from './Home';
 import { titreBetAuto } from './Dashboard';
+import { DropdownPill } from './DropdownPill';
 
 // Page "Aperçu de la performance" (style Wealthsimple "Performance insights"), ouverte depuis
 // le bloc Bankroll de l'accueil (clic sur la ligne de variation, voir BankrollHeroChart dans
@@ -59,54 +60,6 @@ function InfoTooltip({ texte }) {
     <span title={texte} style={{ cursor: 'help', display: 'inline-flex', marginLeft: '5px', verticalAlign: 'middle' }}>
       <IconInfo />
     </span>
-  );
-}
-
-function IconChevronDown({ color = 'var(--c-666)', size = 13 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-// Menu deroulant flottant style Wealthsimple : bouton (libelle actif + chevron), panneau
-// arrondi avec groupes optionnels, bouton radio a droite de l'option selectionnee.
-function DropdownFlottant({ label, groups, valeur, onChange, alignRight = false }) {
-  const [ouvert, setOuvert] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!ouvert) return;
-    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setOuvert(false); }
-    document.addEventListener('mousedown', onClickDehors);
-    return () => document.removeEventListener('mousedown', onClickDehors);
-  }, [ouvert]);
-
-  const optionActive = groups.flatMap(g => g.options).find(o => o.value === valeur);
-
-  return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
-      <button onClick={() => setOuvert(o => !o)} aria-haspopup="listbox" aria-expanded={ouvert} aria-label={label} className="perf-dropdown-btn">
-        <span>{optionActive ? optionActive.label : label}</span>
-        <IconChevronDown />
-      </button>
-      {ouvert && (
-        <div className="perf-dropdown-panel" style={alignRight ? { right: 0 } : { left: 0 }}>
-          {groups.map((g, i) => (
-            <div key={i}>
-              {g.titre && <div className="perf-dropdown-titre">{g.titre}</div>}
-              {g.options.map(opt => (
-                <button key={opt.value} className="perf-dropdown-option" onClick={() => { onChange(opt.value); setOuvert(false); }}>
-                  <span>{opt.label}</span>
-                  <span className={`perf-radio${opt.value === valeur ? ' perf-radio-actif' : ''}`}><span /></span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -231,26 +184,13 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
 
   return (
     <div className="perf-page">
-      <style>{`
-        .perf-dropdown-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background-color: var(--c-0d0d0d); border: 1px solid var(--c-222); border-radius: 20px; color: var(--c-ccc); font-size: 12px; font-weight: 600; cursor: pointer; }
-        .perf-dropdown-btn:hover { border-color: var(--c-333); }
-        .perf-dropdown-panel { position: absolute; top: calc(100% + 6px); z-index: 60; min-width: 200px; background-color: var(--c-111); border: 1px solid var(--c-222); border-radius: 14px; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-        .perf-dropdown-titre { padding: 8px 10px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--c-666); }
-        .perf-dropdown-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px; background: none; border: none; border-radius: 9px; color: var(--c-ccc); font-size: 13px; cursor: pointer; text-align: left; }
-        .perf-dropdown-option:hover { background-color: var(--c-1a1a1a); }
-        .perf-radio { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--c-444); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .perf-radio span { width: 7px; height: 7px; border-radius: 50%; background: none; }
-        .perf-radio-actif { border-color: #f97316; }
-        .perf-radio-actif span { background-color: #f97316; }
-      `}</style>
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'var(--c-ccc)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: '6px 2px' }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'var(--c-ccc)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: '6px 2px', minHeight: '44px' }}>
           <IconBack /> {t('back_btn').replace('← ', '')}
         </button>
-        <DropdownFlottant
+        <DropdownPill
           label={t('perf_scope_label')}
-          valeur={portee}
+          value={portee}
           onChange={setPortee}
           groups={[
             { options: [{ value: 'all', label: t('perf_scope_all') }] },
@@ -285,12 +225,12 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
         <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{t('perf_overview_title')}</h2>
-        <DropdownFlottant
+        <DropdownPill
           label={t('perf_overview_title')}
-          valeur={periode}
+          value={periode}
           onChange={setPeriode}
-          alignRight
-          groups={[{ options: PERIODES.map(p => ({ value: p, label: t(`perf_period_${p}`) })) }]}
+          align="right"
+          options={PERIODES.map(p => ({ value: p, label: t(`perf_period_${p}`) }))}
         />
       </div>
 
@@ -365,8 +305,8 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: 'var(--c-white)' }}>{t('perf_view_table').replace(' →', '')}</h3>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={exporterCSV} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-ccc)', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>{t('perf_export_csv')}</button>
-                <button onClick={() => setTableauOuvert(false)} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--c-222)', background: 'none', color: 'var(--c-888)', fontSize: '12px', cursor: 'pointer' }}>{t('favoris_retour')}</button>
+                <button onClick={exporterCSV} style={{ padding: '8px 14px', minHeight: '44px', boxSizing: 'border-box', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-ccc)', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>{t('perf_export_csv')}</button>
+                <button onClick={() => setTableauOuvert(false)} style={{ padding: '8px 14px', minHeight: '44px', boxSizing: 'border-box', borderRadius: '8px', border: '1px solid var(--c-222)', background: 'none', color: 'var(--c-888)', fontSize: '12px', cursor: 'pointer' }}>{t('favoris_retour')}</button>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>

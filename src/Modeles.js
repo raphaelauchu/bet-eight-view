@@ -4,6 +4,7 @@ import { getUrl } from './nhlApi';
 import { useIsMobile, useSaisonCourante, chargerProchaineSemaineAvecMatchs, formatSemaineDe, calculerFavoriMatch } from './Analyses';
 import { TeamAbbrevText, PlayerHelmet } from './BrandAssets';
 import { getModeles, filtrerMatchsPourModele, genererRecommandation, genererROISpecifique } from './modelesData';
+import { DropdownPill } from './DropdownPill';
 
 function CarteAccueil({ icone, titre, onClick }) {
   return (
@@ -234,21 +235,17 @@ function DetailModele({ modele, onBack, embedded }) {
             {matchsEligibles.length === 0 ? (
               <p style={{ color: 'var(--c-666)', fontSize: '12px', margin: 0 }}>Aucun match ne correspond aux critères de ce modèle pour l'instant.</p>
             ) : (
-              <select
+              <DropdownPill
+                ariaLabel="Match"
+                fullWidth
                 value={matchSelectionneId}
-                onChange={e => { setMatchSelectionneId(e.target.value); setChoixUtilisateur(true); }}
-                style={{ width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '10px', color: 'var(--c-white)', fontSize: '13px', boxSizing: 'border-box', outline: 'none' }}
-              >
-                {matchsEligibles.map(m => {
+                onChange={v => { setMatchSelectionneId(v); setChoixUtilisateur(true); }}
+                options={matchsEligibles.map(m => {
                   const date = m.startTimeUTC ? new Date(m.startTimeUTC) : null;
                   const label = date ? `${date.toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric' })} · ${date.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })}` : '';
-                  return (
-                    <option key={m.id} value={m.id}>
-                      {m.awayTeam?.abbrev} VS {m.homeTeam?.abbrev} · {label}
-                    </option>
-                  );
+                  return { value: m.id, label: `${m.awayTeam?.abbrev} VS ${m.homeTeam?.abbrev} · ${label}` };
                 })}
-              </select>
+              />
             )}
           </>
         )}

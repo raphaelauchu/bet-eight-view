@@ -319,14 +319,38 @@ test('desktop/tablette : la carte Elite ouvre un message "Bientôt disponible" (
   expect(screen.queryByText('Bientôt disponible')).not.toBeInTheDocument();
 });
 
-// ===================== Mobile (<768px) : comportement actuel inchange =====================
+// ===================== Mobile (<768px) : une seule colonne qui reutilise les cartes desktop ====
 
-test('mobile : affiche le libelle de bienvenue existant, pas le bandeau desktop ni les nouvelles cartes', async () => {
+test('mobile : une seule colonne qui reutilise les memes cartes que desktop, dans l\'ordre Calendrier/Matchs/Idees/Paris recents', async () => {
   useIsMobile.mockReturnValue(true);
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} />);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPerformance={noop} onOpenTeamFiche={noop} />);
 
-  await waitFor(() => expect(screen.getByText('Bon retour')).toBeInTheDocument());
-  expect(screen.queryByText("Mes pools")).not.toBeInTheDocument();
-  expect(screen.queryByText('Favoris')).not.toBeInTheDocument();
-  expect(screen.queryByText(/Idées du jour/)).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Alex'));
+  // Bankroll (meme composant que desktop : valeur + oeil + ligne de variation + courbe)
+  expect(screen.getByText('$500.00')).toBeInTheDocument();
+  expect(screen.getByLabelText('Masquer le solde')).toBeInTheDocument();
+  // Stats ROI/Taux de reussite/Paris actifs (meme StatsRow que desktop)
+  expect(screen.getByText('ROI')).toBeInTheDocument();
+  expect(screen.getByText('Taux de réussite')).toBeInTheDocument();
+  // Cartes reapparues sur mobile (desormais chargees et affichees, contrairement a avant)
+  await waitFor(() => expect(screen.getByText('Idées du jour')).toBeInTheDocument());
+  const titres = screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
+  expect(titres.indexOf('Calendrier')).toBeLessThan(titres.indexOf('Matchs ce soir'));
+  expect(titres.indexOf('Matchs ce soir')).toBeLessThan(titres.indexOf('Idées du jour'));
+  expect(titres.indexOf('Idées du jour')).toBeLessThan(titres.indexOf('Paris récents'));
+  // Picks/Watchlist (HoldingsWatchlistCard, meme composant que desktop)
+  expect(screen.getByText('Watchlist')).toBeInTheDocument();
+  // Plus aucune trace de l'ancienne mise en page mobile (Kelly, "Bon retour" generique)
+  expect(screen.queryByText('Bon retour')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Mise Kelly/)).not.toBeInTheDocument();
+});
+
+test('mobile : le bouton "Aperçu de la performance" (ligne de variation) appelle onGoToPerformance', async () => {
+  useIsMobile.mockReturnValue(true);
+  const onGoToPerformance = jest.fn();
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPerformance={onGoToPerformance} onOpenTeamFiche={noop} />);
+
+  await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
+  fireEvent.click(screen.getByText(/ce mois/));
+  expect(onGoToPerformance).toHaveBeenCalledWith('1m');
 });

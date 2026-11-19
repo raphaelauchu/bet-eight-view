@@ -9,6 +9,7 @@ import {
   getStatutLabelKey,
 } from './sportsbooksConfig';
 import { extraireComparaisonCotes, decimalToAmerican } from './cotes';
+import { DropdownPill } from './DropdownPill';
 
 const PROVINCE_STORAGE_KEY = 'betrics_province';
 
@@ -175,14 +176,17 @@ function TableauMarche({ titre, colonnes, sportsbooksVisibles, cotesParSite, pro
   );
 }
 
-function ProvinceSelecteur({ valeurInitiale, t, styleSelect, styleBouton, onConfirmer }) {
+function ProvinceSelecteur({ valeurInitiale, t, styleBouton, onConfirmer }) {
   const [choix, setChoix] = useState(valeurInitiale || 'quebec');
   return (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-      <label htmlFor="comparateur-province-select" style={{ fontSize: '12px', color: 'var(--c-666)' }}>{t('comparateur_province_label')}</label>
-      <select id="comparateur-province-select" value={choix} onChange={e => setChoix(e.target.value)} style={styleSelect}>
-        {PROVINCES.map(p => <option key={p} value={p}>{t(`comparateur_province_${p}`)}</option>)}
-      </select>
+      <span style={{ fontSize: '12px', color: 'var(--c-666)' }}>{t('comparateur_province_label')}</span>
+      <DropdownPill
+        ariaLabel={t('comparateur_province_label')}
+        value={choix}
+        onChange={setChoix}
+        options={PROVINCES.map(p => ({ value: p, label: t(`comparateur_province_${p}`) }))}
+      />
       <button style={{ ...styleBouton, backgroundColor: '#f97316', color: 'white', border: 'none' }} onClick={() => onConfirmer(choix)}>
         {t('comparateur_province_confirmer')}
       </button>
@@ -212,7 +216,6 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
   const aideLabelKey = province === 'quebec' ? 'comparateur_aide_qc' : province === 'ontario' ? 'comparateur_aide_on' : province === 'alberta' ? 'comparateur_aide_ab' : null;
 
   const styleCarte = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', border: '1px solid var(--c-222)', padding: '18px', marginBottom: '18px' };
-  const styleSelect = { padding: '8px 12px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '13px' };
   const styleBouton = { padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--c-333)', backgroundColor: 'transparent', color: 'var(--c-ccc)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' };
 
   if (!province || modifierProvince) {
@@ -222,7 +225,6 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
         <ProvinceSelecteur
           valeurInitiale={province}
           t={t}
-          styleSelect={styleSelect}
           styleBouton={styleBouton}
           onConfirmer={(choix) => { confirmerProvince(choix); setModifierProvince(false); }}
         />

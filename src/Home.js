@@ -133,6 +133,14 @@ export function MaskedDots({ t, count = 5, size = 5 }) {
   );
 }
 
+function IconBack({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
 function IconEye({ color = 'currentColor', size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -527,12 +535,25 @@ function LigneWatchlist({ w, libelle, t, onRemove }) {
 }
 
 function HoldingsModal({ t, lang, onglet, setOnglet, picks, watchlist, libelle, onRemovePick, onRemoveWatchlist, chargement, onClose }) {
+  const isMobile = useIsMobile();
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
-      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', border: '1px solid var(--c-222)', padding: '20px', maxWidth: '1000px', width: '100%', maxHeight: '85vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px' }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'var(--c-0d0d0d)', border: isMobile ? 'none' : '1px solid var(--c-222)',
+        borderRadius: isMobile ? 0 : '18px', padding: isMobile ? '16px' : '20px',
+        maxWidth: isMobile ? 'none' : '1000px', width: '100%', maxHeight: isMobile ? '100vh' : '85vh', overflow: 'auto',
+        paddingTop: isMobile ? 'calc(16px + env(safe-area-inset-top))' : '20px',
+      }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+          {isMobile && (
+            <button onClick={onClose} aria-label={t('favoris_retour')} style={{ background: 'none', border: 'none', color: 'var(--c-white)', cursor: 'pointer', padding: '6px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconBack />
+            </button>
+          )}
           <SegmentTabsFavoris onglet={onglet} setOnglet={setOnglet} t={t} />
-          <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-888)', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>{t('favoris_retour')}</button>
+          {!isMobile && (
+            <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-888)', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>{t('favoris_retour')}</button>
+          )}
         </div>
         {onglet === 'picks'
           ? <TablePicks t={t} lang={lang} picks={picks} onRemove={onRemovePick} chargement={chargement} />
@@ -717,237 +738,63 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
   );
 }
 
-// ===================== Mise en page mobile (<768px) : INCHANGEE (meme JSX qu'avant le redesign) =====================
+// ===================== Mise en page mobile (<768px) =====================
+// Une seule colonne qui reutilise EXACTEMENT les memes cartes que desktop/tablette (plus de
+// JSX ni de logique dupliques) dans l'ordre demande : Bonjour, Bankroll (courbe + periodes +
+// Valeur/Rendement), stats ROI/Taux/Paris actifs, Calendrier (defilement horizontal), Matchs du
+// jour (4 + "Voir plus"), Picks/Watchlist, Idees du jour, Paris recents.
 
-function MobileHomeDashboard({ t, data, onGoToBets }) {
+function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, paris, betsAuto, parisActifs, roi, winRate, recentCombines,
+    displayName, bankroll, bankrollLoading, parisTraites,
+    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
+    week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   } = data;
 
-  const [filtreGraph, setFiltreGraph] = useState('1m');
-  const [filtreCustomDebut, setFiltreCustomDebut] = useState('');
-  const [filtreCustomFin, setFiltreCustomFin] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [matchsSoir, setMatchsSoir] = useState([]);
+  const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
+  const [showComingSoon, setShowComingSoon] = useState(false);
 
-  useEffect(() => {
-    const today = getDateStr(new Date());
-    fetch(getUrl('schedule/' + today))
-      .then(r => r.json())
-      .then(d => setMatchsSoir((d.gameWeek?.[0]?.games || []).slice(0, 5)))
-      .catch(() => {});
-  }, []);
+  function toggleHideAmounts() {
+    setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; });
+  }
 
-  const bankrollDisplay = bankroll != null ? bankroll.toFixed(2) : '...';
-  const kellyStake = bankroll != null ? (bankroll * 0.05).toFixed(2) : '...';
+  const todayStr = getDateStr(new Date());
+  const activeCount = parisActifs.length + betsAutoActifs.length;
 
-  const now = new Date();
-  const periodeJoursHome = { '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
-  const parisTraites = paris.filter(p => p.statut !== 'actif');
-  const paris30 = parisTraites.filter(p => p.date_pari && (now - new Date(p.date_pari)) / 86400000 <= 30);
-  const profit30 = paris30.reduce((a, p) => a + (p.profit || 0), 0);
-  const gagnes30 = paris30.filter(p => p.statut === 'gagne').length;
-  const winRate30 = paris30.length > 0 ? Math.round(gagnes30 / paris30.length * 100) : 0;
-  const mise30 = paris30.reduce((a, p) => a + (p.mise || 0), 0);
-  const roi30 = mise30 > 0 ? ((profit30 / mise30) * 100).toFixed(1) : '0.0';
-
-  const parisFiltresGraph = parisTraites.filter(p => {
-    if (!p.date_pari) return false;
-    const datePari = new Date(p.date_pari);
-    if (filtreCustomDebut && filtreCustomFin) {
-      const debut = new Date(filtreCustomDebut);
-      const fin = new Date(filtreCustomFin);
-      fin.setHours(23, 59, 59);
-      return datePari >= debut && datePari <= fin;
-    }
-    const diff = (now - datePari) / 86400000;
-    return diff <= periodeJoursHome[filtreGraph];
-  });
-
-  const parisTraitesSorted = [...parisFiltresGraph].sort((a, b) => new Date(a.date_pari) - new Date(b.date_pari));
-  let cumul = 0;
-  const curveData = parisTraitesSorted.map(p => { cumul += (p.profit || 0); return cumul; });
-  const maxVal = Math.max(...curveData, 1);
-  const minVal = Math.min(...curveData, 0);
-  const range = maxVal - minVal || 1;
-  const H = 60;
-  const W = 200;
-  const points = curveData.map((v, i) => {
-    const x = curveData.length === 1 ? W / 2 : (i / (curveData.length - 1)) * W;
-    const y = H - ((v - minVal) / range) * H;
-    return x + ',' + y;
-  }).join(' ');
-  const profitFiltre = parisFiltresGraph.reduce((a, p) => a + (p.profit || 0), 0);
+  const selectedDayGames = useMemo(() => {
+    const day = week.find(d => d.date === selectedDate);
+    return day?.games || [];
+  }, [week, selectedDate]);
 
   return (
-    <div style={{ padding: '20px 20px 0', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t('home_welcome')}</p>
-        <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
-      </div>
+    <div className="home-mobile" style={{ padding: '16px', paddingBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px', margin: '0 auto', overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes home-skel-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.8; } }
+        .home-skel { background-color: var(--c-1a1a1a); animation: home-skel-pulse 1.4s ease-in-out infinite; }
+        .home-eye-btn { background: none; border: none; padding: 6px; margin-top: -6px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+      `}</style>
 
-      <div style={{ position: 'relative', borderRadius: '24px', padding: '24px', marginBottom: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, var(--c-1a1a1a) 0%, var(--c-111) 100%)', border: '1px solid var(--c-222)' }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
-          <div style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: '20px', padding: '3px 10px' }}>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{t('home_live')}</span>
-          </div>
-        </div>
-        <h1 style={{ margin: '6px 0 16px', fontSize: '44px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
-          ${bankrollDisplay !== '...' ? bankrollDisplay.split('.')[0] : '0'}<span style={{ fontSize: '24px', color: 'var(--c-555)' }}>.{bankrollDisplay !== '...' ? (bankrollDisplay.split('.')[1] || '00') : '00'}</span>
-        </h1>
+      <GreetingBanner t={t} displayName={displayName} />
 
-        <div style={{ marginBottom: '12px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_last30')}</span>
-            <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '600' }}>{t('home_live')}</span>
-          </div>
-          <div style={{ display: 'flex' }}>
-            {[
-              [t('home_profit'), (profit30 >= 0 ? '+' : '') + '$' + profit30.toFixed(2), profit30 >= 0 ? '#22c55e' : '#ef4444'],
-              [t('home_win_rate'), winRate30 + '%', 'white'],
-              [t('home_roi'), (parseFloat(roi30) >= 0 ? '+' : '') + roi30 + '%', parseFloat(roi30) >= 0 ? '#22c55e' : '#ef4444'],
-            ].map(([label, val, color], i) => (
-              <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1a1a1a)' : 'none', paddingRight: i < 2 ? '10px' : '0', paddingLeft: i > 0 ? '10px' : '0' }}>
-                <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '9px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color }}>{val}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <BankrollHeroChart
+        t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
+        hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
+        parisTraites={parisTraites} betsLoading={betsLoading}
+      />
 
-        <div style={{ marginBottom: '16px', backgroundColor: 'var(--c-0d0d0d)', borderRadius: '12px', padding: '12px', border: '1px solid var(--c-1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '10px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('home_profit_curve')}</span>
-              <span style={{ fontSize: '11px', fontWeight: '700', color: profitFiltre >= 0 ? '#22c55e' : '#ef4444' }}>{profitFiltre >= 0 ? '+' : ''}${profitFiltre.toFixed(2)}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
-                <button key={val} onClick={() => { setFiltreGraph(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '2px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtreGraph === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtreGraph === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '10px', fontWeight: '600' }}>
-                  {label}
-                </button>
-              ))}
-              <button onClick={() => setShowAdvanced(!showAdvanced)}
-                style={{ padding: '2px 6px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showAdvanced || filtreCustomDebut ? '#f97316' : 'transparent', color: showAdvanced || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px' }}>
-                ⚙
-              </button>
-            </div>
-          </div>
-          {showAdvanced && (
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '8px' }}>
-              <input type="date" value={filtreCustomDebut} onChange={e => { setFiltreCustomDebut(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
-              <span style={{ color: 'var(--c-444)', fontSize: '10px' }}>→</span>
-              <input type="date" value={filtreCustomFin} onChange={e => { setFiltreCustomFin(e.target.value); setFiltreGraph('1m'); }}
-                style={{ flex: 1, padding: '6px 8px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '8px', color: 'var(--c-white)', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} />
-              {(filtreCustomDebut || filtreCustomFin) && (
-                <button onClick={() => { setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                  style={{ padding: '6px 8px', backgroundColor: 'transparent', border: '1px solid var(--c-333)', borderRadius: '8px', color: 'var(--c-555)', cursor: 'pointer', fontSize: '10px' }}>✕</button>
-              )}
-            </div>
-          )}
-          {curveData.length > 1 ? (
-            <svg width="100%" height={H} viewBox={'0 0 ' + W + ' ' + H} preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <polyline points={points} fill="none" stroke={profitFiltre >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="0" y1={H - ((0 - minVal) / range) * H} x2={W} y2={H - ((0 - minVal) / range) * H} stroke="var(--c-333)" strokeWidth="0.5" strokeDasharray="4,4" />
-            </svg>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--c-333)', fontSize: '11px' }}>{t('home_no_bets_period')}</div>
-          )}
-        </div>
+      <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
 
-        <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
-          {[[t('home_roi'), `${parseFloat(roi) >= 0 ? '+' : ''}${roi}%`, parseFloat(roi) >= 0 ? '#22c55e' : '#ef4444'], [t('home_win_rate'), `${winRate}%`, 'white'], [t('home_active'), `${parisActifs.length} ${t('home_bets_unit')}`, '#f97316']].map(([label, val, color], i) => (
-            <div key={i} style={{ flex: 1, borderRight: i < 2 ? '1px solid var(--c-1f1f1f)' : 'none', paddingRight: i < 2 ? '16px' : '0', paddingLeft: i > 0 ? '16px' : '0' }}>
-              <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{label}</p>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', color }}>{val}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
-      {matchsSoir.length > 0 && (
-        <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_tonight')}</h3>
-            <span style={{ color: '#f97316', fontSize: '11px', fontWeight: '600' }}>{matchsSoir.length} {t('home_games_unit')}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {matchsSoir.map((m, i) => {
-              const away = m.awayTeam?.abbrev;
-              const home = m.homeTeam?.abbrev;
-              const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
-              const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>VS</span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }} title="À domicile">{home}</span>
-                  </div>
-                  {isLive ? (
-                    <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
-                  ) : (
-                    <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{heure}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <TonightGamesCard t={t} lang={lang} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
 
-      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid var(--c-161616)', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_recent_bets')}</h3>
-          <span onClick={onGoToBets} style={{ color: '#f97316', fontSize: '12px', cursor: 'pointer' }}>{t('home_see_all')}</span>
-        </div>
-        {recentCombines.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '8px' }}>
-            <span style={{ fontSize: '28px' }}>🏒</span>
-            <p style={{ margin: 0, color: 'var(--c-333)', fontSize: '13px' }}>{t('home_no_bets_title')}</p>
-            <p style={{ margin: 0, color: 'var(--c-222)', fontSize: '12px' }}>{t('home_no_bets_sub')}</p>
-          </div>
-        ) : recentCombines.map((p, i) => (
-          <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-            <div>
-              <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'var(--c-white)' }}>{p.titre}</p>
-              <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              {p.statut === 'actif' ? (
-                <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>{t('home_active_badge')}</span>
-              ) : (
-                <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
-                  {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <HoldingsWatchlistCard t={t} lang={lang} utilisateur={utilisateur} hideAmounts={hideAmounts} />
 
-      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '18px', padding: '18px', border: '1px solid rgba(34,197,94,0.15)', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={{ margin: '0 0 3px', color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('home_kelly')}</p>
-            <p style={{ margin: 0, fontSize: '32px', fontWeight: '900', color: '#22c55e', letterSpacing: '-1px' }}>${kellyStake.split('.')[0]}<span style={{ fontSize: '18px', color: '#1a6b3c' }}>.{kellyStake.split('.')[1] || '00'}</span></p>
-          </div>
-          <div style={{ backgroundColor: 'rgba(34,197,94,0.08)', borderRadius: '14px', padding: '12px 16px', border: '1px solid rgba(34,197,94,0.15)' }}>
-            <p style={{ margin: '0 0 2px', color: '#22c55e', fontSize: '11px', fontWeight: '600', textAlign: 'center' }}>{t('home_per_bet')}</p>
-            <p style={{ margin: 0, color: '#1a6b3c', fontSize: '10px', textAlign: 'center' }}>{t('home_max_risk')}</p>
-          </div>
-        </div>
-      </div>
+      <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
+
+      <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
+
+      {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
     </div>
   );
 }
@@ -990,21 +837,19 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     }).catch(() => setBetsLoading(false));
   }, [utilisateur?.id]);
 
-  // Donnees propres a la mise en page tablette/web (calendrier, idees du jour) : pas besoin sur
-  // mobile, qui ne les affiche pas (comportement actuel inchangé).
+  // Calendrier + idees du jour : utilises par les DEUX mises en page desormais (la mobile
+  // reutilise les memes cartes que desktop/tablette, voir MobileHomeDashboard plus bas).
   useEffect(() => {
-    if (isMobile) return;
     let annule = false;
     chargerSemaine().then(res => { if (!annule) { setWeek(res); setWeekLoading(false); } });
     return () => { annule = true; };
-  }, [isMobile]);
+  }, []);
 
   useEffect(() => {
-    if (isMobile) return;
     let annule = false;
     chargerIdeesDuJour().then(res => { if (!annule) { setDailyIdeas(res); setIdeasLoading(false); } });
     return () => { annule = true; };
-  }, [isMobile]);
+  }, []);
 
   const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
   const parisActifs = paris.filter(p => p.statut === 'actif');
@@ -1033,7 +878,14 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   };
 
   if (isMobile) {
-    return <MobileHomeDashboard t={t} data={sharedData} onGoToBets={onGoToBets} />;
+    return (
+      <MobileHomeDashboard
+        t={t} lang={lang} utilisateur={utilisateur} data={sharedData}
+        onGoToBets={onGoToBets}
+        onGoToPerformance={onGoToPerformance || (() => {})}
+        onOpenTeamFiche={onOpenTeamFiche || (() => {})}
+      />
+    );
   }
   return (
     <DesktopHomeDashboard
