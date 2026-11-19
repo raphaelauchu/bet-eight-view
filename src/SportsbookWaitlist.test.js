@@ -40,6 +40,16 @@ test('AddSportsbookButton : pilule "+ texte" sur desktop, rond "+" seul sur mobi
   expect(onClick).toHaveBeenCalledTimes(1);
 });
 
+test('AddSportsbookButton (pilule) : texte complet sur une seule ligne, icone + texte, retrecit sous 380px via CSS plutot que de se couper', () => {
+  render(<AddSportsbookButton t={t} mobile={false} onClick={noop} />);
+  const bouton = screen.getByText('Ajouter un sportsbook').closest('button');
+  expect(bouton.className).toContain('sportsbook-add-pill');
+  expect(bouton).toHaveStyle({ whiteSpace: 'nowrap', flexShrink: '0' });
+  // La regle media (<380px) qui retrecit police/padding est definie dans un <style> co-localise,
+  // jamais une coupure du texte lui-meme (pas de textOverflow/ellipsis sur ce bouton).
+  expect(bouton).not.toHaveStyle({ textOverflow: 'ellipsis' });
+});
+
 test('liste bet365/Betway/BET99/Sports Interaction, texte seul (aucun logo), avec "Bientôt disponible"', async () => {
   mockWaitlist();
   render(<SportsbookWaitlistSheet t={t} utilisateur={utilisateur} onClose={noop} />);

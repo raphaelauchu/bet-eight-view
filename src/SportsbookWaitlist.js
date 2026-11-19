@@ -33,12 +33,23 @@ export function AddSportsbookButton({ t, mobile, onClick }) {
       </button>
     );
   }
+  // Sous 380px (telephones etroits), la pilule retrecit legerement (police + padding) plutot que
+  // de couper son texte -- c'est la salutation a cote d'elle (voir GreetingBanner, Home.js) qui
+  // se tronque en premier (points de suspension sur le prenom), jamais ce bouton.
   return (
-    <button onClick={onClick}
-      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', minHeight: '44px', boxSizing: 'border-box', borderRadius: '24px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-      <IconPlus size={15} />
-      <span>{t('sportsbook_add_cta')}</span>
-    </button>
+    <>
+      <style>{`
+        .sportsbook-add-pill { padding: 10px 18px; font-size: 13px; gap: 8px; min-height: 44px; }
+        @media (max-width: 380px) {
+          .sportsbook-add-pill { padding: 9px 12px; font-size: 11.5px; gap: 6px; min-height: 40px; }
+        }
+      `}</style>
+      <button onClick={onClick} className="sportsbook-add-pill"
+        style={{ display: 'flex', alignItems: 'center', boxSizing: 'border-box', borderRadius: '24px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', color: 'var(--c-white)', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <IconPlus size={15} />
+        <span>{t('sportsbook_add_cta')}</span>
+      </button>
+    </>
   );
 }
 

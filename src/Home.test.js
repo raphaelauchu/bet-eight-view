@@ -304,26 +304,23 @@ test('desktop/tablette : le bouton "Ajouter un sportsbook" (pilule + texte) est 
   expect(screen.getAllByText('Bientôt disponible').length).toBe(4);
 });
 
-test('mobile : le bouton "Ajouter un sportsbook" est la meme pilule texte que desktop (pas un rond "+"), sous "Bonjour" et avant Bankroll, et ouvre la liste d\'attente', async () => {
+test('mobile : le bouton "Ajouter un sportsbook" (pilule texte complete, pas de rond "+") est sur la MEME ligne que "Bonjour"/le nom, a droite, et ouvre la liste d\'attente', async () => {
   useIsMobile.mockReturnValue(true);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
   await waitFor(() => expect(screen.getByText('Ajouter un sportsbook')).toBeInTheDocument());
 
-  // Meme pilule texte qu'au bureau (pas de rond "+" sans texte sur mobile).
+  // Meme pilule texte qu'au bureau (pas de rond "+" sans texte sur mobile), texte jamais coupe.
   const bouton = screen.getByText('Ajouter un sportsbook').closest('button');
   expect(bouton).toBeInTheDocument();
   expect(bouton).not.toHaveAttribute('aria-label'); // pilule = libelle visible, pas besoin d'aria-label
-  const style = window.getComputedStyle(bouton);
-  expect(parseInt(style.minHeight, 10)).toBeGreaterThanOrEqual(44);
+  expect(bouton.className).toContain('sportsbook-add-pill');
 
-  // Ordre DOM : sous le nom ("Alex"), avant le libelle BANKROLL.
+  // Meme ligne que le nom/la salutation : le bouton et le bloc nom partagent le meme parent
+  // flex direct (pas une rangee separee en dessous).
   const nom = screen.getByRole('heading', { level: 2 });
-  const bankroll = screen.getByText('Bankroll');
-  const position = nom.compareDocumentPosition(bouton);
-  // eslint-disable-next-line no-bitwise
-  expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // bouton vient apres le nom
-  // eslint-disable-next-line no-bitwise
-  expect(bouton.compareDocumentPosition(bankroll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // Bankroll vient apres le bouton
+  const rangeeSalutation = nom.closest('div').parentElement;
+  expect(rangeeSalutation.contains(bouton)).toBe(true);
+  expect(Array.from(rangeeSalutation.children)).toContain(bouton);
 
   fireEvent.click(bouton);
   await waitFor(() => expect(screen.getByText('BET99')).toBeInTheDocument());

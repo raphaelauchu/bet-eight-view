@@ -188,28 +188,24 @@ function EmptyState({ icon = '—', title, sub, cta, onCta }) {
 // alignee a gauche sur sa propre ligne (jamais a cote du nom -- pas assez de largeur a 360px
 // sans tronquer le texte), au-dessus du bloc Bankroll. Voir src/SportsbookWaitlist.js.
 function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
+  // Mobile : le nom peut se tronquer (points de suspension) pour laisser la place a la pilule,
+  // qui elle ne raccourcit jamais son texte -- minWidth:0 est necessaire pour qu'un enfant flex
+  // puisse etre tronque (sinon il force la largeur du conteneur au lieu de respecter ellipsis).
   const nomEtGreeting = (
-    <div>
+    <div style={mobile ? { minWidth: 0, flex: '1 1 auto' } : undefined}>
       <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t(greetingKey())}</p>
-      <h2 style={{ margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
+      <h2 style={{
+        margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)',
+        ...(mobile ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {}),
+      }}>{displayName}</h2>
     </div>
   );
 
-  if (mobile) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {nomEtGreeting}
-        {onAddSportsbook && (
-          <div style={{ display: 'flex' }}>
-            <AddSportsbookButton t={t} mobile={false} onClick={onAddSportsbook} />
-          </div>
-        )}
-      </div>
-    );
-  }
-
+  // Meme ligne que la salutation sur les deux breakpoints (mobile ET desktop/iPad), pilule a
+  // droite -- seul l'alignement vertical differe : centre sur le bloc de salutation en mobile
+  // (demande explicite), cale sur le bas du nom en desktop (comportement historique, inchange).
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: mobile ? 'center' : 'flex-end', gap: '12px' }}>
       {nomEtGreeting}
       {onAddSportsbook && <AddSportsbookButton t={t} mobile={false} onClick={onAddSportsbook} />}
     </div>
