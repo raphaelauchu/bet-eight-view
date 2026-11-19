@@ -401,37 +401,6 @@ function WeekCalendarCard({ t, loading, week, selectedDate, onSelectDate }) {
   );
 }
 
-// ===================== Mes pools =====================
-
-function MyPoolsCard({ t, loading, pools, onOpenPool, onCreateOrJoin }) {
-  return (
-    <div style={cardStyle}>
-      <h3 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>{t('home_pools_title')}</h3>
-      {loading ? (
-        <CardSkeleton lines={2} />
-      ) : pools.length === 0 ? (
-        <EmptyState icon="🏆" title={t('home_pools_empty_title')} cta={t('home_pools_empty_cta')} onCta={onCreateOrJoin} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {pools.map(p => (
-            <div key={p.poolId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '8px 0', borderTop: '1px solid var(--c-111)' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--c-555)' }}>
-                  {t('home_pools_rank_short')} #{p.rank ?? '—'} · {t('home_pools_points_short')} {Number(p.points || 0).toFixed(1)}
-                </div>
-              </div>
-              <button onClick={() => onOpenPool(p.poolId)} style={{ flex: '0 0 auto', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', color: 'var(--c-ccc)', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                {t('home_pools_open_btn')}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ===================== Favoris (aucun systeme existant : etat vide uniquement) =====================
 
 function FavoritesCard({ t }) {
@@ -512,11 +481,11 @@ function ComingSoonOverlay({ t, onClose }) {
 
 // ===================== Mise en page tablette/web (>=768px) =====================
 
-function DesktopHomeDashboard({ t, data, onGoToBets, onGoToPool, onOpenTeamFiche }) {
+function DesktopHomeDashboard({ t, data, onGoToBets, onOpenTeamFiche }) {
   const {
     displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
-    pools, poolsLoading, week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
+    week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -567,7 +536,6 @@ function DesktopHomeDashboard({ t, data, onGoToBets, onGoToPool, onOpenTeamFiche
       <div className="home-side-col">
         <TonightGamesCard t={t} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
         <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <MyPoolsCard t={t} loading={poolsLoading} pools={pools} onOpenPool={onGoToPool} onCreateOrJoin={() => onGoToPool(null)} />
         <FavoritesCard t={t} />
         <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
       </div>
@@ -814,7 +782,7 @@ function MobileHomeDashboard({ t, data, onGoToBets }) {
 
 // ===================== Composant principal : donnees partagees + choix de mise en page =====================
 
-export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToPool, onOpenTeamFiche, lang = 'en' }) {
+export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onOpenTeamFiche, lang = 'en' }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
 
@@ -825,8 +793,6 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   const [betsAuto, setBetsAuto] = useState([]);
   const [betsLoading, setBetsLoading] = useState(true);
 
-  const [pools, setPools] = useState([]);
-  const [poolsLoading, setPoolsLoading] = useState(true);
   const [week, setWeek] = useState([]);
   const [weekLoading, setWeekLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(() => getDateStr(new Date()));
@@ -852,15 +818,8 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     }).catch(() => setBetsLoading(false));
   }, [utilisateur?.id]);
 
-  // Donnees propres a la mise en page tablette/web (pools, calendrier, idees du jour) : pas
-  // besoin sur mobile, qui ne les affiche pas (comportement actuel inchangé).
-  useEffect(() => {
-    if (isMobile || !utilisateur?.id) return;
-    let annule = false;
-    chargerMesPools(utilisateur.id).then(res => { if (!annule) { setPools(res); setPoolsLoading(false); } });
-    return () => { annule = true; };
-  }, [isMobile, utilisateur?.id]);
-
+  // Donnees propres a la mise en page tablette/web (calendrier, idees du jour) : pas besoin sur
+  // mobile, qui ne les affiche pas (comportement actuel inchangé).
   useEffect(() => {
     if (isMobile) return;
     let annule = false;
@@ -898,7 +857,7 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   const sharedData = {
     displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
-    pools, poolsLoading, week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
+    week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   };
 
   if (isMobile) {
@@ -908,30 +867,12 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     <DesktopHomeDashboard
       t={t} data={sharedData}
       onGoToBets={onGoToBets}
-      onGoToPool={onGoToPool || (() => {})}
       onOpenTeamFiche={onOpenTeamFiche || (() => {})}
     />
   );
 }
 
 // ===================== Chargements de donnees (colonne de droite, tablette/web) =====================
-
-async function chargerMesPools(userId) {
-  try {
-    const { data } = await supabase.from('pool_members').select('id, pool:pools(id,name,status)').eq('user_id', userId);
-    const rows = (data || []).filter(r => r.pool);
-    const withStandings = await Promise.all(rows.map(async (r) => {
-      try {
-        const { data: standings } = await supabase.rpc('get_pool_standings', { p_pool_id: r.pool.id });
-        const mine = (standings || []).find(s => s.member_id === r.id);
-        return { poolId: r.pool.id, name: r.pool.name, status: r.pool.status, rank: mine?.rank ?? null, points: mine?.total_points ?? 0 };
-      } catch {
-        return { poolId: r.pool.id, name: r.pool.name, status: r.pool.status, rank: null, points: 0 };
-      }
-    }));
-    return withStandings;
-  } catch { return []; }
-}
 
 async function chargerSemaine() {
   try {

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import Auth from './Auth';
 import PublicSite from './PublicSite';
-import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile, useIsDesktopWide } from './Analyses';
+import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile } from './Analyses';
 import { PlayerHelmet } from './BrandAssets';
 import { useSaisonCourante } from './season';
 import ModelesFlux from './Modeles';
 import PoolHub from './Pool';
 import { HomeDashboard } from './Home';
+import { FavorisPage } from './Favoris';
 import EmailOAuthCallback from './EmailOAuthCallback';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { PROVINCES } from './sportsbooksConfig';
@@ -108,25 +109,131 @@ function IconMore({ color = 'currentColor', size = 20 }) {
   );
 }
 
-// Bouton avatar utilisateur + popup (Settings / Appearance / Language / Logout), reutilise
-// dans la sidebar desktop et la top bar mobile.
-function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up' }) {
+function IconChevronRight({ color = 'currentColor', size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function IconAppearance({ color = 'currentColor', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v18a9 9 0 0 0 0-18Z" fill={color} stroke="none" />
+    </svg>
+  );
+}
+
+function IconLanguage({ color = 'currentColor', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z" />
+    </svg>
+  );
+}
+
+function IconLogout({ color = 'currentColor', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+function IconHeart({ color = 'currentColor', size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.8 8.6c0 4-5 7.4-8.8 10-3.8-2.6-8.8-6-8.8-10a4.6 4.6 0 0 1 8.8-2 4.6 4.6 0 0 1 8.8 2Z" />
+    </svg>
+  );
+}
+
+function IconShield({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l8 3v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3Z" />
+    </svg>
+  );
+}
+
+function IconExpand({ color = 'currentColor', size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+      <path d="M21 16v3a2 2 0 0 1-2 2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
+
+// Bouton avatar utilisateur + popup (nom, Apparence, Langue, Parametres, Deconnexion), style
+// Wealthsimple : Apparence/Langue ouvrent un sous-menu a cote (radio sur le choix actif) plutot
+// que des boutons inline. Reutilise dans la sidebar desktop et la top bar mobile.
+function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, popupPosition = 'up' }) {
   const [ouvert, setOuvert] = useState(false);
+  const [sousMenu, setSousMenu] = useState(null); // 'apparence' | 'langue' | null
   const ref = React.useRef(null);
 
   useEffect(() => {
     if (!ouvert) return;
-    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setOuvert(false); }
+    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) { setOuvert(false); setSousMenu(null); } }
     document.addEventListener('mousedown', onClickDehors);
     return () => document.removeEventListener('mousedown', onClickDehors);
   }, [ouvert]);
 
-  const initiale = (utilisateur?.email || '?').charAt(0).toUpperCase();
-  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'block' };
+  const nomAffiche = displayName || utilisateur?.email || '?';
+  const initiale = nomAffiche.charAt(0).toUpperCase();
+  const itemStyle = { width: '100%', textAlign: 'left', padding: '10px 12px', backgroundColor: 'transparent', border: 'none', color: 'var(--c-white)', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' };
+  // La sidebar ancre son popup a gauche (popupPosition="up") : le sous-menu s'ouvre a droite.
+  // La top bar mobile ancre le sien a droite (popupPosition="down") : le sous-menu s'ouvre a gauche pour rester a l'ecran.
+  const sousMenuAGauche = popupPosition === 'down';
+
+  function LigneSousMenu({ cle, icon, label, children }) {
+    const actif = sousMenu === cle;
+    return (
+      <div style={{ position: 'relative' }}
+        onMouseEnter={() => setSousMenu(cle)}
+        onMouseLeave={() => setSousMenu(m => (m === cle ? null : m))}>
+        <button onClick={() => setSousMenu(m => (m === cle ? null : cle))} onFocus={() => setSousMenu(cle)} style={itemStyle}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+          {icon}
+          <span style={{ flex: 1 }}>{label}</span>
+          <IconChevronRight color="var(--c-666)" size={14} />
+        </button>
+        {actif && (
+          <div style={{
+            position: 'absolute', top: 0, [sousMenuAGauche ? 'right' : 'left']: 'calc(100% + 6px)',
+            backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '6px', minWidth: '160px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 410,
+          }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function OptionRadio({ actif, label, onClick }) {
+    return (
+      <button onClick={onClick} style={{ ...itemStyle, justifyContent: 'space-between' }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+        <span>{label}</span>
+        <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: `2px solid ${actif ? '#f97316' : 'var(--c-444)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {actif && <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f97316' }} />}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOuvert(o => !o)} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', fontWeight: '900', fontSize: '14px', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <button onClick={() => setOuvert(o => !o)} aria-label={t('menu_settings')} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', cursor: 'pointer', backgroundColor: '#f97316', color: 'white', fontWeight: '900', fontSize: '14px', overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initiale}
       </button>
       {ouvert && (
@@ -136,31 +243,32 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
           backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', padding: '8px', minWidth: '200px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 400,
         }}>
           <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
-            <div style={{ color: 'var(--c-888)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{utilisateur?.email}</div>
+            <div style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche}</div>
+            {displayName && <div style={{ color: 'var(--c-666)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{utilisateur?.email}</div>}
           </div>
-          <button onClick={() => { onGoToProfile(); setOuvert(false); }} style={itemStyle}
+
+          <LigneSousMenu cle="apparence" icon={<IconAppearance color="var(--c-888)" size={16} />} label={t('menu_appearance')}>
+            <OptionRadio actif={themePref === 'light'} label={t('theme_light')} onClick={() => setThemePref('light')} />
+            <OptionRadio actif={themePref === 'dark'} label={t('theme_dark')} onClick={() => setThemePref('dark')} />
+            <OptionRadio actif={themePref === 'system'} label={t('theme_system')} onClick={() => setThemePref('system')} />
+          </LigneSousMenu>
+
+          <LigneSousMenu cle="langue" icon={<IconLanguage color="var(--c-888)" size={16} />} label={t('menu_language')}>
+            <OptionRadio actif={lang === 'fr'} label={t('lang_francais')} onClick={() => setLang('fr')} />
+            <OptionRadio actif={lang === 'en'} label={t('lang_english')} onClick={() => setLang('en')} />
+          </LigneSousMenu>
+
+          <button onClick={() => { onGoToProfile(); setOuvert(false); setSousMenu(null); }} style={itemStyle}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-1a1a1a)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-            {t('menu_settings')}
+            <IconGear color="var(--c-888)" size={16} />
+            <span>{t('menu_settings')}</span>
           </button>
-          <div style={{ padding: '10px 12px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_appearance')}</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => { if (mode !== 'dark') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'dark' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: mode === 'dark' ? '700' : '400' }}>Dark</button>
-              <button onClick={() => { if (mode !== 'light') toggleTheme(); }} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: mode === 'light' ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: mode === 'light' ? '700' : '400' }}>Light</button>
-            </div>
-          </div>
-          <div style={{ padding: '4px 12px 10px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--c-666)', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '6px' }}>{t('menu_language')}</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {['fr', 'en'].map(l => (
-                <button key={l} onClick={() => setLang(l)} style={{ flex: 1, padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: lang === l ? '#f97316' : 'var(--c-1a1a1a)', color: 'var(--c-white)', fontSize: '12px', fontWeight: lang === l ? '700' : '400' }}>{l.toUpperCase()}</button>
-              ))}
-            </div>
-          </div>
+
           <div style={{ height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '4px 0' }} />
           <button onClick={onLogout} style={{ ...itemStyle, color: '#ef4444' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-            {t('menu_signout')}
+            <IconLogout color="#ef4444" size={16} />
+            <span>{t('menu_signout')}</span>
           </button>
         </div>
       )}
@@ -168,53 +276,44 @@ function ProfileMenuButton({ utilisateur, avatarUrl, mode, toggleTheme, lang, se
   );
 }
 
-// Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : icones + tooltips au
-// survol en-dessous de 1200px (SIDEBAR_WIDTH_COMPACT) ; a partir de 1200px ("web"), elle
-// s'elargit et affiche le libelle en permanence a cote de l'icone (SIDEBAR_WIDTH_WIDE), plus
-// besoin de tooltip puisque le texte est deja visible.
+// Sidebar gauche fixe (desktop/tablette >=768px), style Wealthsimple : etroite, icones
+// seulement, tooltip au survol ET au focus clavier (:focus-within) a droite de l'icone active.
 export const SIDEBAR_WIDTH_COMPACT = 60;
-export const SIDEBAR_WIDTH_WIDE = 220;
 
-function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t, isWide }) {
-  const width = isWide ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_COMPACT;
+function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
   function SidebarButton({ tab, size }) {
     const badge = tab.badge > 0 ? tab.badge : null;
     return (
-      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0, position: 'relative' }}>
-        <button onClick={() => onSelectTab(tab)} style={{
-          width: isWide ? '100%' : '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+      <div className="sb-item" style={{ position: 'relative' }}>
+        <button onClick={() => onSelectTab(tab)} aria-label={tab.label} style={{
+          width: '44px', height: '44px', borderRadius: '12px', border: 'none', cursor: 'pointer',
           backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.12)' : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: isWide ? 'flex-start' : 'center',
-          gap: isWide ? '12px' : 0, padding: isWide ? '0 12px' : 0, position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
         }}>
           <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-777)'} size={size} />
-          {isWide && <span style={{ fontSize: '13px', fontWeight: activeId === tab.id ? '700' : '500', color: activeId === tab.id ? '#f97316' : 'var(--c-ccc)', whiteSpace: 'nowrap' }}>{tab.label}</span>}
-          {badge && !isWide && (
-            <span style={{ position: 'absolute', top: '2px', right: isWide ? 'auto' : '2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{badge}</span>
-          )}
-          {badge && isWide && (
-            <span style={{ marginLeft: 'auto', backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '800', borderRadius: '10px', minWidth: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{badge}</span>
+          {badge && (
+            <span style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{badge}</span>
           )}
         </button>
-        {!isWide && <span className="sb-tooltip">{tab.label}{badge ? ` (${badge})` : ''}</span>}
+        <span className="sb-tooltip" role="tooltip">{tab.label}{badge ? ` (${badge})` : ''}</span>
       </div>
     );
   }
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: `${width}px`, backgroundColor: 'var(--c-111)', borderRight: '1px solid var(--c-1e1e1e)', display: 'flex', flexDirection: 'column', alignItems: isWide ? 'stretch' : 'center', padding: '18px 0 14px', zIndex: 300, transition: 'width 0.15s ease' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: `${SIDEBAR_WIDTH_COMPACT}px`, backgroundColor: 'var(--c-111)', borderRight: '1px solid var(--c-1e1e1e)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 14px', zIndex: 300 }}>
       <style>{`
         .sb-item { position: relative; }
         .sb-tooltip { position: absolute; left: 62px; top: 50%; transform: translateY(-50%) translateX(-4px); background: var(--c-1a1a1a); border: 1px solid var(--c-2a2a2a); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 400; }
-        .sb-item:hover .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
+        .sb-item:hover .sb-tooltip, .sb-item:focus-within .sb-tooltip { opacity: 1; transform: translateY(-50%) translateX(0); }
       `}</style>
-      <div style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px', paddingLeft: isWide ? '22px' : 0, textAlign: isWide ? 'left' : 'center' }}>{isWide ? 'Betrics' : 'B'}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', alignItems: isWide ? 'stretch' : 'center' }}>
+      <div aria-hidden="true" style={{ color: '#f97316', fontWeight: '900', fontSize: '20px', marginBottom: '22px', textAlign: 'center' }}>B</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, alignItems: 'center' }}>
         {tabsPrincipaux.map(tab => <SidebarButton key={tab.id} tab={tab} size={20} />)}
-        {tabsSecondaires.length > 0 && <div style={{ width: isWide ? 'calc(100% - 20px)' : '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: isWide ? '8px 10px' : '8px 0' }} />}
+        {tabsSecondaires.length > 0 && <div style={{ width: '28px', height: '1px', backgroundColor: 'var(--c-1e1e1e)', margin: '8px 0' }} />}
         {tabsSecondaires.map(tab => <SidebarButton key={tab.id} tab={tab} size={18} />)}
       </div>
-      <div className="sb-item" style={{ width: isWide ? '100%' : 'auto', padding: isWide ? '0 10px' : 0 }}>
-        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" />
+      <div className="sb-item">
+        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="up" />
       </div>
     </div>
   );
@@ -243,7 +342,7 @@ function BottomNav({ tabs, activeId, onSelectTab }) {
 }
 
 // Top bar mobile : marque + acces rapide (Pool/Paris/Bankroll/Admin, absents de la bottom nav) + profil.
-function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, mode, toggleTheme, lang, setLang, onGoToProfile, onLogout, t }) {
+function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const ref = React.useRef(null);
 
@@ -277,7 +376,7 @@ function MobileTopBar({ tabsSecondaires, onSelectTab, utilisateur, avatarUrl, mo
             )}
           </div>
         )}
-        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="down" />
+        <ProfileMenuButton utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang} onGoToProfile={onGoToProfile} onLogout={onLogout} t={t} popupPosition="down" />
       </div>
     </div>
   );
@@ -969,6 +1068,141 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   );
 }
 
+const PERIODES_BANKROLL_CHART = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
+
+// Graphique d'evolution de la bankroll, style Wealthsimple : grande valeur (survolee ou
+// derniere) + variation coloree en haut, courbe lisse (Catmull-Rom) avec degrade sous la ligne,
+// curseur interactif (survol = valeur/date a cet instant), selecteurs de periode sous le
+// graphique, bascule Valeur/Rendement. Reutilise seulement les donnees deja calculees par
+// BankrollPage (seriePoints = meme cumul depot(+)/retrait(-) qu'avant, juste horodate) -- gere
+// sa propre fenetre de periode, independante du filtre de la liste de transactions plus bas.
+function BankrollChart({ t, lang, seriePoints, valeurActuelle = 0 }) {
+  const [periode, setPeriode] = useState('all');
+  const [modeRendement, setModeRendement] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState(null);
+  const svgRef = React.useRef(null);
+
+  const libellesPeriode = {
+    '1d': t('bank_period_1d'), '1w': t('bank_period_1w'), '1m': t('bank_period_1m'),
+    '3m': t('bank_period_3m'), '6m': t('bank_period_6m'), 'ytd': t('bank_period_ytd'),
+    '1y': t('bank_period_1y'), 'all': t('bank_period_all'),
+  };
+
+  const maintenant = new Date();
+  const pointsPeriode = seriePoints.filter(p => {
+    if (!p.date) return true;
+    if (periode === 'all') return true;
+    const d = new Date(p.date);
+    if (periode === 'ytd') return d.getFullYear() === maintenant.getFullYear();
+    const joursParPeriode = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
+    return (maintenant - d) / 86400000 <= joursParPeriode[periode];
+  });
+
+  const valeurs = pointsPeriode.map(p => p.value);
+  const base = valeurs.length ? valeurs[0] : 0;
+  const serieAffichee = modeRendement
+    ? valeurs.map(v => (base !== 0 ? ((v - base) / Math.abs(base)) * 100 : 0))
+    : valeurs;
+
+  const H = 110, W = 600;
+  const maxVal = Math.max(...serieAffichee, 1);
+  const minVal = Math.min(...serieAffichee, 0);
+  const range = (maxVal - minVal) || 1;
+  const coords = serieAffichee.map((v, i) => ({
+    x: serieAffichee.length === 1 ? W / 2 : (i / (serieAffichee.length - 1)) * W,
+    y: H - ((v - minVal) / range) * H,
+  }));
+
+  // Chemin lisse (Catmull-Rom convertie en courbes de Bezier cubiques).
+  function cheminLisse(pts) {
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? i : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+    }
+    return d;
+  }
+  const lignePath = cheminLisse(coords);
+  const airePath = coords.length > 1 ? `${lignePath} L ${coords[coords.length - 1].x},${H} L ${coords[0].x},${H} Z` : '';
+
+  const variation = serieAffichee.length > 1 ? serieAffichee[serieAffichee.length - 1] - serieAffichee[0] : 0;
+  const hausse = variation >= 0;
+  const couleur = hausse ? '#22c55e' : '#ef4444';
+
+  const pointSurvol = hoverIndex != null ? pointsPeriode[hoverIndex] : null;
+  const valeurSurvolee = hoverIndex != null ? serieAffichee[hoverIndex] : (serieAffichee.length ? serieAffichee[serieAffichee.length - 1] : (modeRendement ? 0 : valeurActuelle));
+  const dateSurvolee = pointSurvol ? pointSurvol.date : pointsPeriode[pointsPeriode.length - 1]?.date;
+
+  function onMouseMove(e) {
+    if (!svgRef.current || coords.length === 0) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const xSvg = ((e.clientX - rect.left) / rect.width) * W;
+    let plusProche = 0, meilleureDist = Infinity;
+    coords.forEach((c, i) => { const dist = Math.abs(c.x - xSvg); if (dist < meilleureDist) { meilleureDist = dist; plusProche = i; } });
+    setHoverIndex(plusProche);
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <div style={{ fontSize: '26px', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-1px' }}>
+            {modeRendement
+              ? `${valeurSurvolee >= 0 ? '+' : ''}${valeurSurvolee.toFixed(1)}%`
+              : `$${valeurSurvolee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--c-666)', marginTop: '2px' }}>
+            {dateSurvolee ? new Date(dateSurvolee).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+            {serieAffichee.length > 1 && (
+              <> · <span style={{ color: couleur, fontWeight: '700' }}>{hausse ? '+' : ''}{modeRendement ? `${variation.toFixed(1)}%` : `$${variation.toFixed(2)}`}</span></>
+            )}
+          </div>
+        </div>
+        <button onClick={() => setModeRendement(m => !m)} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--c-333)', backgroundColor: 'var(--c-1a1a1a)', color: 'var(--c-ccc)', fontSize: '11px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}>
+          {modeRendement ? t('bank_toggle_value') : t('bank_toggle_return')}
+        </button>
+      </div>
+
+      {coords.length > 1 ? (
+        <svg ref={svgRef} width="100%" height={H + 8} viewBox={`0 0 ${W} ${H + 8}`} preserveAspectRatio="none"
+          onMouseMove={onMouseMove} onMouseLeave={() => setHoverIndex(null)} style={{ cursor: 'crosshair', overflow: 'visible', display: 'block' }}>
+          <defs>
+            <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={couleur} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={couleur} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={airePath} fill="url(#bkGrad)" stroke="none" />
+          <path d={lignePath} fill="none" stroke={couleur} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          {hoverIndex != null && coords[hoverIndex] && (
+            <>
+              <line x1={coords[hoverIndex].x} y1="0" x2={coords[hoverIndex].x} y2={H} stroke="var(--c-333)" strokeWidth="1" strokeDasharray="3 3" />
+              <circle cx={coords[hoverIndex].x} cy={coords[hoverIndex].y} r="3.5" fill={couleur} stroke="var(--c-080808)" strokeWidth="1.5" />
+            </>
+          )}
+        </svg>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
+      )}
+
+      <div style={{ display: 'flex', gap: '4px', marginTop: '10px', flexWrap: 'wrap' }}>
+        {PERIODES_BANKROLL_CHART.map(p => (
+          <button key={p} onClick={() => { setPeriode(p); setHoverIndex(null); }}
+            style={{ padding: '4px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: periode === p ? '#f97316' : 'var(--c-1a1a1a)', color: periode === p ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
+            {libellesPeriode[p]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
@@ -1064,22 +1298,15 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const winRate = parisFiltres.length > 0 ? Math.round(parisGagnes / parisFiltres.length * 100) : 0;
   const profitReel = totalRetire - totalDepose + profitParis;
 
-  // Courbe bankroll
-  const txSorted = [...txFiltrees].sort((a,b) => new Date(a.date_transaction) - new Date(b.date_transaction));
-  let cumul = 0;
-  const curveData = txSorted.map(tx => {
-    cumul += tx.type === 'deposit' ? tx.montant : -tx.montant;
-    return cumul;
+  // Serie complete (toutes les transactions, cumul chronologique) pour le graphique --
+  // BankrollChart gere sa propre fenetre de periode (independante du filtre de la liste de
+  // transactions plus bas) ; meme calcul cumulatif depot(+)/retrait(-) qu'avant.
+  const transactionsSorted = [...transactions].sort((a, b) => new Date(a.date_transaction) - new Date(b.date_transaction));
+  let cumulGraph = 0;
+  const seriePointsBankroll = transactionsSorted.map(tx => {
+    cumulGraph += tx.type === 'deposit' ? tx.montant : -tx.montant;
+    return { date: tx.date_transaction, value: cumulGraph };
   });
-  const maxVal = Math.max(...curveData, 1);
-  const minVal = Math.min(...curveData, 0);
-  const range = maxVal - minVal || 1;
-  const H = 80; const W = 300;
-  const points = curveData.map((v, i) => {
-    const x = curveData.length === 1 ? W/2 : (i / (curveData.length - 1)) * W;
-    const y = H - ((v - minVal) / range) * H;
-    return x + ',' + y;
-  }).join(' ');
 
   const inp = { width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: '-apple-system, sans-serif' };
 
@@ -1136,35 +1363,8 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   // Graphique d'evolution + totaux "all-time" : colonne principale sur iPad/web.
   const chartAndTotals = (
     <>
-      <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px', border: '1px solid var(--c-1a1a1a)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ color: 'var(--c-444)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bank_evolution')}</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {[['1m', '1M'], ['3m', '3M'], ['6m', '6M'], ['1y', '1Y']].map(([val, label]) => (
-              <button key={val} onClick={() => { setFiltrePeriode(val); setFiltreCustomDebut(''); setFiltreCustomFin(''); }}
-                style={{ padding: '3px 10px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: filtrePeriode === val && !filtreCustomDebut ? '#f97316' : 'var(--c-1a1a1a)', color: filtrePeriode === val && !filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '11px', fontWeight: '600' }}>
-                {label}
-              </button>
-            ))}
-            <button onClick={() => setShowFiltresAvances(!showFiltresAvances)}
-              style={{ padding: '3px 8px', borderRadius: '20px', border: '1px solid var(--c-222)', cursor: 'pointer', backgroundColor: showFiltresAvances || filtreCustomDebut ? '#f97316' : 'transparent', color: showFiltresAvances || filtreCustomDebut ? 'white' : 'var(--c-555)', fontSize: '12px', fontWeight: '600' }}>
-              ⚙
-            </button>
-          </div>
-        </div>
-        {curveData.length > 1 ? (
-          <svg width="100%" height={H} viewBox={"0 0 " + W + " " + H} preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="bkGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <polyline points={points} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--c-333)', fontSize: '12px' }}>{t('bank_empty_chart')}</div>
-        )}
+      <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px 14px 10px', border: '1px solid var(--c-1a1a1a)' }}>
+        <BankrollChart t={t} lang={lang} seriePoints={seriePointsBankroll} valeurActuelle={bankroll || 0} />
       </div>
 
       <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
@@ -1369,7 +1569,8 @@ function App() {
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
   const [lang, setLang] = useState('en');
   const [avatarUrl, setAvatarUrl] = useState(null);
-  const [mode, toggleTheme] = useWSTheme();
+  const [displayName, setDisplayName] = useState('');
+  const [mode, , themePref, setThemePref] = useWSTheme();
   useEffect(() => { document.documentElement.setAttribute('data-theme', mode); }, [mode]);
   const [showRecherche, setShowRecherche] = useState(false);
   const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
@@ -1377,7 +1578,6 @@ function App() {
   const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
   const [pendingOpenPlayer, setPendingOpenPlayer] = useState(null);
   const isMobile = useIsMobile();
-  const isDesktopWide = useIsDesktopWide();
   // Appele sans condition (regle des hooks) : utilisateur peut passer de null a connecte entre
   // deux rendus, un hook appele seulement dans la branche "if (utilisateur)" plus bas
   // changerait d'ordre d'appel entre les rendus. Le hook lui-meme gere deja utilisateur=null.
@@ -1394,9 +1594,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!utilisateur?.id) { setAvatarUrl(null); return; }
-    supabase.from('profiles').select('avatar_url').eq('id', utilisateur.id).single()
-      .then(({ data }) => setAvatarUrl(data?.avatar_url || null));
+    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); return; }
+    supabase.from('profiles').select('avatar_url, username, first_name, last_name').eq('id', utilisateur.id).single()
+      .then(({ data }) => {
+        setAvatarUrl(data?.avatar_url || null);
+        const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
+        setDisplayName(nomComplet || '');
+      });
   }, [utilisateur?.id]);
 
   async function handleDeconnexion() {
@@ -1434,7 +1638,9 @@ function App() {
       { id: 'pooldraft', label: t('nav_tab_pool'), Icon: IconDraft },
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
-      ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconGear }] : []),
+      ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
+      { id: 'favoris', label: t('nav_tab_favoris'), Icon: IconHeart },
+      { id: 'profile', label: t('menu_settings'), Icon: IconGear },
     ];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 
@@ -1469,6 +1675,8 @@ function App() {
       <PoolHub utilisateur={utilisateur} lang={lang} openPoolId={pendingOpenPoolId} onConsumedOpenPoolId={() => setPendingOpenPoolId(null)} />
     ) : page === 'admin' ? (
       <AdminPage />
+    ) : page === 'favoris' ? (
+      <FavorisPage utilisateur={utilisateur} lang={lang} />
     ) : page === 'stats' ? (
       <AnalysesFlux onLigueChange={(l) => setLigueAnalyses(l)} lang={lang} utilisateur={utilisateur}
         pendingOpenPlayer={pendingOpenPlayer} onConsumedOpenPlayer={() => setPendingOpenPlayer(null)} />
@@ -1478,26 +1686,25 @@ function App() {
       <HomeDashboard
         utilisateur={utilisateur} lang={lang}
         onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
-        onGoToPool={(poolId) => { setPendingOpenPoolId(poolId || null); setPage('pooldraft'); }}
         onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
       />
     );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${isDesktopWide ? SIDEBAR_WIDTH_WIDE : SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? '80px' : 0 }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? '80px' : 0 }}>
 
         {!isMobile && (
           <AppSidebar
             tabsPrincipaux={tabsPrincipaux} tabsSecondaires={tabsSecondaires} activeId={activeId} onSelectTab={handleSelectTab}
-            utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
-            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t} isWide={isDesktopWide}
+            utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
+            onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
           />
         )}
 
         {isMobile && (
           <MobileTopBar
             tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
-            utilisateur={utilisateur} avatarUrl={avatarUrl} mode={mode} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
+            utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName} themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
           />
         )}

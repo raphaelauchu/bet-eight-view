@@ -3,7 +3,7 @@ import {
   AnalysesFlux, tabKey, openOrActivateTab, closeAnalyseTab, moveActiveSearchIndex,
   buildSearchGroups, readAnalyseState, writeAnalyseState, formFromSavedPick,
   buildMatchTab, calculerProbabiliteImplicite, calculerEdgePct, aggregerTendanceEquipe,
-  filtrerFaceAFace, formeSequence,
+  filtrerFaceAFace, formeSequence, useWSTheme,
 } from './Analyses';
 import HockeyTicker from './HockeyTicker';
 import { _resetCacheSaisonCourante } from './season';
@@ -418,3 +418,50 @@ test('matchup : changement de periode de tendances (L5/L10/Saison) recalcule les
   fireEvent.click(screen.getByText('Saison'));
   await waitFor(() => expect(screen.getAllByText('2-0').length).toBeGreaterThan(0));
 }, 15000);
+
+// ===================== Theme app-wide (dark/light/system) — useWSTheme =====================
+// Pilote le data-theme global (voir src/App.js) ; teste ici en isolation via un petit
+// composant-harnais, independamment du reste de la sidebar.
+
+function ThemeHarness() {
+  const [mode, toggleTheme, pref, setPref] = useWSTheme();
+  return (
+    <div>
+      <span data-testid="mode">{mode}</span>
+      <span data-testid="pref">{pref}</span>
+      <button onClick={toggleTheme}>toggle</button>
+      <button onClick={() => setPref('system')}>system</button>
+      <button onClick={() => setPref('light')}>light</button>
+    </div>
+  );
+}
+
+beforeEach(() => {
+  try { window.localStorage.clear(); } catch {}
+});
+
+test('useWSTheme : sombre par defaut, persiste la preference dans localStorage', () => {
+  render(<ThemeHarness />);
+  expect(screen.getByTestId('mode').textContent).toBe('dark');
+  expect(screen.getByTestId('pref').textContent).toBe('dark');
+  expect(window.localStorage.getItem('betrics_stats_theme')).toBe('dark');
+});
+
+test('useWSTheme : toggleTheme bascule dark/light (comportement historique conserve pour les appelants existants)', () => {
+  render(<ThemeHarness />);
+  fireEvent.click(screen.getByText('toggle'));
+  expect(screen.getByTestId('mode').textContent).toBe('light');
+  expect(screen.getByTestId('pref').textContent).toBe('light');
+});
+
+test('useWSTheme : preference "system" resout le mode via prefers-color-scheme', () => {
+  window.matchMedia = jest.fn().mockImplementation(query => ({
+    matches: true, media: query,
+    addEventListener: jest.fn(), removeEventListener: jest.fn(),
+    addListener: jest.fn(), removeListener: jest.fn(),
+  }));
+  render(<ThemeHarness />);
+  fireEvent.click(screen.getByText('system'));
+  expect(screen.getByTestId('pref').textContent).toBe('system');
+  expect(screen.getByTestId('mode').textContent).toBe('dark');
+});

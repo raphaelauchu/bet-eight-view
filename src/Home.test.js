@@ -107,11 +107,10 @@ beforeEach(() => {
 
 const noop = () => {};
 
-test('desktop/tablette : etats vides affiches pour pools, favoris, calendrier, matchs et idees quand aucune donnee', async () => {
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={noop} onOpenTeamFiche={noop} />);
+test('desktop/tablette : etats vides affiches pour favoris, calendrier, matchs et idees quand aucune donnee', async () => {
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
-  await waitFor(() => expect(screen.getByText("Vous n'êtes dans aucun pool")).toBeInTheDocument());
-  expect(screen.getByText(/suivi des joueurs et équipes favoris/i)).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText(/suivi des joueurs et équipes favoris/i)).toBeInTheDocument());
   await waitFor(() => expect(screen.getByText('Aucun match')).toBeInTheDocument()); // calendrier vide
   expect(screen.getByText('Aucun match ce jour')).toBeInTheDocument(); // carte matchs vide
   await waitFor(() => expect(screen.getByText(/Pas assez de matchs récents/)).toBeInTheDocument());
@@ -119,41 +118,11 @@ test('desktop/tablette : etats vides affiches pour pools, favoris, calendrier, m
   expect(screen.getByText('Elite')).toBeInTheDocument();
 });
 
-test('desktop/tablette : la carte Mes pools affiche le rang et les points quand get_pool_standings repond', async () => {
-  supabase.from.mockImplementation((table) => {
-    if (table === 'pool_members') {
-      return mockQuery({ data: [{ id: 'member-1', pool: { id: 'pool-1', name: 'Pool Test', status: 'active' } }], error: null });
-    }
-    return mockQuery(tableResult(table));
-  });
-  supabase.rpc.mockResolvedValue({ data: [{ member_id: 'member-1', rank: 2, total_points: 42.5 }], error: null });
-
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={noop} onOpenTeamFiche={noop} />);
-
-  await waitFor(() => expect(screen.getByText('Pool Test')).toBeInTheDocument());
-  expect(screen.getByText(/#2/)).toBeInTheDocument();
-  expect(screen.getByText(/42.5/)).toBeInTheDocument();
-});
-
-test('desktop/tablette : le bouton Ouvrir d\'un pool declenche onGoToPool avec le bon id', async () => {
-  supabase.from.mockImplementation((table) => {
-    if (table === 'pool_members') {
-      return mockQuery({ data: [{ id: 'member-1', pool: { id: 'pool-42', name: 'Pool Test', status: 'active' } }], error: null });
-    }
-    return mockQuery(tableResult(table));
-  });
-  supabase.rpc.mockResolvedValue({ data: [{ member_id: 'member-1', rank: 1, total_points: 10 }], error: null });
-  const onGoToPool = jest.fn();
-
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={onGoToPool} onOpenTeamFiche={noop} />);
-
-  await waitFor(() => expect(screen.getByText('Pool Test')).toBeInTheDocument());
-  fireEvent.click(screen.getByText('Ouvrir'));
-  expect(onGoToPool).toHaveBeenCalledWith('pool-42');
-});
+// La section "Mes pools" a ete retiree de l'accueil (redesign navigation Wealthsimple) --
+// plus de carte pools/bouton Ouvrir a tester ici ; PoolHub (src/Pool.js) reste inchange.
 
 test('desktop/tablette : bouton oeil masque/affiche le montant de la bankroll', async () => {
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={noop} onOpenTeamFiche={noop} />);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
   await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
   fireEvent.click(screen.getByLabelText('Masquer les montants'));
@@ -171,13 +140,13 @@ test('desktop/tablette : la carte Idees du jour affiche le joueur chaud et la se
     return mockQuery(tableResult(table));
   });
 
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={noop} onOpenTeamFiche={noop} />);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
   await waitFor(() => expect(screen.getByText(/J\. Testeur/)).toBeInTheDocument());
 });
 
 test('desktop/tablette : la carte Elite ouvre un message "Bientôt disponible" (pas de vraie logique de paywall)', async () => {
-  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPool={noop} onOpenTeamFiche={noop} />);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
   await waitFor(() => expect(screen.getByText('Elite')).toBeInTheDocument());
   fireEvent.click(screen.getByText(/EV \/ Arbitrage/));

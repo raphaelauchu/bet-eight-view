@@ -4527,12 +4527,32 @@ const WS_THEME = {
   },
 };
 
+// Theme app-wide (dark/light/system), pilote via data-theme sur <html> (voir src/App.js).
+// pref ('dark'|'light'|'system', persistee dans localStorage, 'dark' par defaut) est le choix
+// brut de l'utilisateur ; mode ('dark'|'light' uniquement) est la valeur resolue -- 'system'
+// suit prefers-color-scheme en direct (ecoute les changements). Retourne [mode, toggleTheme,
+// pref, setPref] : les deux premiers elements gardent la forme historique (bascule binaire
+// dark/light) pour ne pas casser les appelants existants (StatsHub/WSSidebar) qui ignorent les
+// deux derniers ; le nouveau menu Apparence (src/App.js, ProfileMenuButton) utilise pref/setPref
+// pour le choix explicite a 3 valeurs.
 function useWSTheme() {
-  const [mode, setMode] = useState(() => {
+  const [pref, setPref] = useState(() => {
     try { return localStorage.getItem('betrics_stats_theme') || 'dark'; } catch { return 'dark'; }
   });
-  useEffect(() => { try { localStorage.setItem('betrics_stats_theme', mode); } catch {} }, [mode]);
-  return [mode, () => setMode(m => (m === 'dark' ? 'light' : 'dark'))];
+  const [systemPrefersDark, setSystemPrefersDark] = useState(() => {
+    try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch { return true; }
+  });
+  useEffect(() => { try { localStorage.setItem('betrics_stats_theme', pref); } catch {} }, [pref]);
+  useEffect(() => {
+    let mql;
+    try { mql = window.matchMedia('(prefers-color-scheme: dark)'); } catch { return undefined; }
+    const onChange = (e) => setSystemPrefersDark(e.matches);
+    if (mql.addEventListener) mql.addEventListener('change', onChange); else mql.addListener(onChange);
+    return () => { if (mql.removeEventListener) mql.removeEventListener('change', onChange); else mql.removeListener(onChange); };
+  }, []);
+  const mode = pref === 'system' ? (systemPrefersDark ? 'dark' : 'light') : pref;
+  const toggleTheme = () => setPref(m => (m === 'dark' ? 'light' : 'dark'));
+  return [mode, toggleTheme, pref, setPref];
 }
 
 function WSIconSearch({ color = 'currentColor', size = 16 }) {

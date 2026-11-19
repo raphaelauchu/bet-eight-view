@@ -41,9 +41,11 @@ const noop = () => {};
 test('iPad/web : solde et bouton nouvelle transaction dans la colonne droite, evolution et transactions dans la colonne principale', async () => {
   render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
   await waitFor(() => expect(document.body.textContent).toContain('$500'));
-  expect(screen.getByText('Évolution Bankroll')).toBeInTheDocument();
   expect(screen.getByText('+ Nouvelle transaction')).toBeInTheDocument();
   expect(screen.getAllByText('Transactions').length).toBeGreaterThan(0);
+  // Nouveau graphique Wealthsimple : bascule Valeur/Rendement + selecteurs de periode
+  expect(screen.getByText('Rendement')).toBeInTheDocument();
+  expect(screen.getByText('TOUT')).toBeInTheDocument();
 });
 
 // ===================== Mobile (<768px) : INCHANGE, une seule colonne =====================
@@ -52,6 +54,6 @@ test('mobile : une seule colonne (comportement inchange)', async () => {
   useIsMobile.mockReturnValue(true);
   render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
   await waitFor(() => expect(document.body.textContent).toContain('$500'));
-  expect(screen.getByText('Évolution Bankroll')).toBeInTheDocument();
   expect(screen.getByText('+ Nouvelle transaction')).toBeInTheDocument();
+  expect(screen.getByText('TOUT')).toBeInTheDocument();
 });
