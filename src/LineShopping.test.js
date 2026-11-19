@@ -60,8 +60,8 @@ test('Quebec : aucun logo, aucun lien sortant, mentions age/jeu responsable et s
   const etiquettesGrises = screen.getAllByText(/Hors réglementation au Québec/i);
   expect(etiquettesGrises.length).toBe(8);
 
-  expect(screen.getByText('Mise-o-jeu+')).toBeInTheDocument();
-  expect(screen.getByText(/Seul site réglementé au Québec/i)).toBeInTheDocument();
+  expect(screen.queryByText('Mise-o-jeu+')).not.toBeInTheDocument();
+  expect(screen.queryByText(/Seul site réglementé au Québec/i)).not.toBeInTheDocument();
 });
 
 test('BET99 et Sports Interaction affichent "Cotes non disponibles" (non fournis par la source)', async () => {

@@ -4,7 +4,6 @@ import { supabase } from './supabase';
 import {
   PROVINCES,
   STATUT,
-  MISE_O_JEU,
   getSportsbooksPourProvince,
   getStatutLabelKey,
 } from './sportsbooksConfig';
@@ -269,13 +268,6 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
           <span style={{ fontSize: '11px', color: 'var(--c-666)', fontWeight: '700' }}>{t(ageLabelKey)}</span>
         )}
       </div>
-
-      {province === 'quebec' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: 'var(--c-111)', borderRadius: '10px', marginBottom: '14px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--c-white)', fontWeight: '600' }}>{MISE_O_JEU.nom}</span>
-          <span style={{ fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px', backgroundColor: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>{t('sportsbook_miseojeu_statut')}</span>
-        </div>
-      )}
 
       {sportsbooksVisibles.length === 0 ? (
         <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '16px 0' }}>{t('comparateur_cotes_non_dispo')}</div>

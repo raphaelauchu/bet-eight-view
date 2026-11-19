@@ -62,17 +62,6 @@ export const SPORTSBOOKS = [
   },
 ];
 
-// Mise-o-jeu+ : affiché comme information au Québec seulement, jamais de cotes (la source
-// actuelle ne le fournit pas) -- voir règle 3 de la tâche.
-export const MISE_O_JEU = {
-  id: 'miseojeu',
-  nom: 'Mise-o-jeu+',
-  oddsApiBookmakerKey: null,
-  statutsParProvince: {
-    quebec: { statut: STATUT.REGULATED, lastVerified: '2026-11-18' },
-  },
-};
-
 // Sites à afficher pour une province donnée : "unverified" est toujours masqué (statut non
 // confirmé, on ne prend pas position), "autre" n'affiche jamais aucun site.
 export function getSportsbooksPourProvince(province) {
