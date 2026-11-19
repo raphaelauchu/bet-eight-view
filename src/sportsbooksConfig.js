@@ -13,6 +13,13 @@ export const STATUT = {
   UNVERIFIED: 'unverified',
 };
 
+// Interrupteur du comparateur de cotes (src/LineShopping.js) : tant que false, AUCUN appel
+// n'est fait a la source de cotes (voir getCotesHockey dans src/cotes.js, qui court-circuite
+// la requete a l'Edge Function nhl-odds-cache quand ce drapeau est a false) -- aucun credit
+// The Odds API consomme, le comparateur tourne en "mode apercu" avec des cellules de cotes
+// vides. Remettre a true pour reactiver la recuperation reelle des cotes.
+export const ODDS_COMPARATOR_LIVE_DATA = false;
+
 export const PROVINCES = ['quebec', 'ontario', 'alberta', 'autre'];
 
 // id -> clé bookmaker telle que renvoyée par The Odds API (champ `bookmakers[].key` de

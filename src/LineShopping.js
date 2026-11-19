@@ -4,10 +4,11 @@ import { supabase } from './supabase';
 import {
   PROVINCES,
   STATUT,
+  ODDS_COMPARATOR_LIVE_DATA,
   getSportsbooksPourProvince,
   getStatutLabelKey,
 } from './sportsbooksConfig';
-import { extraireComparaisonCotes, decimalToAmerican, getCotesLastUpdated } from './cotes';
+import { extraireComparaisonCotes, decimalToAmerican } from './cotes';
 
 const PROVINCE_STORAGE_KEY = 'betrics_province';
 
@@ -70,8 +71,13 @@ function moyenneDisponibles(valeurs) {
 }
 
 // Cellule "cote" d'une colonne de marche : format americain + equivalent decimal, surlignage
-// sobre si c'est la meilleure cote disponible de la colonne, ecart vs moyenne sinon.
-function CelluleCote({ prix, meilleurPrix, moyenne, t }) {
+// sobre si c'est la meilleure cote disponible de la colonne, ecart vs moyenne sinon. En mode
+// apercu (ODDS_COMPARATOR_LIVE_DATA=false), toujours un tiret -- jamais de cote inventee, jamais
+// de mise en evidence.
+function CelluleCote({ prix, meilleurPrix, moyenne, apercu, t }) {
+  if (apercu) {
+    return <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '13px', padding: '8px 6px' }}>—</div>;
+  }
   if (typeof prix !== 'number' || !Number.isFinite(prix)) {
     return <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '8px 6px' }}>{t('comparateur_cotes_non_dispo')}</div>;
   }
@@ -124,15 +130,17 @@ function EtiquetteStatut({ sportsbook, province, t }) {
   );
 }
 
-// Un tableau "marche" (Moneyline / Total...) : une ligne par sportsbook visible, mise en
-// evidence sobre de la meilleure cote par colonne, ecart vs moyenne sinon.
-function TableauMarche({ titre, colonnes, sportsbooksVisibles, cotesParSite, province, t }) {
+// Un tableau "marche" (Moneyline / Total / Ecart de buts...) : une ligne par sportsbook
+// visible, mise en evidence sobre de la meilleure cote par colonne, ecart vs moyenne sinon. En
+// mode apercu, toutes les cellules sont des tirets (voir CelluleCote), aucun calcul de
+// meilleure cote/moyenne n'est effectue.
+function TableauMarche({ titre, colonnes, sportsbooksVisibles, cotesParSite, province, apercu, t }) {
   const valeursParColonne = colonnes.map(col => sportsbooksVisibles.map(sb => col.valeur(cotesParSite[sb.id])));
-  const meilleurParColonne = valeursParColonne.map(vals => {
+  const meilleurParColonne = apercu ? colonnes.map(() => null) : valeursParColonne.map(vals => {
     const dispo = vals.filter(v => typeof v === 'number' && Number.isFinite(v));
     return dispo.length ? Math.max(...dispo) : null;
   });
-  const moyenneParColonne = valeursParColonne.map(moyenneDisponibles);
+  const moyenneParColonne = apercu ? colonnes.map(() => null) : valeursParColonne.map(moyenneDisponibles);
 
   return (
     <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', border: '1px solid var(--c-222)', padding: '14px', marginBottom: '14px' }}>
@@ -155,7 +163,7 @@ function TableauMarche({ titre, colonnes, sportsbooksVisibles, cotesParSite, pro
                 <td style={{ padding: '8px 6px' }}><EtiquetteStatut sportsbook={sb} province={province} t={t} /></td>
                 {colonnes.map((col, i) => (
                   <td key={i}>
-                    <CelluleCote prix={valeursParColonne[i][ligne]} meilleurPrix={meilleurParColonne[i]} moyenne={moyenneParColonne[i]} t={t} />
+                    <CelluleCote prix={valeursParColonne[i][ligne]} meilleurPrix={meilleurParColonne[i]} moyenne={moyenneParColonne[i]} apercu={apercu} t={t} />
                   </td>
                 ))}
               </tr>
@@ -191,7 +199,6 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
   const t = getT(lang);
   const { province, chargement, confirmerProvince } = useProvinceUtilisateur(utilisateur);
   const [modifierProvince, setModifierProvince] = useState(false);
-  const [filtreRegulesSeulement, setFiltreRegulesSeulement] = useState(false);
 
   if (dejaJoue) return null;
   if (chargement) return null;
@@ -199,10 +206,7 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
   const cotesParSite = extraireComparaisonCotes(matchBrut);
   const derniereMaj = cotesFetchedAt || null;
 
-  const sportsbooksBase = getSportsbooksPourProvince(province);
-  const sportsbooksVisibles = filtreRegulesSeulement
-    ? sportsbooksBase.filter(sb => sb.statutInfo?.statut === STATUT.REGULATED)
-    : sportsbooksBase;
+  const sportsbooksVisibles = getSportsbooksPourProvince(province);
 
   const ageLabelKey = province === 'ontario' ? 'comparateur_age_on' : province === 'alberta' ? 'comparateur_age_ab' : province === 'quebec' ? 'comparateur_age_qc' : null;
   const aideLabelKey = province === 'quebec' ? 'comparateur_aide_qc' : province === 'ontario' ? 'comparateur_aide_on' : province === 'alberta' ? 'comparateur_aide_ab' : null;
@@ -238,49 +242,62 @@ export function ComparateurCotesLNH({ matchBrut, nom1, nom2, dejaJoue, utilisate
     );
   }
 
+  const trouverParEquipe = (outcomes, nom) => outcomes?.find(o => {
+    const n = (o.name || '').toLowerCase();
+    const cible = (nom || '').toLowerCase();
+    return n.includes(cible) || cible.includes(n);
+  });
   const colonnesMoneyline = [
-    { label: nom1, valeur: c => c?.moneyline?.find(o => (o.name || '').toLowerCase().includes(nom1.toLowerCase()) || nom1.toLowerCase().includes((o.name || '').toLowerCase()))?.price },
-    { label: nom2, valeur: c => c?.moneyline?.find(o => (o.name || '').toLowerCase().includes(nom2.toLowerCase()) || nom2.toLowerCase().includes((o.name || '').toLowerCase()))?.price },
+    { label: nom1, valeur: c => trouverParEquipe(c?.moneyline, nom1)?.price },
+    { label: nom2, valeur: c => trouverParEquipe(c?.moneyline, nom2)?.price },
   ];
   const colonnesTotal = [
     { label: t('comparateur_total_over'), valeur: c => c?.total?.find(o => o.name === 'Over')?.price },
     { label: t('comparateur_total_under'), valeur: c => c?.total?.find(o => o.name === 'Under')?.price },
   ];
+  const colonnesEcartButs = [
+    { label: nom1, valeur: c => trouverParEquipe(c?.spread, nom1)?.price },
+    { label: nom2, valeur: c => trouverParEquipe(c?.spread, nom2)?.price },
+  ];
 
   return (
     <div style={styleCarte}>
+      {!ODDS_COMPARATOR_LIVE_DATA && (
+        <div style={{ fontSize: '11px', color: '#f97316', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '8px', padding: '7px 10px', marginBottom: '12px' }}>
+          {t('comparateur_apercu_banniere')}
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
         <div>
           <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{t('comparateur_titre')}</div>
           <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{t('comparateur_sub')}</div>
         </div>
-        <button style={styleBouton} onClick={() => setModifierProvince(true)}>
-          {t(`comparateur_province_${province}`)} · {t('comparateur_province_modifier')}
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', margin: '10px 0 14px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--c-888)', cursor: 'pointer' }}>
-          <input type="checkbox" checked={filtreRegulesSeulement} onChange={e => setFiltreRegulesSeulement(e.target.checked)} />
-          {t('comparateur_filtre_regules')}
-        </label>
-        {ageLabelKey && (
-          <span style={{ fontSize: '11px', color: 'var(--c-666)', fontWeight: '700' }}>{t(ageLabelKey)}</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {ageLabelKey && (
+            <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>{t(ageLabelKey)}</span>
+          )}
+          <button style={styleBouton} onClick={() => setModifierProvince(true)}>
+            {t(`comparateur_province_${province}`)} · {t('comparateur_province_modifier')}
+          </button>
+        </div>
       </div>
 
       {sportsbooksVisibles.length === 0 ? (
-        <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '16px 0' }}>{t('comparateur_cotes_non_dispo')}</div>
+        <div style={{ textAlign: 'center', color: 'var(--c-555)', fontSize: '12px', padding: '16px 0', marginTop: '14px' }}>{t('comparateur_cotes_non_dispo')}</div>
       ) : (
-        <div>
-          <TableauMarche titre={t('comparateur_moneyline')} colonnes={colonnesMoneyline} sportsbooksVisibles={sportsbooksVisibles} cotesParSite={cotesParSite} province={province} t={t} />
-          <TableauMarche titre={t('comparateur_total_titre')} colonnes={colonnesTotal} sportsbooksVisibles={sportsbooksVisibles} cotesParSite={cotesParSite} province={province} t={t} />
+        <div style={{ marginTop: '14px' }}>
+          <TableauMarche titre={t('comparateur_moneyline')} colonnes={colonnesMoneyline} sportsbooksVisibles={sportsbooksVisibles} cotesParSite={cotesParSite} province={province} apercu={!ODDS_COMPARATOR_LIVE_DATA} t={t} />
+          <TableauMarche titre={t('comparateur_total_titre')} colonnes={colonnesTotal} sportsbooksVisibles={sportsbooksVisibles} cotesParSite={cotesParSite} province={province} apercu={!ODDS_COMPARATOR_LIVE_DATA} t={t} />
+          <TableauMarche titre={t('comparateur_puckline_titre')} colonnes={colonnesEcartButs} sportsbooksVisibles={sportsbooksVisibles} cotesParSite={cotesParSite} province={province} apercu={!ODDS_COMPARATOR_LIVE_DATA} t={t} />
         </div>
       )}
 
-      <div style={{ fontSize: '10px', color: 'var(--c-555)', marginBottom: '10px' }}>
-        {t('comparateur_maj')} {derniereMaj ? new Date(derniereMaj).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA') : '-'}
-      </div>
+      {ODDS_COMPARATOR_LIVE_DATA && (
+        <div style={{ fontSize: '10px', color: 'var(--c-555)', marginBottom: '10px' }}>
+          {t('comparateur_maj')} {derniereMaj ? new Date(derniereMaj).toLocaleString(lang === 'fr' ? 'fr-CA' : 'en-CA') : '-'}
+        </div>
+      )}
 
       <div style={{ borderTop: '1px solid var(--c-161616)', paddingTop: '12px' }}>
         <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--c-888)', marginBottom: '4px' }}>{t('comparateur_jeu_responsable_titre')}</div>

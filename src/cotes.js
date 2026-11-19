@@ -1,11 +1,19 @@
 import { supabase } from './supabase';
-import { SPORTSBOOKS } from './sportsbooksConfig';
+import { SPORTSBOOKS, ODDS_COMPARATOR_LIVE_DATA } from './sportsbooksConfig';
 
-// Les cotes passent par l'Edge Function nhl-odds-cache (voir supabase/functions/) plutot que
-// par un appel direct a The Odds API depuis le navigateur : la cle API reste cote serveur et
-// le resultat est mis en cache (5 min) pour tous les utilisateurs/composants qui le demandent
-// en meme temps (voir audit de la source dans le resume de la tache qui a introduit ce cache).
-export async function getCotesHockey() {
+// Fournisseur "The Odds API" : passe par l'Edge Function nhl-odds-cache (voir supabase/
+// functions/) plutot que par un appel direct a The Odds API depuis le navigateur -- la cle API
+// reste cote serveur et le resultat est mis en cache (5 min) pour tous les utilisateurs/
+// composants qui le demandent en meme temps (voir audit de la source dans le resume de la
+// tache qui a introduit ce cache).
+//
+// Un fournisseur de cotes est une fonction async sans argument qui retourne le MEME FORMAT que
+// celui-ci : un tableau de matchs The Odds API (`away_team`/`home_team`/`bookmakers[]`), avec
+// une propriete `_fetchedAt` (horodatage ISO ou null) attachee au tableau. Pour brancher un
+// autre fournisseur plus tard, ecrire sa fonction fetchOdds* ici (meme forme de sortie) et
+// l'ajouter a ODDS_PROVIDERS/ODDS_PROVIDER_ACTIF plus bas -- rien d'autre (sportsbooksConfig.js,
+// LineShopping.js, Analyses.js) n'a besoin de changer.
+export async function fetchOddsTheOddsApi() {
   try {
     const { data: payload, error } = await supabase.functions.invoke('nhl-odds-cache');
     if (error) throw error;
@@ -18,6 +26,22 @@ export async function getCotesHockey() {
     vide._fetchedAt = null;
     return vide;
   }
+}
+
+export const ODDS_PROVIDERS = { theOddsApi: fetchOddsTheOddsApi };
+export const ODDS_PROVIDER_ACTIF = 'theOddsApi';
+
+// Point d'entree utilise par le reste de l'app (src/Analyses.js). Tant que
+// ODDS_COMPARATOR_LIVE_DATA est a false (src/sportsbooksConfig.js), ne fait AUCUN appel reseau
+// -- ni a l'Edge Function ni, en amont, a The Odds API -- et retourne un resultat vide : le
+// mode apercu du comparateur (src/LineShopping.js) ne consomme donc aucun credit de la source.
+export async function getCotesHockey() {
+  if (!ODDS_COMPARATOR_LIVE_DATA) {
+    const vide = [];
+    vide._fetchedAt = null;
+    return vide;
+  }
+  return ODDS_PROVIDERS[ODDS_PROVIDER_ACTIF]();
 }
 
 // Horodatage de la derniere mise a jour des cotes retournees par getCotesHockey(), fourni par
