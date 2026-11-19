@@ -118,19 +118,12 @@ body {
   min-width: 0; /* evite qu'un enfant large (ex. graphique) ne force un debordement de colonne */
 }
 
-/* Rangee de cartes stats (ROI / taux de reussite / paris actifs / meilleure serie) : 2
-   colonnes en portrait iPad (~820px), 4 colonnes des que la largeur le permet (~900px et
-   plus, couvre l'iPad paysage ~1180px ainsi que le web). */
+/* Rangee de cartes stats (ROI / taux de reussite / paris actifs) : 3 colonnes egales, toutes
+   largeurs -- "Meilleure serie" retiree, 3 cartes se partagent la largeur a parts egales. */
 .home-stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-}
-
-@media (min-width: 900px) {
-  .home-stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 /* Zones tactiles >=44px (iPad) sur les elements interactifs de l'accueil desktop/tablette. */

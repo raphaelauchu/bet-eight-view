@@ -1081,7 +1081,7 @@ function filtrerParPeriode(points, periode) {
 // Graphique d'evolution de la bankroll (courbe partagee WealthsimpleChart) : gere sa propre
 // fenetre de periode et son mode Valeur/Rendement, independants du filtre de la liste de
 // transactions plus bas. Memes donnees/calcul (seriePoints = cumul depot(+)/retrait(-)) qu'avant.
-function BankrollChartSection({ t, lang, seriePoints, valeurActuelle = 0 }) {
+function BankrollChartSection({ t, lang, seriePoints }) {
   const [periode, setPeriode] = useState('all');
   const [modeRendement, setModeRendement] = useState(false);
 
@@ -1090,21 +1090,21 @@ function BankrollChartSection({ t, lang, seriePoints, valeurActuelle = 0 }) {
   const pointsAffiches = modeRendement
     ? pointsPeriode.map(p => ({ date: p.date, value: base !== 0 ? ((p.value - base) / Math.abs(base)) * 100 : 0 }))
     : pointsPeriode;
+  const variation = pointsAffiches.length > 1 ? pointsAffiches[pointsAffiches.length - 1].value - pointsAffiches[0].value : 0;
+  const couleur = variation >= 0 ? '#22c55e' : '#ef4444';
 
   return (
     <WealthsimpleChart
-      t={t} lang={lang}
+      lang={lang}
       points={pointsAffiches}
       periods={PERIODES_BANKROLL_CHART.map(p => ({ key: p, label: t(`bank_period_${p}`) }))}
       period={periode} onSelectPeriod={setPeriode}
       modeOptions={[{ key: 'value', label: t('bank_toggle_value') }, { key: 'return', label: t('bank_toggle_return') }]}
       mode={modeRendement ? 'return' : 'value'}
       onSelectMode={(m) => setModeRendement(m === 'return')}
-      isPercent={modeRendement}
-      valeurActuelle={valeurActuelle}
       emptyLabel={t('bank_empty_chart')}
       gradientId="bkGrad"
-      showHeader={false}
+      color={couleur}
     />
   );
 }
@@ -1270,7 +1270,7 @@ export function BankrollPage({ utilisateur, onBack, lang = 'en' }) {
   const chartAndTotals = (
     <>
       <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', padding: '14px 14px 10px', border: '1px solid var(--c-1a1a1a)' }}>
-        <BankrollChartSection t={t} lang={lang} seriePoints={seriePointsBankroll} valeurActuelle={bankroll || 0} />
+        <BankrollChartSection t={t} lang={lang} seriePoints={seriePointsBankroll} />
       </div>
 
       <div style={{ display: 'flex', borderTop: '1px solid var(--c-1f1f1f)', paddingTop: '16px' }}>
@@ -1586,6 +1586,7 @@ function App() {
       <HomeDashboard
         utilisateur={utilisateur} lang={lang}
         onGoToProps={() => setPage('props')} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
+        onGoToBankroll={() => setPage('bankroll')}
         onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
       />
     );

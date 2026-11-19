@@ -179,6 +179,52 @@ test('desktop/tablette : masquer le solde masque aussi ROI, paris recents et Pic
   expect(screen.getAllByLabelText('Montant masqué').length).toBeGreaterThanOrEqual(4);
 });
 
+test('desktop/tablette : les boutons de periode changent le suffixe du texte de variation', async () => {
+  writeHideAmounts(false);
+  const maintenant = new Date();
+  const hierSoir = new Date(maintenant.getTime() - 2 * 3600000).toISOString();
+  supabase.from.mockImplementation((table) => {
+    if (table === 'paris') {
+      return mockQuery({
+        data: [
+          { id: 'p1', statut: 'gagne', profit: 10, mise: 20, date_pari: hierSoir },
+          { id: 'p2', statut: 'perdu', profit: -5, mise: 20, date_pari: maintenant.toISOString() },
+        ], error: null,
+      });
+    }
+    return mockQuery(tableResult(table));
+  });
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText(/ce mois/)).toBeInTheDocument()); // periode par defaut '1m'
+
+  fireEvent.click(screen.getByText('1S'));
+  await waitFor(() => expect(screen.getByText(/cette semaine/)).toBeInTheDocument());
+
+  fireEvent.click(screen.getByText('Tout'));
+  await waitFor(() => expect(screen.getByText(/depuis le début/)).toBeInTheDocument());
+});
+
+test('desktop/tablette : solde masque affiche "Aperçu de la performance" cliquable vers la page Bankroll', async () => {
+  writeHideAmounts(false);
+  const onGoToBankroll = jest.fn();
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToBankroll={onGoToBankroll} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('Masquer le solde'));
+  const lien = screen.getByText('Aperçu de la performance →');
+  fireEvent.click(lien);
+  expect(onGoToBankroll).toHaveBeenCalledTimes(1);
+});
+
+test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stats seulement', async () => {
+  writeHideAmounts(false);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('ROI')).toBeInTheDocument());
+  expect(screen.queryByText('Meilleure série')).not.toBeInTheDocument();
+  expect(screen.getByText('Taux de réussite')).toBeInTheDocument();
+  expect(screen.getByText('Paris actifs')).toBeInTheDocument();
+});
+
 test('desktop/tablette : bouton oeil masque/affiche le montant de la bankroll avec des points, pas du texte', async () => {
   writeHideAmounts(false);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);

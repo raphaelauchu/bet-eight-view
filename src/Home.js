@@ -123,11 +123,11 @@ function CardSkeleton({ lines = 3 }) {
 
 // Remplace un montant sensible quand hideAmounts est actif : 5 petits points gris arrondis
 // (pas de texte/emoji), avec un libelle accessible pour les lecteurs d'ecran.
-function MaskedDots({ t }) {
+function MaskedDots({ t, count = 5, size = 5 }) {
   return (
-    <span aria-label={t('home_amounts_hidden')} style={{ display: 'inline-flex', gap: '3px', verticalAlign: 'middle' }}>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--c-666)', display: 'inline-block' }} />
+    <span aria-label={t('home_amounts_hidden')} style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.max(3, Math.round(size / 2))}px`, verticalAlign: 'middle' }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <span key={i} style={{ width: `${size}px`, height: `${size}px`, borderRadius: '50%', backgroundColor: 'var(--c-666)', display: 'inline-block' }} />
       ))}
     </span>
   );
@@ -182,58 +182,98 @@ function GreetingBanner({ t, displayName }) {
 // ===================== Bankroll + courbe de profit fusionnees (un seul bloc, sans cadre) =====================
 
 const CHART_PERIODS = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
+const PERIOD_SUFFIX_KEYS = {
+  '1d': 'home_period_suffix_1d', '1w': 'home_period_suffix_1w', '1m': 'home_period_suffix_1m',
+  '3m': 'home_period_suffix_3m', '6m': 'home_period_suffix_6m', 'ytd': 'home_period_suffix_ytd',
+  '1y': 'home_period_suffix_1y', 'all': 'home_period_suffix_all',
+};
 
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, changeAmount, changePercent, hideAmounts, onToggleHide, parisTraites, betsLoading }) {
+// Le texte de variation sous la grande valeur suit la periode/le mode selectionnes dans le
+// graphique (et le point survole, le cas echeant) -- JAMAIS la grande valeur elle-meme en mode
+// Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
+// grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToBankroll, parisTraites, betsLoading }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
+  const [hoverPoint, setHoverPoint] = useState(null);
   const display = bankroll != null ? bankroll.toFixed(2) : null;
-  const changePositive = changeAmount >= 0;
 
   const { values, dates } = useMemo(() => computeChartSeries(parisTraites, period, mode), [parisTraites, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
 
+  useEffect(() => { setHoverPoint(null); }, [period, mode]);
+
+  const premierPoint = points.length ? points[0] : null;
+  const dernierPoint = points.length ? points[points.length - 1] : null;
+  const pointActif = hoverPoint || dernierPoint;
+  const auMoinsDeuxPoints = points.length > 1;
+  const variation = (auMoinsDeuxPoints && pointActif) ? pointActif.value - premierPoint.value : 0;
+  const hausse = variation >= 0;
+  const couleur = hausse ? '#22c55e' : '#ef4444';
+  const suffixe = t(PERIOD_SUFFIX_KEYS[period] || 'home_period_suffix_all');
+
+  let texteVariation = null;
+  if (auMoinsDeuxPoints) {
+    if (mode === 'return') {
+      texteVariation = `${hausse ? '+' : ''}${variation.toFixed(1)}% ${suffixe} →`;
+    } else {
+      const pct = premierPoint.value !== 0 ? Math.abs((variation / premierPoint.value) * 100) : 0;
+      texteVariation = `${hausse ? '+' : ''}$${variation.toFixed(2)} (${hausse ? '+' : ''}${pct.toFixed(1)}%) ${suffixe} →`;
+    }
+  }
+
+  const grandeValeurTexte = mode === 'return'
+    ? `${pointActif && pointActif.value >= 0 ? '+' : ''}${(pointActif?.value ?? 0).toFixed(1)}%`
+    : (display != null ? `$${display}` : null);
+  const grandeValeurCouleur = mode === 'return' ? couleur : 'var(--c-white)';
+  const chargementValeur = mode === 'return' ? betsLoading : bankrollLoading;
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-        <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
-        <button
-          onClick={onToggleHide}
-          aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
-          title={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
-          className="home-eye-btn"
-        >
-          {hideAmounts ? <IconEye color="var(--c-666)" /> : <IconEyeOff color="var(--c-666)" />}
-        </button>
-      </div>
+      <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
 
-      {bankrollLoading || display == null ? (
+      {chargementValeur || grandeValeurTexte == null ? (
         <SkeletonBlock height={56} width="60%" />
       ) : (
-        <h1 style={{ margin: '10px 0 6px', fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
-          {hideAmounts ? <MaskedDots t={t} /> : `$${display}`}
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '10px 0 6px' }}>
+          <h1 style={{ margin: 0, fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: '900', color: grandeValeurCouleur, letterSpacing: '-2px', lineHeight: 1 }}>
+            {hideAmounts ? <MaskedDots t={t} count={7} size={14} /> : grandeValeurTexte}
+          </h1>
+          <button
+            onClick={onToggleHide}
+            aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
+            title={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
+            className="home-eye-btn"
+          >
+            {hideAmounts ? <IconEye color="var(--c-666)" /> : <IconEyeOff color="var(--c-666)" />}
+          </button>
+        </div>
       )}
 
-      {!bankrollLoading && (
-        <div style={{ fontSize: '14px', fontWeight: '800', color: changePositive ? '#22c55e' : '#ef4444', marginBottom: '22px' }}>
-          {hideAmounts
-            ? <MaskedDots t={t} />
-            : `${changePositive ? '+' : ''}$${changeAmount.toFixed(2)} (${changePositive ? '+' : ''}${changePercent.toFixed(1)}%) ${t('home_today_suffix')}`}
+      {!chargementValeur && (hideAmounts || texteVariation) && (
+        <div style={{ marginBottom: '22px' }}>
+          {hideAmounts ? (
+            <button onClick={onGoToBankroll} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--c-666)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', textAlign: 'left' }}>
+              {t('home_performance_insights')}
+            </button>
+          ) : (
+            <div style={{ fontSize: '14px', fontWeight: '800', color: couleur }}>{texteVariation}</div>
+          )}
         </div>
       )}
 
       {betsLoading ? <SkeletonBlock height={160} /> : (
         <WealthsimpleChart
-          t={t} lang={lang}
+          lang={lang}
           points={points}
           periods={CHART_PERIODS.map(p => ({ key: p, label: t(`home_chart_period_${p}`) }))}
           period={period} onSelectPeriod={setPeriod}
           modeOptions={[{ key: 'value', label: t('home_chart_mode_value') }, { key: 'return', label: t('home_chart_mode_return') }]}
           mode={mode} onSelectMode={setMode}
-          isPercent={mode === 'return'}
           emptyLabel={t('home_no_bets_period')}
           hauteur={150}
-          showHeader={false}
+          color={couleur}
+          onHoverChange={setHoverPoint}
         />
       )}
     </div>
@@ -251,11 +291,11 @@ function StatCard({ label, value, color = 'var(--c-white)' }) {
   );
 }
 
-function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak, hideAmounts }) {
+function StatsRow({ t, loading, roi, winRate, activeCount, hideAmounts }) {
   if (loading) {
     return (
       <div className="home-stats-grid">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} style={{ ...cardStyle, padding: '16px' }}><CardSkeleton lines={2} /></div>)}
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} style={{ ...cardStyle, padding: '16px' }}><CardSkeleton lines={2} /></div>)}
       </div>
     );
   }
@@ -265,7 +305,6 @@ function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak, hideAmoun
       <StatCard label={t('home_stat_roi')} value={hideAmounts ? <MaskedDots t={t} /> : `${roiNum >= 0 ? '+' : ''}${roi}%`} color={roiNum >= 0 ? '#22c55e' : '#ef4444'} />
       <StatCard label={t('home_stat_win_rate')} value={`${winRate}%`} />
       <StatCard label={t('home_stat_active_bets')} value={activeCount} color="#f97316" />
-      <StatCard label={t('home_stat_best_streak')} value={bestStreak > 0 ? `${bestStreak} ${t('home_stat_streak_unit')}` : '—'} color={bestStreak > 0 ? '#22c55e' : 'var(--c-white)'} />
     </div>
   );
 }
@@ -585,9 +624,9 @@ function ComingSoonOverlay({ t, onClose }) {
 
 // ===================== Mise en page tablette/web (>=768px) =====================
 
-function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onOpenTeamFiche }) {
+function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToBankroll, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
+    displayName, bankroll, bankrollLoading, parisTraites,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
   } = data;
@@ -600,17 +639,6 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onOpenTe
   }
 
   const todayStr = getDateStr(new Date());
-  const changeAmount = computeTodayChangeAmount(paris, betsAuto, todayStr);
-  const changePercent = computeTodayChangePercent(changeAmount, bankroll || 0);
-
-  const settledCombinedAsc = useMemo(() => {
-    const list = [
-      ...parisTraites.map(p => ({ statut: p.statut, date: p.date_pari })),
-      ...betsAutoTraites.map(b => ({ statut: b.statut, date: b.verified_at || b.created_at })),
-    ].filter(x => x.date);
-    return list.sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [parisTraites, betsAutoTraites]);
-  const bestStreak = computeBestWinStreak(settledCombinedAsc);
   const activeCount = parisActifs.length + betsAutoActifs.length;
 
   const selectedDayGames = useMemo(() => {
@@ -633,11 +661,10 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onOpenTe
         <div className="home-main-col">
           <BankrollHeroChart
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
-            changeAmount={changeAmount} changePercent={changePercent}
-            hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts}
+            hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToBankroll={onGoToBankroll}
             parisTraites={parisTraites} betsLoading={betsLoading}
           />
-          <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} bestStreak={bestStreak} hideAmounts={hideAmounts} />
+          <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
           <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
         </div>
 
@@ -891,7 +918,7 @@ function MobileHomeDashboard({ t, data, onGoToBets }) {
 
 // ===================== Composant principal : donnees partagees + choix de mise en page =====================
 
-export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onOpenTeamFiche, lang = 'en' }) {
+export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToBankroll, onOpenTeamFiche, lang = 'en' }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
 
@@ -976,6 +1003,7 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     <DesktopHomeDashboard
       t={t} lang={lang} utilisateur={utilisateur} data={sharedData}
       onGoToBets={onGoToBets}
+      onGoToBankroll={onGoToBankroll || (() => {})}
       onOpenTeamFiche={onOpenTeamFiche || (() => {})}
     />
   );
