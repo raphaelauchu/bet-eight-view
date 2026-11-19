@@ -86,7 +86,8 @@ test('changer la periode recalcule les cartes (suffixe + valeurs)', async () => 
   render(<PerformanceInsights utilisateur={{ id: 'u1' }} lang="fr" onBack={noop} initialPeriod="all" />);
   await waitFor(() => expect(screen.getByText('Rendement total (Depuis le début)')).toBeInTheDocument());
 
-  fireEvent.change(screen.getByLabelText('Aperçu'), { target: { value: '1d' } });
+  fireEvent.click(screen.getByLabelText('Aperçu'));
+  fireEvent.click(screen.getByText('Dernier jour'));
   await waitFor(() => expect(screen.getByText('Rendement total (Dernier jour)')).toBeInTheDocument());
   // Seul le pari d'aujourd'hui (gagne +50) compte sur "Dernier jour"
   expect(screen.getByText('Profit réalisé (Dernier jour)')).toBeInTheDocument();

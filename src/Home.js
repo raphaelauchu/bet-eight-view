@@ -188,10 +188,28 @@ const PERIOD_SUFFIX_KEYS = {
   '1y': 'home_period_suffix_1y', 'all': 'home_period_suffix_all',
 };
 
+const JOURS_PAR_PERIODE = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
+
+// Total mise des paris regles dans la periode choisie (meme fenetre que computeChartSeries) --
+// sert de denominateur au ROI affiche sous la grande valeur, pour que "ROI" signifie la meme
+// chose ici que sur la page Aperçu de la performance (profit / mises), pas juste "% du solde
+// de depart de la courbe".
+function miseTotalePourPeriode(parisTraites, periode) {
+  const maintenant = new Date();
+  return (parisTraites || []).filter(p => {
+    if (!p.date_pari) return false;
+    if (periode === 'all') return true;
+    const d = new Date(p.date_pari);
+    if (periode === 'ytd') return d.getFullYear() === maintenant.getFullYear();
+    return (maintenant - d) / 86400000 <= JOURS_PAR_PERIODE[periode];
+  }).reduce((a, p) => a + (Number(p.mise) || 0), 0);
+}
+
 // Le texte de variation sous la grande valeur suit la periode/le mode selectionnes dans le
 // graphique (et le point survole, le cas echeant) -- JAMAIS la grande valeur elle-meme en mode
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
+// Toujours affichee (meme a $0.00 sans aucun pari) -- jamais masquee faute de donnees.
 function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, parisTraites, betsLoading }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
@@ -200,27 +218,24 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
 
   const { values, dates } = useMemo(() => computeChartSeries(parisTraites, period, mode), [parisTraites, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
+  const miseTotalePeriode = useMemo(() => miseTotalePourPeriode(parisTraites, period), [parisTraites, period]);
 
   useEffect(() => { setHoverPoint(null); }, [period, mode]);
 
-  const premierPoint = points.length ? points[0] : null;
-  const dernierPoint = points.length ? points[points.length - 1] : null;
+  const premierPoint = points.length ? points[0] : { value: 0 };
+  const dernierPoint = points.length ? points[points.length - 1] : { value: 0 };
   const pointActif = hoverPoint || dernierPoint;
-  const auMoinsDeuxPoints = points.length > 1;
-  const variation = (auMoinsDeuxPoints && pointActif) ? pointActif.value - premierPoint.value : 0;
+  const variation = pointActif.value - premierPoint.value;
   const hausse = variation >= 0;
   const couleur = hausse ? '#22c55e' : '#ef4444';
   const suffixe = t(PERIOD_SUFFIX_KEYS[period] || 'home_period_suffix_all');
 
-  let texteVariation = null;
-  if (auMoinsDeuxPoints) {
-    if (mode === 'return') {
-      texteVariation = `${hausse ? '+' : ''}${variation.toFixed(1)}% ${suffixe} →`;
-    } else {
-      const pct = premierPoint.value !== 0 ? Math.abs((variation / premierPoint.value) * 100) : 0;
-      texteVariation = `${hausse ? '+' : ''}$${variation.toFixed(2)} (${hausse ? '+' : ''}${pct.toFixed(1)}%) ${suffixe} →`;
-    }
-  }
+  const texteVariation = mode === 'return'
+    ? `${hausse ? '+' : ''}${variation.toFixed(1)}% ${suffixe} →`
+    : (() => {
+      const roiPct = miseTotalePeriode !== 0 ? (variation / miseTotalePeriode) * 100 : 0;
+      return `${hausse ? '+' : ''}$${variation.toFixed(2)} (${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(1)}% ${t('perf_roi')}) ${suffixe} →`;
+    })();
 
   const grandeValeurTexte = mode === 'return'
     ? `${pointActif && pointActif.value >= 0 ? '+' : ''}${(pointActif?.value ?? 0).toFixed(1)}%`
@@ -250,7 +265,7 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
         </div>
       )}
 
-      {!chargementValeur && (hideAmounts || texteVariation) && (
+      {!chargementValeur && (
         <div style={{ marginBottom: '22px' }}>
           <button
             onClick={() => onGoToPerformance(period)}
@@ -344,10 +359,18 @@ function RecentBetsCard({ t, loading, recentCombines, onSeeAll, hideAmounts }) {
 
 // ===================== Colonne de droite : matchs + calendrier =====================
 
+const MATCHS_PAR_PAGE = 4;
+
 function TonightGamesCard({ t, lang, loading, games, selectedDate, todayStr, onOpenTeam }) {
+  const [nbAffiches, setNbAffiches] = useState(MATCHS_PAR_PAGE);
+  useEffect(() => { setNbAffiches(MATCHS_PAR_PAGE); }, [selectedDate, games]);
+
   const title = selectedDate === todayStr
     ? t('home_tonight')
     : `${t('home_games_on')} ${new Date(selectedDate + 'T12:00:00').toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'short' })}`;
+  const gamesAffiches = games.slice(0, nbAffiches);
+  const resteACacher = games.length - nbAffiches;
+
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -359,32 +382,46 @@ function TonightGamesCard({ t, lang, loading, games, selectedDate, todayStr, onO
       ) : games.length === 0 ? (
         <EmptyState icon="🏒" title={t('home_no_games_day')} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {games.map((m, i) => {
-            const away = m.awayTeam?.abbrev;
-            const home = m.homeTeam?.abbrev;
-            const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
-            const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
-            return (
-              <button
-                key={m.id || i}
-                onClick={() => onOpenTeam(buildEquipeFromScheduleTeam(m.homeTeam))}
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>VS</span>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }} title="À domicile">{home}</span>
-                </div>
-                {isLive ? (
-                  <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
-                ) : (
-                  <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{heure}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {gamesAffiches.map((m, i) => {
+              const away = m.awayTeam?.abbrev;
+              const home = m.homeTeam?.abbrev;
+              const heure = new Date(m.startTimeUTC).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+              const isLive = m.gameState === 'LIVE' || m.gameState === 'CRIT';
+              return (
+                <button
+                  key={m.id || i}
+                  onClick={() => onOpenTeam(buildEquipeFromScheduleTeam(m.homeTeam))}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }}>{away}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--c-444)' }}>VS</span>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)' }} title="À domicile">{home}</span>
+                  </div>
+                  {isLive ? (
+                    <span style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '20px' }}>LIVE</span>
+                  ) : (
+                    <span style={{ color: 'var(--c-555)', fontSize: '12px' }}>{heure}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {resteACacher > 0 && (
+            <button onClick={() => setNbAffiches(n => Math.min(n + MATCHS_PAR_PAGE, games.length))}
+              style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'none', border: 'none', color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+              {t('home_see_more').replace('{n}', resteACacher)}
+            </button>
+          )}
+          {resteACacher <= 0 && games.length > MATCHS_PAR_PAGE && (
+            <button onClick={() => setNbAffiches(MATCHS_PAR_PAGE)}
+              style={{ width: '100%', marginTop: '8px', padding: '8px', background: 'none', border: 'none', color: 'var(--c-666)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+              {t('home_see_less')}
+            </button>
+          )}
+        </>
       )}
     </div>
   );

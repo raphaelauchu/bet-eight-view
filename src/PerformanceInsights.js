@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { readHideAmounts, MaskedDots } from './Home';
@@ -59,6 +59,54 @@ function InfoTooltip({ texte }) {
     <span title={texte} style={{ cursor: 'help', display: 'inline-flex', marginLeft: '5px', verticalAlign: 'middle' }}>
       <IconInfo />
     </span>
+  );
+}
+
+function IconChevronDown({ color = 'var(--c-666)', size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+// Menu deroulant flottant style Wealthsimple : bouton (libelle actif + chevron), panneau
+// arrondi avec groupes optionnels, bouton radio a droite de l'option selectionnee.
+function DropdownFlottant({ label, groups, valeur, onChange, alignRight = false }) {
+  const [ouvert, setOuvert] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ouvert) return;
+    function onClickDehors(e) { if (ref.current && !ref.current.contains(e.target)) setOuvert(false); }
+    document.addEventListener('mousedown', onClickDehors);
+    return () => document.removeEventListener('mousedown', onClickDehors);
+  }, [ouvert]);
+
+  const optionActive = groups.flatMap(g => g.options).find(o => o.value === valeur);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button onClick={() => setOuvert(o => !o)} aria-haspopup="listbox" aria-expanded={ouvert} aria-label={label} className="perf-dropdown-btn">
+        <span>{optionActive ? optionActive.label : label}</span>
+        <IconChevronDown />
+      </button>
+      {ouvert && (
+        <div className="perf-dropdown-panel" style={alignRight ? { right: 0 } : { left: 0 }}>
+          {groups.map((g, i) => (
+            <div key={i}>
+              {g.titre && <div className="perf-dropdown-titre">{g.titre}</div>}
+              {g.options.map(opt => (
+                <button key={opt.value} className="perf-dropdown-option" onClick={() => { onChange(opt.value); setOuvert(false); }}>
+                  <span>{opt.label}</span>
+                  <span className={`perf-radio${opt.value === valeur ? ' perf-radio-actif' : ''}`}><span /></span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -184,30 +232,33 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
   return (
     <div className="perf-page">
       <style>{`
-        .perf-select { padding: 7px 10px; background-color: var(--c-111); border: 1px solid var(--c-222); border-radius: 8px; color: var(--c-ccc); font-size: 12px; }
-        .perf-period-select { padding: 7px 12px; background-color: var(--c-0d0d0d); border: 1px solid var(--c-222); border-radius: 20px; color: var(--c-ccc); font-size: 12px; font-weight: 600; }
+        .perf-dropdown-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background-color: var(--c-0d0d0d); border: 1px solid var(--c-222); border-radius: 20px; color: var(--c-ccc); font-size: 12px; font-weight: 600; cursor: pointer; }
+        .perf-dropdown-btn:hover { border-color: var(--c-333); }
+        .perf-dropdown-panel { position: absolute; top: calc(100% + 6px); z-index: 60; min-width: 200px; background-color: var(--c-111); border: 1px solid var(--c-222); border-radius: 14px; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+        .perf-dropdown-titre { padding: 8px 10px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--c-666); }
+        .perf-dropdown-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 9px 10px; background: none; border: none; border-radius: 9px; color: var(--c-ccc); font-size: 13px; cursor: pointer; text-align: left; }
+        .perf-dropdown-option:hover { background-color: var(--c-1a1a1a); }
+        .perf-radio { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--c-444); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .perf-radio span { width: 7px; height: 7px; border-radius: 50%; background: none; }
+        .perf-radio-actif { border-color: #f97316; }
+        .perf-radio-actif span { background-color: #f97316; }
       `}</style>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'var(--c-ccc)', fontSize: '13px', fontWeight: '600', cursor: 'pointer', padding: '6px 2px' }}>
           <IconBack /> {t('back_btn').replace('← ', '')}
         </button>
-        <select className="perf-select" value={portee} onChange={e => setPortee(e.target.value)} aria-label={t('perf_scope_label')}>
-          <option value="all">{t('perf_scope_all')}</option>
-          {bookmakersDisponibles.length > 0 && (
-            <optgroup label={t('perf_scope_group_bookmaker')}>
-              {bookmakersDisponibles.map(bm => <option key={bm} value={`book:${bm}`}>{bm}</option>)}
-            </optgroup>
-          )}
-          <optgroup label={t('perf_scope_group_sport')}>
-            <option value="sport:nhl">{t('perf_scope_sport_nhl')}</option>
-          </optgroup>
-          {typesDisponibles.length > 0 && (
-            <optgroup label={t('perf_scope_group_type')}>
-              {typesDisponibles.map(ty => <option key={ty} value={`type:${ty}`}>{labelTypePari(ty, t)}</option>)}
-            </optgroup>
-          )}
-        </select>
+        <DropdownFlottant
+          label={t('perf_scope_label')}
+          valeur={portee}
+          onChange={setPortee}
+          groups={[
+            { options: [{ value: 'all', label: t('perf_scope_all') }] },
+            ...(bookmakersDisponibles.length > 0 ? [{ titre: t('perf_scope_group_bookmaker'), options: bookmakersDisponibles.map(bm => ({ value: `book:${bm}`, label: bm })) }] : []),
+            { titre: t('perf_scope_group_sport'), options: [{ value: 'sport:nhl', label: t('perf_scope_sport_nhl') }] },
+            ...(typesDisponibles.length > 0 ? [{ titre: t('perf_scope_group_type'), options: typesDisponibles.map(ty => ({ value: `type:${ty}`, label: labelTypePari(ty, t) })) }] : []),
+          ]}
+        />
       </div>
 
       <h1 style={{ margin: '0 0 6px', fontSize: 'clamp(24px, 3vw, 30px)', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--c-white)' }}>{t('perf_title')}</h1>
@@ -234,9 +285,13 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
         <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{t('perf_overview_title')}</h2>
-        <select className="perf-period-select" value={periode} onChange={e => setPeriode(e.target.value)} aria-label={t('perf_overview_title')}>
-          {PERIODES.map(p => <option key={p} value={p}>{t(`perf_period_${p}`)}</option>)}
-        </select>
+        <DropdownFlottant
+          label={t('perf_overview_title')}
+          valeur={periode}
+          onChange={setPeriode}
+          alignRight
+          groups={[{ options: PERIODES.map(p => ({ value: p, label: t(`perf_period_${p}`) })) }]}
+        />
       </div>
 
       {chargement ? (

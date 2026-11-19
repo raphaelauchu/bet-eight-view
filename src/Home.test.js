@@ -108,6 +108,16 @@ beforeEach(() => {
 
 const noop = () => {};
 
+function buildGames(n) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `g${i}`,
+    awayTeam: { abbrev: `AW${i}` },
+    homeTeam: { abbrev: `HM${i}` },
+    startTimeUTC: new Date().toISOString(),
+    gameState: 'FUT',
+  }));
+}
+
 test('desktop/tablette : etats vides affiches pour holdings/watchlist, calendrier, matchs et idees quand aucune donnee', async () => {
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
@@ -117,6 +127,25 @@ test('desktop/tablette : etats vides affiches pour holdings/watchlist, calendrie
   await waitFor(() => expect(screen.getByText(/Pas assez de matchs récents/)).toBeInTheDocument());
   expect(screen.getByText(/EV \/ Arbitrage/)).toBeInTheDocument(); // carte Elite toujours visible
   expect(screen.getByText('Elite')).toBeInTheDocument();
+});
+
+test('desktop/tablette : liste des matchs limitee a 4, "Voir plus" deplie puis "Voir moins" reduit', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  global.fetch = jest.fn(() => Promise.resolve({ json: () => Promise.resolve({ gameWeek: [{ date: today, games: buildGames(6) }] }) }));
+
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+
+  await waitFor(() => expect(screen.getByText('AW0')).toBeInTheDocument());
+  expect(screen.getAllByText(/^AW/).length).toBe(4); // seulement 4 matchs affiches au depart
+  expect(screen.queryByText('AW4')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('Voir plus (2)'));
+  await waitFor(() => expect(screen.getByText('AW4')).toBeInTheDocument());
+  expect(screen.getAllByText(/^AW/).length).toBe(6);
+
+  fireEvent.click(screen.getByText('Voir moins'));
+  await waitFor(() => expect(screen.queryByText('AW4')).not.toBeInTheDocument());
+  expect(screen.getAllByText(/^AW/).length).toBe(4);
 });
 
 test('desktop/tablette : le calendrier est affiche avant la carte des matchs du jour', async () => {
@@ -236,6 +265,14 @@ test('desktop/tablette : solde visible -- la ligne de variation est aussi cliqua
 
   fireEvent.click(screen.getByText(/ce mois/));
   expect(onGoToPerformance).toHaveBeenCalledWith('1m');
+});
+
+test('desktop/tablette : ligne de variation toujours visible meme sans aucun pari (plus de bug de disparition faute de donnees)', async () => {
+  writeHideAmounts(false);
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onGoToPerformance={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
+  // aucun pari (tableResult par defaut) : la ligne reste affichee, a $0.00 / 0.0% ROI, jamais masquee
+  expect(screen.getByText('+$0.00 (+0.0% ROI) ce mois →')).toBeInTheDocument();
 });
 
 test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stats seulement', async () => {

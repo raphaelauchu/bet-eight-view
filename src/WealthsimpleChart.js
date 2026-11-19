@@ -68,7 +68,7 @@ export function WealthsimpleChart({
 
   const gid = gradientId || `wsGrad${Math.random().toString(36).slice(2)}`;
   const dateSurvolee = hoverIndex != null ? points[hoverIndex]?.date : null;
-  const dateLabel = dateSurvolee ? new Date(dateSurvolee).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' }) : '';
+  const dateLabel = dateSurvolee ? new Date(dateSurvolee).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
 
   return (
     <div>
@@ -86,9 +86,10 @@ export function WealthsimpleChart({
             <path d={lignePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             {hoverIndex != null && coords[hoverIndex] && (
               <>
+                <line x1="0" y1={coords[hoverIndex].y} x2={W} y2={coords[hoverIndex].y} stroke="var(--c-333)" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
                 <line x1={coords[hoverIndex].x} y1="0" x2={coords[hoverIndex].x} y2={H} stroke="var(--c-333)" strokeWidth="1" strokeDasharray="3 3" />
                 <circle cx={coords[hoverIndex].x} cy={coords[hoverIndex].y} r="3.5" fill={color} stroke="var(--c-080808)" strokeWidth="1.5" />
-                <text x={coords[hoverIndex].x} y={Math.max(coords[hoverIndex].y - 10, 8)} textAnchor="middle" fontSize="10" fill="var(--c-888)">{dateLabel}</text>
+                <text x={coords[hoverIndex].x} y={Math.max(coords[hoverIndex].y - 12, 9)} textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--c-888)">{dateLabel}</text>
               </>
             )}
           </g>
