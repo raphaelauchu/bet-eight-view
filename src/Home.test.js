@@ -304,13 +304,28 @@ test('desktop/tablette : le bouton "Ajouter un sportsbook" (pilule + texte) est 
   expect(screen.getAllByText('Bientôt disponible').length).toBe(4);
 });
 
-test('mobile : le bouton "Ajouter un sportsbook" est un rond "+" (pas de texte visible) et ouvre la liste d\'attente', async () => {
+test('mobile : le bouton "Ajouter un sportsbook" est la meme pilule texte que desktop (pas un rond "+"), sous "Bonjour" et avant Bankroll, et ouvre la liste d\'attente', async () => {
   useIsMobile.mockReturnValue(true);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
-  await waitFor(() => expect(screen.getByLabelText('Ajouter un sportsbook')).toBeInTheDocument());
-  expect(screen.queryByText('Ajouter un sportsbook')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText('Ajouter un sportsbook')).toBeInTheDocument());
 
-  fireEvent.click(screen.getByLabelText('Ajouter un sportsbook'));
+  // Meme pilule texte qu'au bureau (pas de rond "+" sans texte sur mobile).
+  const bouton = screen.getByText('Ajouter un sportsbook').closest('button');
+  expect(bouton).toBeInTheDocument();
+  expect(bouton).not.toHaveAttribute('aria-label'); // pilule = libelle visible, pas besoin d'aria-label
+  const style = window.getComputedStyle(bouton);
+  expect(parseInt(style.minHeight, 10)).toBeGreaterThanOrEqual(44);
+
+  // Ordre DOM : sous le nom ("Alex"), avant le libelle BANKROLL.
+  const nom = screen.getByRole('heading', { level: 2 });
+  const bankroll = screen.getByText('Bankroll');
+  const position = nom.compareDocumentPosition(bouton);
+  // eslint-disable-next-line no-bitwise
+  expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // bouton vient apres le nom
+  // eslint-disable-next-line no-bitwise
+  expect(bouton.compareDocumentPosition(bankroll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // Bankroll vient apres le bouton
+
+  fireEvent.click(bouton);
   await waitFor(() => expect(screen.getByText('BET99')).toBeInTheDocument());
 });
 

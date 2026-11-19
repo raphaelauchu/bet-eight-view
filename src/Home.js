@@ -182,16 +182,36 @@ function EmptyState({ icon = '—', title, sub, cta, onCta }) {
 // ===================== Bandeau d'accueil + bankroll (colonne principale) =====================
 
 // `onAddSportsbook` optionnel : quand fourni, affiche le bouton "Ajouter un sportsbook" (style
-// Wealthsimple "Add account") sur la meme ligne -- pilule + texte sur desktop (mobile=false),
-// rond "+" seul sur mobile (mobile=true). Voir src/SportsbookWaitlist.js.
+// Wealthsimple "Add account", meme pilule + texte complet sur desktop ET mobile -- jamais de
+// variante ronde "+" seul, qui coupait le texte/etait peu lisible). Desktop : a droite de la
+// ligne "Good morning", alignee avec le bas du nom. Mobile : SOUS la ligne "Bonjour, {nom}",
+// alignee a gauche sur sa propre ligne (jamais a cote du nom -- pas assez de largeur a 360px
+// sans tronquer le texte), au-dessus du bloc Bankroll. Voir src/SportsbookWaitlist.js.
 function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: mobile ? 'center' : 'flex-end', gap: '12px' }}>
-      <div>
-        <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t(greetingKey())}</p>
-        <h2 style={{ margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
+  const nomEtGreeting = (
+    <div>
+      <p style={{ margin: '0 0 2px', color: 'var(--c-444)', fontSize: '13px' }}>{t(greetingKey())}</p>
+      <h2 style={{ margin: 0, fontSize: '30px', fontWeight: '800', letterSpacing: '-0.8px', color: 'var(--c-white)' }}>{displayName}</h2>
+    </div>
+  );
+
+  if (mobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {nomEtGreeting}
+        {onAddSportsbook && (
+          <div style={{ display: 'flex' }}>
+            <AddSportsbookButton t={t} mobile={false} onClick={onAddSportsbook} />
+          </div>
+        )}
       </div>
-      {onAddSportsbook && <AddSportsbookButton t={t} mobile={mobile} onClick={onAddSportsbook} />}
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px' }}>
+      {nomEtGreeting}
+      {onAddSportsbook && <AddSportsbookButton t={t} mobile={false} onClick={onAddSportsbook} />}
     </div>
   );
 }
