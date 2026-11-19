@@ -1543,7 +1543,6 @@ function App() {
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
       ...(isAdmin ? [{ id: 'admin', label: t('menu_admin'), Icon: IconShield }] : []),
-      { id: 'profile', label: t('menu_settings'), Icon: IconGear },
     ];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
 

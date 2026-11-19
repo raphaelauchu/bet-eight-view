@@ -121,6 +121,38 @@ function CardSkeleton({ lines = 3 }) {
   );
 }
 
+// Remplace un montant sensible quand hideAmounts est actif : 5 petits points gris arrondis
+// (pas de texte/emoji), avec un libelle accessible pour les lecteurs d'ecran.
+function MaskedDots({ t }) {
+  return (
+    <span aria-label={t('home_amounts_hidden')} style={{ display: 'inline-flex', gap: '3px', verticalAlign: 'middle' }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--c-666)', display: 'inline-block' }} />
+      ))}
+    </span>
+  );
+}
+
+function IconEye({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7-10.5-7-10.5-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function IconEyeOff({ color = 'currentColor', size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2" />
+      <path d="M9.9 4.24A10.9 10.9 0 0 1 12 4c6.5 0 10.5 7 10.5 7a18 18 0 0 1-3.1 3.9" />
+      <path d="M6.1 6.1C3.2 8 1.5 11 1.5 11s4 7 10.5 7a10.4 10.4 0 0 0 4.1-.84" />
+    </svg>
+  );
+}
+
 function EmptyState({ icon = '—', title, sub, cta, onCta }) {
   return (
     <div style={{ textAlign: 'center', padding: '24px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -162,15 +194,15 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, changeAmount, c
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
         <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
         <button
           onClick={onToggleHide}
           aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
           title={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
-          style={{ width: '36px', height: '36px', borderRadius: '10px', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-0a0a0a)', color: 'var(--c-888)', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          className="home-eye-btn"
         >
-          {hideAmounts ? '🙈' : '👁️'}
+          {hideAmounts ? <IconEye color="var(--c-666)" /> : <IconEyeOff color="var(--c-666)" />}
         </button>
       </div>
 
@@ -178,14 +210,14 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, changeAmount, c
         <SkeletonBlock height={56} width="60%" />
       ) : (
         <h1 style={{ margin: '10px 0 6px', fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
-          {hideAmounts ? t('home_amounts_hidden') : `$${display}`}
+          {hideAmounts ? <MaskedDots t={t} /> : `$${display}`}
         </h1>
       )}
 
       {!bankrollLoading && (
         <div style={{ fontSize: '14px', fontWeight: '800', color: changePositive ? '#22c55e' : '#ef4444', marginBottom: '22px' }}>
           {hideAmounts
-            ? t('home_amounts_hidden')
+            ? <MaskedDots t={t} />
             : `${changePositive ? '+' : ''}$${changeAmount.toFixed(2)} (${changePositive ? '+' : ''}${changePercent.toFixed(1)}%) ${t('home_today_suffix')}`}
         </div>
       )}
@@ -219,7 +251,7 @@ function StatCard({ label, value, color = 'var(--c-white)' }) {
   );
 }
 
-function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak }) {
+function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak, hideAmounts }) {
   if (loading) {
     return (
       <div className="home-stats-grid">
@@ -230,7 +262,7 @@ function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak }) {
   const roiNum = parseFloat(roi);
   return (
     <div className="home-stats-grid">
-      <StatCard label={t('home_stat_roi')} value={`${roiNum >= 0 ? '+' : ''}${roi}%`} color={roiNum >= 0 ? '#22c55e' : '#ef4444'} />
+      <StatCard label={t('home_stat_roi')} value={hideAmounts ? <MaskedDots t={t} /> : `${roiNum >= 0 ? '+' : ''}${roi}%`} color={roiNum >= 0 ? '#22c55e' : '#ef4444'} />
       <StatCard label={t('home_stat_win_rate')} value={`${winRate}%`} />
       <StatCard label={t('home_stat_active_bets')} value={activeCount} color="#f97316" />
       <StatCard label={t('home_stat_best_streak')} value={bestStreak > 0 ? `${bestStreak} ${t('home_stat_streak_unit')}` : '—'} color={bestStreak > 0 ? '#22c55e' : 'var(--c-white)'} />
@@ -240,7 +272,7 @@ function StatsRow({ t, loading, roi, winRate, activeCount, bestStreak }) {
 
 // ===================== Paris recents =====================
 
-function RecentBetsCard({ t, loading, recentCombines, onSeeAll }) {
+function RecentBetsCard({ t, loading, recentCombines, onSeeAll, hideAmounts }) {
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -259,6 +291,8 @@ function RecentBetsCard({ t, loading, recentCombines, onSeeAll }) {
           </div>
           {p.statut === 'actif' ? (
             <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>{t('home_active_badge')}</span>
+          ) : hideAmounts ? (
+            <MaskedDots t={t} />
           ) : (
             <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
               {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
@@ -384,17 +418,21 @@ function iconBtnStyle(actif) {
   return { background: 'none', border: '1px solid var(--c-222)', borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: actif ? 'rgba(249,115,22,0.1)' : 'transparent' };
 }
 
-function LignePick({ p }) {
+function LignePick({ p, t, hideAmounts }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: '1px solid var(--c-111)' }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.label}</div>
         <div style={{ fontSize: '11px', color: 'var(--c-666)' }}>{p.market || '—'}{p.line != null ? ` ${p.line}` : ''}</div>
       </div>
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{p.odds ?? '—'}</div>
-        {p.planned_stake != null && <div style={{ fontSize: '11px', color: 'var(--c-555)' }}>${p.planned_stake}</div>}
-      </div>
+      {hideAmounts ? (
+        <MaskedDots t={t} />
+      ) : (
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{p.odds ?? '—'}</div>
+          {p.planned_stake != null && <div style={{ fontSize: '11px', color: 'var(--c-555)' }}>${p.planned_stake}</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -429,7 +467,7 @@ function HoldingsModal({ t, lang, onglet, setOnglet, picks, watchlist, libelle, 
   );
 }
 
-function HoldingsWatchlistCard({ t, lang, utilisateur }) {
+function HoldingsWatchlistCard({ t, lang, utilisateur, hideAmounts }) {
   const { watchlist, savedPicks, chargement, libelleWatchlist, retirerWatchlist, retirerPick } = useFavorisData(utilisateur);
   const [onglet, setOnglet] = useState('picks');
   const [agrandi, setAgrandi] = useState(false);
@@ -462,7 +500,7 @@ function HoldingsWatchlistCard({ t, lang, utilisateur }) {
         {chargement ? (
           <EtatVideFavoris texte={t('favoris_chargement')} />
         ) : onglet === 'picks' ? (
-          picksFiltres.length === 0 ? <EtatVideFavoris texte={t('favoris_picks_vide')} /> : picksFiltres.map(p => <LignePick key={p.id} p={p} />)
+          picksFiltres.length === 0 ? <EtatVideFavoris texte={t('favoris_picks_vide')} /> : picksFiltres.map(p => <LignePick key={p.id} p={p} t={t} hideAmounts={hideAmounts} />)
         ) : (
           watchlistFiltree.length === 0 ? <EtatVideFavoris texte={t('favoris_watchlist_vide')} /> : watchlistFiltree.map(w => <LigneWatchlist key={w.id} w={w} libelle={libelleWatchlist} t={t} onRemove={retirerWatchlist} />)
         )}
@@ -581,29 +619,34 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onOpenTe
   }, [week, selectedDate]);
 
   return (
-    <div className="home-grid">
+    <div className="home-page">
       <style>{`
         @keyframes home-skel-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.8; } }
         .home-skel { background-color: var(--c-1a1a1a); animation: home-skel-pulse 1.4s ease-in-out infinite; }
+        .home-eye-btn { background: none; border: none; padding: 6px; margin-top: -6px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .home-eye-btn:hover { background-color: var(--c-1a1a1a); }
       `}</style>
 
-      <div className="home-main-col">
-        <GreetingBanner t={t} displayName={displayName} />
-        <BankrollHeroChart
-          t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
-          changeAmount={changeAmount} changePercent={changePercent}
-          hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts}
-          parisTraites={parisTraites} betsLoading={betsLoading}
-        />
-        <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} bestStreak={bestStreak} />
-        <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} />
-      </div>
+      <GreetingBanner t={t} displayName={displayName} />
 
-      <div className="home-side-col">
-        <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <TonightGamesCard t={t} lang={lang} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
-        <HoldingsWatchlistCard t={t} lang={lang} utilisateur={utilisateur} />
-        <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
+      <div className="home-grid">
+        <div className="home-main-col">
+          <BankrollHeroChart
+            t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
+            changeAmount={changeAmount} changePercent={changePercent}
+            hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts}
+            parisTraites={parisTraites} betsLoading={betsLoading}
+          />
+          <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} bestStreak={bestStreak} hideAmounts={hideAmounts} />
+          <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
+        </div>
+
+        <div className="home-side-col">
+          <WeekCalendarCard t={t} loading={weekLoading} week={week} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <TonightGamesCard t={t} lang={lang} loading={weekLoading} games={selectedDayGames} selectedDate={selectedDate} todayStr={todayStr} onOpenTeam={onOpenTeamFiche} />
+          <HoldingsWatchlistCard t={t} lang={lang} utilisateur={utilisateur} hideAmounts={hideAmounts} />
+          <DailyIdeasCard t={t} loading={ideasLoading} ideas={dailyIdeas} onOpenElite={() => setShowComingSoon(true)} />
+        </div>
       </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}

@@ -126,6 +126,16 @@ test('desktop/tablette : le calendrier est affiche avant la carte des matchs du 
   expect(titres.indexOf('Calendrier')).toBeLessThan(titres.indexOf('Matchs ce soir'));
 });
 
+test('desktop/tablette : le bandeau "Bonjour" occupe sa propre rangee, hors de la grille 2 colonnes', async () => {
+  const { container } = render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('Calendrier')).toBeInTheDocument());
+  const bandeau = screen.getByRole('heading', { level: 2 }); // nom affiche (GreetingBanner)
+  const grille = container.querySelector('.home-grid');
+  expect(grille).not.toBeNull();
+  expect(bandeau.closest('.home-grid')).toBeNull(); // jamais dans la grille 2 colonnes
+  expect(grille.contains(bandeau)).toBe(false);
+});
+
 test('desktop/tablette : Picks/Watchlist bascule sans changer de page et branche la vraie donnee watchlist', async () => {
   supabase.from.mockImplementation((table) => {
     if (table === 'watchlist_items') return mockQuery({ data: [{ id: 'w1', kind: 'team', ref_id: 'MTL', created_at: '2026-01-01T00:00:00Z' }], error: null });
@@ -148,14 +158,36 @@ test('desktop/tablette : Picks/Watchlist bascule sans changer de page et branche
 // La section "Mes pools" a ete retiree de l'accueil (redesign navigation Wealthsimple) --
 // plus de carte pools/bouton Ouvrir a tester ici ; PoolHub (src/Pool.js) reste inchange.
 
-test('desktop/tablette : bouton oeil masque/affiche le montant de la bankroll', async () => {
+test('desktop/tablette : masquer le solde masque aussi ROI, paris recents et Picks (points, pas de $)', async () => {
+  writeHideAmounts(false); // etat initial deterministe, independant de l'ordre d'execution des tests
+  supabase.from.mockImplementation((table) => {
+    if (table === 'paris') return mockQuery({ data: [{ id: 'p1', statut: 'gagne', profit: 42, mise: 20, date_pari: new Date().toISOString(), match: 'MTL @ TOR', bookmaker: 'bet365', cote: 1.9 }], error: null });
+    if (table === 'saved_picks') return mockQuery({ data: [{ id: 'sp1', label: 'Connor McDavid - O 1.5 pts', market: 'Points', odds: -110, planned_stake: 20, status: 'saved', created_at: '2026-01-01T00:00:00Z' }], error: null });
+    return mockQuery(tableResult(table));
+  });
+
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText(/Connor McDavid/)).toBeInTheDocument());
+  expect(screen.getByText('+$42.00')).toBeInTheDocument();
+  expect(screen.getByText('-110')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByLabelText('Masquer le solde'));
+
+  expect(screen.queryByText('+$42.00')).not.toBeInTheDocument();
+  expect(screen.queryByText('-110')).not.toBeInTheDocument();
+  // ROI + variation du jour + paris recents + Picks : au moins 4 montants masques simultanement
+  expect(screen.getAllByLabelText('Montant masqué').length).toBeGreaterThanOrEqual(4);
+});
+
+test('desktop/tablette : bouton oeil masque/affiche le montant de la bankroll avec des points, pas du texte', async () => {
+  writeHideAmounts(false);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
 
   await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
-  fireEvent.click(screen.getByLabelText('Masquer les montants'));
-  expect(screen.getAllByText('•••••').length).toBeGreaterThan(0); // bankroll ET variation du jour sont tous deux masques
+  fireEvent.click(screen.getByLabelText('Masquer le solde'));
+  expect(screen.getAllByLabelText('Montant masqué').length).toBeGreaterThan(0); // bankroll ET variation du jour sont tous deux masques (5 points, pas d'emoji/texte)
   expect(screen.queryByText('$500.00')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByLabelText('Afficher les montants'));
+  fireEvent.click(screen.getByLabelText('Afficher le solde'));
   await waitFor(() => expect(screen.getByText('$500.00')).toBeInTheDocument());
 });
 

@@ -75,26 +75,39 @@ body {
 }
 
 /* ===================== Accueil (HomeDashboard) : grille responsive desktop/tablette =====================
-   < 768px (mobile) : .home-grid n'est meme pas rendu (HomeDashboard affiche directement la
-   mise en page mobile existante, inchangee) -- ces regles ne s'appliquent donc qu'a partir de
-   768px, ou le composant desktop/tablette est monte.
+   < 768px (mobile) : .home-page/.home-grid ne sont meme pas rendus (HomeDashboard affiche
+   directement la mise en page mobile existante, inchangee) -- ces regles ne s'appliquent donc
+   qu'a partir de 768px, ou le composant desktop/tablette est monte.
+   .home-page porte le padding/largeur max (rangee 1 : bandeau "Bonjour" pleine largeur, seul
+   sur sa ligne). .home-grid est la rangee 2 : grille CSS 2 colonnes (align-items:start) pour que
+   les deux colonnes demarrent exactement a la meme hauteur, jamais a celle du bandeau.
    768-1199px (iPad) : 2 colonnes, 65%/35%.
    >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr, espacement plus genereux. */
+.home-page {
+  padding: 24px;
+}
+
+@media (min-width: 1200px) {
+  .home-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+}
+
 .home-grid {
   display: grid;
   grid-template-columns: 65% 35%;
   gap: 20px;
-  padding: 24px;
   align-items: start;
+  margin-top: 24px;
 }
 
 @media (min-width: 1200px) {
   .home-grid {
-    max-width: 1400px;
-    margin: 0 auto;
     grid-template-columns: 2fr 1fr;
     gap: 28px;
-    padding: 32px;
+    margin-top: 28px;
   }
 }
 
@@ -123,6 +136,9 @@ body {
 /* Zones tactiles >=44px (iPad) sur les elements interactifs de l'accueil desktop/tablette. */
 .home-grid button, .home-grid [role="button"] {
   min-height: 44px;
+}
+.home-grid button.home-eye-btn {
+  min-height: 32px; /* bouton oeil discret (style Wealthsimple) : pas de zone tactile elargie forcee */
 }
 .home-grid button.home-chip {
   min-height: 36px; /* chips de periode/onglets : zone tactile elargie via padding, pas la hauteur de la puce elle-meme */
