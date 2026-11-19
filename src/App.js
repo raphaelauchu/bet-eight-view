@@ -15,6 +15,7 @@ import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { PROVINCES } from './sportsbooksConfig';
 import { supabase } from './supabase';
 import { getT } from './i18n';
+import { BottomSheet } from './BottomSheet';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -236,7 +237,7 @@ function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, set
 
   const corpsMenu = (
     <>
-      <div style={{ padding: '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
+      <div style={{ padding: isMobile ? '6px 44px 10px 12px' : '6px 12px 10px', borderBottom: '1px solid var(--c-1e1e1e)', marginBottom: '4px' }}>
         <div style={{ color: 'var(--c-white)', fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomAffiche}</div>
         {displayName && <div style={{ color: 'var(--c-666)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>{utilisateur?.email}</div>}
       </div>
@@ -282,15 +283,9 @@ function ProfileMenuButton({ utilisateur, avatarUrl, displayName, themePref, set
       </button>
 
       {ouvert && isMobile && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }} onClick={fermer}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxHeight: '80vh', overflowY: 'auto', backgroundColor: 'var(--c-111)', borderRadius: '20px 20px 0 0', border: '1px solid var(--c-222)', borderBottom: 'none', padding: '8px 8px calc(14px + env(safe-area-inset-bottom))' }}
-          >
-            <div style={{ width: '36px', height: '4px', borderRadius: '3px', backgroundColor: 'var(--c-333)', margin: '8px auto 10px' }} />
-            {corpsMenu}
-          </div>
-        </div>
+        <BottomSheet onClose={fermer} ariaLabel={t('menu_settings')}>
+          {corpsMenu}
+        </BottomSheet>
       )}
 
       {ouvert && !isMobile && (
@@ -351,31 +346,36 @@ function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelectTab, ut
   );
 }
 
-// Navigation du bas (mobile <768px) : 4 onglets seulement (pas Pool).
-// Barre du bas mobile : icones seules (pas de libelle visible, voir aria-label pour
-// l'accessibilite), 6 onglets + bouton de profil (feuille du bas, voir ProfileMenuButton
-// isMobile=true) en 7e position. Cibles tactiles >=44px (zone cliquable des boutons, pas
-// seulement l'icone). Marge basse tenant compte de l'encoche iOS (env(safe-area-inset-bottom)).
-// Barre du bas mobile : 4 onglets seulement desormais (Accueil/Recherche/Analyses/Modeles --
-// Pool/Paris/Bankroll/Admin passent par le bouton "..." de la top bar, voir MoreSheet plus bas).
-// Style Wealthsimple : chaque onglet est sa propre pilule flottante arrondie, fond clair
-// (teinte orange translucide) sous l'onglet actif, icone seule (pas de libelle visible).
+// Barre du bas mobile (<768px), style Wealthsimple : pilule flottante COMPACTE et centree
+// (~80% de la largeur, max 360px, ~64px de haut) -- pas pleine largeur. 4 onglets icones
+// seules (Accueil/Recherche/Analyses/Modeles -- Pool/Paris/Bankroll/Admin passent par le
+// bouton "..." de la top bar, voir MoreSheet). Onglet actif : grosse pastille arrondie claire
+// derriere l'icone, animee (transition + leger "pop" d'echelle) au changement d'onglet.
+// Cibles tactiles >=44px, marge de 12px au-dessus de la safe-area iOS.
 export function BottomNav({ tabs, activeId, onSelectTab }) {
   return (
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200 }}>
-      <div style={{ margin: '0 16px', marginBottom: 'max(20px, calc(10px + env(safe-area-inset-bottom)))', backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: '24px', border: '1px solid var(--c-1a1a1a)', backdropFilter: 'blur(20px)', padding: '8px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', boxShadow: '0 -4px 40px rgba(0,0,0,0.5)' }}>
+    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 250, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+      <div style={{
+        width: '80%', maxWidth: '360px', height: '64px', boxSizing: 'border-box',
+        marginBottom: 'max(12px, calc(12px + env(safe-area-inset-bottom)))',
+        backgroundColor: 'rgba(20,20,20,0.92)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        padding: '6px', display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.45)', pointerEvents: 'auto',
+      }}>
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => onSelectTab(tab)} aria-label={tab.label} aria-current={activeId === tab.id ? 'page' : undefined}
-            style={{ flex: 1, minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}>
+            style={{ flex: 1, minHeight: '44px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}>
             <span style={{
               position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: '48px', height: '40px', borderRadius: '20px',
-              backgroundColor: activeId === tab.id ? 'rgba(249,115,22,0.16)' : 'transparent',
-              transition: 'background-color 0.15s ease',
+              width: '46px', height: '46px', borderRadius: '50%',
+              backgroundColor: activeId === tab.id ? 'var(--c-white)' : 'transparent',
+              transform: activeId === tab.id ? 'scale(1)' : 'scale(0.82)',
+              transition: 'background-color 0.22s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1)',
             }}>
               <tab.Icon color={activeId === tab.id ? '#f97316' : 'var(--c-666)'} size={21} />
               {tab.badge > 0 && (
-                <span style={{ position: 'absolute', top: '0px', right: '2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>{tab.badge}</span>
+                <span style={{ position: 'absolute', top: '-2px', right: '-2px', backgroundColor: '#f97316', color: 'white', fontSize: '9px', fontWeight: '800', borderRadius: '10px', minWidth: '15px', height: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', border: '1.5px solid var(--c-111)' }}>{tab.badge}</span>
               )}
             </span>
           </button>
@@ -389,22 +389,18 @@ export function BottomNav({ tabs, activeId, onSelectTab }) {
 // bouton "..." de la top bar mobile -- meme contenu que tabsSecondaires de la sidebar desktop.
 export function MoreSheet({ tabs, onSelectTab, onClose, t }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 600, display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxHeight: '75vh', overflowY: 'auto', backgroundColor: 'var(--c-111)', borderRadius: '20px 20px 0 0', border: '1px solid var(--c-222)', borderBottom: 'none', padding: '8px 10px calc(14px + env(safe-area-inset-bottom))' }}>
-        <div style={{ width: '36px', height: '4px', borderRadius: '3px', backgroundColor: 'var(--c-333)', margin: '8px auto 10px' }} />
-        <div style={{ padding: '2px 6px 12px', fontSize: '14px', fontWeight: '800', color: 'var(--c-white)' }}>{t('nav_more_title')}</div>
-        {tabs.map(tab => (
-          <button key={tab.id} onClick={() => { onSelectTab(tab); onClose(); }}
-            style={{ width: '100%', minHeight: '44px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'none', border: 'none', borderRadius: '10px', cursor: 'pointer', boxSizing: 'border-box' }}>
-            <tab.Icon color="var(--c-888)" size={18} />
-            <span style={{ fontSize: '14px', color: 'var(--c-white)', fontWeight: '600' }}>{tab.label}</span>
-            {tab.badge > 0 && (
-              <span style={{ marginLeft: 'auto', backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '800', borderRadius: '10px', minWidth: '17px', height: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{tab.badge}</span>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
+    <BottomSheet onClose={onClose} title={t('nav_more_title')}>
+      {tabs.map(tab => (
+        <button key={tab.id} onClick={() => { onSelectTab(tab); onClose(); }}
+          style={{ width: '100%', minHeight: '44px', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'none', border: 'none', borderRadius: '10px', cursor: 'pointer', boxSizing: 'border-box' }}>
+          <tab.Icon color="var(--c-888)" size={18} />
+          <span style={{ fontSize: '14px', color: 'var(--c-white)', fontWeight: '600' }}>{tab.label}</span>
+          {tab.badge > 0 && (
+            <span style={{ marginLeft: 'auto', backgroundColor: '#f97316', color: 'white', fontSize: '10px', fontWeight: '800', borderRadius: '10px', minWidth: '17px', height: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{tab.badge}</span>
+          )}
+        </button>
+      ))}
+    </BottomSheet>
   );
 }
 
@@ -420,10 +416,17 @@ function IconMoreDots({ color = 'currentColor', size = 18 }) {
 // de la page au centre, "..." (sections secondaires, voir MoreSheet) + avatar de profil rond a
 // droite (feuille du bas, voir ProfileMenuButton isMobile). Le profil n'est donc plus dans la
 // bottom nav (voir BottomNav ci-dessus, reduite a 4 onglets).
+//
+// position:fixed (PAS sticky) : sticky cassait par intermittence sur mobile des que cette barre
+// avait un ancetre position:sticky + backdrop-filter combine a un re-render (comportement
+// irregulier selon le moteur, notamment iOS Safari) -- fixed est garanti ancre au viewport quoi
+// qu'il arrive. Le contenu compense avec un padding-top egal a MOBILE_TOPBAR_HEIGHT (voir App()).
+export const MOBILE_TOPBAR_HEIGHT = 54;
+
 export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t }) {
   const [moreOuvert, setMoreOuvert] = useState(false);
   return (
-    <div style={{ backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', position: 'sticky', top: 0, zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)', boxSizing: 'border-box' }}>
       <button onClick={onGoHome} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifySelf: 'start' }}>
         <img src="/logo192.png" alt="" style={{ width: '30px', height: '30px', borderRadius: '8px' }} />
       </button>
@@ -1685,7 +1688,7 @@ function App() {
     );
 
     return (
-      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${SIDEBAR_WIDTH_COMPACT}px`, paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : 0 }}>
+      <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: 'var(--c-080808)', minHeight: '100vh', color: 'var(--c-white)', paddingLeft: isMobile ? 0 : `${SIDEBAR_WIDTH_COMPACT}px`, paddingTop: isMobile ? `calc(${MOBILE_TOPBAR_HEIGHT}px + env(safe-area-inset-top))` : 0, paddingBottom: isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : 0 }}>
 
         {!isMobile && (
           <AppSidebar

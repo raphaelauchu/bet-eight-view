@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsMobile } from './useIsMobile';
+import { BottomSheet } from './BottomSheet';
 
 // Composant de filtre/selecteur reutilisable, style Wealthsimple : bouton pilule (bordure fine,
 // fond sombre legerement releve, texte gras moyen, chevron fin) + menu flottant arrondi au clic
@@ -48,7 +49,9 @@ export function DropdownPill({
   const optionActive = optionsAplaties.find(o => o.value === value);
 
   useEffect(() => {
-    if (!ouvert) return;
+    // Mobile : la feuille du bas (BottomSheet, portail) gere deja sa propre fermeture (fond,
+    // glissement, Echap, X) -- pas d'ecouteur global ici.
+    if (!ouvert || isMobile) return;
     function onClicExterieur(e) {
       if (wrapRef.current?.contains(e.target)) return;
       if (panelRef.current?.contains(e.target)) return;
@@ -63,7 +66,7 @@ export function DropdownPill({
       document.removeEventListener('mousedown', onClicExterieur);
       document.removeEventListener('keydown', onEchap);
     };
-  }, [ouvert]);
+  }, [ouvert, isMobile]);
 
   useEffect(() => {
     if (!ouvert) return;
@@ -164,15 +167,7 @@ export function DropdownPill({
         .ddp-radio span { width: 7px; height: 7px; border-radius: 50%; background: none; }
         .ddp-radio-actif { border-color: #f97316; }
         .ddp-radio-actif span { background-color: #f97316; }
-
-        .ddp-backdrop { position: fixed; inset: 0; background-color: rgba(0,0,0,0.55); z-index: 600; display: flex; align-items: flex-end; }
-        .ddp-sheet {
-          width: 100%; max-height: 75vh; overflow-y: auto; background-color: var(--c-111); border-radius: 20px 20px 0 0;
-          border: 1px solid var(--c-222); border-bottom: none; padding: 8px 8px calc(14px + env(safe-area-inset-bottom));
-        }
-        .ddp-sheet-grabber { width: 36px; height: 4px; border-radius: 3px; background-color: var(--c-333); margin: 8px auto 10px; }
-        .ddp-sheet-titre { padding: 4px 10px 10px; font-size: 14px; font-weight: 800; color: var(--c-white); }
-        .ddp-sheet .ddp-option { padding: 13px 12px; font-size: 14.5px; }
+        .ddp-option-lg { padding: 13px 12px; font-size: 14.5px; }
       `}</style>
 
       <button
@@ -198,13 +193,11 @@ export function DropdownPill({
       )}
 
       {ouvert && isMobile && (
-        <div className="ddp-backdrop" onClick={() => setOuvert(false)}>
-          <div ref={panelRef} role="listbox" aria-label={ariaLabel || label} className="ddp-sheet" onClick={e => e.stopPropagation()}>
-            <div className="ddp-sheet-grabber" />
-            {label && <div className="ddp-sheet-titre">{label}</div>}
-            {rendreGroupes('ddp-option')}
+        <BottomSheet onClose={() => setOuvert(false)} title={label} ariaLabel={ariaLabel || label}>
+          <div ref={panelRef} role="listbox" aria-label={ariaLabel || label}>
+            {rendreGroupes('ddp-option ddp-option-lg')}
           </div>
-        </div>
+        </BottomSheet>
       )}
     </div>
   );

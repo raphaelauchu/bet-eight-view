@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useIsMobile } from './useIsMobile';
+import { BottomSheet } from './BottomSheet';
 
 // Meme mapping que PerformanceInsights.js (labelTypePari) -- duplique volontairement (4 lignes)
 // plutot qu'importe, pour eviter une dependance circulaire (PerformanceInsights.js importe
@@ -360,57 +362,87 @@ export function ShareStatsSheet({ t, lang, bets, bankroll, hideAmountsInitial = 
     { label: t('share_template_summary') },
   ];
 
-  const corps = (
-    <div onClick={e => e.stopPropagation()} style={{
-      width: '100%', maxWidth: isMobile ? 'none' : '420px', maxHeight: isMobile ? '92vh' : '90vh', overflowY: 'auto',
-      backgroundColor: 'var(--c-111)', border: isMobile ? '1px solid var(--c-222)' : '1px solid var(--c-222)', borderBottom: isMobile ? 'none' : '1px solid var(--c-222)',
-      borderRadius: isMobile ? '20px 20px 0 0' : '18px', padding: `16px 16px calc(16px + env(safe-area-inset-bottom))`,
-      boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-    }}>
-      {isMobile && <div style={{ width: '36px', height: '4px', borderRadius: '3px', backgroundColor: 'var(--c-333)', margin: '2px auto 10px' }} />}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{t('share_title')}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => setHideAmounts(h => !h)} aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
-            style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IconEyeMini color="var(--c-888)" off={hideAmounts} />
-          </button>
-          <button onClick={onClose} aria-label={t('favoris_retour')} style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', background: 'none', color: 'var(--c-888)', cursor: 'pointer', fontSize: '16px' }}>✕</button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        {PERIODES_PARTAGE.map(p => (
-          <button key={p} onClick={() => setPeriode(p)}
-            style={{ padding: '6px 14px', minHeight: '32px', boxSizing: 'border-box', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: periode === p ? '#f97316' : 'var(--c-1a1a1a)', color: periode === p ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: '700' }}>
-            {t(`home_chart_period_${p}`)}
-          </button>
-        ))}
-      </div>
-
-      <canvas ref={canvasRef} width={W} height={H} style={{ width: '100%', maxWidth: '280px', height: 'auto', display: 'block', margin: '0 auto', borderRadius: '18px', border: '1px solid var(--c-1a1a1a)' }} />
-
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '14px 0 6px' }}>
-        {modeles.map((m, i) => (
-          <button key={i} onClick={() => setModele(i)} aria-label={m.label} aria-current={modele === i}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-            <span style={{ fontSize: '11px', fontWeight: modele === i ? '800' : '500', color: modele === i ? 'var(--c-white)' : 'var(--c-666)' }}>{m.label}</span>
-            <span style={{ width: modele === i ? '18px' : '7px', height: '7px', borderRadius: '4px', backgroundColor: modele === i ? '#f97316' : 'var(--c-333)', transition: 'all 0.2s' }} />
-          </button>
-        ))}
-      </div>
-
-      <button onClick={partager} style={{ width: '100%', marginTop: '10px', padding: '15px', minHeight: '48px', boxSizing: 'border-box', borderRadius: '12px', border: 'none', backgroundColor: '#0a0a0a', color: 'white', fontSize: '14px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-        <IconShare color="white" size={16} />
-        {isMobile ? t('share_cta_share') : t('share_cta_download')}
-      </button>
+  const periodesRow = (
+    <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      {PERIODES_PARTAGE.map(p => (
+        <button key={p} onClick={() => setPeriode(p)}
+          style={{ padding: '6px 14px', minHeight: '32px', boxSizing: 'border-box', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: periode === p ? '#f97316' : 'var(--c-1a1a1a)', color: periode === p ? 'white' : 'var(--c-888)', fontSize: '12px', fontWeight: '700' }}>
+          {t(`home_chart_period_${p}`)}
+        </button>
+      ))}
     </div>
   );
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 700, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px' }} onClick={onClose}>
-      {corps}
+  const canvasEl = (
+    <canvas ref={canvasRef} width={W} height={H} style={{ width: '100%', maxWidth: '280px', height: 'auto', display: 'block', margin: '0 auto', borderRadius: '18px', border: '1px solid var(--c-1a1a1a)' }} />
+  );
+
+  const carousel = (
+    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '14px 0 6px' }}>
+      {modeles.map((m, i) => (
+        <button key={i} onClick={() => setModele(i)} aria-label={m.label} aria-current={modele === i}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+          <span style={{ fontSize: '11px', fontWeight: modele === i ? '800' : '500', color: modele === i ? 'var(--c-white)' : 'var(--c-666)' }}>{m.label}</span>
+          <span style={{ width: modele === i ? '18px' : '7px', height: '7px', borderRadius: '4px', backgroundColor: modele === i ? '#f97316' : 'var(--c-333)', transition: 'all 0.2s' }} />
+        </button>
+      ))}
     </div>
+  );
+
+  const boutonAction = (
+    <button onClick={partager} style={{ width: '100%', marginTop: '10px', padding: '15px', minHeight: '48px', boxSizing: 'border-box', borderRadius: '12px', border: 'none', backgroundColor: '#0a0a0a', color: 'white', fontSize: '14px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+      <IconShare color="white" size={16} />
+      {isMobile ? t('share_cta_share') : t('share_cta_download')}
+    </button>
+  );
+
+  const boutonOeil = (
+    <button onClick={() => setHideAmounts(h => !h)} aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')}
+      style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <IconEyeMini color="var(--c-888)" off={hideAmounts} />
+    </button>
+  );
+
+  // Feuille du bas (portail document.body, voir BottomSheet.js) sur mobile -- JAMAIS un enfant
+  // DOM imbrique dans l'en-tete ou le bloc Bankroll qui a ouvert le bouton de partage.
+  if (isMobile) {
+    return (
+      <BottomSheet onClose={onClose} ariaLabel={t('share_title')}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{t('share_title')}</span>
+          {boutonOeil}
+        </div>
+        {periodesRow}
+        {canvasEl}
+        {carousel}
+        {boutonAction}
+      </BottomSheet>
+    );
+  }
+
+  // Desktop : modale centree (pas une feuille du bas), mais toujours portee vers document.body
+  // par coherence/securite (meme raisonnement que BottomSheet : jamais prisonniere d'un ancetre
+  // position:sticky/filter/overflow qui casserait position:fixed).
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 2200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto',
+        backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '18px', padding: '16px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{t('share_title')}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {boutonOeil}
+            <button onClick={onClose} aria-label={t('favoris_retour')} style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', background: 'none', color: 'var(--c-888)', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+          </div>
+        </div>
+        {periodesRow}
+        {canvasEl}
+        {carousel}
+        {boutonAction}
+      </div>
+    </div>,
+    document.body
   );
 }

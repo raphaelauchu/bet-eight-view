@@ -96,3 +96,71 @@ test('MobileTopBar : pas de bouton "..." quand il n\'y a aucune section secondai
   renderTopBar({ tabsSecondaires: [] });
   expect(screen.queryByLabelText('Plus')).not.toBeInTheDocument();
 });
+
+test('MobileTopBar : position fixe (pas sticky) avec un z-index eleve -- en-tete toujours visible, jamais masque au defilement', () => {
+  renderTopBar();
+  const barre = screen.getByLabelText('Betrics').closest('div');
+  expect(barre).toHaveStyle({ position: 'fixed', top: '0px' });
+});
+
+test('"..." et profil s\'ouvrent aussi au toucher (touchstart/touchend), pas seulement au clic souris', () => {
+  renderTopBar();
+
+  fireEvent.touchStart(screen.getByLabelText('Plus'));
+  fireEvent.touchEnd(screen.getByLabelText('Plus'));
+  fireEvent.click(screen.getByLabelText('Plus')); // les navigateurs mobiles emettent aussi un click synthetique apres le toucher
+  expect(screen.getByText('Pool')).toBeInTheDocument();
+});
+
+test('les feuilles "..." et profil sont rendues via portail (document.body), jamais imbriquees dans la top bar', () => {
+  const { container } = renderTopBar();
+
+  fireEvent.click(screen.getByLabelText('Plus'));
+  const feuillePlus = screen.getByRole('dialog');
+  expect(container.contains(feuillePlus)).toBe(false);
+  expect(document.body.contains(feuillePlus)).toBe(true);
+  fireEvent.click(feuillePlus.parentElement); // ferme via le fond
+
+  fireEvent.click(screen.getByLabelText('Réglages'));
+  const feuilleProfil = screen.getByRole('dialog');
+  expect(container.contains(feuilleProfil)).toBe(false);
+  expect(document.body.contains(feuilleProfil)).toBe(true);
+});
+
+test('les boutons "..." et profil restent presents et cliquables apres un re-render du parent (persistance, pas de disparition)', () => {
+  const { rerender } = renderTopBar({ title: 'Accueil' });
+  expect(screen.getByLabelText('Plus')).toBeInTheDocument();
+  expect(screen.getByLabelText('Réglages')).toBeInTheDocument();
+
+  // Simule un re-render du parent (ex. changement de page -> nouveau titre), comme App() le
+  // ferait a chaque navigation -- les boutons ne doivent ni disparaitre ni perdre leur etat.
+  rerender(
+    <MobileTopBar
+      title="Analyses" onGoHome={noop}
+      tabsSecondaires={[{ id: 'pooldraft', label: 'Pool', Icon }]} onSelectTab={noop}
+      utilisateur={{ id: 'u1', email: 'alex@example.com' }} avatarUrl={null} displayName="Alex"
+      themePref="dark" setThemePref={noop} lang="fr" setLang={noop}
+      onGoToProfile={noop} onLogout={noop} t={t}
+    />
+  );
+
+  expect(screen.getByText('Analyses')).toBeInTheDocument();
+  const boutonPlus = screen.getByLabelText('Plus');
+  const boutonProfil = screen.getByLabelText('Réglages');
+  expect(boutonPlus).toBeInTheDocument();
+  expect(boutonProfil).toBeInTheDocument();
+
+  fireEvent.click(boutonPlus);
+  expect(screen.getByText('Pool')).toBeInTheDocument();
+});
+
+test('ouvrir la feuille de profil puis cliquer a l\'interieur (ex. le nom) ne la referme pas aussitot', () => {
+  renderTopBar();
+  fireEvent.click(screen.getByLabelText('Réglages'));
+  expect(screen.getByText('Alex')).toBeInTheDocument();
+
+  fireEvent.mouseDown(screen.getByText('Alex'));
+  fireEvent.click(screen.getByText('Alex'));
+  expect(screen.getByText('Alex')).toBeInTheDocument();
+  expect(screen.getByText('Apparence')).toBeInTheDocument();
+});

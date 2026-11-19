@@ -84,17 +84,24 @@ test('regroupe les options par section (titre de groupe affiche)', () => {
   expect(screen.getByText('Section B')).toBeInTheDocument();
 });
 
-test('sous 768px, le panneau devient une feuille du bas (role listbox dans un fond semi-transparent, fermeture au clic sur le fond)', () => {
+test('sous 768px, le panneau devient une feuille du bas rendue via portail (document.body), fermeture au clic sur le fond', () => {
   setViewportWidth(375);
   const onChange = jest.fn();
-  render(<DropdownPill label="Choix" value="a" onChange={onChange} options={OPTIONS} />);
+  const { container } = render(<DropdownPill label="Choix" value="a" onChange={onChange} options={OPTIONS} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Choix' }));
   const panneau = screen.getByRole('listbox');
   expect(panneau).toBeInTheDocument();
-  expect(panneau.className).toContain('ddp-sheet');
+  const dialogue = screen.getByRole('dialog');
+  expect(dialogue).toContainElement(panneau);
+  // Portail : la feuille n'est PAS un descendant DOM du conteneur de rendu local.
+  expect(container.contains(dialogue)).toBe(false);
+  expect(document.body.contains(dialogue)).toBe(true);
 
-  // Le fond (backdrop) est le parent direct du panneau ; cliquer dessus referme.
-  fireEvent.click(panneau.parentElement);
+  // Le fond (backdrop) est le parent du dialogue ; cliquer dessus referme (clic sur le
+  // dialogue lui-meme, via stopPropagation, ne doit PAS refermer).
+  fireEvent.click(dialogue);
+  expect(screen.getByRole('listbox')).toBeInTheDocument();
+  fireEvent.click(dialogue.parentElement);
   expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
 });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
@@ -540,8 +541,8 @@ function LigneWatchlist({ w, libelle, t, onRemove }) {
 
 function HoldingsModal({ t, lang, onglet, setOnglet, picks, watchlist, libelle, onRemovePick, onRemoveWatchlist, chargement, onClose }) {
   const isMobile = useIsMobile();
-  return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px' }} onClick={onClose}>
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 2200, display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px' }} onClick={onClose}>
       <div style={{
         backgroundColor: 'var(--c-0d0d0d)', border: isMobile ? 'none' : '1px solid var(--c-222)',
         borderRadius: isMobile ? 0 : '18px', padding: isMobile ? '16px' : '20px',
@@ -563,7 +564,8 @@ function HoldingsModal({ t, lang, onglet, setOnglet, picks, watchlist, libelle, 
           ? <TablePicks t={t} lang={lang} picks={picks} onRemove={onRemovePick} chargement={chargement} />
           : <TableWatchlist t={t} lang={lang} items={watchlist} libelle={libelle} onRemove={onRemoveWatchlist} chargement={chargement} />}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
