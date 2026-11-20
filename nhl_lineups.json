@@ -1,1878 +1,229 @@
 {
-  "last_updated": "2026-11-19 00:05",
+  "last_updated": "2026-11-20 00:28",
   "teams": {
     "anaheim-ducks": {
       "name": "Anaheim Ducks",
-      "forwards": {
-        "L1": {
-          "LW": "Cutter Gauthier",
-          "C": "Leo Carlsson",
-          "RW": "Judd Caulfield"
-        },
-        "L2": {
-          "LW": "Jeff Malott",
-          "C": "Mikael Granlund",
-          "RW": "Troy Terry"
-        },
-        "L3": {
-          "LW": "Alex Killorn",
-          "C": "Tim Washe",
-          "RW": "Nikita Nesterenko"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Jackson Lacombe",
-          "RD": "Ian Moore"
-        },
-        "D2": {
-          "LD": "Pavel Mintyukov",
-          "RD": "Tristan Luneau"
-        },
-        "D3": {
-          "LD": "Drew Helleson",
-          "RD": "Noah Warren"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Judd Caulfield",
-          "Leo Carlsson",
-          "Mikael Granlund",
-          "Jackson Lacombe",
-          "Cutter Gauthier"
-        ],
-        "PP2": [
-          "Alex Killorn",
-          "Nikita Nesterenko",
-          "Roger McQueen",
-          "Troy Terry",
-          "Tristan Luneau"
-        ]
-      },
-      "goalies": [
-        "Lukas Dostal",
-        "Ville Husso"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "boston-bruins": {
       "name": "Boston Bruins",
-      "forwards": {
-        "L1": {
-          "LW": "JJ Peterka",
-          "C": "Pavel Zacha",
-          "RW": "David Pastrnak"
-        },
-        "L2": {
-          "LW": "Michael Eyssimont",
-          "C": "Fraser Minten",
-          "RW": "Morgan Geekie"
-        },
-        "L3": {
-          "LW": "Casey Mittelstadt",
-          "C": "Elias Lindholm",
-          "RW": "Marat Khusnutdinov"
-        },
-        "L4": {
-          "LW": "Tanner Jeannot",
-          "C": "Sean Kuraly",
-          "RW": "Mark Kastelic"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Hampus Lindholm",
-          "RD": "Charlie McAvoy"
-        },
-        "D2": {
-          "LD": "Nikita Zadorov",
-          "RD": "Will Borgen"
-        },
-        "D3": {
-          "LD": "Mason Lohrei",
-          "RD": "Connor Clifton"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Morgan Geekie",
-          "Elias Lindholm",
-          "Pavel Zacha",
-          "David Pastrnak",
-          "Charlie McAvoy"
-        ],
-        "PP2": [
-          "Marat Khusnutdinov",
-          "Fraser Minten",
-          "Casey Mittelstadt",
-          "JJ Peterka",
-          "Mason Lohrei"
-        ]
-      },
-      "goalies": [
-        "Jeremy Swayman",
-        "Michael DiPietro"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "buffalo-sabres": {
       "name": "Buffalo Sabres",
-      "forwards": {
-        "L1": {
-          "LW": "Zach Benson",
-          "C": "Jiri Kulich",
-          "RW": "Tage Thompson"
-        },
-        "L2": {
-          "LW": "Peyton Krebs",
-          "C": "Noah Ostlund",
-          "RW": "Jack Quinn"
-        },
-        "L3": {
-          "LW": "Jason Zucker",
-          "C": "Josh Norris",
-          "RW": "Josh Doan"
-        },
-        "L4": {
-          "LW": "Beck Malenstyn",
-          "C": "Tyson Kozak",
-          "RW": "Sam Carrick"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Mattias Samuelsson",
-          "RD": "Rasmus Dahlin"
-        },
-        "D2": {
-          "LD": "Owen Power",
-          "RD": "Conor Timmins"
-        },
-        "D3": {
-          "LD": "Olen Zellweger",
-          "RD": "Zach Metsa"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Josh Doan",
-          "Zach Benson",
-          "Jack Quinn",
-          "Tage Thompson",
-          "Rasmus Dahlin"
-        ],
-        "PP2": [
-          "Noah Ostlund",
-          "Jiri Kulich",
-          "Jason Zucker",
-          "Owen Power",
-          "Josh Norris"
-        ]
-      },
-      "goalies": [
-        "Alex Lyon",
-        "Colten Ellis"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "calgary-flames": {
       "name": "Calgary Flames",
-      "forwards": {
-        "L1": {
-          "LW": "Joel Farabee",
-          "C": "Mikael Backlund",
-          "RW": "Matt Coronato"
-        },
-        "L2": {
-          "LW": "Matvei Gridin",
-          "C": "Martin Pospisil",
-          "RW": "Ryan Strome"
-        },
-        "L3": {
-          "LW": "Yegor Sharangovich",
-          "C": "Morgan Frost",
-          "RW": "Adam Klapka"
-        },
-        "L4": {
-          "LW": "Maxim Tsyplakov",
-          "C": "Jonathan Castagna",
-          "RW": "Aydar Suniev"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Yan Kuznetsov",
-          "RD": "Zayne Parekh"
-        },
-        "D2": {
-          "LD": "Joel Hanley",
-          "RD": "Simon Nemec"
-        },
-        "D3": {
-          "LD": "Jacob Middleton",
-          "RD": "Zach Whitecloud"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Joel Farabee",
-          "Morgan Frost",
-          "Matt Coronato",
-          "Matvei Gridin",
-          "Zayne Parekh"
-        ],
-        "PP2": [
-          "Adam Klapka",
-          "Ryan Strome",
-          "Aydar Suniev",
-          "Simon Nemec",
-          "Yegor Sharangovich"
-        ]
-      },
-      "goalies": [
-        "Dustin Wolf",
-        "Devin Cooley"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "carolina-hurricanes": {
       "name": "Carolina Hurricanes",
-      "forwards": {
-        "L1": {
-          "LW": "William Carrier",
-          "C": "Sebastian Aho",
-          "RW": "Andrei Svechnikov"
-        },
-        "L2": {
-          "LW": "Nikolaj Ehlers",
-          "C": "Logan Stankoven",
-          "RW": "Jackson Blake"
-        },
-        "L3": {
-          "LW": "Jordan Martinook",
-          "C": "Jordan Staal",
-          "RW": "Seth Jarvis"
-        },
-        "L4": {
-          "LW": "Taylor Hall",
-          "C": "Mark Jankowski",
-          "RW": "Eric Robinson"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Jaccob Slavin",
-          "RD": "Jalen Chatfield"
-        },
-        "D2": {
-          "LD": "K'Andre Miller",
-          "RD": "Sean Walker"
-        },
-        "D3": {
-          "LD": "Shayne Gostisbehere",
-          "RD": "Alexander Nikishin"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Andrei Svechnikov",
-          "Sebastian Aho",
-          "Jackson Blake",
-          "Nikolaj Ehlers",
-          "Shayne Gostisbehere"
-        ],
-        "PP2": [
-          "Taylor Hall",
-          "Mark Jankowski",
-          "Seth Jarvis",
-          "Logan Stankoven",
-          "Alexander Nikishin"
-        ]
-      },
-      "goalies": [
-        "Brandon Bussi",
-        "Pyotr Kochetkov"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "chicago-blackhawks": {
       "name": "Chicago Blackhawks",
-      "forwards": {
-        "L1": {
-          "LW": "Tyler Bertuzzi",
-          "C": "Anton Frondell",
-          "RW": "Roman Kantserov"
-        },
-        "L2": {
-          "LW": "Oliver Moore",
-          "C": "Frank Nazar",
-          "RW": "Patrick Kane"
-        },
-        "L3": {
-          "LW": "Jordan Greenway",
-          "C": "Ryan Greene",
-          "RW": "Teuvo Teravainen"
-        },
-        "L4": {
-          "LW": "Andrew Mangiapane",
-          "C": "Ryan Donato",
-          "RW": "Cole Smith"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Alex Vlasic",
-          "RD": "Sam Rinzel"
-        },
-        "D2": {
-          "LD": "Ian Cole",
-          "RD": "Artyom Levshunov"
-        },
-        "D3": {
-          "LD": "Wyatt Kaiser",
-          "RD": "Ethan Del Mastro"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Tyler Bertuzzi",
-          "Frank Nazar",
-          "Roman Kantserov",
-          "Sam Rinzel",
-          "Patrick Kane"
-        ],
-        "PP2": [
-          "Oliver Moore",
-          "Anton Frondell",
-          "Ryan Donato",
-          "Artyom Levshunov",
-          "Teuvo Teravainen"
-        ]
-      },
-      "goalies": [
-        "Spencer Knight",
-        "Drew Commesso"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "colorado-avalanche": {
       "name": "Colorado Avalanche",
-      "forwards": {
-        "L1": {
-          "LW": "Artturi Lehkonen",
-          "C": "Brock Nelson",
-          "RW": "Martin Necas"
-        },
-        "L2": {
-          "LW": "Jaden Schwartz",
-          "C": "Nazem Kadri",
-          "RW": "T.J. Hughes"
-        },
-        "L3": {
-          "LW": "Gabriel Landeskog",
-          "C": "Nicolas Roy",
-          "RW": "Gavin Brindley"
-        },
-        "L4": {
-          "LW": "Parker Kelly",
-          "C": "Fedor Svechkov",
-          "RW": "Logan O'Connor"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Devon Toews",
-          "RD": "Sam Malinski"
-        },
-        "D2": {
-          "LD": "Brett Kulak",
-          "RD": "Noah Juulsen"
-        },
-        "D3": {
-          "LD": "Mike Reilly",
-          "RD": "Brent Burns"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "T.J. Hughes",
-          "Nazem Kadri",
-          "Artturi Lehkonen",
-          "Martin Necas",
-          "Devon Toews"
-        ],
-        "PP2": [
-          "Jaden Schwartz",
-          "Nicolas Roy",
-          "Brock Nelson",
-          "Sam Malinski",
-          "Gabriel Landeskog"
-        ]
-      },
-      "goalies": [
-        "Mackenzie Blackwood",
-        "Scott Wedgewood"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "columbus-blue-jackets": {
       "name": "Columbus Blue Jackets",
-      "forwards": {
-        "L1": {
-          "LW": "Dmitri Voronkov",
-          "C": "Adam Fantilli",
-          "RW": "Valeri Nichushkin"
-        },
-        "L2": {
-          "LW": "Matthew Knies",
-          "C": "Luca Del Bel Belluz",
-          "RW": "Kent Johnson"
-        },
-        "L3": {
-          "LW": "Cole Sillinger",
-          "C": "Charlie Coyle",
-          "RW": "Mathieu Olivier"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Zach Werenski",
-          "RD": "Damon Severson"
-        },
-        "D2": {
-          "LD": "Ivan Provorov",
-          "RD": "Denton Mateychuk"
-        },
-        "D3": {
-          "LD": "Dante Fabbro",
-          "RD": "Erik Gudbranson"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Matthew Knies",
-          "Luca Del Bel Belluz",
-          "Charlie Coyle",
-          "Zach Werenski",
-          "Kent Johnson"
-        ],
-        "PP2": [
-          "Valeri Nichushkin",
-          "Adam Fantilli",
-          "Dmitri Voronkov",
-          "Denton Mateychuk",
-          "Ivan Provorov"
-        ]
-      },
-      "goalies": [
-        "Cam Talbot",
-        "Jet Greaves"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "dallas-stars": {
       "name": "Dallas Stars",
-      "forwards": {
-        "L1": {
-          "LW": "Jason Robertson",
-          "C": "Wyatt Johnston",
-          "RW": "Mikko Rantanen"
-        },
-        "L2": {
-          "LW": "Jamie Benn",
-          "C": "Roope Hintz",
-          "RW": "Arttu Hyry"
-        },
-        "L3": {
-          "LW": "Sam Steel",
-          "C": "Justin Hryckowian",
-          "RW": "Tyler Seguin"
-        },
-        "L4": {
-          "LW": "David Perron",
-          "C": "Radek Faksa",
-          "RW": "Colin Blackwell"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Esa Lindell",
-          "RD": "Miro Heiskanen"
-        },
-        "D2": {
-          "LD": "Thomas Harley",
-          "RD": "Nils Lundkvist"
-        },
-        "D3": {
-          "LD": "Trey Taylor",
-          "RD": "Kyle Burroughs"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Wyatt Johnston",
-          "Roope Hintz",
-          "Mikko Rantanen",
-          "Miro Heiskanen",
-          "Jason Robertson"
-        ],
-        "PP2": [
-          "Jamie Benn",
-          "Justin Hryckowian",
-          "David Perron",
-          "Thomas Harley",
-          "Tyler Seguin"
-        ]
-      },
-      "goalies": [
-        "Jake Oettinger",
-        "Casey DeSmith"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "detroit-red-wings": {
       "name": "Detroit Red Wings",
-      "forwards": {
-        "L1": {
-          "LW": "Alex DeBrincat",
-          "C": "Marco Kasper",
-          "RW": "Emmitt Finnie"
-        },
-        "L2": {
-          "LW": "Michael Brandsegg-Nygård",
-          "C": "Andrew Copp",
-          "RW": "Lucas Raymond"
-        },
-        "L3": {
-          "LW": "Carter Mazur",
-          "C": "J.T. Compher",
-          "RW": "Viktor Arvidsson"
-        },
-        "L4": {
-          "LW": "Michael Rasmussen",
-          "C": "Sheldon Dries",
-          "RW": "Keegan Kolesar"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Anton Johansson",
-          "RD": "Moritz Seider"
-        },
-        "D2": {
-          "LD": "Ben Chiarot",
-          "RD": "Justin Faulk"
-        },
-        "D3": {
-          "LD": "Andreas Englund",
-          "RD": "Albert Johansson"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Viktor Arvidsson",
-          "Emmitt Finnie",
-          "Lucas Raymond",
-          "Alex DeBrincat",
-          "Moritz Seider"
-        ],
-        "PP2": [
-          "Marco Kasper",
-          "J.T. Compher",
-          "Andrew Copp",
-          "Michael Brandsegg-Nygård",
-          "Justin Faulk"
-        ]
-      },
-      "goalies": [
-        "Daniil Tarasov",
-        "John Gibson"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "edmonton-oilers": {
       "name": "Edmonton Oilers",
-      "forwards": {
-        "L1": {
-          "LW": "Colton Dach",
-          "C": "Connor McDavid",
-          "RW": "Zach Hyman"
-        },
-        "L2": {
-          "LW": "Vasily Podkolzin",
-          "C": "Leon Draisaitl",
-          "RW": "Kasperi Kapanen"
-        },
-        "L3": {
-          "LW": "Filip Hallander",
-          "C": "Jason Dickinson",
-          "RW": "Trent Frederic"
-        },
-        "L4": {
-          "LW": "Alex Formenton",
-          "C": "Owen Michaels",
-          "RW": "Mathieu Joseph"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Mattias Ekholm",
-          "RD": "Evan Bouchard"
-        },
-        "D2": {
-          "LD": "Ryan Shea",
-          "RD": "Connor Murphy"
-        },
-        "D3": {
-          "LD": "Shakir Mukhamadullin",
-          "RD": "Ty Emberson"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Zach Hyman",
-          "Leon Draisaitl",
-          "Vasily Podkolzin",
-          "Connor McDavid",
-          "Evan Bouchard"
-        ],
-        "PP2": [
-          "Trent Frederic",
-          "Colton Dach",
-          "Kasperi Kapanen",
-          "Ryan Shea",
-          "Mattias Ekholm"
-        ]
-      },
-      "goalies": [
-        "Devon Levi",
-        "Tristan Jarry"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "florida-panthers": {
       "name": "Florida Panthers",
-      "forwards": {
-        "L1": {
-          "LW": "Brady Tkachuk",
-          "C": "Sam Bennett",
-          "RW": "Matthew Tkachuk"
-        },
-        "L2": {
-          "LW": "Eetu Luostarinen",
-          "C": "Anton Lundell",
-          "RW": "Sam Reinhart"
-        },
-        "L3": {
-          "LW": "Carter Verhaeghe",
-          "C": "Lars Eller",
-          "RW": "Sandis Vilmanis"
-        },
-        "L4": {
-          "LW": "Bokondji Imama",
-          "C": "Cole Schwindt",
-          "RW": "Garnet Hathaway"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Gustav Forsling",
-          "RD": "Aaron Ekblad"
-        },
-        "D2": {
-          "LD": "Niko Mikkola",
-          "RD": "Seth Jones"
-        },
-        "D3": {
-          "LD": "Uvis Balinskis",
-          "RD": "Dmitry Kulikov"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Brady Tkachuk",
-          "Sam Reinhart",
-          "Carter Verhaeghe",
-          "Seth Jones",
-          "Matthew Tkachuk"
-        ],
-        "PP2": [
-          "Sam Bennett",
-          "Lars Eller",
-          "Eetu Luostarinen",
-          "Aaron Ekblad",
-          "Anton Lundell"
-        ]
-      },
-      "goalies": [
-        "Jacob Markstrom",
-        "Akira Schmid"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "los-angeles-kings": {
       "name": "Los Angeles Kings",
-      "forwards": {
-        "L1": {
-          "LW": "Alex Turcotte",
-          "C": "Alex Laferriere",
-          "RW": "Adrian Kempe"
-        },
-        "L2": {
-          "LW": "Kevin Fiala",
-          "C": "Quinton Byfield",
-          "RW": "Mats Zuccarello"
-        },
-        "L3": {
-          "LW": "Trevor Moore",
-          "C": "Erik Haula",
-          "RW": "Joel Armia"
-        },
-        "L4": {
-          "LW": "Andre Lee",
-          "C": "Scott Laughton",
-          "RW": "Corey Perry"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Erik Gustafsson",
-          "RD": "Brandt Clarke"
-        },
-        "D2": {
-          "LD": "Joel Edmundson",
-          "RD": "Drew Doughty"
-        },
-        "D3": {
-          "LD": "Mikey Anderson",
-          "RD": "Brian Dumoulin"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Kevin Fiala",
-          "Quinton Byfield",
-          "Alex Laferriere",
-          "Adrian Kempe",
-          "Erik Gustafsson"
-        ],
-        "PP2": [
-          "Mats Zuccarello",
-          "Erik Haula",
-          "Corey Perry",
-          "Brandt Clarke",
-          "Drew Doughty"
-        ]
-      },
-      "goalies": [
-        "Darcy Kuemper",
-        "Anton Forsberg"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "minnesota-wild": {
       "name": "Minnesota Wild",
-      "forwards": {
-        "L1": {
-          "LW": "Kirill Kaprizov",
-          "C": "Joel Eriksson Ek",
-          "RW": "Matt Boldy"
-        },
-        "L2": {
-          "LW": "Yakov Trenin",
-          "C": "Danila Yurov",
-          "RW": "Maxim Shabanov"
-        },
-        "L3": {
-          "LW": "Blake Coleman",
-          "C": "Michael McCarron",
-          "RW": "Bobby Brink"
-        },
-        "L4": {
-          "LW": "Marcus Foligno",
-          "C": "Ryan Hartman",
-          "RW": "Nick Foligno"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Quinn Hughes",
-          "RD": "Jared Spurgeon"
-        },
-        "D2": {
-          "LD": "Jonas Brodin",
-          "RD": "Brock Faber"
-        },
-        "D3": {
-          "LD": "Matt Kiersted",
-          "RD": "Zach Bogosian"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Maxim Shabanov",
-          "Joel Eriksson Ek",
-          "Kirill Kaprizov",
-          "Quinn Hughes",
-          "Matt Boldy"
-        ],
-        "PP2": [
-          "Blake Coleman",
-          "Ryan Hartman",
-          "Bobby Brink",
-          "Danila Yurov",
-          "Brock Faber"
-        ]
-      },
-      "goalies": [
-        "Jesper Wallstedt",
-        "Calvin Pickard"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "montreal-canadiens": {
       "name": "Montreal Canadiens",
-      "forwards": {
-        "L1": {
-          "LW": "Cole Caufield",
-          "C": "Nick Suzuki",
-          "RW": "Juraj Slafkovsky"
-        },
-        "L2": {
-          "LW": "Zack Bolduc",
-          "C": "Phillip Danault",
-          "RW": "Alexandre Texier"
-        },
-        "L3": {
-          "LW": "Alex Newhook",
-          "C": "Oliver Kapanen",
-          "RW": "Kirby Dach"
-        },
-        "L4": {
-          "LW": "Florian Xhekaj",
-          "C": "Jake Evans",
-          "RW": "Owen Beck"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Lane Hutson",
-          "RD": "Noah Dobson"
-        },
-        "D2": {
-          "LD": "Kaiden Guhle",
-          "RD": "Alexandre Carrier"
-        },
-        "D3": {
-          "LD": "Arber Xhekaj",
-          "RD": "Adam Engstrom"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Juraj Slafkovsky",
-          "Nick Suzuki",
-          "Zack Bolduc",
-          "Cole Caufield",
-          "Lane Hutson"
-        ],
-        "PP2": [
-          "Kirby Dach",
-          "Oliver Kapanen",
-          "Alexandre Texier",
-          "Noah Dobson",
-          "Alex Newhook"
-        ]
-      },
-      "goalies": [
-        "Jacob Fowler",
-        "Jakub Dobes"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "nashville-predators": {
       "name": "Nashville Predators",
-      "forwards": {
-        "L1": {
-          "LW": "Steven Stamkos",
-          "C": "Ryan O'Reilly",
-          "RW": "Mavrik Bourque"
-        },
-        "L2": {
-          "LW": "Filip Forsberg",
-          "C": "Shane Wright",
-          "RW": "Nils Hoglander"
-        },
-        "L3": {
-          "LW": "Reid Schaefer",
-          "C": "Alex Kerfoot",
-          "RW": "Jonathan Marchessault"
-        },
-        "L4": {
-          "LW": "Ross Colton",
-          "C": "Jack Drury",
-          "RW": "Adam Edstrom"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Roman Josi",
-          "RD": "Adam Wilsby"
-        },
-        "D2": {
-          "LD": "Brady Skjei",
-          "RD": "Nick Perbix"
-        },
-        "D3": {
-          "LD": "Nicolas Hague",
-          "RD": "Jayden Struble"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Filip Forsberg",
-          "Ryan O'Reilly",
-          "Jonathan Marchessault",
-          "Steven Stamkos",
-          "Roman Josi"
-        ],
-        "PP2": [
-          "Alex Kerfoot",
-          "Shane Wright",
-          "Nils Hoglander",
-          "Brady Skjei",
-          "Mavrik Bourque"
-        ]
-      },
-      "goalies": [
-        "Juuse Saros",
-        "Justus Annunen"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "new-jersey-devils": {
       "name": "New Jersey Devils",
-      "forwards": {
-        "L1": {
-          "LW": "Arseny Gritsyuk",
-          "C": "Jack Hughes",
-          "RW": "Jesper Bratt"
-        },
-        "L2": {
-          "LW": "Timo Meier",
-          "C": "Nico Hischier",
-          "RW": "Luke Evangelista"
-        },
-        "L3": {
-          "LW": "Stefan Noesen",
-          "C": "Evan Rodrigues",
-          "RW": "Connor Brown"
-        },
-        "L4": {
-          "LW": "Jesper Boqvist",
-          "C": "Cody Glass",
-          "RW": "Lenni Hameenaho"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Luke Hughes",
-          "RD": "Brett Pesce"
-        },
-        "D2": {
-          "LD": "Jonas Siegenthaler",
-          "RD": "Dougie Hamilton"
-        },
-        "D3": {
-          "LD": "Declan Chisholm",
-          "RD": "Brenden Dillon"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Arseny Gritsyuk",
-          "Nico Hischier",
-          "Connor Brown",
-          "Jack Hughes",
-          "Luke Hughes"
-        ],
-        "PP2": [
-          "Timo Meier",
-          "Evan Rodrigues",
-          "Luke Evangelista",
-          "Jesper Bratt",
-          "Dougie Hamilton"
-        ]
-      },
-      "goalies": [
-        "Connor Hellebuyck",
-        "Jake Allen"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "new-york-islanders": {
       "name": "New York Islanders",
-      "forwards": {
-        "L1": {
-          "LW": "Simon Holmstrom",
-          "C": "Bo Horvat",
-          "RW": "Kyle Palmieri"
-        },
-        "L2": {
-          "LW": "Emil Heineman",
-          "C": "Brayden Schenn",
-          "RW": "Victor Eklund"
-        },
-        "L3": {
-          "LW": "Ondrej Palat",
-          "C": "Mathew Barzal",
-          "RW": "Matias Maccelli"
-        },
-        "L4": {
-          "LW": "Anthony Duclair",
-          "C": "Casey Cizikas",
-          "RW": "Mitchell Chaffee"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Matthew Schaefer",
-          "RD": "Ryan Pulock"
-        },
-        "D2": {
-          "LD": "Adam Pelech",
-          "RD": "Tony DeAngelo"
-        },
-        "D3": {
-          "LD": "Ben Hutton",
-          "RD": "Matthew Kessel"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Victor Eklund",
-          "Bo Horvat",
-          "Brayden Schenn",
-          "Matias Maccelli",
-          "Matthew Schaefer"
-        ],
-        "PP2": [
-          "Kyle Palmieri",
-          "Simon Holmstrom",
-          "Anthony Duclair",
-          "Mathew Barzal",
-          "Tony DeAngelo"
-        ]
-      },
-      "goalies": [
-        "Ilya Sorokin",
-        "Semyon Varlamov"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "new-york-rangers": {
       "name": "New York Rangers",
-      "forwards": {
-        "L1": {
-          "LW": "Gabriel Perreault",
-          "C": "Mika Zibanejad",
-          "RW": "Alexis Lafrenière"
-        },
-        "L2": {
-          "LW": "Will Cuylle",
-          "C": "J.T. Miller",
-          "RW": "Tye Kartye"
-        },
-        "L3": {
-          "LW": "Eeli Tolvanen",
-          "C": "Noah Laba",
-          "RW": "Oliver Bjorkstrand"
-        },
-        "L4": {
-          "LW": "Jaroslav Chmelar",
-          "C": "Glenn Gawdin",
-          "RW": "Matt Rempe"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Vladislav Gavrikov",
-          "RD": "Adam Fox"
-        },
-        "D2": {
-          "LD": "Marcus Pettersson",
-          "RD": "Braden Schneider"
-        },
-        "D3": {
-          "LD": "Matthew Robertson",
-          "RD": "Scott Morrow"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Alexis Lafrenière",
-          "Gabriel Perreault",
-          "J.T. Miller",
-          "Mika Zibanejad",
-          "Adam Fox"
-        ],
-        "PP2": [
-          "Eeli Tolvanen",
-          "Tye Kartye",
-          "Will Cuylle",
-          "Oliver Bjorkstrand",
-          "Adam Fox"
-        ]
-      },
-      "goalies": [
-        "Joonas Korpisalo",
-        "Dylan Garand"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "ottawa-senators": {
       "name": "Ottawa Senators",
-      "forwards": {
-        "L1": {
-          "LW": "Fabian Zetterlund",
-          "C": "Tim Stützle",
-          "RW": "Dylan Cozens"
-        },
-        "L2": {
-          "LW": "Philip Tomasino",
-          "C": "Shane Pinto",
-          "RW": "Drake Batherson"
-        },
-        "L3": {
-          "LW": "Michael Amadio",
-          "C": "Ridly Greig",
-          "RW": "Claude Giroux"
-        },
-        "L4": {
-          "LW": "Sammy Blais",
-          "C": "Stephen Halliday",
-          "RW": "Tyler Boucher"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Jake Sanderson",
-          "RD": "Artem Zub"
-        },
-        "D2": {
-          "LD": "Thomas Chabot",
-          "RD": "Jordan Spence"
-        },
-        "D3": {
-          "LD": "Tyler Kleven",
-          "RD": "Nikolas Matinpalo"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Stephen Halliday",
-          "Shane Pinto",
-          "Tim Stützle",
-          "Drake Batherson",
-          "Jake Sanderson"
-        ],
-        "PP2": [
-          "Ridly Greig",
-          "Dylan Cozens",
-          "Claude Giroux",
-          "Thomas Chabot",
-          "Jordan Spence"
-        ]
-      },
-      "goalies": [
-        "Linus Ullmark",
-        "Samuel Ersson"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "philadelphia-flyers": {
       "name": "Philadelphia Flyers",
-      "forwards": {
-        "L1": {
-          "LW": "Tyson Foerster",
-          "C": "Trevor Zegras",
-          "RW": "Travis Konecny"
-        },
-        "L2": {
-          "LW": "Cole Knuble",
-          "C": "Christian Dvorak",
-          "RW": "Owen Tippett"
-        },
-        "L3": {
-          "LW": "Porter Martone",
-          "C": "Noah Cates",
-          "RW": "Matvei Michkov"
-        },
-        "L4": {
-          "LW": "Denver Barkey",
-          "C": "Sean Couturier",
-          "RW": "Noel Acciari"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Travis Sanheim",
-          "RD": "Jamie Drysdale"
-        },
-        "D2": {
-          "LD": "Cam York",
-          "RD": "Rasmus Ristolainen"
-        },
-        "D3": {
-          "LD": "Nick Seeler",
-          "RD": "Oliver Bonk"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Porter Martone",
-          "Denver Barkey",
-          "Matvei Michkov",
-          "Trevor Zegras",
-          "Jamie Drysdale"
-        ],
-        "PP2": [
-          "Travis Konecny",
-          "Christian Dvorak",
-          "Tyson Foerster",
-          "Owen Tippett",
-          "Oliver Bonk"
-        ]
-      },
-      "goalies": [
-        "Dan Vladar",
-        "Joseph Woll"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "pittsburgh-penguins": {
       "name": "Pittsburgh Penguins",
-      "forwards": {
-        "L1": {
-          "LW": "Evgeni Malkin",
-          "C": "Sidney Crosby",
-          "RW": "Rickard Rakell"
-        },
-        "L2": {
-          "LW": "Tommy Novak",
-          "C": "Ben Kindel",
-          "RW": "Egor Chinakhov"
-        },
-        "L3": {
-          "LW": "Rutger McGroarty",
-          "C": "Hendrix Lapierre",
-          "RW": "Ville Koivunen"
-        },
-        "L4": {
-          "LW": "Connor Dewar",
-          "C": "Blake Lizotte",
-          "RW": "Nicholas Robertson"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Spencer Stastney",
-          "RD": "Erik Karlsson"
-        },
-        "D2": {
-          "LD": "Samuel Girard",
-          "RD": "Kaedan Korczak"
-        },
-        "D3": {
-          "LD": "Trevor van Riemsdyk",
-          "RD": "Kris Letang"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Rickard Rakell",
-          "Ben Kindel",
-          "Tommy Novak",
-          "Erik Karlsson",
-          "Sidney Crosby"
-        ],
-        "PP2": [
-          "Ville Koivunen",
-          "Hendrix Lapierre",
-          "Egor Chinakhov",
-          "Kris Letang",
-          "Evgeni Malkin"
-        ]
-      },
-      "goalies": [
-        "Arturs Silovs",
-        "Sergei Murashov"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "san-jose-sharks": {
       "name": "San Jose Sharks",
-      "forwards": {
-        "L1": {
-          "LW": "Ivar Stenberg",
-          "C": "Macklin Celebrini",
-          "RW": "Adam Gaudette"
-        },
-        "L2": {
-          "LW": "Barclay Goodrow",
-          "C": "Alexander Wennberg",
-          "RW": "Will Smith"
-        },
-        "L3": {
-          "LW": "Mason Marchment",
-          "C": "Ty Dellandrea",
-          "RW": "Collin Graf"
-        },
-        "L4": {
-          "LW": "Tyler Toffoli",
-          "C": "Zack Ostapchuk",
-          "RW": "Michael Misa"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Darnell Nurse",
-          "RD": "Eric Pohlkamp"
-        },
-        "D2": {
-          "LD": "Dmitry Orlov",
-          "RD": "Jacob Trouba"
-        },
-        "D3": {
-          "LD": "Sam Dickinson",
-          "RD": "Nolan Allan"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Ivar Stenberg",
-          "Alexander Wennberg",
-          "Tyler Toffoli",
-          "Macklin Celebrini",
-          "Sam Dickinson"
-        ],
-        "PP2": [
-          "Adam Gaudette",
-          "Michael Misa",
-          "Mason Marchment",
-          "Dmitry Orlov",
-          "Will Smith"
-        ]
-      },
-      "goalies": [
-        "Yaroslav Askarov",
-        "Alex Nedeljkovic"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "seattle-kraken": {
       "name": "Seattle Kraken",
-      "forwards": {
-        "L1": {
-          "LW": "Bobby McMann",
-          "C": "Matty Beniers",
-          "RW": "Jordan Eberle"
-        },
-        "L2": {
-          "LW": "Kaapo Kakko",
-          "C": "Berkly Catton",
-          "RW": "Mackie Samoskevich"
-        },
-        "L3": {
-          "LW": "Frederick Gaudreau",
-          "C": "Ben Meyers",
-          "RW": "Matthew Wood"
-        },
-        "L4": {
-          "LW": "Ryan Winterton",
-          "C": "Chandler Stephenson",
-          "RW": "Jagger Firkus"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Vince Dunn",
-          "RD": "Adam Larsson"
-        },
-        "D2": {
-          "LD": "Ryker Evans",
-          "RD": "Brandon Montour"
-        },
-        "D3": {
-          "LD": "Ryan Lindgren",
-          "RD": "Cale Fleury"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Jordan Eberle",
-          "Matty Beniers",
-          "Bobby McMann",
-          "Chandler Stephenson",
-          "Vince Dunn"
-        ],
-        "PP2": [
-          "Kaapo Kakko",
-          "Berkly Catton",
-          "Matthew Wood",
-          "Mackie Samoskevich",
-          "Brandon Montour"
-        ]
-      },
-      "goalies": [
-        "Joey Daccord",
-        "Philipp Grubauer"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "st-louis-blues": {
       "name": "St Louis Blues",
-      "forwards": {
-        "L1": {
-          "LW": "Jake Neighbours",
-          "C": "Robert Thomas",
-          "RW": "Jimmy Snuggerud"
-        },
-        "L2": {
-          "LW": "Dylan Holloway",
-          "C": "Mason McTavish",
-          "RW": "Connor McMichael"
-        },
-        "L3": {
-          "LW": "Aleksanteri Kaskimaki",
-          "C": "Pavel Buchnevich",
-          "RW": "Jonatan Berggren"
-        },
-        "L4": {
-          "LW": "Dalibor Dvorsky",
-          "C": "Pius Suter",
-          "RW": "Alexey Toropchenko"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Philip Broberg",
-          "RD": "Logan Mailloux"
-        },
-        "D2": {
-          "LD": "Justin Barron",
-          "RD": "Colton Parayko"
-        },
-        "D3": {
-          "LD": "Cam Fowler",
-          "RD": "Brandon Carlo"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Jimmy Snuggerud",
-          "Mason McTavish",
-          "Jake Neighbours",
-          "Robert Thomas",
-          "Philip Broberg"
-        ],
-        "PP2": [
-          "Pavel Buchnevich",
-          "Connor McMichael",
-          "Dylan Holloway",
-          "Logan Mailloux",
-          "Dalibor Dvorsky"
-        ]
-      },
-      "goalies": [
-        "Joel Hofer",
-        "Jordan Binnington"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "tampa-bay-lightning": {
       "name": "Tampa Bay Lightning",
-      "forwards": {
-        "L1": {
-          "LW": "Jake Guentzel",
-          "C": "Brayden Point",
-          "RW": "Nikita Kucherov"
-        },
-        "L2": {
-          "LW": "Ilya Mikheyev",
-          "C": "Anthony Cirelli",
-          "RW": "Pontus Holmberg"
-        },
-        "L3": {
-          "LW": "Yanni Gourde",
-          "C": "Sam O'Reilly",
-          "RW": "Gage Goncalves"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Charle-Edouard D'Astous",
-          "RD": "John Carlson"
-        },
-        "D2": {
-          "LD": "Victor Hedman",
-          "RD": "J.J. Moser"
-        },
-        "D3": {
-          "LD": "Ryan McDonagh",
-          "RD": "Erik Cernak"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Jake Guentzel",
-          "Sam O'Reilly",
-          "Nikita Kucherov",
-          "Brayden Point",
-          "John Carlson"
-        ],
-        "PP2": [
-          "Gage Goncalves",
-          "Anthony Cirelli",
-          "Pontus Holmberg",
-          "Victor Hedman",
-          "Charle-Edouard D'Astous"
-        ]
-      },
-      "goalies": [
-        "Andrei Vasilevskiy",
-        "Dennis Hildeby"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "toronto-maple-leafs": {
       "name": "Toronto Maple Leafs",
-      "forwards": {
-        "L1": {
-          "LW": "Easton Cowan",
-          "C": "Auston Matthews",
-          "RW": "Jack Roslovic"
-        },
-        "L2": {
-          "LW": "Ryan Tverberg",
-          "C": "John Tavares",
-          "RW": "William Nylander"
-        },
-        "L3": {
-          "LW": "Gavin McKenna",
-          "C": "Nick Paul",
-          "RW": "Dakota Joshua"
-        },
-        "L4": {
-          "LW": "Brandon Duhaime",
-          "C": "Teddy Blueger",
-          "RW": "Zack MacEwen"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Jake McCabe",
-          "RD": "Darren Raddysh"
-        },
-        "D2": {
-          "LD": "Oliver Ekman-Larsson",
-          "RD": "Chris Tanev"
-        },
-        "D3": {
-          "LD": "Morgan Rielly",
-          "RD": "Troy Stecher"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "John Tavares",
-          "William Nylander",
-          "Jack Roslovic",
-          "Darren Raddysh",
-          "Auston Matthews"
-        ],
-        "PP2": [
-          "Gavin McKenna",
-          "Nick Paul",
-          "Easton Cowan",
-          "Morgan Rielly",
-          "Oliver Ekman-Larsson"
-        ]
-      },
-      "goalies": [
-        "Anthony Stolarz",
-        "Sergei Bobrovsky"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "utah-mammoth": {
       "name": "Utah Mammoth",
-      "forwards": {
-        "L1": {
-          "LW": "Logan Cooley",
-          "C": "Vincent Trocheck",
-          "RW": "Clayton Keller"
-        },
-        "L2": {
-          "LW": "Anders Lee",
-          "C": "Barrett Hayton",
-          "RW": "Kailer Yamamoto"
-        },
-        "L3": {
-          "LW": "Michael Carcone",
-          "C": "Jack McBain",
-          "RW": "Lawson Crouse"
-        },
-        "L4": {
-          "LW": "Liam O'Brien",
-          "C": "Kevin Stenlund",
-          "RW": "Daniil But"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Mikhail Sergachev",
-          "RD": "Andrew Peeke"
-        },
-        "D2": {
-          "LD": "Dmitri Simashev",
-          "RD": "MacKenzie Weegar"
-        },
-        "D3": {
-          "LD": "Zac Jones",
-          "RD": "Nick DeSimone"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Barrett Hayton",
-          "Vincent Trocheck",
-          "Logan Cooley",
-          "Mikhail Sergachev",
-          "Clayton Keller"
-        ],
-        "PP2": [
-          "Anders Lee",
-          "Lawson Crouse",
-          "Kailer Yamamoto",
-          "MacKenzie Weegar",
-          "Michael Carcone"
-        ]
-      },
-      "goalies": [
-        "Karel Vejmelka",
-        "Sebastian Cossa"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "vancouver-canucks": {
       "name": "Vancouver Canucks",
-      "forwards": {
-        "L1": {
-          "LW": "Jake DeBrusk",
-          "C": "Elias Pettersson",
-          "RW": "Jonathan Lekkerimaki"
-        },
-        "L2": {
-          "LW": "Paul Cotter",
-          "C": "Filip Chytil",
-          "RW": "Brock Boeser"
-        },
-        "L3": {
-          "LW": "Liam Ohgren",
-          "C": "Marco Rossi",
-          "RW": "Linus Karlsson"
-        },
-        "L4": {
-          "LW": "Drew O'Connor",
-          "C": "Max Sasson",
-          "RW": "Brendan Gallagher"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Zeev Buium",
-          "RD": "Filip Hronek"
-        },
-        "D2": {
-          "LD": "Elias Nils Pettersson",
-          "RD": "Tom Willander"
-        },
-        "D3": {
-          "LD": "Jamie Oleksiak",
-          "RD": "Cameron Crotty"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Jake DeBrusk",
-          "Elias Pettersson",
-          "Brock Boeser",
-          "Jonathan Lekkerimaki",
-          "Filip Hronek"
-        ],
-        "PP2": [
-          "Marco Rossi",
-          "Filip Chytil",
-          "Linus Karlsson",
-          "Zeev Buium",
-          "Tom Willander"
-        ]
-      },
-      "goalies": [
-        "Nikita Tolopilo",
-        "Leevi Merilainen"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "vegas-golden-knights": {
       "name": "Vegas Golden Knights",
-      "forwards": {
-        "L1": {
-          "LW": "Brett Howden",
-          "C": "Jack Eichel",
-          "RW": "Mark Stone"
-        },
-        "L2": {
-          "LW": "Trevor Connelly",
-          "C": "William Karlsson",
-          "RW": "Mitch Marner"
-        },
-        "L3": {
-          "LW": "Ivan Barbashev",
-          "C": "Tomas Hertl",
-          "RW": "Victor Olofsson"
-        },
-        "L4": {
-          "LW": "Raphael Lavoie",
-          "C": "Nic Dowd",
-          "RW": "Braeden Bowman"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Brayden McNabb",
-          "RD": "Shea Theodore"
-        },
-        "D2": {
-          "LD": "Jeremy Lauzon",
-          "RD": "Rasmus Andersson"
-        },
-        "D3": {
-          "LD": "Parker Wotherspoon",
-          "RD": "Dylan Coghlan"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Mark Stone",
-          "Tomas Hertl",
-          "Victor Olofsson",
-          "Jack Eichel",
-          "Mitch Marner"
-        ],
-        "PP2": [
-          "Braeden Bowman",
-          "William Karlsson",
-          "Trevor Connelly",
-          "Rasmus Andersson",
-          "Shea Theodore"
-        ]
-      },
-      "goalies": [
-        "Carter Hart",
-        "Adin Hill"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "washington-capitals": {
       "name": "Washington Capitals",
-      "forwards": {
-        "L1": {
-          "LW": "Aliaksei Protas",
-          "C": "Pierre-Luc Dubois",
-          "RW": "Alex Tuch"
-        },
-        "L2": {
-          "LW": "Ryan Leonard",
-          "C": "Dylan Strome",
-          "RW": "Tom Wilson"
-        },
-        "L3": {
-          "LW": "Justin Sourdif",
-          "C": "Ilya Protas",
-          "RW": "Jordan Kyrou"
-        },
-        "L4": {
-          "LW": "Alex Ovechkin",
-          "C": "Boone Jenner",
-          "RW": "Anthony Beauvillier"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Jakob Chychrun",
-          "RD": "Matt Roy"
-        },
-        "D2": {
-          "LD": "Martin Fehervary",
-          "RD": "Timothy Liljegren"
-        },
-        "D3": {
-          "LD": "Cole Hutson",
-          "RD": "Jack St. Ivany"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Tom Wilson",
-          "Dylan Strome",
-          "Jordan Kyrou",
-          "Alex Ovechkin",
-          "Jakob Chychrun"
-        ],
-        "PP2": [
-          "Ilya Protas",
-          "Pierre-Luc Dubois",
-          "Alex Tuch",
-          "Ryan Leonard",
-          "Cole Hutson"
-        ]
-      },
-      "goalies": [
-        "Logan Thompson",
-        "Charlie Lindgren"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     },
     "winnipeg-jets": {
       "name": "Winnipeg Jets",
-      "forwards": {
-        "L1": {
-          "LW": "Kyle Connor",
-          "C": "Mark Scheifele",
-          "RW": "Gabriel Vilardi"
-        },
-        "L2": {
-          "LW": "Cole Perfetti",
-          "C": "Brayden Yager",
-          "RW": "Dawson Mercer"
-        },
-        "L3": {
-          "LW": "Alex Iafallo",
-          "C": "Adam Lowry",
-          "RW": "Viggo Björck"
-        },
-        "L4": {
-          "LW": "Cole Koepke",
-          "C": "Morgan Barron",
-          "RW": "Danny Zhilkin"
-        }
-      },
-      "defence": {
-        "D1": {
-          "LD": "Josh Morrissey",
-          "RD": "Mario Ferraro"
-        },
-        "D2": {
-          "LD": "Dylan Samberg",
-          "RD": "Neal Pionk"
-        },
-        "D3": {
-          "LD": "Henry Thrun",
-          "RD": "Tyrel Bauer"
-        }
-      },
-      "pp_units": {
-        "PP1": [
-          "Gabriel Vilardi",
-          "Mark Scheifele",
-          "Cole Perfetti",
-          "Josh Morrissey",
-          "Kyle Connor"
-        ],
-        "PP2": [
-          "Viggo Björck",
-          "Brayden Yager",
-          "Alex Iafallo",
-          "Neal Pionk",
-          "Dawson Mercer"
-        ]
-      },
-      "goalies": [
-        "Nico Daws",
-        "Stuart Skinner"
-      ]
+      "forwards": {},
+      "defence": {},
+      "pp_units": {},
+      "goalies": []
     }
   }
 }
