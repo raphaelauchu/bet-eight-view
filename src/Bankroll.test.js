@@ -166,6 +166,21 @@ describe('page de compte : mise en page responsive (>= 1024px grille, < 1024px l
     return Array.from(container.querySelectorAll('[data-testid^="bank-block-"]')).map(el => el.getAttribute('data-testid'));
   }
 
+  test('le bouton "+ Ajouter un pari" a une marge droite (16-24px) et ne chevauche plus Recent bets (plus de marge negative)', async () => {
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByTestId('bank-block-recent-bets')).toBeInTheDocument());
+
+    const boutonAjouterPari = screen.getByText('+ Ajouter un pari'); // le <button> lui-meme
+    const ligneBouton = boutonAjouterPari.parentElement; // le conteneur flex qui porte la marge
+    const paddingRight = parseInt(ligneBouton.style.paddingRight, 10);
+    expect(paddingRight).toBeGreaterThanOrEqual(16);
+    expect(paddingRight).toBeLessThanOrEqual(24);
+    const marginBottom = parseInt(ligneBouton.style.marginBottom, 10);
+    expect(marginBottom).toBeGreaterThan(0); // jamais negatif (chevauchement avec Recent bets)
+  });
+
   test('>= 1024px : en-tete seul en haut sur toute la largeur, hors de la grille 2 colonnes ; colonnes alignees en haut', async () => {
     useMinWidth.mockReturnValue(true); // >= 1024px pour CETTE page (seuil propre a AccountDetail)
     const { container } = render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
@@ -213,15 +228,20 @@ describe('page de compte : mise en page responsive (>= 1024px grille, < 1024px l
     expect(page.className).toBe('bankroll-account-mobile');
   });
 
-  test('>= 1024px : la page n\'a pas besoin de ce degagement (pas de nav flottante en bas sur desktop)', async () => {
+  test('>= 1024px : la page n\'a pas besoin de ce degagement (pas de nav flottante en bas sur desktop), en-tete et grille partagent la meme marge horizontale', async () => {
     useMinWidth.mockReturnValue(true);
     render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
     await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Betway'));
     await waitFor(() => expect(screen.getByTestId('bank-block-stats')).toBeInTheDocument());
 
-    const page = screen.getByTestId('bank-block-header').parentElement;
-    expect(page.className).toBe('');
+    const page = screen.getByTestId('bank-block-header').closest('.bankroll-page-shell');
+    expect(page).not.toBeNull();
+    expect(page.className).not.toMatch(/bankroll-account-mobile/);
+    // L'en-tete et la grille sont tous deux des enfants DIRECTS du meme shell (meme marge
+    // horizontale partagee) -- l'en-tete n'est toujours pas un enfant de la grille elle-meme.
+    expect(screen.getByTestId('bank-block-header').closest('.bankroll-header-row').parentElement).toBe(page);
+    expect(page.querySelector('.bankroll-grid').parentElement).toBe(page);
   });
 });
 

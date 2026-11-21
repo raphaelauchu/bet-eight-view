@@ -285,24 +285,51 @@ body {
 }
 
 /* ===================== Bankroll =====================
-   <768px (mobile) : INCHANGE.
-   768-1199px (iPad) : .bankroll-grid, 2 colonnes 65%/35%.
-   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr. */
+   <1024px (mobile, seuil propre a cette page) : INCHANGE, voir .bankroll-account-mobile.
+   >=1024px : .bankroll-page-shell porte la SEULE marge/largeur horizontale partagee par la
+   ligne d'en-tete (.bankroll-header-row, Retour/pilule/...) ET la grille (.bankroll-grid) en
+   dessous -- sans ca, l'en-tete (hors de la grille, voir AccountDetail) toucherait les bords de
+   l'ecran pendant que la grille, elle, aurait son propre padding : les deux doivent avoir
+   EXACTEMENT les memes marges gauche/droite pour que Retour/la pilule ne touchent jamais la
+   barre laterale et que "..." s'aligne avec le bord droit de la colonne de droite.
+   1024-1199px (iPad paysage/petit laptop) : 2 colonnes 65%/35%, padding 24px.
+   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr, padding 32px. */
+.bankroll-page-shell {
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+  .bankroll-page-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+}
+
+.bankroll-header-row {
+  padding-top: 24px;
+}
+
+@media (min-width: 1200px) {
+  .bankroll-header-row {
+    padding-top: 32px;
+  }
+}
+
 .bankroll-grid {
   display: grid;
   grid-template-columns: 65% 35%;
   gap: 20px;
-  padding: 24px;
+  padding-bottom: 24px;
   align-items: start;
 }
 
 @media (min-width: 1200px) {
   .bankroll-grid {
-    max-width: 1400px;
-    margin: 0 auto;
     grid-template-columns: 2fr 1fr;
     gap: 28px;
-    padding: 32px;
+    padding-bottom: 32px;
   }
 }
 

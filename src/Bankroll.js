@@ -626,7 +626,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   const statCard = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '16px', border: '1px solid var(--c-161616)' };
 
   const header = (
-    <div data-testid="bank-block-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+    <div data-testid="bank-block-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
       <button onClick={onBack} style={secondaryBtn}>{t('back_btn')}</button>
       <DropdownPill
         ariaLabel={t('bank_switch_account')}
@@ -687,7 +687,10 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   // ordonnee, voir le return plus bas) differe selon isDesktopGrid -- pas de JSX duplique.
   const recentBetsBlock = (
     <div data-testid="bank-block-recent-bets">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-6px' }}>{addBetBtn}</div>
+      {/* paddingRight (pas justifyContent seul) : garde une vraie marge entre le bouton et le
+          bord droit de sa colonne (16-24px), pas seulement un alignement flush-right. marginBottom
+          positif (plus jamais negatif) : evite que le bouton chevauche la carte Recent bets. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '20px', marginBottom: '14px' }}>{addBetBtn}</div>
       <AccountBetsTable t={t} lang={lang} bets={bets} hideAmounts={hideAmounts} />
     </div>
   );
@@ -756,15 +759,21 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
       // .bankroll-account-mobile (index.css) degage la barre de navigation flottante du bas --
       // en inline style, jsdom/cssstyle ne sait pas parser calc()+env() (voir Bankroll.test.js),
       // d'ou le passage par une classe CSS plutot qu'un paddingBottom inline.
-      className={isDesktopGrid ? undefined : 'bankroll-account-mobile'}
+      // .bankroll-page-shell (desktop/iPad) : MEME marge horizontale que l'en-tete et la grille
+      // en dessous (voir index.css) -- sans cette classe partagee, l'en-tete (hors de la grille)
+      // toucherait les bords de l'ecran/la barre laterale alors que la grille, elle, aurait son
+      // propre padding.
+      className={isDesktopGrid ? 'bankroll-page-shell' : 'bankroll-account-mobile'}
       style={{
-        padding: isDesktopGrid ? '0' : '16px', maxWidth: isDesktopGrid ? 'none' : '600px', margin: isDesktopGrid ? '0' : '0 auto',
+        padding: isDesktopGrid ? undefined : '16px', maxWidth: isDesktopGrid ? undefined : '600px', margin: isDesktopGrid ? undefined : '0 auto',
         fontFamily: '-apple-system, sans-serif', boxSizing: 'border-box',
       }}>
       {/* Back / selecteur de compte / ... : seule sur toute la largeur, TOUJOURS hors de la
           grille 2 colonnes -- sinon la colonne de droite s'alignerait sur cette ligne au lieu de
-          s'aligner sur le haut de la carte bankroll (voir bankroll-grid, align-items: start). */}
-      {header}
+          s'aligner sur le haut de la carte bankroll (voir bankroll-grid, align-items: start).
+          .bankroll-header-row (desktop/iPad uniquement) lui donne son propre espacement du haut
+          -- le ~24px avant la grille vient du marginBottom:24px deja sur `header` lui-meme. */}
+      {isDesktopGrid ? <div className="bankroll-header-row">{header}</div> : header}
 
       {isDesktopGrid ? (
         <div className="bankroll-grid">
