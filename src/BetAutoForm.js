@@ -1,5 +1,6 @@
 import React from 'react';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
+import { autoBookmakerForAccount } from './bankrollCalc';
 
 export const TYPES_BET = ['Moneyline', 'Prop joueur', 'Total', 'Parlay'];
 export const STAT_VALEURS = ['buts', 'passes', 'points', 'tirs', 'hits', 'blocs'];
@@ -35,6 +36,7 @@ export function formDepuisBetAuto(data) {
     // n'est PAS forcee vers un choix arbitraire, elle retombe sur "non specifie" plutot que de
     // faire semblant qu'un bookmaker precis a ete selectionne.
     bookmaker: BOOKMAKERS_SUPPORTES.includes(data.bookmaker) ? data.bookmaker : '',
+    account_id: data.account_id || null,
     type_bet: TYPES_BET.includes(data.type_bet) ? data.type_bet : TYPES_BET[0],
     joueur_ou_equipe: data.joueur_nom || '',
     stat_pariee: !estTotal ? (mapperStatDepuisIA(data.stat_type) || STAT_VALEURS[0]) : STAT_VALEURS[0],
@@ -59,6 +61,7 @@ export function champsDBDepuisForm(form, t) {
     : null;
   return {
     bookmaker: form.bookmaker || null,
+    account_id: form.account_id || null,
     type_bet: form.type_bet,
     joueur_nom: form.type_bet === 'Prop joueur' || form.type_bet === 'Parlay' ? (form.joueur_ou_equipe || null) : null,
     equipe: form.equipe || null,
@@ -75,7 +78,7 @@ export function champsDBDepuisForm(form, t) {
 
 // Champs du formulaire, adaptes au type de pari selectionne (Moneyline / Prop joueur / Total / Parlay).
 // Partage entre BetImportFlow (creation) et BetDetailSheet (edition).
-export function BetAutoForm({ form, setForm, t }) {
+export function BetAutoForm({ form, setForm, t, accounts, onCreateAccount }) {
   const STAT_OPTIONS = STAT_VALEURS.map(v => ({ value: v, label: t(`stat_${v}`) }));
   const estMoneyline = form.type_bet === 'Moneyline';
   const estProp = form.type_bet === 'Prop joueur';
@@ -91,8 +94,28 @@ export function BetAutoForm({ form, setForm, t }) {
     );
   }
 
+  // Compte (src/Bankroll.js) : optionnel -- seuls les appelants qui connaissent la liste des
+  // comptes de l'utilisateur (BetImportFlow, BetDetailSheet) passent `accounts`. Choisir un
+  // compte derive automatiquement le bookmaker (son `kind`, voir autoBookmakerForAccount) --
+  // l'utilisateur peut toujours le corriger manuellement juste apres, ce champ reste editable.
+  function changerCompte(valeur) {
+    if (valeur === '__new__') { onCreateAccount?.(); return; }
+    const bookmakerDerive = autoBookmakerForAccount(accounts, valeur);
+    setForm({ ...form, account_id: valeur || null, bookmaker: bookmakerDerive || form.bookmaker });
+  }
+
   return (
     <>
+      {accounts && (
+        <div>
+          <div style={labelStyle}>{t('bank_form_account_label')}</div>
+          <select style={champStyle} value={form.account_id || ''} onChange={e => changerCompte(e.target.value)}>
+            <option value="">{t('bank_form_account_none')}</option>
+            {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            {onCreateAccount && <option value="__new__">{t('bank_create_account_inline')}</option>}
+          </select>
+        </div>
+      )}
       <div>
         <div style={labelStyle}>{t('import_field_bookmaker')}</div>
         <select style={champStyle} value={form.bookmaker} onChange={e => setForm({ ...form, bookmaker: e.target.value })}>

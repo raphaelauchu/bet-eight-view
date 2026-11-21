@@ -30,7 +30,7 @@ function champManuel(form, setForm, nom, label, props = {}) {
   );
 }
 
-function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, onSave }) {
+function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, onSave, accounts }) {
   const t = getT(lang);
   const [mode, setMode] = React.useState('view');
   const [formManuel, setFormManuel] = React.useState(null);
@@ -47,6 +47,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
         type_pari: d.type_pari || BET_TYPES[0].value,
         selection: d.selection || '',
         bookmaker: BOOKMAKERS_SUPPORTES.includes(d.bookmaker) ? d.bookmaker : '',
+        account_id: d.account_id || null,
         mise: d.mise ?? '',
         cote: d.cote ?? '',
         date_pari: d.date_pari ? d.date_pari.slice(0, 10) : '',
@@ -78,6 +79,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
           type_pari: formManuel.type_pari,
           selection: formManuel.selection || null,
           bookmaker: formManuel.bookmaker || null,
+          account_id: formManuel.account_id || null,
           mise: parseFloat(formManuel.mise),
           cote: parseFloat(formManuel.cote),
           date_pari: formManuel.date_pari || null,
@@ -166,6 +168,15 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
                 {BOOKMAKERS_SUPPORTES.map(b => <option key={b}>{b}</option>)}
               </select>
             </div>
+            {accounts && (
+              <div>
+                <div style={labelStyle}>{t('bank_form_account_label')}</div>
+                <select style={champStyle} value={formManuel.account_id || ''} onChange={e => setFormManuel({ ...formManuel, account_id: e.target.value || null })}>
+                  <option value="">{t('bank_form_account_none')}</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {champManuel(formManuel, setFormManuel, 'mise', t('bets_stake'), { type: 'number' })}
               {champManuel(formManuel, setFormManuel, 'cote', t('bets_odds'), { type: 'number', step: '0.01' })}
@@ -183,7 +194,7 @@ function BetDetailSheet({ item, onClose, lang = 'en', onDelete, onMarkStatut, on
 
         {mode === 'edit' && type === 'auto' && formAuto && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <BetAutoForm form={formAuto} setForm={setFormAuto} t={t} />
+            <BetAutoForm form={formAuto} setForm={setFormAuto} t={t} accounts={accounts} />
             <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
               <button onClick={() => setMode('view')} style={{ padding: '11px 20px', backgroundColor: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>{t('cancel_btn')}</button>
               <button onClick={sauvegarder} disabled={saving} style={{ flex: 1, padding: '11px 20px', background: 'linear-gradient(135deg, #f97316, #ea580c)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>

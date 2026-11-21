@@ -87,8 +87,10 @@ function LigneSportsbook({ t, utilisateur, sb, dejaInscrit, onInscrit }) {
   );
 }
 
-export function SportsbookWaitlistSheet({ t, utilisateur, onClose }) {
-  const isMobile = useIsMobile();
+// SportsbookWaitlistBody = juste la liste (sans feuille/modale) -- reutilise par
+// SportsbookWaitlistSheet (seul) ET par src/Home.js (AddSportsbookSheet, sous le titre
+// "Synchronisation automatique", a cote de la creation de compte manuelle).
+export function SportsbookWaitlistBody({ t, utilisateur }) {
   const [inscrits, setInscrits] = useState(new Set());
   const [chargement, setChargement] = useState(true);
 
@@ -105,7 +107,7 @@ export function SportsbookWaitlistSheet({ t, utilisateur, onClose }) {
     setInscrits(prev => new Set(prev).add(id));
   }
 
-  const corps = (
+  return (
     <>
       <p style={{ fontSize: '13px', color: 'var(--c-666)', margin: '0 0 8px', lineHeight: '1.5' }}>{t('sportsbook_intro')}</p>
       {chargement ? (
@@ -117,6 +119,11 @@ export function SportsbookWaitlistSheet({ t, utilisateur, onClose }) {
       )}
     </>
   );
+}
+
+export function SportsbookWaitlistSheet({ t, utilisateur, onClose }) {
+  const isMobile = useIsMobile();
+  const corps = <SportsbookWaitlistBody t={t} utilisateur={utilisateur} />;
 
   if (isMobile) {
     return (

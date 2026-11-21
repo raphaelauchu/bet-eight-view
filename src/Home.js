@@ -4,11 +4,17 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
 import { useIsMobile, getDateStr } from './Analyses';
-import { titreBetAuto } from './Dashboard';
+import { titreBetAuto } from './betDisplay';
 import { WealthsimpleChart } from './WealthsimpleChart';
 import { useFavorisData, IconExpand, IconFilter, IconStarFilled, TablePicks, TableWatchlist, EtatVideFavoris } from './Favoris';
 import { ShareStatsButton } from './ShareStats';
-import { AddSportsbookButton, SportsbookWaitlistSheet } from './SportsbookWaitlist';
+import { AddSportsbookButton, SportsbookWaitlistBody } from './SportsbookWaitlist';
+import { AddAccountBody } from './AddAccountBody';
+import { BottomSheet } from './BottomSheet';
+import {
+  normalizeAllBets, betsForAccount, settledBets, isWithinPeriod,
+  computeGlobalBankroll, computeBankrollSeries,
+} from './bankrollCalc';
 
 // ===================== Persistance locale (masquer les montants) =====================
 // try/catch systematique : localStorage peut etre indisponible (navigation privee, quota
@@ -212,6 +218,39 @@ function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
   );
 }
 
+// Feuille ouverte par "Ajouter un sportsbook" (GreetingBanner) : une vraie creation de compte
+// manuel (src/AddAccountBody.js -- memes 4 sportsbooks reconnus + "Autre") en haut, et la liste
+// d'attente de synchronisation automatique (src/SportsbookWaitlist.js, aucune connexion reelle
+// n'existe encore) en dessous, sous le titre "Synchronisation automatique". `existingKinds`
+// (comptes deja crees par l'utilisateur) evite de proposer deux fois le meme sportsbook.
+function AddSportsbookSheet({ t, utilisateur, existingKinds, onClose, onAccountCreated }) {
+  const corps = (
+    <>
+      <AddAccountBody t={t} utilisateur={utilisateur} existingKinds={existingKinds} onCreated={(compte) => { onAccountCreated(compte); onClose(); }} />
+      <div style={{ height: '1px', backgroundColor: 'var(--c-1a1a1a)', margin: '18px 0 14px' }} />
+      <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-555)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{t('sportsbook_auto_sync_heading')}</div>
+      <SportsbookWaitlistBody t={t} utilisateur={utilisateur} />
+    </>
+  );
+
+  const isMobileSheet = useIsMobile();
+  if (isMobileSheet) {
+    return <BottomSheet onClose={onClose} title={t('sportsbook_add_title')}>{corps}</BottomSheet>;
+  }
+  return createPortal(
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 2200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '420px', maxHeight: '85vh', overflowY: 'auto', backgroundColor: 'var(--c-111)', border: '1px solid var(--c-222)', borderRadius: '18px', padding: '20px', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--c-white)' }}>{t('sportsbook_add_title')}</span>
+          <button onClick={onClose} aria-label={t('favoris_retour')} style={{ width: '32px', height: '32px', minHeight: '32px', borderRadius: '50%', border: '1px solid var(--c-222)', background: 'none', color: 'var(--c-888)', cursor: 'pointer', fontSize: '15px' }}>✕</button>
+        </div>
+        {corps}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ===================== Bankroll + courbe de profit fusionnees (un seul bloc, sans cadre) =====================
 
 const CHART_PERIODS = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
@@ -221,37 +260,27 @@ const PERIOD_SUFFIX_KEYS = {
   '1y': 'home_period_suffix_1y', 'all': 'home_period_suffix_all',
 };
 
-const JOURS_PAR_PERIODE = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
-
-// Total mise des paris regles dans la periode choisie (meme fenetre que computeChartSeries) --
-// sert de denominateur au ROI affiche sous la grande valeur, pour que "ROI" signifie la meme
-// chose ici que sur la page Aperçu de la performance (profit / mises), pas juste "% du solde
-// de depart de la courbe".
-function miseTotalePourPeriode(parisTraites, periode) {
-  const maintenant = new Date();
-  return (parisTraites || []).filter(p => {
-    if (!p.date_pari) return false;
-    if (periode === 'all') return true;
-    const d = new Date(p.date_pari);
-    if (periode === 'ytd') return d.getFullYear() === maintenant.getFullYear();
-    return (maintenant - d) / 86400000 <= JOURS_PAR_PERIODE[periode];
-  }).reduce((a, p) => a + (Number(p.mise) || 0), 0);
-}
 
 // Le texte de variation sous la grande valeur suit la periode/le mode selectionnes dans le
 // graphique (et le point survole, le cas echeant) -- JAMAIS la grande valeur elle-meme en mode
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
 // Toujours affichee (meme a $0.00 sans aucun pari) -- jamais masquee faute de donnees.
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, parisTraites, betsLoading, betsPourPartage }) {
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, betsGlobal, betsLoading, betsPourPartage }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
   const [hoverPoint, setHoverPoint] = useState(null);
   const display = bankroll != null ? bankroll.toFixed(2) : null;
 
-  const { values, dates } = useMemo(() => computeChartSeries(parisTraites, period, mode), [parisTraites, period, mode]);
+  // Courbe = profit cumulatif des paris regles de TOUS les comptes non archives (src/Bankroll.js,
+  // src/bankrollCalc.js) -- jamais les depots/retraits, voir computeBankrollSeries. betsGlobal est
+  // deja la fusion paris+bets_auto normalisee, filtree aux comptes non archives (voir HomeDashboard).
+  const { values, dates } = useMemo(() => computeBankrollSeries(betsGlobal, period, mode), [betsGlobal, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
-  const miseTotalePeriode = useMemo(() => miseTotalePourPeriode(parisTraites, period), [parisTraites, period]);
+  const miseTotalePeriode = useMemo(() => {
+    const now = new Date();
+    return settledBets(betsGlobal).filter(b => isWithinPeriod(b.dateSettlement, period, now)).reduce((a, b) => a + (b.stake || 0), 0);
+  }, [betsGlobal, period]);
 
   useEffect(() => { setHoverPoint(null); }, [period, mode]);
 
@@ -712,9 +741,10 @@ function ComingSoonOverlay({ t, onClose }) {
 
 function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, bankrollLoading, parisTraites,
+    displayName, bankroll, bankrollLoading, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
+    accounts, onAccountCreated,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -749,7 +779,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
           <BankrollHeroChart
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
             hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-            parisTraites={parisTraites} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+            betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
           />
           <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
           <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
@@ -764,7 +794,14 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
       </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
-      {sportsbookOuvert && <SportsbookWaitlistSheet t={t} utilisateur={utilisateur} onClose={() => setSportsbookOuvert(false)} />}
+      {sportsbookOuvert && (
+        <AddSportsbookSheet
+          t={t} utilisateur={utilisateur}
+          existingKinds={new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind))}
+          onAccountCreated={onAccountCreated}
+          onClose={() => setSportsbookOuvert(false)}
+        />
+      )}
     </div>
   );
 }
@@ -777,9 +814,10 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
 
 function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, bankrollLoading, parisTraites,
+    displayName, bankroll, bankrollLoading, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
+    accounts, onAccountCreated,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -811,7 +849,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       <BankrollHeroChart
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
         hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-        parisTraites={parisTraites} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+        betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
       />
 
       <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
@@ -831,7 +869,14 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       </div>
 
       {showComingSoon && <ComingSoonOverlay t={t} onClose={() => setShowComingSoon(false)} />}
-      {sportsbookOuvert && <SportsbookWaitlistSheet t={t} utilisateur={utilisateur} onClose={() => setSportsbookOuvert(false)} />}
+      {sportsbookOuvert && (
+        <AddSportsbookSheet
+          t={t} utilisateur={utilisateur}
+          existingKinds={new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind))}
+          onAccountCreated={onAccountCreated}
+          onClose={() => setSportsbookOuvert(false)}
+        />
+      )}
     </div>
   );
 }
@@ -843,8 +888,9 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   const isMobile = useIsMobile();
 
   const [firstName, setFirstName] = useState('');
-  const [bankroll, setBankroll] = useState(null);
-  const [bankrollLoading, setBankrollLoading] = useState(true);
+  const [accounts, setAccounts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
   const [paris, setParis] = useState([]);
   const [betsAuto, setBetsAuto] = useState([]);
   const [betsLoading, setBetsLoading] = useState(true);
@@ -861,9 +907,17 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     if (!utilisateur?.id) return;
     supabase.from('profiles').select('first_name').eq('id', utilisateur.id).single()
       .then(({ data }) => { if (data?.first_name) setFirstName(data.first_name); });
-    supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).maybeSingle()
-      .then(({ data }) => { setBankroll(data ? data.montant : 0); setBankrollLoading(false); })
-      .catch(() => setBankrollLoading(false));
+    // Bankroll globale (src/Bankroll.js, src/bankrollCalc.js) = somme des soldes de tous les
+    // comptes non archives -- plus jamais lue directement depuis bankroll.montant (colonne
+    // conservee uniquement pour la migration historique, voir supabase/migrations/20261121_*).
+    Promise.all([
+      supabase.from('bankroll_accounts').select('*').eq('user_id', utilisateur.id),
+      supabase.from('bankroll_transactions').select('*').eq('user_id', utilisateur.id),
+    ]).then(([accRes, txRes]) => {
+      setAccounts(accRes.data || []);
+      setTransactions(txRes.data || []);
+      setAccountsLoading(false);
+    }).catch(() => setAccountsLoading(false));
     Promise.all([
       supabase.from('paris').select('*').eq('user_id', utilisateur.id).order('date_pari', { ascending: false }),
       supabase.from('bets_auto').select('*').eq('user_id', utilisateur.id).order('created_at', { ascending: false }),
@@ -914,10 +968,27 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   const betsPourPartage = paris.map(p => ({ date: p.date_pari, profit: Number(p.profit) || 0, mise: Number(p.mise) || 0, statut: p.statut, type: null }))
     .concat(betsAuto.map(b => ({ date: b.verified_at || b.created_at, profit: Number(b.resultat) || 0, mise: Number(b.mise) || 0, statut: b.statut === 'pending' ? 'actif' : b.statut, type: b.type_bet || null })));
 
+  // Bankroll globale = somme des soldes de tous les comptes non archives (src/bankrollCalc.js,
+  // meme calcul que src/Bankroll.js:BankrollOverview -- les deux doivent TOUJOURS afficher le
+  // meme total). betsGlobal (fusion paris+bets_auto normalisee) alimente la courbe de
+  // BankrollHeroChart : inclut aussi les paris sans compte (account_id NULL, jamais exclus par
+  // une archive puisqu'ils n'appartiennent a aucun compte).
+  const allBets = useMemo(() => normalizeAllBets(paris, betsAuto), [paris, betsAuto]);
+  const accountsNonArchivees = useMemo(() => new Set(accounts.filter(a => !a.archived_at).map(a => a.id)), [accounts]);
+  const accountsWithData = useMemo(() => accounts.map(a => ({
+    archivedAt: a.archived_at,
+    transactions: transactions.filter(tx => tx.account_id === a.id),
+    bets: betsForAccount(allBets, a.id),
+  })), [accounts, transactions, allBets]);
+  const bankroll = useMemo(() => computeGlobalBankroll(accountsWithData), [accountsWithData]);
+  const betsGlobal = useMemo(() => allBets.filter(b => b.accountId == null || accountsNonArchivees.has(b.accountId)), [allBets, accountsNonArchivees]);
+  const bankrollLoading = accountsLoading || betsLoading;
+
   const sharedData = {
-    displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites,
+    displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
+    accounts, onAccountCreated: (compte) => setAccounts(prev => [...prev, compte]),
   };
 
   if (isMobile) {

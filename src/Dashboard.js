@@ -7,13 +7,10 @@ import BetDetailSheet from './BetDetailSheet';
 import { fichierVersJpegBase64 } from './imageUtils';
 import { BET_TYPES } from './betTypes';
 import { useIsMobile } from './Analyses';
+import { AddAccountSheet } from './Bankroll';
+import { titreBetAuto } from './betDisplay';
 
-// Titre d'affichage d'un bet importe : joueur (prop) > equipe misee (moneyline) > type
-export function titreBetAuto(bet) {
-  if (bet.joueur_nom) return `${bet.joueur_nom} — ${bet.stat_type || ''} ${bet.ligne ?? ''}`.trim();
-  if (bet.equipe) return `${bet.equipe} vs ${bet.adversaire || '?'}`;
-  return bet.type_bet || '—';
-}
+export { titreBetAuto };
 
 function Dashboard({ lang = 'en' }) {
   const t = getT(lang);
@@ -37,6 +34,17 @@ function Dashboard({ lang = 'en' }) {
   const [filtreRecherche, setFiltreRecherche] = useState('');
   const [showFiltresAvances, setShowFiltresAvances] = useState(false);
   const [erreurAction, setErreurAction] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [utilisateur, setUtilisateur] = useState(null);
+  // Resolveur de la promesse rendue par onCreateAccount (voir BetAutoForm.js:changerCompte) --
+  // tant qu'il n'est pas null, la feuille "Ajouter un compte" est affichee ; se resout avec le
+  // compte cree (ou null si l'utilisateur annule) pour que le formulaire de pari en cours puisse
+  // selectionner ce nouveau compte sans jamais fermer/rouvrir le flux d'import.
+  const [accountSheetResolve, setAccountSheetResolve] = useState(null);
+
+  function demanderCreationCompte() {
+    return new Promise(resolve => setAccountSheetResolve(() => resolve));
+  }
 
   function signalerErreur(contexte, error) {
     console.error(contexte, error);
@@ -48,6 +56,7 @@ function Dashboard({ lang = 'en' }) {
   async function chargerDonnees() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      setUtilisateur(user);
       const { data: dataParis, error: errorParis } = await supabase.from('paris').select('*').eq('user_id', user.id).order('date_pari', { ascending: false });
       if (!errorParis) setParis(dataParis || []);
       const { data: dataBankroll, error: errorBankroll } = await supabase.from('bankroll').select('*').eq('user_id', user.id).maybeSingle();
@@ -60,6 +69,8 @@ function Dashboard({ lang = 'en' }) {
       }
       const { data: dataBetsAuto, error: errorBetsAuto } = await supabase.from('bets_auto').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       if (!errorBetsAuto) setBetsAuto(dataBetsAuto || []);
+      const { data: dataAccounts } = await supabase.from('bankroll_accounts').select('*').eq('user_id', user.id).is('archived_at', null).order('created_at', { ascending: true });
+      setAccounts(dataAccounts || []);
 
       // TODO (parsers): une fois les parsers email branchés, cette liste sera peuplée
       // automatiquement par une Edge Function / job qui lit les courriels de confirmation
@@ -300,6 +311,8 @@ function Dashboard({ lang = 'en' }) {
   if (chargement) return <div style={{ padding: '80px', textAlign: 'center', color: 'var(--c-555)' }}>Loading...</div>;
 
   const miseActiveTotal = actifsCombines.reduce((a, e) => a + (parseFloat(e.data.mise) || 0), 0);
+  const comptePrincipal = accounts.find(a => a.kind === 'other' && a.name === 'Principal');
+  const existingKinds = new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind));
 
   const contenuPrincipal = (
     <>
@@ -345,6 +358,17 @@ function Dashboard({ lang = 'en' }) {
           onClose={() => { setAfficherImport(false); setImageImport(null); }}
           onEnregistrer={importerBetAuto}
           onImported={() => { setAfficherImport(false); setImageImport(null); }}
+          accounts={accounts}
+          defaultAccountId={comptePrincipal?.id || null}
+          onCreateAccount={demanderCreationCompte}
+        />
+      )}
+
+      {accountSheetResolve && (
+        <AddAccountSheet
+          t={t} utilisateur={utilisateur} existingKinds={existingKinds}
+          onClose={() => { accountSheetResolve(null); setAccountSheetResolve(null); }}
+          onCreated={(compte) => { setAccounts(prev => [...prev, compte]); accountSheetResolve(compte); setAccountSheetResolve(null); }}
         />
       )}
 
@@ -508,6 +532,7 @@ function Dashboard({ lang = 'en' }) {
         onDelete={supprimerDepuisFiche}
         onMarkStatut={marquerStatutDepuisFiche}
         onSave={sauvegarderDepuisFiche}
+        accounts={accounts}
       />
 
       {onglet === 'bankroll' && (

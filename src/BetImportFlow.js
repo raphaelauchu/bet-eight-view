@@ -4,10 +4,15 @@ import { getT } from './i18n';
 import { trouverGameId } from './nhlGameLookup';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
 import { TYPES_BET, TYPE_BET_DEPUIS_IA, STAT_VALEURS, mapperStatDepuisIA, champsDBDepuisForm, champStyle, labelStyle, BetAutoForm } from './BetAutoForm';
+import { BOOKMAKER_VERS_KIND } from './bankrollCalc';
 
 // apercu / imageBase64 : image deja choisie et normalisee par Dashboard.js
 // (le flow n'affiche plus de choix camera/galerie, il part directement de l'apercu)
-function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, onEnregistrer }) {
+// `accounts`/`defaultAccountId`/`onCreateAccount` (optionnels) : liste des comptes de bankroll
+// de l'utilisateur (src/Bankroll.js) -- defaultAccountId preselectionne le compte (ex. venant
+// d'une page de compte precise) ; sans lui, un bookmaker detecte par l'IA (voir analyser())
+// selectionne automatiquement le compte correspondant s'il existe.
+function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, onEnregistrer, accounts, defaultAccountId, onCreateAccount }) {
   const t = getT(lang);
   const [step, setStep] = React.useState(1);
   const [analysing, setAnalysing] = React.useState(false);
@@ -15,6 +20,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
     bookmaker: '', // sportsbook d'origine : optionnel, pas de choix impose par defaut
+    account_id: defaultAccountId || null,
     joueur_ou_equipe: '',
     type_bet: TYPES_BET[0],
     stat_pariee: STAT_VALEURS[0],
@@ -42,9 +48,16 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
       });
       if (error || data?.error) throw new Error(data?.error || error.message);
       const extrait = data.data || {};
+      const bookmakerDetecte = BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : '';
+      // Sans compte deja impose (defaultAccountId), fait correspondre le bookmaker detecte par
+      // l'IA a un compte existant de l'utilisateur (meme mapping que la migration SQL) --
+      // jamais ecrase un compte deja selectionne/impose.
+      const kindDetecte = BOOKMAKER_VERS_KIND[bookmakerDetecte];
+      const compteCorrespondant = !defaultAccountId && kindDetecte ? (accounts || []).find(a => a.kind === kindDetecte) : null;
       setForm(f => ({
         ...f,
-        bookmaker: BOOKMAKERS_SUPPORTES.includes(extrait.bookmaker) ? extrait.bookmaker : '',
+        bookmaker: bookmakerDetecte,
+        account_id: compteCorrespondant ? compteCorrespondant.id : f.account_id,
         joueur_ou_equipe: extrait.joueur_ou_equipe || '',
         type_bet: TYPE_BET_DEPUIS_IA[extrait.type_bet] || TYPES_BET[0],
         stat_pariee: mapperStatDepuisIA(extrait.stat_pariee) || STAT_VALEURS[0],
@@ -131,7 +144,7 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
       {step === 2 && (
         <div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
-            <BetAutoForm form={form} setForm={setForm} t={t} />
+            <BetAutoForm form={form} setForm={setForm} t={t} accounts={accounts} onCreateAccount={onCreateAccount} />
             <div>
               <div style={labelStyle}>{t('import_field_potential')}</div>
               <div style={{ ...champStyle, backgroundColor: '#080808', color: '#22c55e', fontWeight: '700' }}>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { readHideAmounts, MaskedDots } from './Home';
-import { titreBetAuto } from './Dashboard';
+import { titreBetAuto } from './betDisplay';
 import { DropdownPill } from './DropdownPill';
 import { ShareStatsButton } from './ShareStats';
 

@@ -76,7 +76,8 @@ test('readHideAmounts/writeHideAmounts : try/catch si localStorage indisponible'
 function tableResult(table) {
   const map = {
     profiles: { data: { first_name: 'Alex' }, error: null },
-    bankroll: { data: { montant: 500 }, error: null },
+    bankroll_accounts: { data: [{ id: 'acc1', user_id: 'u1', name: 'Principal', kind: 'other', archived_at: null }], error: null },
+    bankroll_transactions: { data: [{ id: 'tx1', account_id: 'acc1', type: 'deposit', amount: 500 }], error: null },
     paris: { data: [], error: null },
     bets_auto: { data: [], error: null },
     pool_members: { data: [], error: null },
