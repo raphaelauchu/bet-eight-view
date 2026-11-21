@@ -276,6 +276,21 @@ test('desktop/tablette : ligne de variation toujours visible meme sans aucun par
   expect(screen.getByText('+$0.00 (+0.0% ROI) ce mois →')).toBeInTheDocument();
 });
 
+test('desktop/tablette : nouvel utilisateur sans aucun compte -- bankroll a 0$, etat vide "Ajoute ton premier compte", pas de courbe', async () => {
+  writeHideAmounts(false);
+  supabase.from.mockImplementation((table) => {
+    if (table === 'bankroll_accounts') return mockQuery({ data: [], error: null });
+    if (table === 'bankroll_transactions') return mockQuery({ data: [], error: null });
+    return mockQuery(tableResult(table));
+  });
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+  await waitFor(() => expect(screen.getByText('$0.00')).toBeInTheDocument());
+  expect(screen.getByText('Ajoute ton premier compte')).toBeInTheDocument();
+  expect(screen.getByText('+ Ajouter un compte')).toBeInTheDocument();
+  // Aucune ligne de variation/ROI ni courbe tant qu'il n'y a aucun compte reel.
+  expect(screen.queryByText(/ROI\)/)).not.toBeInTheDocument();
+});
+
 test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stats seulement', async () => {
   writeHideAmounts(false);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);

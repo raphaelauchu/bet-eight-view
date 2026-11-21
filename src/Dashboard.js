@@ -311,7 +311,11 @@ function Dashboard({ lang = 'en' }) {
   if (chargement) return <div style={{ padding: '80px', textAlign: 'center', color: 'var(--c-555)' }}>Loading...</div>;
 
   const miseActiveTotal = actifsCombines.reduce((a, e) => a + (parseFloat(e.data.mise) || 0), 0);
-  const comptePrincipal = accounts.find(a => a.kind === 'other' && a.name === 'Principal');
+  // Aucun compte "Principal" par defaut (voir src/Bankroll.js) : le premier compte existant de
+  // l'utilisateur sert de pre-selection raisonnable, sans fallback cache. S'il n'a encore aucun
+  // compte, aucune pre-selection n'est possible -- voir BetAutoForm.js, qui propose alors de
+  // creer un compte avant d'enregistrer.
+  const premierCompte = accounts[0] || null;
   const existingKinds = new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind));
 
   const contenuPrincipal = (
@@ -359,7 +363,7 @@ function Dashboard({ lang = 'en' }) {
           onEnregistrer={importerBetAuto}
           onImported={() => { setAfficherImport(false); setImageImport(null); }}
           accounts={accounts}
-          defaultAccountId={comptePrincipal?.id || null}
+          defaultAccountId={premierCompte?.id || null}
           onCreateAccount={demanderCreationCompte}
         />
       )}

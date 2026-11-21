@@ -1,0 +1,13 @@
+-- Supprime le concept de compte "Principal"/"Fonds non assignes" introduit (par erreur) par la
+-- version initiale de 20261121_bankroll_accounts.sql. Idempotente : sans effet si aucun compte
+-- "Principal" n'existe (deploiement neuf, ou cette migration deja executee).
+--
+-- Aucune reassignation : les paris/bets_auto rattaches a un compte "Principal" redeviennent
+-- simplement sans compte (account_id -> NULL, via la contrainte "on delete set null" deja
+-- presente sur paris.account_id/bets_auto.account_id). Les transactions du compte "Principal"
+-- (depot initial migre automatiquement) sont supprimees avec lui ("on delete cascade" sur
+-- bankroll_transactions.account_id) -- aucun "fonds non assigne" ne les remplace : elles
+-- disparaissent, conformement a la demande explicite de ne garder aucune notion de compte
+-- cache/par defaut. La bankroll globale (src/bankrollCalc.js:computeGlobalBankroll) redevient
+-- alors exactement la somme des comptes reels restants de l'utilisateur.
+delete from bankroll_accounts where name = 'Principal' and kind = 'other';

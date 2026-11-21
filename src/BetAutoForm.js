@@ -1,6 +1,6 @@
 import React from 'react';
 import { BOOKMAKERS_SUPPORTES } from './bookmakers';
-import { autoBookmakerForAccount } from './bankrollCalc';
+import { autoBookmakerForAccount, bookmakerDepuisKind } from './bankrollCalc';
 
 export const TYPES_BET = ['Moneyline', 'Prop joueur', 'Total', 'Parlay'];
 export const STAT_VALEURS = ['buts', 'passes', 'points', 'tirs', 'hits', 'blocs'];
@@ -98,15 +98,42 @@ export function BetAutoForm({ form, setForm, t, accounts, onCreateAccount }) {
   // comptes de l'utilisateur (BetImportFlow, BetDetailSheet) passent `accounts`. Choisir un
   // compte derive automatiquement le bookmaker (son `kind`, voir autoBookmakerForAccount) --
   // l'utilisateur peut toujours le corriger manuellement juste apres, ce champ reste editable.
-  function changerCompte(valeur) {
-    if (valeur === '__new__') { onCreateAccount?.(); return; }
-    const bookmakerDerive = autoBookmakerForAccount(accounts, valeur);
-    setForm({ ...form, account_id: valeur || null, bookmaker: bookmakerDerive || form.bookmaker });
+  // Aucun compte par defaut/cache : "Aucun compte" est une option explicite et visible (le pari
+  // ne compte alors dans aucun total), jamais un repli silencieux vers un compte "Principal".
+  function selectionnerCompte(compteId) {
+    const bookmakerDerive = autoBookmakerForAccount(accounts, compteId);
+    setForm({ ...form, account_id: compteId || null, bookmaker: bookmakerDerive || form.bookmaker });
+  }
+
+  // onCreateAccount (optionnel) renvoie une promesse resolue avec le compte cree (ou null si
+  // l'utilisateur annule) -- une fois cree, il est immediatement selectionne ici, sans retour
+  // manuel au menu deroulant. Le bookmaker est derive directement du `kind` du compte renvoye
+  // (pas via selectionnerCompte/autoBookmakerForAccount, qui cherchent dans la prop `accounts` --
+  // potentiellement pas encore mise a jour au moment ou cette promesse se resout).
+  async function creerEtSelectionnerCompte() {
+    const nouveauCompte = await onCreateAccount?.();
+    if (!nouveauCompte) return;
+    const bookmakerDerive = bookmakerDepuisKind(nouveauCompte.kind);
+    setForm({ ...form, account_id: nouveauCompte.id, bookmaker: bookmakerDerive || form.bookmaker });
+  }
+
+  async function changerCompte(valeur) {
+    if (valeur === '__new__') { await creerEtSelectionnerCompte(); return; }
+    selectionnerCompte(valeur);
   }
 
   return (
     <>
-      {accounts && (
+      {accounts && accounts.length === 0 && onCreateAccount ? (
+        // Aucun compte du tout : propose explicitement d'en creer un avant d'enregistrer
+        // (jamais de compte cache/par defaut cree a la place) -- voir onCreateAccount.
+        <div style={{ padding: '14px', borderRadius: '10px', border: '1px dashed #333', backgroundColor: '#0d0d0d', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 10px', color: '#888', fontSize: '13px' }}>{t('bank_form_no_account_yet')}</p>
+          <button type="button" onClick={creerEtSelectionnerCompte} style={{ padding: '9px 16px', borderRadius: '20px', border: 'none', backgroundColor: '#f97316', color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+            {t('bank_add_account_cta')}
+          </button>
+        </div>
+      ) : accounts && (
         <div>
           <div style={labelStyle}>{t('bank_form_account_label')}</div>
           <select style={champStyle} value={form.account_id || ''} onChange={e => changerCompte(e.target.value)}>

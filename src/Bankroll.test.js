@@ -27,11 +27,11 @@ function mockQuery(result) {
 }
 
 const ACCOUNTS = [
-  { id: 'acc-principal', user_id: 'u1', name: 'Principal', kind: 'other', created_at: '2026-01-01', archived_at: null },
+  { id: 'acc-autre', user_id: 'u1', name: 'Épargne', kind: 'other', created_at: '2026-01-01', archived_at: null },
   { id: 'acc-betway', user_id: 'u1', name: 'Betway', kind: 'betway', created_at: '2026-01-02', archived_at: null },
 ];
 const TRANSACTIONS = [
-  { id: 'tx1', user_id: 'u1', account_id: 'acc-principal', type: 'deposit', amount: 500, occurred_on: '2026-01-01', note: null },
+  { id: 'tx1', user_id: 'u1', account_id: 'acc-autre', type: 'deposit', amount: 500, occurred_on: '2026-01-01', note: null },
   { id: 'tx2', user_id: 'u1', account_id: 'acc-betway', type: 'deposit', amount: 200, occurred_on: '2026-01-02', note: null },
 ];
 const PARIS = [];
@@ -62,10 +62,10 @@ beforeEach(() => {
 describe('vue d\'ensemble', () => {
   test('affiche la bankroll globale (somme des comptes) et une carte par compte', async () => {
     render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
-    // Principal : 500 (depot) + 0 (aucun pari) = 500. Betway : 200 (depot) + 50 (profit) = 250.
+    // Épargne : 500 (depot) + 0 (aucun pari) = 500. Betway : 200 (depot) + 50 (profit) = 250.
     // Global = 750.
     await waitFor(() => expect(screen.getByText('$750.00')).toBeInTheDocument());
-    expect(screen.getByText('Principal')).toBeInTheDocument();
+    expect(screen.getByText('Épargne')).toBeInTheDocument();
     expect(screen.getByText('Betway')).toBeInTheDocument();
     expect(screen.getByText('$500.00')).toBeInTheDocument();
     expect(screen.getByText('$250.00')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('vue d\'ensemble', () => {
   test('etat vide quand l\'utilisateur n\'a aucun compte', async () => {
     setupSupabase({ accounts: [], transactions: [], betsAuto: [] });
     render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
-    await waitFor(() => expect(screen.getByText('Aucun compte pour le moment')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Ajoute ton premier compte')).toBeInTheDocument());
     expect(screen.getAllByText('+ Ajouter un compte').length).toBeGreaterThan(0);
   });
 
@@ -85,6 +85,55 @@ describe('vue d\'ensemble', () => {
     await waitFor(() => expect(screen.getByText('Paris récents')).toBeInTheDocument());
     expect(screen.getByText('Ajouter de l’argent')).toBeInTheDocument();
     expect(screen.getByText('Retirer')).toBeInTheDocument();
+  });
+});
+
+describe('nouvel utilisateur (aucun compte -- plus de "Principal" auto-cree)', () => {
+  beforeEach(() => {
+    setupSupabase({ accounts: [], transactions: [], paris: [], betsAuto: [] });
+  });
+
+  test('total a 0$ et etat vide soigne avec la pilule "+ Ajouter un compte"', async () => {
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('$0.00')).toBeInTheDocument());
+    expect(screen.getByText('Ajoute ton premier compte')).toBeInTheDocument();
+    expect(screen.getAllByText('+ Ajouter un compte').length).toBeGreaterThan(0);
+    // Aucune trace d'un compte "Principal" nulle part dans la page.
+    expect(screen.queryByText('Principal')).not.toBeInTheDocument();
+  });
+
+  test('"+ Ajouter un compte" cree exactement le compte choisi par l\'utilisateur, jamais un "Principal" automatique', async () => {
+    const insertedAccounts = [];
+    supabase.from.mockImplementation((table) => {
+      if (table === 'bankroll_accounts') {
+        return {
+          select: () => mockQuery({ data: insertedAccounts.map((p, i) => ({ id: `new-acc-${i}`, archived_at: null, ...p })), error: null }),
+          insert: (payload) => {
+            insertedAccounts.push(payload);
+            return { select: () => ({ single: () => Promise.resolve({ data: { id: `new-acc-${insertedAccounts.length - 1}`, ...payload, archived_at: null }, error: null }) }) };
+          },
+        };
+      }
+      if (table === 'bankroll_transactions') return mockQuery({ data: [], error: null });
+      if (table === 'paris') return mockQuery({ data: [], error: null });
+      if (table === 'bets_auto') return mockQuery({ data: [], error: null });
+      return mockQuery({ data: [], error: null });
+    });
+
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Ajoute ton premier compte')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByText('+ Ajouter un compte')[0]);
+    await waitFor(() => expect(screen.getByText('Betway', { selector: 'button' })).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway', { selector: 'button' }));
+    await waitFor(() => expect(screen.getByText('Créer le compte')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Créer le compte'));
+
+    await waitFor(() => expect(insertedAccounts.length).toBe(1));
+    expect(insertedAccounts[0].name).toBe('Betway');
+    expect(insertedAccounts[0].name).not.toBe('Principal');
+    await waitFor(() => expect(screen.getByText('Comptes')).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Ajoute ton premier compte')).not.toBeInTheDocument());
   });
 });
 

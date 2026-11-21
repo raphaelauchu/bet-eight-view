@@ -266,7 +266,7 @@ const PERIOD_SUFFIX_KEYS = {
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
 // Toujours affichee (meme a $0.00 sans aucun pari) -- jamais masquee faute de donnees.
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, betsGlobal, betsLoading, betsPourPartage }) {
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, betsGlobal, betsLoading, betsPourPartage, hasAccounts, onAddAccount }) {
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
   const [hoverPoint, setHoverPoint] = useState(null);
@@ -330,7 +330,7 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
         </div>
       )}
 
-      {!chargementValeur && (
+      {!chargementValeur && hasAccounts && (
         <div style={{ marginBottom: '22px' }}>
           <button
             onClick={() => onGoToPerformance(period)}
@@ -341,7 +341,19 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
         </div>
       )}
 
-      {betsLoading ? <SkeletonBlock height={160} /> : (
+      {/* Aucun compte (src/Bankroll.js) : etat vide a la place de la courbe -- la bankroll
+          globale reste $0.00 ci-dessus (somme de zero compte), jamais un compte "Principal"
+          cache ne vient la remplacer. */}
+      {!bankrollLoading && !hasAccounts ? (
+        <div style={{ textAlign: 'center', padding: '28px 12px', backgroundColor: 'var(--c-0a0a0a)', borderRadius: '14px', border: '1px dashed var(--c-222)' }}>
+          <div style={{ fontSize: '26px', marginBottom: '8px' }}>💰</div>
+          <p style={{ margin: '0 0 4px', color: 'var(--c-white)', fontWeight: '700', fontSize: '14px' }}>{t('home_bankroll_empty_title')}</p>
+          <p style={{ margin: '0 0 14px', color: 'var(--c-555)', fontSize: '13px' }}>{t('home_bankroll_empty_body')}</p>
+          <button onClick={onAddAccount} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', borderRadius: '20px', border: 'none', backgroundColor: '#f97316', color: 'white', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+            {t('bank_add_account_cta')}
+          </button>
+        </div>
+      ) : betsLoading ? <SkeletonBlock height={160} /> : (
         <WealthsimpleChart
           lang={lang}
           points={points}
@@ -744,7 +756,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
     displayName, bankroll, bankrollLoading, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
-    accounts, onAccountCreated,
+    accounts, hasAccounts, onAccountCreated,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -780,6 +792,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
             hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
             betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+            hasAccounts={hasAccounts} onAddAccount={() => setSportsbookOuvert(true)}
           />
           <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
           <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
@@ -817,7 +830,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
     displayName, bankroll, bankrollLoading, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
-    accounts, onAccountCreated,
+    accounts, hasAccounts, onAccountCreated,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -850,6 +863,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
         hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
         betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+        hasAccounts={hasAccounts} onAddAccount={() => setSportsbookOuvert(true)}
       />
 
       <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
@@ -970,9 +984,9 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
 
   // Bankroll globale = somme des soldes de tous les comptes non archives (src/bankrollCalc.js,
   // meme calcul que src/Bankroll.js:BankrollOverview -- les deux doivent TOUJOURS afficher le
-  // meme total). betsGlobal (fusion paris+bets_auto normalisee) alimente la courbe de
-  // BankrollHeroChart : inclut aussi les paris sans compte (account_id NULL, jamais exclus par
-  // une archive puisqu'ils n'appartiennent a aucun compte).
+  // meme total). Aucun compte "Principal"/par defaut : betsGlobal (fusion paris+bets_auto
+  // normalisee) EXCLUT les paris sans compte (account_id NULL) -- ils ne comptent dans aucun
+  // total tant qu'ils ne sont pas rattaches a un compte reel, voir src/Bankroll.js.
   const allBets = useMemo(() => normalizeAllBets(paris, betsAuto), [paris, betsAuto]);
   const accountsNonArchivees = useMemo(() => new Set(accounts.filter(a => !a.archived_at).map(a => a.id)), [accounts]);
   const accountsWithData = useMemo(() => accounts.map(a => ({
@@ -981,14 +995,15 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     bets: betsForAccount(allBets, a.id),
   })), [accounts, transactions, allBets]);
   const bankroll = useMemo(() => computeGlobalBankroll(accountsWithData), [accountsWithData]);
-  const betsGlobal = useMemo(() => allBets.filter(b => b.accountId == null || accountsNonArchivees.has(b.accountId)), [allBets, accountsNonArchivees]);
+  const betsGlobal = useMemo(() => allBets.filter(b => accountsNonArchivees.has(b.accountId)), [allBets, accountsNonArchivees]);
   const bankrollLoading = accountsLoading || betsLoading;
+  const hasAccounts = accounts.length > 0;
 
   const sharedData = {
     displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites, betsGlobal,
     recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
-    accounts, onAccountCreated: (compte) => setAccounts(prev => [...prev, compte]),
+    accounts, hasAccounts, onAccountCreated: (compte) => setAccounts(prev => [...prev, compte]),
   };
 
   if (isMobile) {

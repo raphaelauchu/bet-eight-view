@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { getT } from './i18n';
 import { BetAutoForm, champsDBDepuisForm, formDepuisBetAuto } from './BetAutoForm';
 
@@ -48,7 +48,7 @@ describe('selecteur de compte (optionnel, affiche seulement si `accounts` est fo
   test('avec `accounts`, le selecteur liste les comptes + une option "aucun"', () => {
     const accounts = [{ id: 'a1', name: 'Principal', kind: 'other' }, { id: 'a2', name: 'Betway', kind: 'betway' }];
     render(<BetAutoForm form={{ ...FORM_BASE, account_id: null }} setForm={noop} t={t} accounts={accounts} />);
-    const select = screen.getByText('Aucun (compte Principal)').closest('select');
+    const select = screen.getByText('Aucun compte').closest('select');
     expect(select).toBeInTheDocument();
     expect(within(select).getByText('Betway')).toBeInTheDocument();
   });
@@ -58,17 +58,42 @@ describe('selecteur de compte (optionnel, affiche seulement si `accounts` est fo
     let formActuel = { ...FORM_BASE, bookmaker: '', account_id: null };
     const setForm = jest.fn(f => { formActuel = f; });
     const { rerender } = render(<BetAutoForm form={formActuel} setForm={setForm} t={t} accounts={accounts} />);
-    fireEvent.change(screen.getByText('Aucun (compte Principal)').closest('select'), { target: { value: 'a2' } });
+    fireEvent.change(screen.getByText('Aucun compte').closest('select'), { target: { value: 'a2' } });
     expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ account_id: 'a2', bookmaker: 'Betway' }));
     rerender(<BetAutoForm form={formActuel} setForm={setForm} t={t} accounts={accounts} />);
   });
 
   test('une option "+ Nouveau compte..." appelle onCreateAccount quand `accounts` ET `onCreateAccount` sont fournis', () => {
-    const accounts = [{ id: 'a1', name: 'Principal', kind: 'other' }];
+    const accounts = [{ id: 'a1', name: 'Épargne', kind: 'other' }];
     const onCreateAccount = jest.fn();
     render(<BetAutoForm form={FORM_BASE} setForm={noop} t={t} accounts={accounts} onCreateAccount={onCreateAccount} />);
-    const select = screen.getByText('Aucun (compte Principal)').closest('select');
+    const select = screen.getByText('Aucun compte').closest('select');
     fireEvent.change(select, { target: { value: '__new__' } });
     expect(onCreateAccount).toHaveBeenCalled();
+  });
+
+  test('sans AUCUN compte : propose de creer un compte a la volee (pas de selecteur, pas de repli cache)', () => {
+    const onCreateAccount = jest.fn();
+    render(<BetAutoForm form={FORM_BASE} setForm={noop} t={t} accounts={[]} onCreateAccount={onCreateAccount} />);
+    expect(screen.getByText('Tu n\'as pas encore de compte.')).toBeInTheDocument();
+    expect(screen.queryByText('Compte')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('+ Ajouter un compte'));
+    expect(onCreateAccount).toHaveBeenCalled();
+  });
+
+  test('sans AUCUN compte et sans onCreateAccount (ex. edition d\'un vieux pari) : pas de prompt casse, juste "Aucun compte"', () => {
+    render(<BetAutoForm form={FORM_BASE} setForm={noop} t={t} accounts={[]} />);
+    expect(screen.queryByText('Tu n\'as pas encore de compte.')).not.toBeInTheDocument();
+    expect(screen.getByText('Aucun compte')).toBeInTheDocument();
+  });
+
+  test('une fois le compte cree, il est selectionne automatiquement (sans retour manuel au menu)', async () => {
+    const nouveauCompte = { id: 'new-1', name: 'Betway', kind: 'betway' };
+    const onCreateAccount = jest.fn(() => Promise.resolve(nouveauCompte));
+    let formActuel = { ...FORM_BASE, account_id: null };
+    const setForm = jest.fn(f => { formActuel = f; });
+    render(<BetAutoForm form={formActuel} setForm={setForm} t={t} accounts={[]} onCreateAccount={onCreateAccount} />);
+    fireEvent.click(screen.getByText('+ Ajouter un compte'));
+    await waitFor(() => expect(setForm).toHaveBeenCalledWith(expect.objectContaining({ account_id: 'new-1', bookmaker: 'Betway' })));
   });
 });

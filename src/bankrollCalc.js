@@ -276,7 +276,8 @@ export function betsForDay(bets, dateStr) {
 // BOOKMAKERS_SUPPORTES (src/bookmakers.js, libelles affiches dans les formulaires de pari) vs
 // `kind` de bankroll_accounts (valeurs stables utilisees par la migration/l'UI). Le mapping
 // couvre volontairement seulement les 4 sportsbooks reconnus par la migration -- tout le reste
-// ('Mise au jeu', 'DraftKings', ou aucun) releve du compte "Autre"/"Principal".
+// ('Mise au jeu', 'DraftKings', ou aucun) releve d'un compte "Autre" cree par l'utilisateur
+// (aucun compte par defaut/cache n'existe, voir src/Bankroll.js).
 export const BOOKMAKER_VERS_KIND = {
   'Bet365': 'bet365',
   'Betway': 'betway',
