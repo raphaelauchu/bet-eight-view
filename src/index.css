@@ -324,6 +324,13 @@ body {
   min-height: 44px;
 }
 
+/* Page de compte (src/Bankroll.js:AccountDetail) en une seule colonne (<1024px, seuil propre a
+   cette page) : degage la barre de navigation flottante du bas (App.js:BottomNav, ~64px +
+   marge + safe-area) pour que le dernier bloc (Stats) ne soit jamais partiellement cache. */
+.bankroll-account-mobile {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
 /* ===================== Pool =====================
    Le conteneur du lobby (PoolLobby) etait fige a max-width:760px pour TOUS les onglets, y
    compris la salle de draft, le classement et Mon equipe qui ont besoin de toute la largeur

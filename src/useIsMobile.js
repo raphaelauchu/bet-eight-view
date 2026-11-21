@@ -25,3 +25,17 @@ export function useIsDesktopWide() {
   }, []);
   return isDesktopWide;
 }
+
+// Seuil de largeur generique (meme pattern que useIsMobile/useIsDesktopWide ci-dessus) pour les
+// pages qui ont besoin d'un point de bascule different du seuil mobile standard (768px) --
+// ex. src/Bankroll.js:AccountDetail, dont la grille 2 colonnes n'a assez de place qu'a partir de
+// 1024px (iPad portrait reste donc en une seule colonne pour cette page precise).
+export function useMinWidth(px) {
+  const [ok, setOk] = useState(window.innerWidth >= px);
+  useEffect(() => {
+    const handle = () => setOk(window.innerWidth >= px);
+    window.addEventListener('resize', handle);
+    return () => window.removeEventListener('resize', handle);
+  }, [px]);
+  return ok;
+}

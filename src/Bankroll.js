@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from './supabase';
 import { getT } from './i18n';
-import { useIsMobile } from './useIsMobile';
+import { useIsMobile, useMinWidth } from './useIsMobile';
 import { BottomSheet } from './BottomSheet';
 import { DropdownPill } from './DropdownPill';
 import { WealthsimpleChart } from './WealthsimpleChart';
@@ -579,7 +579,11 @@ function AddBetFromAccount({ t, lang, account, onClose, onImported }) {
 // ===================== Page d'un compte =====================
 
 export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack, onSwitchAccount, onChanged }) {
-  const isMobile = useIsMobile();
+  // Seuil propre a cette page (1024px, pas le seuil mobile standard de l'app a 768px) : la
+  // grille 2 colonnes (carte bankroll+calendrier+paris a gauche, actions+stats a droite) n'a
+  // assez de place qu'a partir d'un iPad en mode paysage/un petit laptop -- en portrait iPad
+  // (768-1023px) cette page reste a une seule colonne, voir useMinWidth (src/useIsMobile.js).
+  const isDesktopGrid = useMinWidth(1024);
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
@@ -622,7 +626,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   const statCard = { backgroundColor: 'var(--c-0d0d0d)', borderRadius: '14px', padding: '16px', border: '1px solid var(--c-161616)' };
 
   const header = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+    <div data-testid="bank-block-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
       <button onClick={onBack} style={secondaryBtn}>{t('back_btn')}</button>
       <DropdownPill
         ariaLabel={t('bank_switch_account')}
@@ -643,7 +647,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   );
 
   const heroBlock = (
-    <div style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '18px', padding: '20px', border: '1px solid var(--c-1a1a1a)' }}>
+    <div data-testid="bank-block-hero" style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '18px', padding: '20px', border: '1px solid var(--c-1a1a1a)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 6px' }}>
         <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 46px)', fontWeight: '900', color: mode === 'return' ? couleur : 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
           {hideAmounts ? <MaskedDots t={t} count={7} size={13} /> : grandeValeur}
@@ -668,7 +672,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   );
 
   const calendarBlock = (
-    <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '18px', border: '1px solid var(--c-161616)' }}>
+    <div data-testid="bank-block-calendar" style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '18px', border: '1px solid var(--c-161616)' }}>
       <BankrollCalendar t={t} lang={lang} bets={bets} hideAmounts={hideAmounts} />
     </div>
   );
@@ -679,81 +683,103 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
     </button>
   );
 
-  const leftCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {heroBlock}
-      {calendarBlock}
+  // Chaque bloc n'est defini qu'UNE fois ; seul l'assemblage (grille desktop vs liste mobile
+  // ordonnee, voir le return plus bas) differe selon isDesktopGrid -- pas de JSX duplique.
+  const recentBetsBlock = (
+    <div data-testid="bank-block-recent-bets">
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-6px' }}>{addBetBtn}</div>
       <AccountBetsTable t={t} lang={lang} bets={bets} hideAmounts={hideAmounts} />
     </div>
   );
 
-  const rightCol = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button onClick={() => setSheet('deposit')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '18px 10px', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', backgroundColor: 'var(--c-0d0d0d)', color: 'var(--c-white)', cursor: 'pointer' }}>
-          <IconArrowDownCircle color="#22c55e" />
-          <span style={{ fontSize: '12.5px', fontWeight: '700' }}>{t('bank_add_money_title')}</span>
-        </button>
-        <button onClick={() => setSheet('withdraw')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '18px 10px', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', backgroundColor: 'var(--c-0d0d0d)', color: 'var(--c-white)', cursor: 'pointer' }}>
-          <IconArrowUpCircle color="#ef4444" />
-          <span style={{ fontSize: '12.5px', fontWeight: '700' }}>{t('bank_withdraw_title')}</span>
-        </button>
-      </div>
+  const moneyButtons = (
+    <div data-testid="bank-block-money-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <button onClick={() => setSheet('deposit')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '18px 10px', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', backgroundColor: 'var(--c-0d0d0d)', color: 'var(--c-white)', cursor: 'pointer' }}>
+        <IconArrowDownCircle color="#22c55e" />
+        <span style={{ fontSize: '12.5px', fontWeight: '700' }}>{t('bank_add_money_title')}</span>
+      </button>
+      <button onClick={() => setSheet('withdraw')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '18px 10px', borderRadius: '14px', border: '1px solid var(--c-1a1a1a)', backgroundColor: 'var(--c-0d0d0d)', color: 'var(--c-white)', cursor: 'pointer' }}>
+        <IconArrowUpCircle color="#ef4444" />
+        <span style={{ fontSize: '12.5px', fontWeight: '700' }}>{t('bank_withdraw_title')}</span>
+      </button>
+    </div>
+  );
 
-      <div style={statCard}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_available_label')}</div>
-            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(available)}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_at_risk_label')}</div>
-            <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(atRisk)}</div>
-          </div>
+  const availableAtRiskBlock = (
+    <div data-testid="bank-block-available-at-risk" style={statCard}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_available_label')}</div>
+          <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(available)}</div>
         </div>
-      </div>
-
-      <div style={statCard}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_net_deposits_label')}</div>
-          {derniereMaj && <div style={{ color: 'var(--c-444)', fontSize: '10.5px' }}>{new Date(`${derniereMaj}T00:00:00`).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' })}</div>}
-        </div>
-        <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(netDeposits)}</div>
-        <button onClick={() => setSheet('history')} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '12px', fontWeight: '700', cursor: 'pointer', padding: 0, marginTop: '8px' }}>{t('bank_see_history')}</button>
-      </div>
-
-      <div style={statCard}>
-        <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('bank_stats_title')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {[
-            ['ROI', hideAmounts ? null : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`, roi >= 0 ? '#22c55e' : '#ef4444'],
-            [t('bank_win_rate'), `${winRate}%`, 'var(--c-white)'],
-            [t('bets_total_staked'), hideAmounts ? null : fmt(totalStaked), 'var(--c-white)'],
-            [t('bank_avg_odds'), avgOdds ? avgOdds.toFixed(2) : '—', 'var(--c-white)'],
-            [t('bank_best_day'), hideAmounts ? null : (bestDay ? fmtSigned(bestDay.profit) : '—'), bestDay && bestDay.profit >= 0 ? '#22c55e' : bestDay ? '#ef4444' : 'var(--c-white)'],
-          ].map(([label, val, color], i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: 'var(--c-666)' }}>{label}</span>
-              <span style={{ fontWeight: '700', color }}>{val === null ? <MaskedDots t={t} count={3} size={4} /> : val}</span>
-            </div>
-          ))}
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_at_risk_label')}</div>
+          <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(atRisk)}</div>
         </div>
       </div>
     </div>
   );
 
+  const netDepositsBlock = (
+    <div data-testid="bank-block-net-deposits" style={statCard}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('bank_net_deposits_label')}</div>
+        {derniereMaj && <div style={{ color: 'var(--c-444)', fontSize: '10.5px' }}>{new Date(`${derniereMaj}T00:00:00`).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' })}</div>}
+      </div>
+      <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-white)', marginTop: '4px' }}>{hideAmounts ? <MaskedDots t={t} /> : fmt(netDeposits)}</div>
+      <button onClick={() => setSheet('history')} style={{ background: 'none', border: 'none', color: '#f97316', fontSize: '12px', fontWeight: '700', cursor: 'pointer', padding: 0, marginTop: '8px' }}>{t('bank_see_history')}</button>
+    </div>
+  );
+
+  const statsBlock = (
+    <div data-testid="bank-block-stats" style={statCard}>
+      <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('bank_stats_title')}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {[
+          ['ROI', hideAmounts ? null : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`, roi >= 0 ? '#22c55e' : '#ef4444'],
+          [t('bank_win_rate'), `${winRate}%`, 'var(--c-white)'],
+          [t('bets_total_staked'), hideAmounts ? null : fmt(totalStaked), 'var(--c-white)'],
+          [t('bank_avg_odds'), avgOdds ? avgOdds.toFixed(2) : '—', 'var(--c-white)'],
+          [t('bank_best_day'), hideAmounts ? null : (bestDay ? fmtSigned(bestDay.profit) : '—'), bestDay && bestDay.profit >= 0 ? '#22c55e' : bestDay ? '#ef4444' : 'var(--c-white)'],
+        ].map(([label, val, color], i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+            <span style={{ color: 'var(--c-666)' }}>{label}</span>
+            <span style={{ fontWeight: '700', color }}>{val === null ? <MaskedDots t={t} count={3} size={4} /> : val}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ padding: isMobile ? '16px' : '0', maxWidth: isMobile ? '600px' : 'none', margin: isMobile ? '0 auto' : '0', fontFamily: '-apple-system, sans-serif' }}>
-      {isMobile ? (
-        <>
-          {header}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>{rightCol}{leftCol}</div>
-        </>
-      ) : (
+    <div
+      // .bankroll-account-mobile (index.css) degage la barre de navigation flottante du bas --
+      // en inline style, jsdom/cssstyle ne sait pas parser calc()+env() (voir Bankroll.test.js),
+      // d'ou le passage par une classe CSS plutot qu'un paddingBottom inline.
+      className={isDesktopGrid ? undefined : 'bankroll-account-mobile'}
+      style={{
+        padding: isDesktopGrid ? '0' : '16px', maxWidth: isDesktopGrid ? 'none' : '600px', margin: isDesktopGrid ? '0' : '0 auto',
+        fontFamily: '-apple-system, sans-serif', boxSizing: 'border-box',
+      }}>
+      {/* Back / selecteur de compte / ... : seule sur toute la largeur, TOUJOURS hors de la
+          grille 2 colonnes -- sinon la colonne de droite s'alignerait sur cette ligne au lieu de
+          s'aligner sur le haut de la carte bankroll (voir bankroll-grid, align-items: start). */}
+      {header}
+
+      {isDesktopGrid ? (
         <div className="bankroll-grid">
-          <div className="bankroll-main-col">{header}{leftCol}</div>
-          <div className="bankroll-side-col">{rightCol}</div>
+          <div className="bankroll-main-col">{heroBlock}{calendarBlock}{recentBetsBlock}</div>
+          <div className="bankroll-side-col">{moneyButtons}{availableAtRiskBlock}{netDepositsBlock}{statsBlock}</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {heroBlock}
+          {moneyButtons}
+          {calendarBlock}
+          {recentBetsBlock}
+          {availableAtRiskBlock}
+          {netDepositsBlock}
+          {statsBlock}
         </div>
       )}
 

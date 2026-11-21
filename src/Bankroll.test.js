@@ -1,7 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BankrollPage } from './Bankroll';
 
-jest.mock('./useIsMobile', () => ({ useIsMobile: jest.fn(() => false) }));
+jest.mock('./useIsMobile', () => ({ useIsMobile: jest.fn(() => false), useMinWidth: jest.fn(() => true) }));
 
 jest.mock('./imageUtils', () => ({ fichierVersJpegBase64: jest.fn() }));
 jest.mock('./nhlGameLookup', () => ({ trouverGameId: jest.fn() }));
@@ -10,7 +10,7 @@ jest.mock('./supabase', () => ({
   supabase: { from: jest.fn(), auth: { getUser: jest.fn() }, functions: { invoke: jest.fn() } },
 }));
 
-const { useIsMobile } = require('./useIsMobile');
+const { useIsMobile, useMinWidth } = require('./useIsMobile');
 const { supabase } = require('./supabase');
 const { fichierVersJpegBase64 } = require('./imageUtils');
 const { trouverGameId } = require('./nhlGameLookup');
@@ -53,6 +53,7 @@ const noop = () => {};
 
 beforeEach(() => {
   useIsMobile.mockReturnValue(false);
+  useMinWidth.mockReturnValue(true);
   supabase.auth.getUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
   fichierVersJpegBase64.mockResolvedValue('data:image/jpeg;base64,xx');
   trouverGameId.mockResolvedValue(null);
@@ -158,6 +159,72 @@ describe('page de compte', () => {
   });
 });
 
+describe('page de compte : mise en page responsive (>= 1024px grille, < 1024px liste ordonnee)', () => {
+  const BLOCS = ['bank-block-hero', 'bank-block-money-buttons', 'bank-block-calendar', 'bank-block-recent-bets', 'bank-block-available-at-risk', 'bank-block-net-deposits', 'bank-block-stats'];
+
+  function ordreBlocs(container) {
+    return Array.from(container.querySelectorAll('[data-testid^="bank-block-"]')).map(el => el.getAttribute('data-testid'));
+  }
+
+  test('>= 1024px : en-tete seul en haut sur toute la largeur, hors de la grille 2 colonnes ; colonnes alignees en haut', async () => {
+    useMinWidth.mockReturnValue(true); // >= 1024px pour CETTE page (seuil propre a AccountDetail)
+    const { container } = render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByTestId('bank-block-hero')).toBeInTheDocument());
+
+    const grille = container.querySelector('.bankroll-grid');
+    expect(grille).not.toBeNull();
+    // L'en-tete (Back/selecteur/...) n'est PAS un enfant de la grille : les deux colonnes
+    // demarrent donc au meme niveau que la carte bankroll, pas a la hauteur de l'en-tete.
+    expect(screen.getByTestId('bank-block-header').closest('.bankroll-grid')).toBeNull();
+    const colonneGauche = grille.querySelector('.bankroll-main-col');
+    const colonneDroite = grille.querySelector('.bankroll-side-col');
+    expect(colonneGauche.contains(screen.getByTestId('bank-block-hero'))).toBe(true);
+    expect(colonneDroite.contains(screen.getByTestId('bank-block-money-buttons'))).toBe(true);
+    // Colonne gauche : carte bankroll, calendrier, paris recents (dans cet ordre).
+    const gaucheOrdre = Array.from(colonneGauche.querySelectorAll('[data-testid^="bank-block-"]')).map(el => el.getAttribute('data-testid'));
+    expect(gaucheOrdre).toEqual(['bank-block-hero', 'bank-block-calendar', 'bank-block-recent-bets']);
+    // Colonne droite : depot/retrait, disponible/en jeu, depots nets, stats (dans cet ordre).
+    const droiteOrdre = Array.from(colonneDroite.querySelectorAll('[data-testid^="bank-block-"]')).map(el => el.getAttribute('data-testid'));
+    expect(droiteOrdre).toEqual(['bank-block-money-buttons', 'bank-block-available-at-risk', 'bank-block-net-deposits', 'bank-block-stats']);
+  });
+
+  test('< 1024px : ordre vertical exact des blocs (en-tete, bankroll, depot/retrait, calendrier, paris recents, disponible/en jeu, depots nets, stats)', async () => {
+    useMinWidth.mockReturnValue(false); // < 1024px pour CETTE page
+    const { container } = render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByTestId('bank-block-hero')).toBeInTheDocument());
+
+    // Aucune grille 2 colonnes sous 1024px pour cette page.
+    expect(container.querySelector('.bankroll-grid')).toBeNull();
+    expect(ordreBlocs(container)).toEqual(['bank-block-header', ...BLOCS]);
+  });
+
+  test('< 1024px : la page porte la classe qui degage la barre de navigation flottante du bas', async () => {
+    useMinWidth.mockReturnValue(false);
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByTestId('bank-block-stats')).toBeInTheDocument());
+
+    const page = screen.getByTestId('bank-block-header').parentElement;
+    expect(page.className).toBe('bankroll-account-mobile');
+  });
+
+  test('>= 1024px : la page n\'a pas besoin de ce degagement (pas de nav flottante en bas sur desktop)', async () => {
+    useMinWidth.mockReturnValue(true);
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByTestId('bank-block-stats')).toBeInTheDocument());
+
+    const page = screen.getByTestId('bank-block-header').parentElement;
+    expect(page.className).toBe('');
+  });
+});
+
 describe('ajouter un pari depuis la page de compte', () => {
   test('le pari cree est rattache au compte courant meme si le formulaire ne fournit aucun compte (ordre du spread)', async () => {
     supabase.functions.invoke.mockResolvedValue({
@@ -202,6 +269,7 @@ describe('ajouter un pari depuis la page de compte', () => {
 describe('mobile', () => {
   test('une seule colonne, tuiles depot/retrait visibles', async () => {
     useIsMobile.mockReturnValue(true);
+    useMinWidth.mockReturnValue(false);
     render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
     await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
     fireEvent.click(screen.getByText('Betway'));
