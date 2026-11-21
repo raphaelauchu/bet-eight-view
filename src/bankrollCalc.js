@@ -2,11 +2,20 @@
 // Aucun appel reseau ici -- tout prend en entree des listes deja chargees (bankroll_accounts,
 // bankroll_transactions, paris, bets_auto) et retourne des nombres/series. Permet de tester le
 // calcul independamment de Supabase/React (voir bankrollCalc.test.js).
+import { titreBetAuto } from './betDisplay';
 //
 // Convention partagee avec src/Home.js (computeTodayChangeAmount, computeChartSeries) : un pari
 // manuel (table `paris`) n'a qu'une seule date (date_pari), utilisee a la fois comme date de mise
 // et date de reglement -- un bet importe (table `bets_auto`) a game_date/created_at (mise) et
 // verified_at (reglement). normalizeBet() uniformise les deux sources vers une seule forme.
+//
+// `title` : LE libelle d'affichage (src/BetRow.js, utilise partout -- accueil, page de compte,
+// calendrier) -- joueur (prop) > equipe misee (moneyline) > type, via titreBetAuto (meme fonction
+// que l'accueil, voir src/betDisplay.js) pour bets_auto ; texte libre de l'utilisateur pour un
+// pari manuel (`paris.match`). Ne PAS utiliser `match`/`selection` separement pour l'affichage :
+// ils restent exposes pour compatibilite mais `selection` seul (ex. juste "Alexandre Texier",
+// sans la ligne statistique) etait la source du libelle incoherent entre l'accueil et la page de
+// compte -- voir le CHANGELOG de cette fonction.
 
 export function normalizeBet(entry, source) {
   if (source === 'paris') {
@@ -22,6 +31,8 @@ export function normalizeBet(entry, source) {
       stake: Number(entry.mise) || 0,
       odds: Number(entry.cote) || 0,
       profit: status === 'pending' ? null : (Number(entry.profit) || 0),
+      bookmaker: entry.bookmaker || null,
+      title: entry.match || entry.selection || null,
       match: entry.match || null,
       selection: entry.selection || null,
     };
@@ -39,6 +50,8 @@ export function normalizeBet(entry, source) {
     stake: Number(entry.mise) || 0,
     odds: Number(entry.cote) || 0,
     profit: status === 'pending' ? null : (Number(entry.resultat) || 0),
+    bookmaker: entry.bookmaker || null,
+    title: titreBetAuto(entry),
     match: entry.equipe && entry.adversaire ? `${entry.equipe} vs ${entry.adversaire}` : null,
     selection: entry.joueur_nom || entry.type_bet || null,
   };
@@ -79,6 +92,9 @@ export function computeNetDeposits(transactions) {
   return sumDeposits(transactions) - sumWithdrawals(transactions);
 }
 
+// Profit/mise des paris REGLES uniquement -- le ROI et le "rendement" affiches restent bases
+// sur les paris regles, jamais affectes par un pari en cours (voir computeROI). Ne pas confondre
+// avec computeSettledReturns ci-dessous (le MONTANT retourne, pas le profit net).
 export function computeTotalReturn(bets) {
   return settledBets(bets).reduce((a, b) => a + (b.profit || 0), 0);
 }
@@ -87,24 +103,57 @@ export function computeTotalStaked(bets) {
   return settledBets(bets).reduce((a, b) => a + (b.stake || 0), 0);
 }
 
+// Mises de TOUS les paris (regles + en cours) -- utilise pour le solde (une mise sort du solde
+// des la creation du pari, pas seulement une fois regle) et pour l'affichage "Total Staked" (qui
+// ne doit plus afficher 0$ quand un pari est en jeu, voir src/Bankroll.js).
+export function computeTotalStakedAll(bets) {
+  return (bets || []).reduce((a, b) => a + (b.stake || 0), 0);
+}
+
+// Montant retourne par les paris REGLES (pas le profit net) : gagnant -> mise x cote, perdant ->
+// 0, push/annule -> mise remboursee. Equivaut a mise + profit, le profit etant deja stocke par
+// pari avec cette meme convention (gagne : mise*cote-mise ; perdu : -mise ; push : 0 si jamais
+// un statut push existe un jour). C'est ce montant, PAS le profit, qui revient dans le solde au
+// reglement (voir computeAccountBalance).
+export function computeSettledReturns(bets) {
+  return settledBets(bets).reduce((a, b) => a + (b.stake || 0) + (b.profit || 0), 0);
+}
+
 export function computeROI(bets) {
   const staked = computeTotalStaked(bets);
   return staked > 0 ? (computeTotalReturn(bets) / staked) * 100 : 0;
 }
 
-// Solde = depots - retraits + profit realise des paris regles du compte.
+// Solde d'un compte = depots - retraits - mises de TOUS les paris (la mise sort du solde des la
+// creation du pari, qu'il soit encore en cours ou deja regle) + montant retourne par les paris
+// REGLES (voir computeSettledReturns). Un pari en cours ampute donc deja le solde de sa mise --
+// "Disponible" = ce solde directement, "En jeu" (computeAtRisk) est seulement informatif,
+// affiche a part, jamais soustrait une seconde fois.
+//
+// Exemple (depot 50$, mise 50$) : en cours -> solde 0$ ; gagnant a la cote 2.0 -> solde 100$
+// (mise+profit renvoyes = 50+50) ; perdant -> solde 0$ (0 renvoye) ; push -> solde 50$ (mise
+// remboursee). Voir bankrollCalc.test.js.
 export function computeAccountBalance(transactions, bets) {
-  return computeNetDeposits(transactions) + computeTotalReturn(bets);
+  return computeNetDeposits(transactions) - computeTotalStakedAll(bets) + computeSettledReturns(bets);
 }
 
-// En jeu = somme des mises des paris en attente du compte.
+// En jeu = somme des mises des paris en attente du compte -- purement informatif desormais (le
+// solde, ci-dessus, a DEJA retire ces mises) : ne jamais le re-soustraire de computeAccountBalance.
 export function computeAtRisk(bets) {
   return pendingBets(bets).reduce((a, b) => a + (b.stake || 0), 0);
 }
 
-// Disponible = solde - en jeu.
-export function computeAvailable(balance, atRisk) {
-  return balance - atRisk;
+// Disponible = le solde du compte directement (retrait maximum). Le solde exclut deja les mises
+// en cours (voir computeAccountBalance) : ne plus soustraire "en jeu" une seconde fois ici.
+export function computeAvailable(balance) {
+  return balance;
+}
+
+// Un nouveau pari ne peut jamais depasser le disponible ACTUEL du compte (avant l'ajout de ce
+// pari) -- verification cote app, en plus du trigger cote base (voir
+// supabase/migrations/20261125_bet_stake_balance.sql) qui l'applique aussi a l'insertion directe.
+export function canPlaceBet(transactions, existingBets, stake) {
+  return (Number(stake) || 0) <= computeAccountBalance(transactions, existingBets);
 }
 
 export function computeWinRate(bets) {
@@ -146,7 +195,7 @@ export function computeAccountSummary(account) {
     id: account.id,
     balance,
     atRisk,
-    available: computeAvailable(balance, atRisk),
+    available: computeAvailable(balance),
     netDeposits: computeNetDeposits(account.transactions),
     totalReturn: computeTotalReturn(account.bets),
     roi: computeROI(account.bets),
@@ -173,23 +222,54 @@ export function isWithinPeriod(dateStr, period, now = new Date()) {
   return (now - d) / 86400000 <= jours;
 }
 
-// Serie {values,dates,finalValue} pour la courbe : mode='value' -> profit cumulatif ($),
-// mode='return' -> rendement cumulatif (%) = profit cumule / mise cumulee. Memes composants que
-// src/Home.js computeChartSeries (le depot/retrait n'intervient JAMAIS ici, seulement le profit
-// des paris regles -- voir computeAccountBalance pour le solde reel, qui lui en tient compte).
+// Serie {values,dates,finalValue} pour la courbe.
+//
+// mode='return' : rendement cumulatif (%) = profit cumule / mise cumulee, paris REGLES
+// uniquement (le "rendement" reste base sur les paris regles, jamais affecte par un pari en
+// cours -- memes composants que l'ancien src/Home.js computeChartSeries). Le depot/retrait
+// n'intervient jamais ici.
+//
+// mode='value' : coherent avec computeAccountBalance -- la mise sort du solde au moment du pari
+// (evenement -mise a la date de mise) et revient au reglement (evenement +montant retourne a la
+// date de reglement, voir computeSettledReturns). Un pari encore en cours a la fin de la periode
+// n'affiche donc qu'une baisse (sa mise), jamais le profit qu'il n'a pas encore genere -- un
+// pari place ET regle dans la periode redonne au total le meme profit net qu'avant (−mise puis
+// +mise+profit = +profit), seul l'etat intermediaire pendant qu'il est en cours differe.
 export function computeBankrollSeries(bets, period, mode, now = new Date()) {
-  const filtered = settledBets(bets)
-    .filter(b => isWithinPeriod(b.dateSettlement, period, now))
-    .sort((a, b) => new Date(a.dateSettlement) - new Date(b.dateSettlement));
+  if (mode === 'return') {
+    const filtered = settledBets(bets)
+      .filter(b => isWithinPeriod(b.dateSettlement, period, now))
+      .sort((a, b) => new Date(a.dateSettlement) - new Date(b.dateSettlement));
 
-  let cumulProfit = 0;
-  let cumulStake = 0;
+    let cumulProfit = 0;
+    let cumulStake = 0;
+    const dates = [];
+    const values = filtered.map(b => {
+      cumulProfit += b.profit || 0;
+      cumulStake += b.stake || 0;
+      dates.push(b.dateSettlement);
+      return cumulStake > 0 ? (cumulProfit / cumulStake) * 100 : 0;
+    });
+    return { values, dates, finalValue: values.length ? values[values.length - 1] : 0 };
+  }
+
+  const events = [];
+  for (const b of bets || []) {
+    if (isWithinPeriod(b.datePlaced, period, now)) {
+      events.push({ date: b.datePlaced, delta: -(b.stake || 0) });
+    }
+    if (b.status !== 'pending' && isWithinPeriod(b.dateSettlement, period, now)) {
+      events.push({ date: b.dateSettlement, delta: (b.stake || 0) + (b.profit || 0) });
+    }
+  }
+  events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let cumul = 0;
   const dates = [];
-  const values = filtered.map(b => {
-    cumulProfit += b.profit || 0;
-    cumulStake += b.stake || 0;
-    dates.push(b.dateSettlement);
-    return mode === 'return' ? (cumulStake > 0 ? (cumulProfit / cumulStake) * 100 : 0) : cumulProfit;
+  const values = events.map(e => {
+    cumul += e.delta;
+    dates.push(e.date);
+    return cumul;
   });
   return { values, dates, finalValue: values.length ? values[values.length - 1] : 0 };
 }

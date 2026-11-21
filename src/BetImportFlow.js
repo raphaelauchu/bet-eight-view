@@ -12,11 +12,17 @@ import { BOOKMAKER_VERS_KIND } from './bankrollCalc';
 // de l'utilisateur (src/Bankroll.js) -- defaultAccountId preselectionne le compte (ex. venant
 // d'une page de compte precise) ; sans lui, un bookmaker detecte par l'IA (voir analyser())
 // selectionne automatiquement le compte correspondant s'il existe.
-function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, onEnregistrer, accounts, defaultAccountId, onCreateAccount }) {
+// `availableForAccount` (optionnel) : { [accountId]: disponibleActuel } -- permet de refuser
+// cote app une mise superieure au disponible du compte choisi (en plus du trigger cote base,
+// voir supabase/migrations/20261125_bet_stake_balance.sql). `onAddMoney` (optionnel) : affiche
+// un lien "Ajouter de l'argent" dans le message d'erreur quand il est fourni par l'appelant
+// (src/Bankroll.js, qui peut ouvrir directement la feuille de depot du compte).
+function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, onEnregistrer, accounts, defaultAccountId, onCreateAccount, availableForAccount, onAddMoney }) {
   const t = getT(lang);
   const [step, setStep] = React.useState(1);
   const [analysing, setAnalysing] = React.useState(false);
   const [erreur, setErreur] = React.useState('');
+  const [soldeInsuffisant, setSoldeInsuffisant] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
     bookmaker: '', // sportsbook d'origine : optionnel, pas de choix impose par defaut
@@ -79,8 +85,21 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
 
   async function confirmerEtEnregistrer() {
     if (!form.mise || !form.cote) return;
-    setSaving(true);
     setErreur('');
+    setSoldeInsuffisant(false);
+    // Refuse une mise superieure au disponible ACTUEL du compte choisi -- meme calcul que
+    // src/bankrollCalc.js:canPlaceBet, verifie cote base en plus (voir
+    // supabase/migrations/20261125_bet_stake_balance.sql). form.account_id est vide quand aucun
+    // selecteur de compte n'est affiche (src/Bankroll.js:AddBetFromAccount, compte deja fixe par
+    // le contexte) -- defaultAccountId sert alors de repli pour retrouver le bon disponible.
+    const compteVise = form.account_id || defaultAccountId;
+    const disponibleActuel = compteVise ? availableForAccount?.[compteVise] : null;
+    if (disponibleActuel != null && parseFloat(form.mise) > disponibleActuel) {
+      setErreur(t('bank_error_stake_exceeds_available').replace('{disponible}', disponibleActuel.toFixed(2)));
+      setSoldeInsuffisant(true);
+      return;
+    }
+    setSaving(true);
     try {
       const inseree = await onEnregistrer(champsDBDepuisForm(form, t));
       if (!inseree) { setSaving(false); return; }
@@ -123,7 +142,12 @@ function BetImportFlow({ lang = 'en', apercu, imageBase64, onClose, onImported, 
 
       {erreur && (
         <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#ef4444' }}>
-          {erreur}
+          <div>{erreur}</div>
+          {soldeInsuffisant && onAddMoney && (
+            <button onClick={onAddMoney} style={{ background: 'none', border: 'none', padding: 0, marginTop: '6px', color: '#f97316', fontWeight: '700', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}>
+              {t('bank_add_money_title')}
+            </button>
+          )}
         </div>
       )}
 

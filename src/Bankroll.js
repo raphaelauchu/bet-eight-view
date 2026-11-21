@@ -9,12 +9,13 @@ import { WealthsimpleChart } from './WealthsimpleChart';
 import { BankrollCalendar } from './BankrollCalendar';
 import { MaskedDots, readHideAmounts, writeHideAmounts } from './Home';
 import { AddAccountBody } from './AddAccountBody';
+import { BetRow } from './BetRow';
 import BetImportFlow from './BetImportFlow';
 import { fichierVersJpegBase64 } from './imageUtils';
 import {
   normalizeAllBets, betsForAccount, computeAccountBalance,
   computeAtRisk, computeAvailable, computeNetDeposits, computeROI, computeWinRate,
-  computeAverageOdds, computeBestDay, computeTotalStaked,
+  computeAverageOdds, computeBestDay, computeTotalStakedAll, canPlaceBet,
   computeGlobalBankroll, computeBankrollSeries, computeVariation, BANKROLL_PERIODS,
 } from './bankrollCalc';
 
@@ -79,12 +80,6 @@ function nomCompte(a, t) {
   return a.name || t('bank_account_other');
 }
 
-function formatDateCourte(dateStr, lang) {
-  if (!dateStr) return '—';
-  const d = new Date(`${String(dateStr).slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { month: 'short', day: 'numeric' });
-}
 
 // ===================== Conteneur generique feuille du bas (mobile) / modale centree (desktop) ====
 
@@ -423,7 +418,7 @@ function MoneySheet({ t, type, account, onClose, onSaved }) {
   const [erreur, setErreur] = useState('');
 
   const balance = computeAccountBalance(account.transactions, account.bets);
-  const available = computeAvailable(balance, computeAtRisk(account.bets));
+  const available = computeAvailable(balance);
 
   async function confirmer() {
     const m = parseFloat(montant);
@@ -514,19 +509,11 @@ function AccountBetsTable({ t, lang, bets, hideAmounts }) {
       {affiches.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('bank_no_bets_account')}</div>
       ) : affiches.map((b, i) => (
-        <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '11px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: '600', fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.match || b.selection || '—'}</div>
-            <div style={{ color: 'var(--c-555)', fontSize: '11.5px' }}>{formatDateCourte(b.dateSettlement || b.datePlaced, lang)} · {t('bets_odds')} {b.odds} · ${b.stake.toFixed(2)}</div>
-          </div>
-          {b.status === 'pending' ? (
-            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', flexShrink: 0 }}>{t('bets_auto_status_pending')}</span>
-          ) : (
-            <span style={{ fontWeight: '800', fontSize: '14px', color: b.profit >= 0 ? '#22c55e' : '#ef4444', flexShrink: 0 }}>
-              {hideAmounts ? <MaskedDots t={t} count={3} size={5} /> : `${b.profit >= 0 ? '+' : ''}$${b.profit.toFixed(2)}`}
-            </span>
-          )}
-        </div>
+        <BetRow
+          key={b.id} t={t} bordered={i > 0} hideAmounts={hideAmounts}
+          title={b.title} bookmaker={b.bookmaker} odds={b.odds} stake={b.stake}
+          status={b.status} profit={b.profit}
+        />
       ))}
     </div>
   );
@@ -534,7 +521,7 @@ function AccountBetsTable({ t, lang, bets, hideAmounts }) {
 
 // ===================== Ajouter un pari (depuis la page de compte) =====================
 
-function AddBetFromAccount({ t, lang, account, onClose, onImported }) {
+function AddBetFromAccount({ t, lang, account, onClose, onImported, onAddMoney }) {
   const [image, setImage] = useState(null);
   const inputRef = React.useRef(null);
 
@@ -568,7 +555,12 @@ function AddBetFromAccount({ t, lang, account, onClose, onImported }) {
       {image && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 2300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
           <div style={{ width: '100%', maxWidth: '480px' }}>
-            <BetImportFlow lang={lang} apercu={image.apercu} imageBase64={image.base64} onClose={onClose} onEnregistrer={enregistrer} onImported={onImported} />
+            <BetImportFlow
+              lang={lang} apercu={image.apercu} imageBase64={image.base64} onClose={onClose} onEnregistrer={enregistrer} onImported={onImported}
+              defaultAccountId={account.id}
+              availableForAccount={{ [account.id]: computeAccountBalance(account.transactions, account.bets) }}
+              onAddMoney={onAddMoney}
+            />
           </div>
         </div>
       )}
@@ -596,11 +588,13 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   const bets = account.bets;
   const balance = computeAccountBalance(account.transactions, bets);
   const atRisk = computeAtRisk(bets);
-  const available = computeAvailable(balance, atRisk);
+  const available = computeAvailable(balance);
   const netDeposits = computeNetDeposits(account.transactions);
   const roi = computeROI(bets);
   const winRate = computeWinRate(bets);
-  const totalStaked = computeTotalStaked(bets);
+  // Total Staked inclut les mises en cours (pas seulement les paris regles) : sinon la carte
+  // afficherait 0$ tant qu'un pari n'est pas encore regle, voir computeTotalStakedAll.
+  const totalStaked = computeTotalStakedAll(bets);
   const avgOdds = computeAverageOdds(bets);
   const bestDay = computeBestDay(bets);
   const derniereMaj = account.transactions.length
@@ -795,7 +789,12 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
       {sheet === 'deposit' && <MoneySheet t={t} type="deposit" account={account} onClose={() => setSheet(null)} onSaved={afterSaved} />}
       {sheet === 'withdraw' && <MoneySheet t={t} type="withdrawal" account={account} onClose={() => setSheet(null)} onSaved={afterSaved} />}
       {sheet === 'history' && <TransactionHistorySheet t={t} lang={lang} account={account} onClose={() => setSheet(null)} onChanged={onChanged} />}
-      {sheet === 'addbet' && <AddBetFromAccount t={t} lang={lang} account={account} onClose={() => setSheet(null)} onImported={() => afterSaved(t('bank_toast_bet_added'))} />}
+      {sheet === 'addbet' && (
+        <AddBetFromAccount
+          t={t} lang={lang} account={account} onClose={() => setSheet(null)} onImported={() => afterSaved(t('bank_toast_bet_added'))}
+          onAddMoney={() => setSheet('deposit')}
+        />
+      )}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--c-1a1a1a)', border: '1px solid var(--c-333)', borderRadius: '12px', padding: '12px 20px', color: 'var(--c-white)', fontSize: '13px', fontWeight: '600', zIndex: 2400, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>

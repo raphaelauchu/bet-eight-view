@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useIsMobile } from './useIsMobile';
 import { BottomSheet } from './BottomSheet';
 import { MaskedDots } from './Home';
+import { BetRow } from './BetRow';
 import { buildMonthCalendar, betsForDay, formatCompactAmount } from './bankrollCalc';
 
 // Calendrier mensuel de profit (src/Bankroll.js : page de compte ET vue d'ensemble avec bascule
@@ -58,17 +59,11 @@ function DayDetailBody({ t, lang, bets, dateStr }) {
       {bets.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--c-333)', fontSize: '13px' }}>{t('bank_cal_day_empty')}</div>
       ) : bets.map((b, i) => (
-        <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '12px 4px', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.match || b.selection || '—'}</div>
-            <div style={{ color: 'var(--c-555)', fontSize: '11.5px', marginTop: '2px' }}>{t('bets_odds')} {b.odds || '—'} · ${b.stake.toFixed(2)}</div>
-          </div>
-          {b.status === 'pending' ? (
-            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', flexShrink: 0 }}>{t('bets_auto_status_pending')}</span>
-          ) : (
-            <span style={{ fontWeight: '800', fontSize: '15px', color: b.profit >= 0 ? '#22c55e' : '#ef4444', flexShrink: 0 }}>{b.profit >= 0 ? '+' : ''}${b.profit.toFixed(2)}</span>
-          )}
-        </div>
+        <BetRow
+          key={b.id} t={t} bordered={i > 0}
+          title={b.title} bookmaker={b.bookmaker} odds={b.odds} stake={b.stake}
+          status={b.status} profit={b.profit}
+        />
       ))}
     </>
   );
@@ -144,7 +139,7 @@ export function BankrollCalendar({ t, lang, bets, hideAmounts }) {
       const signe = entry.profit >= 0 ? '+' : '';
       return `${dateTxt}, ${entry.profit >= 0 ? t('bank_cal_profit_label') : t('bank_cal_loss_label')} ${signe}$${Math.abs(entry.profit).toFixed(0)}`;
     }
-    if (entry.hasPending) return `${dateTxt}, ${t('bets_auto_status_pending')}`;
+    if (entry.hasPending) return `${dateTxt}, ${t('home_active_badge')}`;
     return `${dateTxt}, ${t('bank_cal_no_bet')}`;
   }
 

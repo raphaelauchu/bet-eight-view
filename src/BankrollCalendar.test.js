@@ -13,13 +13,13 @@ const t = (k) => ({
   bank_cal_no_bet: 'aucun pari',
   bank_cal_day_empty: 'Aucun pari ce jour',
   bets_odds: 'Cote',
-  bets_auto_status_pending: 'En attente',
+  home_active_badge: 'Actif',
   back_btn: 'Retour',
   home_amounts_hidden: 'Montants masques',
 }[k] || k);
 
 function makeBet(id, status, profit, dateStr) {
-  return { id, status, profit, stake: 10, odds: 2, match: `Match ${id}`, dateSettlement: dateStr, datePlaced: dateStr };
+  return { id, status, profit, stake: 10, odds: 2, bookmaker: 'Betway', title: `Match ${id}`, dateSettlement: dateStr, datePlaced: dateStr };
 }
 
 describe('BankrollCalendar', () => {
@@ -48,10 +48,10 @@ describe('BankrollCalendar', () => {
     expect(screen.getByText('Match 1')).toBeInTheDocument();
   });
 
-  test('jour avec paris en attente seulement : aria-label "En attente", pas de montant', () => {
+  test('jour avec paris en attente seulement : aria-label "Actif" (meme libelle que l\'accueil), pas de montant', () => {
     const bets = [makeBet(1, 'pending', null, today)];
     render(<BankrollCalendar t={t} lang="fr" bets={bets} hideAmounts={false} />);
-    expect(screen.getByLabelText(/En attente/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Actif/)).toBeInTheDocument();
   });
 
   test('navigation au clavier (fleche droite) deplace le focus actif', () => {

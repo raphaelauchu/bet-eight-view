@@ -11,6 +11,8 @@ import { ShareStatsButton } from './ShareStats';
 import { AddSportsbookButton, SportsbookWaitlistBody } from './SportsbookWaitlist';
 import { AddAccountBody } from './AddAccountBody';
 import { BottomSheet } from './BottomSheet';
+import { BetRow } from './BetRow';
+import { MaskedDots } from './MaskedDots';
 import {
   normalizeAllBets, betsForAccount, settledBets, isWithinPeriod,
   computeGlobalBankroll, computeBankrollSeries,
@@ -130,17 +132,11 @@ function CardSkeleton({ lines = 3 }) {
   );
 }
 
-// Remplace un montant sensible quand hideAmounts est actif : 5 petits points gris arrondis
-// (pas de texte/emoji), avec un libelle accessible pour les lecteurs d'ecran.
-export function MaskedDots({ t, count = 5, size = 5 }) {
-  return (
-    <span aria-label={t('home_amounts_hidden')} style={{ display: 'inline-flex', alignItems: 'center', gap: `${Math.max(3, Math.round(size / 2))}px`, verticalAlign: 'middle' }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <span key={i} style={{ width: `${size}px`, height: `${size}px`, borderRadius: '50%', backgroundColor: 'var(--c-666)', display: 'inline-block' }} />
-      ))}
-    </span>
-  );
-}
+// MaskedDots vit desormais dans son propre fichier (voir src/MaskedDots.js pour pourquoi) --
+// re-exporte ici (en plus d'etre importe pour l'usage local juste en dessous) pour que les
+// importeurs existants (Bankroll.js, BankrollCalendar.js, PerformanceInsights.js) n'aient rien a
+// changer.
+export { MaskedDots };
 
 function IconBack({ color = 'currentColor', size = 20 }) {
   return (
@@ -414,21 +410,12 @@ function RecentBetsCard({ t, loading, recentCombines, onSeeAll, hideAmounts }) {
       ) : recentCombines.length === 0 ? (
         <EmptyState icon="🏒" title={t('home_no_bets_title')} sub={t('home_no_bets_sub')} />
       ) : recentCombines.map((p, i) => (
-        <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: i > 0 ? '1px solid var(--c-111)' : 'none' }}>
-          <div>
-            <p style={{ margin: '0 0 2px', fontWeight: '600', fontSize: '13px', color: 'var(--c-white)' }}>{p.titre}</p>
-            <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px' }}>{p.bookmaker} · {t('home_odds')} {p.cote}</p>
-          </div>
-          {p.statut === 'actif' ? (
-            <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600' }}>{t('home_active_badge')}</span>
-          ) : hideAmounts ? (
-            <MaskedDots t={t} />
-          ) : (
-            <span style={{ color: p.statut === 'gagne' ? '#22c55e' : '#ef4444', fontWeight: '700', fontSize: '14px' }}>
-              {p.statut === 'gagne' ? '+' : '-'}${Math.abs(p.statut === 'gagne' ? p.profit : p.mise).toFixed(2)}
-            </span>
-          )}
-        </div>
+        <BetRow
+          key={p.key} t={t} bordered={i > 0} hideAmounts={hideAmounts}
+          title={p.titre} bookmaker={p.bookmaker} odds={p.cote} stake={p.mise}
+          status={p.statut === 'actif' ? 'pending' : p.statut === 'gagne' ? 'won' : 'lost'}
+          profit={p.profit}
+        />
       ))}
     </div>
   );

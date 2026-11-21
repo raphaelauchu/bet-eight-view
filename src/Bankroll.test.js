@@ -159,6 +159,34 @@ describe('page de compte', () => {
   });
 });
 
+describe('page de compte : nouvelle regle du solde (mise en cours deja retiree) + libelle partage', () => {
+  test('solde = depot - mise en cours (pas depot complet), Total Staked inclut la mise en cours, meme libelle "Actif" + titre complet qu\'a l\'accueil', async () => {
+    setupSupabase({
+      accounts: [{ id: 'acc-betway', user_id: 'u1', name: 'Betway', kind: 'betway', created_at: '2026-01-02', archived_at: null }],
+      transactions: [{ id: 'tx1', user_id: 'u1', account_id: 'acc-betway', type: 'deposit', amount: 50, occurred_on: '2026-01-02', note: null }],
+      paris: [],
+      betsAuto: [
+        { id: 'b1', user_id: 'u1', account_id: 'acc-betway', bookmaker: 'Betway', mise: 50, cote: 1.8, statut: 'pending', joueur_nom: 'Alexandre Texier', stat_type: 'Goals', ligne: 1, created_at: '2026-02-01' },
+      ],
+    });
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByText('Paris récents')).toBeInTheDocument());
+
+    // Solde = 50 (depot) - 50 (mise en cours) = 0$ -- la mise est deja retiree, pas seulement "en jeu" en plus.
+    expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0);
+    // Total Staked doit refleter la mise en cours (ne plus afficher 0$ alors qu'un pari est en jeu)
+    // -- apparait aussi dans "En jeu" et la sous-ligne du pari, donc plusieurs occurrences attendues.
+    expect(screen.getAllByText('$50.00').length).toBeGreaterThanOrEqual(2);
+    // Meme libelle de titre que l'accueil (joueur + ligne statistique, pas juste le nom).
+    expect(screen.getByText('Alexandre Texier — Goals 1')).toBeInTheDocument();
+    // Meme libelle de statut que l'accueil ("Actif"), plus jamais "En attente" ici.
+    expect(screen.getByText('Actif')).toBeInTheDocument();
+    expect(screen.queryByText('En attente')).not.toBeInTheDocument();
+  });
+});
+
 describe('page de compte : mise en page responsive (>= 1024px grille, < 1024px liste ordonnee)', () => {
   const BLOCS = ['bank-block-hero', 'bank-block-money-buttons', 'bank-block-calendar', 'bank-block-recent-bets', 'bank-block-available-at-risk', 'bank-block-net-deposits', 'bank-block-stats'];
 
@@ -283,6 +311,51 @@ describe('ajouter un pari depuis la page de compte', () => {
 
     await waitFor(() => expect(insertedPayloads.length).toBe(1));
     expect(insertedPayloads[0].account_id).toBe('acc-betway');
+  });
+
+  test('refuse une mise superieure au disponible du compte, avec un lien pour ajouter de l\'argent', async () => {
+    // Disponible du compte Betway (fixture ACCOUNTS/TRANSACTIONS/BETS_AUTO) = 200 (depot) - 50
+    // (mise du pari deja regle) + 100 (retourne, gagnant) = 250. Une mise de 9999 doit etre refusee.
+    supabase.functions.invoke.mockResolvedValue({
+      data: { data: { mise: 9999, cote: 1.8, bookmaker: 'Betway', equipe: 'MTL', adversaire: 'TOR' } },
+      error: null,
+    });
+    const insertedPayloads = [];
+    supabase.from.mockImplementation((table) => {
+      if (table === 'bankroll_accounts') return mockQuery({ data: ACCOUNTS, error: null });
+      if (table === 'bankroll_transactions') return mockQuery({ data: TRANSACTIONS, error: null });
+      if (table === 'paris') return mockQuery({ data: PARIS, error: null });
+      if (table === 'bets_auto') {
+        return {
+          select: () => mockQuery({ data: BETS_AUTO, error: null }),
+          insert: (payload) => {
+            insertedPayloads.push(payload);
+            return { select: () => ({ single: () => Promise.resolve({ data: { id: 'new-bet', ...payload }, error: null }) }) };
+          },
+        };
+      }
+      return mockQuery({ data: [], error: null });
+    });
+
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Betway')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Betway'));
+    await waitFor(() => expect(screen.getByText('+ Ajouter un pari')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('+ Ajouter un pari'));
+    const fileInput = document.querySelector('input[type="file"]');
+    const fichier = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(fileInput, { target: { files: [fichier] } });
+
+    await waitFor(() => expect(screen.getByText('Confirmer et enregistrer')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Confirmer et enregistrer'));
+
+    await waitFor(() => expect(screen.getByText(/dépasse le disponible du compte/)).toBeInTheDocument());
+    expect(insertedPayloads.length).toBe(0); // aucun enregistrement
+
+    // Le lien ouvre directement la feuille de depot du compte.
+    fireEvent.click(screen.getByText('Ajouter de l’argent', { selector: 'button' }));
+    await waitFor(() => expect(screen.getByText(/Montant/)).toBeInTheDocument());
   });
 });
 

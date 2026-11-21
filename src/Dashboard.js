@@ -9,6 +9,7 @@ import { BET_TYPES } from './betTypes';
 import { useIsMobile } from './Analyses';
 import { AddAccountSheet } from './Bankroll';
 import { titreBetAuto } from './betDisplay';
+import { normalizeAllBets, betsForAccount, computeAccountBalance } from './bankrollCalc';
 
 export { titreBetAuto };
 
@@ -35,6 +36,7 @@ function Dashboard({ lang = 'en' }) {
   const [showFiltresAvances, setShowFiltresAvances] = useState(false);
   const [erreurAction, setErreurAction] = useState('');
   const [accounts, setAccounts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [utilisateur, setUtilisateur] = useState(null);
   // Resolveur de la promesse rendue par onCreateAccount (voir BetAutoForm.js:changerCompte) --
   // tant qu'il n'est pas null, la feuille "Ajouter un compte" est affichee ; se resout avec le
@@ -71,6 +73,8 @@ function Dashboard({ lang = 'en' }) {
       if (!errorBetsAuto) setBetsAuto(dataBetsAuto || []);
       const { data: dataAccounts } = await supabase.from('bankroll_accounts').select('*').eq('user_id', user.id).is('archived_at', null).order('created_at', { ascending: true });
       setAccounts(dataAccounts || []);
+      const { data: dataTransactions } = await supabase.from('bankroll_transactions').select('*').eq('user_id', user.id);
+      setTransactions(dataTransactions || []);
 
       // TODO (parsers): une fois les parsers email branchés, cette liste sera peuplée
       // automatiquement par une Edge Function / job qui lit les courriels de confirmation
@@ -317,6 +321,14 @@ function Dashboard({ lang = 'en' }) {
   // creer un compte avant d'enregistrer.
   const premierCompte = accounts[0] || null;
   const existingKinds = new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind));
+  // Disponible actuel par compte (src/bankrollCalc.js:computeAccountBalance) -- permet a
+  // BetImportFlow de refuser cote app une mise superieure au disponible du compte choisi (en
+  // plus du trigger cote base, voir supabase/migrations/20261125_bet_stake_balance.sql).
+  const allBetsNormalises = normalizeAllBets(paris, betsAuto);
+  const availableForAccount = Object.fromEntries(accounts.map(a => [
+    a.id,
+    computeAccountBalance(transactions.filter(tx => tx.account_id === a.id), betsForAccount(allBetsNormalises, a.id)),
+  ]));
 
   const contenuPrincipal = (
     <>
@@ -365,6 +377,7 @@ function Dashboard({ lang = 'en' }) {
           accounts={accounts}
           defaultAccountId={premierCompte?.id || null}
           onCreateAccount={demanderCreationCompte}
+          availableForAccount={availableForAccount}
         />
       )}
 
