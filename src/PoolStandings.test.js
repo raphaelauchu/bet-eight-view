@@ -12,6 +12,7 @@ jest.mock('./Analyses', () => ({
   useIsMobile: jest.fn(() => false),
   useSaisonCourante: () => '20252026',
   LOGOS_NHL: {},
+  LOGOS_NHL_REAL: {},
   FicheJoueurStats: () => null,
 }));
 

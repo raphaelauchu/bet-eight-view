@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getT } from './i18n';
-import { headshotUrl, TeamLogo, PlayerAvatar, round1 } from './PoolDraftRoom';
+import { TeamLogo, PlayerAvatar, round1 } from './PoolDraftRoom';
+import { poolPlayerPhotoUrl } from './poolVisuals';
+import { NHL_VISUALS_ENABLED } from './brandAssetsConfig';
+import { useSaisonCourante } from './season';
 import { teamColors } from './nhlTeamColors';
-import { USE_LICENSED_NHL_ASSETS } from './brandAssetsConfig';
-import { TeamJersey } from './BrandAssets';
-import { useRosterNumber } from './rosterNumbers';
+import { readableTextColor } from './BrandAssets';
 
 // ===================== PlayerCard : carte joueur unique, reutilisee partout =====================
 // Formation (Vue vestiaire), echanges, agents libres, repechage, anciens joueurs -- un seul
@@ -64,27 +65,29 @@ function initialsFromName(label) {
   return (mots[0][0] + mots[mots.length - 1][0]).toUpperCase();
 }
 
-// Jamais de fantome gris : si la photo echoue (ou n'existe pas encore pour ce joueur), des
-// initiales sur la couleur reelle de son equipe LNH (nhlTeamColors.js) prennent sa place.
-// Formation du pool (B, voir brandAssetsConfig.js) : tant qu'aucune licence LNH/NHLPA n'existe,
-// jamais de photo ici -- un chandail de dos aux couleurs de l'equipe avec le nom + le numero
-// reel du joueur (useRosterNumber, src/rosterNumbers.js -- MEME source que Analyses.js, un
-// seul fetch par equipe jamais par joueur). Numero pas encore connu : initiales en repli.
-function PlayerPhotoOrInitials({ src, label, teamAbbrev, playerId }) {
+// Jamais de fantome gris : si la photo echoue (ou n'existe pas encore pour ce joueur, ou si
+// NHL_VISUALS_ENABLED est a `false`), des initiales sur la couleur reelle de l'equipe LNH
+// prennent sa place. Variante "formation" uniquement : la photo doit remplir .pcf-photo (carte
+// rectangulaire, voir index.css), donc on utilise les primitives brutes de poolVisuals.js plutot
+// que PlayerAvatar (avatar circulaire a taille fixe, utilise par le reste du Pool).
+function PlayerPhotoOrInitials({ label, teamAbbrev, playerId }) {
+  const seasonId = useSaisonCourante();
   const [failed, setFailed] = useState(false);
-  const number = useRosterNumber(teamAbbrev, playerId);
-  if (!USE_LICENSED_NHL_ASSETS) {
-    return <TeamJersey teamAbbrev={teamAbbrev} name={label} number={number} size={64} className="player-card-photo-img" />;
-  }
-  if (!src || failed) {
+  if (!NHL_VISUALS_ENABLED || !playerId || failed) {
     const colors = teamColors(teamAbbrev);
     return (
-      <div className="player-card-initials" style={{ backgroundColor: colors.primary }} aria-hidden="true">
+      <div className="player-card-initials" style={{ backgroundColor: colors.primary, color: readableTextColor(colors.primary) }} aria-hidden="true">
         {initialsFromName(label)}
       </div>
     );
   }
-  return <img src={src} alt="" className="player-card-photo-img" onError={() => setFailed(true)} />;
+  return (
+    <img
+      src={poolPlayerPhotoUrl(seasonId, teamAbbrev, playerId)}
+      alt="" loading="lazy" className="player-card-photo-img"
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 // row : ligne get_member_breakdown (ou forme compatible : kind/ref_id/label/pos_group/
@@ -178,7 +181,7 @@ export default function PlayerCard({
         )}
 
         <div className="pcf-photo">
-          <PlayerPhotoOrInitials src={headshotUrl(row.ref_id, seasonId, row.team_abbrev, row.pos_group)} label={row.label} teamAbbrev={row.team_abbrev} playerId={row.ref_id} />
+          <PlayerPhotoOrInitials label={row.label} teamAbbrev={row.team_abbrev} playerId={row.ref_id} />
         </div>
 
         <div className="pcf-name" style={{ fontSize: formationNameFontSize(row.label) }}>
@@ -250,7 +253,7 @@ export default function PlayerCard({
         </div>
       )}
 
-      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={photoSize} />}
+      {isTeam ? <TeamLogo abbrev={row.ref_id} size={photoSize} /> : <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={photoSize} playerId={row.ref_id} name={row.label} />}
       {!isTeam && row.team_abbrev && <TeamLogo abbrev={row.team_abbrev} size={size === 'L' ? 18 : 14} />}
       <div className="player-card-name">{row.label}</div>
       {!isTeam && <div className="player-card-pos">{row.pos_group}</div>}

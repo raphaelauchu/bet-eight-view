@@ -9,6 +9,7 @@ jest.mock('./Analyses', () => ({
   useIsMobile: () => false,
   useSaisonCourante: () => '20262027',
   LOGOS_NHL: {},
+  LOGOS_NHL_REAL: {},
   playerPhotoUrl: jest.fn(() => 'data:image/svg+xml,mock'),
   FicheJoueurStats: () => null,
 }));
@@ -352,9 +353,10 @@ test('PoolWaiversTab : grille de PlayerCard avec filtre "Blesses" (player_injuri
   expect(screen.getByText('Agent Libre Blesse')).toBeInTheDocument();
   expect(screen.getByLabelText(/Blessure :/, { selector: 'span' })).toBeInTheDocument();
 
-  // Agents libres : vignette casque/masque (PlayerAvatar), jamais une photo/logo LNH.
-  expect(container.querySelectorAll('img').length).toBe(0);
-  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
+  // Onglet Pool (NHL_VISUALS_ENABLED=true) : vignette photo LNH reelle pour chaque agent libre.
+  const photos = container.querySelectorAll('img');
+  expect(photos.length).toBeGreaterThan(0);
+  photos.forEach(img => expect(img.getAttribute('src')).toMatch(/assets\.nhle\.com\/mugs\/nhl\//));
 
   fireEvent.click(screen.getByText('Blessés'));
   expect(screen.queryByText('Agent Libre Sain')).not.toBeInTheDocument();

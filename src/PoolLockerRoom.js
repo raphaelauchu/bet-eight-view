@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
-import { useSaisonCourante, LOGOS_NHL, FicheJoueurStats } from './Analyses';
+import { useSaisonCourante, FicheJoueurStats } from './Analyses';
 import { headshotUrl, TeamLogo, round1, memberLabel, easternDateStr } from './PoolDraftRoom';
+import { POOL_TEAM_LOGOS } from './poolVisuals';
+import { NHL_VISUALS_ENABLED } from './brandAssetsConfig';
 import { teamGradient, teamColors } from './nhlTeamColors';
 import PlayerCard, { computePlayerTier } from './PlayerCard';
 
@@ -474,8 +476,8 @@ export async function exportLockerRoomImage({ pool, member, rows, standingsRow, 
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, headerH);
 
-  if (teamAbbrev && LOGOS_NHL[teamAbbrev]) {
-    const logo = await loadImageSafe(imageProxyUrl(LOGOS_NHL[teamAbbrev]));
+  if (NHL_VISUALS_ENABLED && teamAbbrev && POOL_TEAM_LOGOS[teamAbbrev]) {
+    const logo = await loadImageSafe(imageProxyUrl(POOL_TEAM_LOGOS[teamAbbrev]));
     if (logo) ctx.drawImage(logo, padding, 20, 90, 90);
   }
 

@@ -8,6 +8,7 @@ jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }
 jest.mock('./Analyses', () => ({
   useSaisonCourante: () => '20262027',
   LOGOS_NHL: { MTL: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg' },
+  LOGOS_NHL_REAL: { MTL: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg' },
   playerPhotoUrl: jest.fn(() => 'data:image/svg+xml,mock'),
   FicheJoueurStats: ({ joueur, onBack }) => (
     <div>
@@ -351,20 +352,26 @@ test('PoolTeamHub : onglet Banc/IR masque pour un pool classique (toujours vide)
   expect(screen.queryByText('Banc/IR')).not.toBeInTheDocument();
 });
 
-test('PoolTeamHub : onglet Banc/IR -- joueur affiche un chandail aux initiales (jamais une photo/logo LNH)', async () => {
+test('PoolTeamHub : onglet Banc/IR -- joueur affiche une photo LNH (NHL_VISUALS_ENABLED), repli initiales si l\'image echoue', async () => {
   const rows = [makeRow({ ref_id: 'bn1', label: 'Jean Dupont', pos_group: 'F', current_slot: 'BN', team_abbrev: 'MTL' })];
   render(<PoolTeamHub pool={POOL_FANTASY} member={MEMBER} rows={rows} standingsRow={null} lang="fr">table</PoolTeamHub>);
   await waitFor(() => expect(screen.getByText('Banc/IR')).toBeInTheDocument());
   fireEvent.click(screen.getByText('Banc/IR'));
 
-  // Tant qu'aucune licence LNH/NHLPA n'existe (USE_LICENSED_NHL_ASSETS=false) : un chandail
-  // SVG inline dessine par Betrics (jamais une image, jamais assets.nhle.com), initiales
-  // visibles dedans (numero de chandail non resolu dans ce test -- roster non mocke).
-  const svg = document.querySelector('.player-card-photo-img');
-  expect(svg).toBeInTheDocument();
-  expect(svg.tagName.toLowerCase()).toBe('svg');
-  expect(svg.innerHTML).not.toMatch(/nhle\.com/);
-  expect(svg.innerHTML).toContain('>JD<');
+  // Onglet Pool uniquement (NHL_VISUALS_ENABLED=true, voir brandAssetsConfig.js) : une vraie
+  // photo assets.nhle.com, jamais le chandail SVG neutre utilise ailleurs dans l'app.
+  const img = document.querySelector('.player-card-photo-img');
+  expect(img).toBeInTheDocument();
+  expect(img.tagName.toLowerCase()).toBe('img');
+  expect(img.getAttribute('src')).toMatch(/assets\.nhle\.com\/mugs\/nhl\//);
+
+  // Image en echec : repli propre sur les initiales du joueur, jamais un fantome gris.
+  fireEvent.error(img);
+  await waitFor(() => {
+    const initials = document.querySelector('.player-card-initials');
+    expect(initials).toBeInTheDocument();
+    expect(initials.textContent).toBe('JD');
+  });
 });
 
 test('PoolTeamHub : etat de chargement -- squelette affiche, pas de carte/onglet, pas de crash', () => {

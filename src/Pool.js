@@ -1485,6 +1485,7 @@ export default function PoolHub({ utilisateur, lang, openPoolId, onConsumedOpenP
         <PoolLobby pool={selectedPool} utilisateur={utilisateur} lang={lang} isMobile={isMobile} initialTab={initialLobbyTab}
           onBack={() => setView('list')} onEditRules={() => setView('edit')}
           onPoolDeleted={handlePoolDeleted} onPoolLeft={handlePoolLeft} />
+        <PoolNhlDisclaimer t={t} />
       </div>
     );
   }
@@ -1522,6 +1523,17 @@ export default function PoolHub({ utilisateur, lang, openPoolId, onConsumedOpenP
           ))}
         </div>
       )}
+      <PoolNhlDisclaimer t={t} />
+    </div>
+  );
+}
+
+// Mention de non-affiliation LNH/AJLNH -- uniquement dans l'onglet Pool (seul endroit de l'app
+// qui affiche encore des visuels LNH reels, voir NHL_VISUALS_ENABLED dans brandAssetsConfig.js).
+function PoolNhlDisclaimer({ t }) {
+  return (
+    <div style={{ marginTop: '24px', paddingTop: '14px', borderTop: '1px solid var(--c-161616)', textAlign: 'center' }}>
+      <span style={{ fontSize: '10px', color: 'var(--c-555)', lineHeight: '1.4' }}>{t('pool_nhl_disclaimer')}</span>
     </div>
   );
 }

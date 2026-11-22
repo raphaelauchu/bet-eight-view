@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { getUrl } from './nhlApi';
-import { useIsMobile, useSaisonCourante, LOGOS_NHL, playerPhotoUrl } from './Analyses';
-import { TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
+import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
 import { useRosterNumber } from './rosterNumbers';
+import { PoolPlayerPhoto, PoolTeamLogo, poolPlayerPhotoUrl } from './poolVisuals';
+import { NHL_VISUALS_ENABLED } from './brandAssetsConfig';
 import {
   computePicksPerMember, computeRosterQuota, computeCurrentMemberId, PICK_POSITIONS,
   currentSeasonLabelFromSeasonId, POSITION_STAT_KEYS, GOALIE_STAT_KEYS, TEAM_STAT_KEYS,
@@ -45,10 +46,13 @@ function getStatsUrl(fullUrl) {
   return estEnProduction ? `/api/nhl?path=${encodeURIComponent(fullUrl)}` : fullUrl;
 }
 
-// posGroup optionnel ('F'|'D'|'G') : choisit le casque (skater) ou le masque de gardien quand
-// aucune licence LNH/NHLPA n'existe (voir src/brandAssetsConfig.js, src/BrandAssets.js).
-export function headshotUrl(playerId, seasonId, team, posGroup) {
-  return playerPhotoUrl(seasonId, team, playerId, { goalie: posGroup === 'G' });
+// URL de photo reelle (assets.nhle.com) pour les usages hors-React du Pool (export canevas de
+// la Vue vestiaire, voir PoolLockerRoom.js) -- NHL_VISUALS_ENABLED (brandAssetsConfig.js, Pool
+// UNIQUEMENT) plutot que le drapeau global USE_LICENSED_NHL_ASSETS. null si desactive ou sans
+// playerId : les appelants (loadImageSafe) traitent deja null comme "aucune image a dessiner".
+export function headshotUrl(playerId, seasonId, team) {
+  if (!NHL_VISUALS_ENABLED || !playerId) return null;
+  return poolPlayerPhotoUrl(seasonId, team, playerId);
 }
 
 function calcAge(birthDate) {
@@ -288,19 +292,19 @@ function mapPickError(code, t) {
   return translated !== key ? translated : t('pool_draft_error_generic');
 }
 
-// Casque (skater) ou masque de gardien, jamais une photo -- voir src/BrandAssets.js.
-export function PlayerAvatar({ teamAbbrev, goalie, size = 32, alt }) {
-  return goalie
-    ? <GoalieMask teamAbbrev={teamAbbrev} size={size} alt={alt} />
-    : <PlayerHelmet teamAbbrev={teamAbbrev} size={size} alt={alt} />;
+// Photo reelle du joueur (assets.nhle.com, src/poolVisuals.js) quand NHL_VISUALS_ENABLED est a
+// `true` ET que playerId est fourni -- sinon initiales sur la couleur de l'equipe. `goalie` n'a
+// plus d'effet sur l'image elle-meme (meme URL skater/gardien), conserve pour compatibilite des
+// appelants existants. `playerId`/`name` optionnels : sans eux (joueur manuel, donnee absente),
+// repli immediat sur les initiales sans tentative reseau.
+export function PlayerAvatar({ teamAbbrev, goalie, size = 32, alt, playerId, name }) {
+  return <PoolPlayerPhoto teamAbbrev={teamAbbrev} size={size} alt={alt} playerId={playerId} name={name || alt} />;
 }
 
-// Logo d'equipe = abreviation en texte seul, jamais une image (regle finale -- voir
-// src/BrandAssets.js TeamAbbrevText). `size` pilote la taille du texte, pas une image.
+// Logo d'equipe reel (assets.nhle.com, src/poolVisuals.js) quand NHL_VISUALS_ENABLED est a
+// `true` -- sinon abreviation en texte seul (repli, voir PoolTeamLogo).
 export function TeamLogo({ abbrev, size = 20, title }) {
-  return (
-    <TeamAbbrevText teamAbbrev={abbrev} title={title} style={{ fontSize: Math.max(10, Math.round(size * 0.5)), flexShrink: 0, lineHeight: 1 }} />
-  );
+  return <PoolTeamLogo teamAbbrev={abbrev} size={size} title={title} alt={title} />;
 }
 
 // ===================== Fiche joueur / equipe (modal) =====================
@@ -364,7 +368,7 @@ export function PlayerDetailModal({ target, seasonId, lang, taken, ownerName, ca
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-            <PlayerAvatar teamAbbrev={!isManualPlayer ? (infos?.team || target.team) : null} goalie={(infos?.position || target.posReel) === 'G'} size={64} alt={infos?.fullName || target.name} />
+            <PlayerAvatar teamAbbrev={!isManualPlayer ? (infos?.team || target.team) : null} goalie={(infos?.position || target.posReel) === 'G'} size={64} alt={infos?.fullName || target.name} playerId={!isManualPlayer ? target.id : null} name={infos?.fullName || target.name} />
             <div>
               <div style={{ fontSize: '17px', fontWeight: '800', color: 'var(--c-white)' }}>{infos?.fullName || target.name}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--c-666)' }}>
@@ -542,7 +546,7 @@ function PickRow({ pick, capEnabled, onClick, highlight, seasonId, points }) {
       borderRadius: '8px', transition: 'background-color 1.5s ease',
     }}>
       <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '18px' }}>{pick.pick_no || '—'}</span>
-      {pick.kind === 'team' ? <TeamLogo abbrev={pick.nhl_team || pick.player_id} size={22} /> : <PlayerAvatar teamAbbrev={!pick.is_manual ? pick.nhl_team : null} goalie={pick.pos_group === 'G'} size={22} />}
+      {pick.kind === 'team' ? <TeamLogo abbrev={pick.nhl_team || pick.player_id} size={22} /> : <PlayerAvatar teamAbbrev={!pick.is_manual ? pick.nhl_team : null} goalie={pick.pos_group === 'G'} size={22} playerId={!pick.is_manual ? pick.player_id : null} name={pick.player_name} />}
       <span style={{ fontSize: '9px', fontWeight: '700', color: POS_COLORS[pick.position] }}>{pick.position}</span>
       <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pick.player_name}</span>
       {capEnabled && pick.salary > 0 && <span style={{ fontSize: '10px', color: 'var(--c-666)' }}>{Number(pick.salary).toLocaleString()} $</span>}
@@ -811,7 +815,7 @@ function TopScorersBlock({ pool, lang, rows, showAll, setShowAll }) {
               {list.map(r => (
                 <tr key={r.ref_id} style={{ borderTop: '1px solid var(--c-161616)' }}>
                   <td style={{ padding: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <PlayerAvatar teamAbbrev={r.team_abbrev} goalie={r.pos_group === 'G'} size={26} />
+                    <PlayerAvatar teamAbbrev={r.team_abbrev} goalie={r.pos_group === 'G'} size={26} playerId={r.ref_id} name={r.label} />
                     <TeamLogo abbrev={r.team_abbrev} size={16} />
                     <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>{r.label}</span>
                   </td>
@@ -1018,7 +1022,7 @@ function MemberStatsSection({ section, rows, pool, capEnabled, t, lang }) {
               <tr key={`${r.kind}:${r.ref_id}`} style={{ borderTop: '1px solid var(--c-161616)', backgroundColor: isTraded ? 'rgba(239,68,68,0.06)' : 'transparent', opacity: isBenched ? 0.55 : 1 }}>
                 <td style={stickyFirstCellStyle('var(--c-0d0d0d)')}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar teamAbbrev={r.team_abbrev} goalie={r.pos_group === 'G'} size={24} />}
+                    {isTeam ? <TeamLogo abbrev={r.ref_id} size={24} /> : <PlayerAvatar teamAbbrev={r.team_abbrev} goalie={r.pos_group === 'G'} size={24} playerId={r.ref_id} name={r.label} />}
                     {!isTeam && r.team_abbrev && <TeamLogo abbrev={r.team_abbrev} size={14} />}
                     <span style={{ color: 'var(--c-white)', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       {r.label}{r.pick_no ? <span style={{ color: 'var(--c-555)', fontWeight: '400' }}> (#{r.pick_no})</span> : ''}
@@ -1252,7 +1256,7 @@ export function AllPicksPanel({ pool, members, picks, lang, onOpenDetail }) {
             return (
               <div key={p.id} onClick={() => onOpenDetail?.(p)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 4px', borderTop: '1px solid var(--c-161616)', cursor: 'pointer' }}>
                 <span style={{ fontSize: '10px', color: '#f97316', fontWeight: '700', minWidth: '26px' }}>{p.pick_no ? `#${p.pick_no}` : '—'}</span>
-                {p.kind === 'team' ? <TeamLogo abbrev={p.nhl_team || p.player_id} size={28} /> : <PlayerAvatar teamAbbrev={!p.is_manual ? p.nhl_team : null} goalie={p.pos_group === 'G'} size={28} />}
+                {p.kind === 'team' ? <TeamLogo abbrev={p.nhl_team || p.player_id} size={28} /> : <PlayerAvatar teamAbbrev={!p.is_manual ? p.nhl_team : null} goalie={p.pos_group === 'G'} size={28} playerId={!p.is_manual ? p.player_id : null} name={p.player_name} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '13px', color: 'var(--c-white)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player_name}</div>
                   <div style={{ fontSize: '10px', color: 'var(--c-666)' }}>{t('pool_draft_round_label')} {p.round || '—'} · {m?.display_name || m?.team_name || '?'}</div>
@@ -1729,7 +1733,7 @@ export default function PoolDraftRoom({ pool, members, picks, utilisateur, lang,
                     return (
                       <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: taken ? 0.4 : 1, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
                         <div onClick={() => openPlayerDetailFromList(j)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, cursor: 'pointer', minWidth: '100px' }}>
-                          <PlayerAvatar teamAbbrev={!j.manual ? j.team : null} goalie={j.posReel === 'G' || j.position === 'G'} size={32} />
+                          <PlayerAvatar teamAbbrev={!j.manual ? j.team : null} goalie={j.posReel === 'G' || j.position === 'G'} size={32} playerId={!j.manual ? j.id : null} name={j.name} />
                           <span style={{ fontSize: '10px', fontWeight: '700', color: POS_COLORS[posReelToPickPosition(j.posReel)], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.name}</div>

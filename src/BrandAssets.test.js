@@ -155,34 +155,31 @@ test('PlayerHelmet / TeamJersey / TeamCrest / PlayerAvatar : rendent un <svg> in
 });
 
 // ===================== Regression bout-en-bout : PlayerCard (les deux variantes) =====================
+// Exception deliberee a la regle "aucune licence LNH/NHLPA" testee plus haut : PlayerCard
+// n'existe QUE dans l'onglet Pool, seul endroit de l'app ou NHL_VISUALS_ENABLED (independant de
+// USE_LICENSED_NHL_ASSETS ci-dessus, voir brandAssetsConfig.js) remet des photos/logos reels.
 
 function makeRow(overrides) {
   return { kind: 'player', ref_id: '8480018', label: 'Nick Suzuki', pos_group: 'F', team_abbrev: 'MTL', total_points: 10, ...overrides };
 }
 
-test('PlayerCard (variant="default") : casque SVG inline, abreviation d\'equipe en texte, aucune image', () => {
+test('PlayerCard (variant="default") : photo joueur + logo d\'equipe reels (assets.nhle.com), onglet Pool uniquement', () => {
   const { container } = render(<PlayerCard row={makeRow()} lang="fr" seasonId="20262027" />);
-  // Casque (PlayerAvatar/PlayerHelmet) + logo d'equipe (TeamLogo/TeamAbbrevText) = jamais un <img>.
-  expect(container.querySelectorAll('img').length).toBe(0);
-  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
-  expect(container.innerHTML).toContain('>MTL<');
-  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
+  expect(container.querySelectorAll('img').length).toBe(2);
+  expect(pointsToNhlDomain(container.innerHTML)).toBe(true);
+  expect(container.innerHTML).toContain('>Nick Suzuki<');
 });
 
-test('PlayerCard (variant="formation") : chandail SVG inline (numero inconnu -> initiales), aucune image LNH', () => {
+test('PlayerCard (variant="formation") : photo joueur reelle (assets.nhle.com)', () => {
   const { container } = render(<PlayerCard row={makeRow({ pos_group: 'G' })} variant="formation" lang="fr" seasonId="20262027" />);
-  // Le chandail (TeamJersey) et le petit badge d'equipe (TeamLogo/TeamAbbrevText) sont tous les
-  // deux du SVG/texte inline -- plus aucun <img> dans cette variante non plus.
-  expect(container.querySelectorAll('img').length).toBe(0);
-  expect(container.querySelectorAll('svg').length).toBeGreaterThan(0);
-  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
-  // "Nick Suzuki" sans numero connu (fetch de roster non resolu en test) -> initiales "NS".
-  expect(container.innerHTML).toContain('>NS<');
+  const img = container.querySelector('.player-card-photo-img');
+  expect(img).toBeInTheDocument();
+  expect(img.tagName.toLowerCase()).toBe('img');
+  expect(img.getAttribute('src')).toMatch(/assets\.nhle\.com\/mugs\/nhl\//);
 });
 
-test('PlayerCard : logo d\'equipe (kind="team") -- abreviation en texte, aucune image', () => {
+test('PlayerCard : logo d\'equipe (kind="team") -- image reelle', () => {
   const { container } = render(<PlayerCard row={{ kind: 'team', ref_id: 'MTL', label: 'MTL', total_points: 5 }} lang="fr" seasonId="20262027" />);
-  expect(container.querySelectorAll('img').length).toBe(0);
+  expect(container.querySelectorAll('img').length).toBe(1);
   expect(container.innerHTML).toContain('>MTL<');
-  expect(pointsToNhlDomain(container.innerHTML)).toBe(false);
 });

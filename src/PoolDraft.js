@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useIsMobile, useSaisonCourante, LOGOS_NHL } from './Analyses';
-import { TeamAbbrevText, PlayerHelmet, GoalieMask } from './BrandAssets';
+import { PlayerAvatar, TeamLogo } from './PoolDraftRoom';
+
+// Un id de joueur manuel (sans correspondance NHL connue) est synthetise comme -Date.now() par
+// construireJoueurManuel() ci-dessous -- jamais un vrai id NHL, donc jamais de requete photo pour lui.
+function idNhlReel(id) {
+  return typeof id === 'number' && id > 0 ? id : null;
+}
 
 const POS_ORDER = ['F', 'D', 'G'];
 const POS_LABELS = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
@@ -860,9 +866,8 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                       onMouseEnter={e => { if (!dejaPris) e.currentTarget.style.backgroundColor = 'var(--c-222)'; }}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {r.positionCode === 'G'
-                        ? <GoalieMask teamAbbrev={r.teamAbbrev} size={36} alt={r.name} />
-                        : <PlayerHelmet teamAbbrev={r.teamAbbrev} size={36} alt={r.name} />}
+                      <PlayerAvatar teamAbbrev={r.teamAbbrev} goalie={r.positionCode === 'G'} size={36} alt={r.name} playerId={idNhlReel(Number(r.playerId))} name={r.name} />
+                      <TeamLogo abbrev={r.teamAbbrev} size={20} title={r.teamAbbrev} />
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--c-white)' }}>{r.name}</div>
                         <div style={{ fontSize: '11px', color: dejaPris ? '#ef4444' : 'var(--c-666)' }}>
@@ -907,9 +912,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
         <div style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid rgba(167,139,250,0.35)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
             <div style={{ visibility: ajoutManuel.equipe ? 'visible' : 'hidden' }}>
-              {ajoutManuel.positionCode === 'G'
-                ? <GoalieMask teamAbbrev={ajoutManuel.equipe} size={36} />
-                : <PlayerHelmet teamAbbrev={ajoutManuel.equipe} size={36} />}
+              <TeamLogo abbrev={ajoutManuel.equipe} size={36} title={ajoutManuel.equipe} />
             </div>
             <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ajouter un joueur manuellement</div>
           </div>
@@ -954,9 +957,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '16px', padding: '20px', maxWidth: '360px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-              {choixEnAttente.posReel === 'G'
-                ? <GoalieMask teamAbbrev={choixEnAttente.equipe} size={48} alt={choixEnAttente.nom} />
-                : <PlayerHelmet teamAbbrev={choixEnAttente.equipe} size={48} alt={choixEnAttente.nom} />}
+              <PlayerAvatar teamAbbrev={choixEnAttente.equipe} goalie={choixEnAttente.posReel === 'G'} size={48} alt={choixEnAttente.nom} playerId={idNhlReel(choixEnAttente.id)} name={choixEnAttente.nom} />
               <div>
                 <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--c-white)' }}>{choixEnAttente.nom}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
@@ -1006,13 +1007,11 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                 const disponible = estDisponible(j.id);
                 return (
                   <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-161616)', borderRadius: '12px', padding: '10px 12px', marginBottom: '6px', opacity: disponible ? 1 : 0.4, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                    {j.posReel === 'G'
-                      ? <GoalieMask teamAbbrev={j.equipe} size={36} alt={j.nom} />
-                      : <PlayerHelmet teamAbbrev={j.equipe} size={36} alt={j.nom} />}
+                    <PlayerAvatar teamAbbrev={j.equipe} goalie={j.posReel === 'G'} size={36} alt={j.nom} playerId={idNhlReel(j.id)} name={j.nom} />
                     <span style={{ fontSize: '10px', fontWeight: '700', color: POS_REEL_COLORS[j.posReel], backgroundColor: 'var(--c-111)', borderRadius: '6px', padding: '3px 7px', flexShrink: 0 }}>{j.posReel}</span>
                     <div style={{ flex: 1, minWidth: '100px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: '700', color: 'var(--c-white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '11px' }} />
+                        <TeamLogo abbrev={j.equipe} size={14} title={j.equipe} />
                         {j.nom}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--c-555)' }}>
@@ -1082,7 +1081,7 @@ function EtapeDraft({ config, setConfig, draftPicks, setDraftPicks, pickIndex, s
                     return (
                       <div key={idxGlobal} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderTop: '1px solid var(--c-161616)' }}>
                         <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '18px' }}>{j.pick}</span>
-                        <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '12px' }} />
+                        <TeamLogo abbrev={j.equipe} size={16} title={j.equipe} />
                         <span style={{ flex: 1, fontSize: '12px', color: 'var(--c-white)', fontWeight: '700' }}>Équipe : {j.equipe}</span>
                         <button onClick={() => retirer(idxGlobal)} style={{ background: 'transparent', border: 'none', color: 'var(--c-444)', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                       </div>
@@ -1199,7 +1198,7 @@ function EtapeResume({ config, draftPicks, salaires, onRetour, onRecommencer }) 
           <div style={{ fontSize: '11px', color: EQUIPE_COLOR, fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '10px' }}>Équipe favorite</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--c-111)', borderRadius: '8px', padding: '8px 12px' }}>
             <span style={{ fontSize: '10px', color: 'var(--c-444)', minWidth: '20px' }}>#{j.pick}</span>
-            <TeamAbbrevText teamAbbrev={j.equipe} style={{ fontSize: '15px' }} />
+            <TeamLogo abbrev={j.equipe} size={24} title={j.equipe} />
             <span style={{ flex: 1, fontSize: '13px', fontWeight: '700', color: 'var(--c-white)' }}>{j.equipe}</span>
           </div>
         </div>

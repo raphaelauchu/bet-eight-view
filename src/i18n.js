@@ -499,6 +499,7 @@ const translations = {
     props_none: 'Aucune prop pour cette catégorie aujourd\'hui.',
 
     // Pool (hub, wizard, lobby, rejoindre)
+    pool_nhl_disclaimer: "Betrics n'est pas affilié à la LNH ni à l'AJLNH. Les noms, logos et photos appartiennent à leurs propriétaires.",
     pool_hub_title: 'Mes pools',
     pool_hub_create_btn: 'Créer un pool',
     pool_hub_join_btn: 'Rejoindre un pool',
@@ -1792,6 +1793,7 @@ const translations = {
     props_none: 'No props for this category today.',
 
     // Pool (hub, wizard, lobby, join)
+    pool_nhl_disclaimer: 'Betrics is not affiliated with the NHL or the NHLPA. Names, logos and photos belong to their respective owners.',
     pool_hub_title: 'My Pools',
     pool_hub_create_btn: 'Create a Pool',
     pool_hub_join_btn: 'Join a Pool',

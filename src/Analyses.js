@@ -6813,7 +6813,7 @@ function RechercheOverlay({ onClose, onSelectPlayer, onSelectTeam }) {
 
 export {
   AnalysesRecherche, AnalysesFlux, RechercheOverlay, FicheJoueur, FicheJoueurStats, FicheEquipe, FicheEquipeWS, WS_THEME, useWSTheme,
-  LOGOS_NHL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs,
+  LOGOS_NHL, LOGOS_NHL_REAL, useIsMobile, useIsDesktopWide, getDateStr, useSaisonCourante, chargerProchaineSemaineAvecMatchs,
   formatSemaineDe, calculerFavoriMatch,
   tabKey, openOrActivateTab, closeAnalyseTab, moveActiveSearchIndex, buildSearchGroups,
   readAnalyseState, writeAnalyseState, formFromSavedPick,

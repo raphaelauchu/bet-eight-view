@@ -5,6 +5,7 @@ jest.mock('./supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }
 jest.mock('./Analyses', () => ({
   useSaisonCourante: () => '20262027',
   LOGOS_NHL: {},
+  LOGOS_NHL_REAL: {},
 }));
 
 const { supabase } = require('./supabase');

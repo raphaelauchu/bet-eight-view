@@ -71,7 +71,7 @@ function PlayerCard({ row, seasonId, lang, canEdit, isMobile, selected, onSelect
         border: selected ? '1px solid #f97316' : '1px solid var(--c-1a1a1a)',
         cursor: canEdit ? (isMobile ? 'pointer' : 'grab') : 'default',
       }}>
-      <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={28} />
+      <PlayerAvatar teamAbbrev={row.team_abbrev} goalie={row.pos_group === 'G'} size={28} playerId={row.ref_id} name={row.label} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-white)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.label}</span>
