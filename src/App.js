@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Dashboard from './Dashboard';
+import BetsPage from './Bets';
 import Auth from './Auth';
 import PublicSite from './PublicSite';
 import { AnalysesFlux, RechercheOverlay, FicheJoueurStats, FicheEquipeWS, WS_THEME, useWSTheme, useIsMobile } from './Analyses';
@@ -1357,7 +1357,7 @@ function App() {
     ) : page === 'profile' ? (
       <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
     ) : page === 'bets' ? (
-      <Dashboard lang={lang} />
+      <BetsPage lang={lang} />
     ) : page === 'bankroll' ? (
       <BankrollPage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
     ) : page === 'performance' ? (

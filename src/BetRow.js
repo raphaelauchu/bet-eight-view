@@ -12,6 +12,10 @@ import { MaskedDots } from './MaskedDots';
 // 'won' | 'lost'. `profit` est ignore quand status==='pending'.
 export function BetRow({ t, title, bookmaker, odds, stake, status, profit, hideAmounts, bordered }) {
   const enCours = status === 'pending';
+  // Annule (push/void, mise remboursee) : jamais un montant colore (ni gagnant ni perdant), un
+  // badge gris neutre distinct -- toujours visible, meme en mode masque (ce n'est pas un montant,
+  // comme le badge "Active" ci-dessus).
+  const estAnnule = status === 'cancelled';
   const gagnant = profit >= 0;
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: bordered ? '1px solid var(--c-111)' : 'none' }}>
@@ -21,6 +25,8 @@ export function BetRow({ t, title, bookmaker, odds, stake, status, profit, hideA
       </div>
       {enCours ? (
         <span style={{ backgroundColor: 'rgba(249,115,22,0.1)', color: '#f97316', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600', border: '1px solid rgba(249,115,22,0.3)', flexShrink: 0 }}>{t('home_active_badge')}</span>
+      ) : estAnnule ? (
+        <span style={{ backgroundColor: 'rgba(136,136,136,0.12)', color: 'var(--c-888)', fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600', border: '1px solid rgba(136,136,136,0.3)', flexShrink: 0 }}>{t('bets_cancelled_badge')}</span>
       ) : hideAmounts ? (
         <MaskedDots t={t} count={3} size={5} />
       ) : (

@@ -210,43 +210,48 @@ body {
   min-height: 44px;
 }
 
-/* ===================== Mes Paris (Dashboard) =====================
-   <768px (mobile) : INCHANGE, une seule colonne (meme JSX qu'avant).
-   768-1199px (iPad) : .bets-grid, 2 colonnes 65%/35%.
-   >=1200px (web) : conteneur centre max 1400px, colonnes 2fr/1fr. */
-.bets-grid {
-  display: grid;
-  grid-template-columns: 65% 35%;
-  gap: 20px;
-  padding: 24px;
-  align-items: start;
+/* ===================== Paris (src/Bets.js) =====================
+   Page unique centree (meme largeur que .perf-page, src/PerformanceInsights.js) : pas de grille
+   2 colonnes (c'est une liste filtrable, pas un tableau de bord a plusieurs blocs lateraux).
+   padding-bottom genereux sous 900px : degage a la fois la barre de navigation flottante du bas
+   (App.js:BottomNav, ~80px + safe-area) ET le bouton flottant "+ Ajouter un pari" (.bets-fab,
+   juste au-dessus) -- meme marge que .bankroll-account-mobile (96px + safe-area). */
+.bets-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px calc(96px + env(safe-area-inset-bottom));
 }
 
-@media (min-width: 1200px) {
-  .bets-grid {
-    max-width: 1400px;
-    margin: 0 auto;
-    grid-template-columns: 2fr 1fr;
-    gap: 28px;
-    padding: 32px;
+@media (min-width: 900px) {
+  .bets-page {
+    padding: 32px 24px 56px;
   }
 }
 
-.bets-main-col, .bets-side-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
+/* Rangee des 4 cartes de resume (paris en cours / en jeu / ROI / taux de reussite) : 4 colonnes
+   egales, 2x2 sous 640px (meme seuil que .perf-stats-grid) pour ne jamais ecraser les chiffres. */
+.bets-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
-.bets-side-col {
-  position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
+@media (max-width: 640px) {
+  .bets-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.bets-grid button, .bets-grid [role="button"] {
+/* Bouton flottant "+ Ajouter un pari" (mobile uniquement, voir src/Bets.js) : calc()+env() ne
+   peut pas etre un style inline (jsdom/cssstyle ne sait pas le parser, voir Bets.test.js) --
+   meme raison que .bankroll-account-mobile ci-dessus. Positionne juste au-dessus de la barre de
+   navigation flottante du bas (~80px + safe-area), jamais superpose au dernier pari de la liste.
+*/
+.bets-fab {
+  bottom: calc(80px + env(safe-area-inset-bottom) + 16px);
+}
+
+.bets-page button, .bets-page [role="button"] {
   min-height: 44px;
 }
 

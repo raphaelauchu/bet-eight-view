@@ -17,10 +17,22 @@ import { titreBetAuto } from './betDisplay';
 // sans la ligne statistique) etait la source du libelle incoherent entre l'accueil et la page de
 // compte -- voir le CHANGELOG de cette fonction.
 
+// Statut brut ('actif'/'pending' | 'gagne' | 'perdu' | 'annule') -> statut normalise. 'annule'
+// (push/void : la mise est remboursee, aucun gain ni perte net) est un statut REGLE (status !==
+// 'pending', voir settledBets/computeSettledReturns -- la mise, deja retiree du solde a la
+// creation du pari comme tous les autres, doit bien y revenir integralement) mais exclu des
+// statistiques de performance (voir decidedBets ci-dessous) : un pari annule ne compte ni comme
+// gagne ni comme perdu, jamais une defaite deguisee dans le taux de reussite/ROI.
+function statusFromStatut(statut, pendingValue) {
+  if (statut === pendingValue) return 'pending';
+  if (statut === 'gagne') return 'won';
+  if (statut === 'annule') return 'cancelled';
+  return 'lost';
+}
+
 export function normalizeBet(entry, source) {
   if (source === 'paris') {
-    const statut = entry.statut;
-    const status = statut === 'actif' ? 'pending' : statut === 'gagne' ? 'won' : 'lost';
+    const status = statusFromStatut(entry.statut, 'actif');
     return {
       id: `m-${entry.id}`,
       source: 'paris',
@@ -30,16 +42,20 @@ export function normalizeBet(entry, source) {
       status,
       stake: Number(entry.mise) || 0,
       odds: Number(entry.cote) || 0,
-      profit: status === 'pending' ? null : (Number(entry.profit) || 0),
+      profit: status === 'pending' ? null : status === 'cancelled' ? 0 : (Number(entry.profit) || 0),
       bookmaker: entry.bookmaker || null,
       title: entry.match || entry.selection || null,
       match: entry.match || null,
       selection: entry.selection || null,
+      // 'player' (prop joueur) vs 'match' (tout le reste : moneyline/total/parlay) -- filtre
+      // "type de pari" de src/Bets.js. `raw` : la ligne brute paris/bets_auto, pour reconstruire
+      // l'objet {type,data} attendu par BetDetailSheet.js sans dupliquer les champs ici.
+      kind: entry.type_pari === 'prop' ? 'player' : 'match',
+      raw: entry,
     };
   }
   // bets_auto
-  const statut = entry.statut;
-  const status = statut === 'pending' ? 'pending' : statut === 'gagne' ? 'won' : 'lost';
+  const status = statusFromStatut(entry.statut, 'pending');
   return {
     id: `a-${entry.id}`,
     source: 'bets_auto',
@@ -49,11 +65,13 @@ export function normalizeBet(entry, source) {
     status,
     stake: Number(entry.mise) || 0,
     odds: Number(entry.cote) || 0,
-    profit: status === 'pending' ? null : (Number(entry.resultat) || 0),
+    profit: status === 'pending' ? null : status === 'cancelled' ? 0 : (Number(entry.resultat) || 0),
     bookmaker: entry.bookmaker || null,
     title: titreBetAuto(entry),
     match: entry.equipe && entry.adversaire ? `${entry.equipe} vs ${entry.adversaire}` : null,
     selection: entry.joueur_nom || entry.type_bet || null,
+    kind: entry.type_bet === 'Prop joueur' ? 'player' : 'match',
+    raw: entry,
   };
 }
 
@@ -78,6 +96,25 @@ export function pendingBets(bets) {
   return (bets || []).filter(b => b.status === 'pending');
 }
 
+// Paris DECIDES (gagne/perdu uniquement, PAS annule) -- utilise pour toutes les statistiques de
+// PERFORMANCE (ROI, taux de reussite, mise moyenne/cote moyenne, meilleure journee) : un pari
+// annule n'a jamais ete un risque reellement couru (sa mise est remboursee, voir
+// computeSettledReturns/computeAccountBalance qui eux utilisent toujours settledBets, PAS
+// decidedBets -- la mise doit quand meme revenir au solde). Ne JAMAIS utiliser settledBets() pour
+// une statistique de performance : un pari annule y compterait comme une defaite deguisee
+// (mise comptee au denominateur, 0% de retour).
+export function decidedBets(bets) {
+  return (bets || []).filter(b => b.status === 'won' || b.status === 'lost');
+}
+
+// Date de reference d'un pari pour le regroupement/filtrage par periode : date de mise tant
+// qu'il est en cours, date de reglement une fois decide (ou annule) -- meme convention partagee
+// par buildMonthCalendar/betsForDay ci-dessous et par src/Bets.js (filtre de periode + regroupement
+// par jour de la liste).
+export function refDateForBet(b) {
+  return b.status === 'pending' ? b.datePlaced : b.dateSettlement;
+}
+
 // ===================== Solde d'un compte =====================
 
 export function sumDeposits(transactions) {
@@ -92,15 +129,17 @@ export function computeNetDeposits(transactions) {
   return sumDeposits(transactions) - sumWithdrawals(transactions);
 }
 
-// Profit/mise des paris REGLES uniquement -- le ROI et le "rendement" affiches restent bases
-// sur les paris regles, jamais affectes par un pari en cours (voir computeROI). Ne pas confondre
-// avec computeSettledReturns ci-dessous (le MONTANT retourne, pas le profit net).
+// Profit/mise des paris DECIDES uniquement (gagne/perdu, jamais annule -- voir decidedBets) --
+// le ROI et le "rendement" affiches restent bases sur la performance reelle, jamais dilues par
+// un pari en cours ni par un pari annule (mise remboursee, aucun risque reellement couru). Ne
+// pas confondre avec computeSettledReturns ci-dessous (le MONTANT retourne au solde, qui lui
+// inclut bien les annules -- voir decidedBets pour le detail de cette distinction).
 export function computeTotalReturn(bets) {
-  return settledBets(bets).reduce((a, b) => a + (b.profit || 0), 0);
+  return decidedBets(bets).reduce((a, b) => a + (b.profit || 0), 0);
 }
 
 export function computeTotalStaked(bets) {
-  return settledBets(bets).reduce((a, b) => a + (b.stake || 0), 0);
+  return decidedBets(bets).reduce((a, b) => a + (b.stake || 0), 0);
 }
 
 // Mises de TOUS les paris (regles + en cours) -- utilise pour le solde (une mise sort du solde
@@ -157,22 +196,24 @@ export function canPlaceBet(transactions, existingBets, stake) {
 }
 
 export function computeWinRate(bets) {
-  const settled = settledBets(bets);
-  if (settled.length === 0) return 0;
-  return Math.round((settled.filter(b => b.status === 'won').length / settled.length) * 100);
+  const decided = decidedBets(bets);
+  if (decided.length === 0) return 0;
+  return Math.round((decided.filter(b => b.status === 'won').length / decided.length) * 100);
 }
 
 export function computeAverageOdds(bets) {
-  const settled = settledBets(bets);
-  if (settled.length === 0) return 0;
-  return settled.reduce((a, b) => a + (b.odds || 0), 0) / settled.length;
+  const decided = decidedBets(bets);
+  if (decided.length === 0) return 0;
+  return decided.reduce((a, b) => a + (b.odds || 0), 0) / decided.length;
 }
 
 // Meilleure journee (profit le plus eleve sur un seul jour de reglement), null s'il n'y a aucun
-// pari regle.
+// pari decide. decidedBets (pas settledBets) : un pari annule contribue toujours 0 au profit,
+// l'exclure ou pas ne change jamais quel jour est "le meilleur" -- mais reste coherent avec le
+// reste de ce bloc (une statistique de PERFORMANCE, jamais de solde).
 export function computeBestDay(bets) {
   const byDay = new Map();
-  for (const b of settledBets(bets)) {
+  for (const b of decidedBets(bets)) {
     if (!b.dateSettlement) continue;
     const day = String(b.dateSettlement).slice(0, 10);
     byDay.set(day, (byDay.get(day) || 0) + (b.profit || 0));
@@ -317,7 +358,7 @@ export function buildMonthCalendar(bets, year, monthIndex) {
 
   const byDay = new Map();
   for (const b of bets || []) {
-    const refDate = b.status === 'pending' ? b.datePlaced : b.dateSettlement;
+    const refDate = refDateForBet(b);
     if (!refDate) continue;
     const d = parseLocalDate(refDate);
     if (d.getFullYear() !== year || d.getMonth() !== monthIndex) continue;
@@ -347,7 +388,7 @@ export function buildMonthCalendar(bets, year, monthIndex) {
 
 export function betsForDay(bets, dateStr) {
   return (bets || []).filter(b => {
-    const refDate = b.status === 'pending' ? b.datePlaced : b.dateSettlement;
+    const refDate = refDateForBet(b);
     return refDate && String(refDate).slice(0, 10) === dateStr;
   });
 }

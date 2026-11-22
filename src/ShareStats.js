@@ -32,7 +32,10 @@ function filtrerParPeriode(bets, periode) {
 
 function calculerStats(bets, periode) {
   const periodeBets = filtrerParPeriode(bets, periode);
-  const regles = periodeBets.filter(b => b.statut !== 'actif');
+  // Decides uniquement (gagne/perdu) : un pari annule (mise remboursee, aucun risque reellement
+  // couru -- voir src/bankrollCalc.js:decidedBets) ne doit jamais diluer le ROI/taux de reussite
+  // affiches sur la carte de partage, ni gonfler le compteur de paris.
+  const regles = periodeBets.filter(b => b.statut === 'gagne' || b.statut === 'perdu');
   const profit = regles.reduce((a, b) => a + (Number(b.profit) || 0), 0);
   const mise = regles.reduce((a, b) => a + (Number(b.mise) || 0), 0);
   const roi = mise !== 0 ? (profit / mise) * 100 : 0;

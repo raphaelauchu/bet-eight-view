@@ -1,5 +1,5 @@
 import {
-  normalizeBet, normalizeAllBets, betsForAccount, settledBets, pendingBets,
+  normalizeBet, normalizeAllBets, betsForAccount, settledBets, pendingBets, decidedBets, refDateForBet,
   computeNetDeposits, computeAccountBalance, computeAtRisk, computeAvailable,
   computeTotalReturn, computeTotalStaked, computeTotalStakedAll, computeSettledReturns,
   computeROI, computeWinRate, computeAverageOdds, canPlaceBet,
@@ -337,5 +337,69 @@ describe('normalizeAllBets / betsForAccount / settledBets / pendingBets', () => 
     expect(betsForAccount(all, 'a1')).toHaveLength(1);
     expect(settledBets(all)).toHaveLength(1);
     expect(pendingBets(all)).toHaveLength(1);
+  });
+});
+
+// ===================== Statut 'annule' (push/void) : mise remboursee, jamais une defaite =====================
+
+describe("normalizeBet : statut 'annule' -> cancelled, profit force a 0", () => {
+  test('paris annule', () => {
+    const b = normalizeBet({ id: 1, statut: 'annule', mise: 50, cote: 2, date_pari: '2026-11-01' }, 'paris');
+    expect(b.status).toBe('cancelled');
+    expect(b.profit).toBe(0);
+  });
+  test('bets_auto annule', () => {
+    const b = normalizeBet({ id: 1, statut: 'annule', mise: 20, cote: 1.8, resultat: 0, verified_at: '2026-11-06' }, 'bets_auto');
+    expect(b.status).toBe('cancelled');
+    expect(b.profit).toBe(0);
+  });
+});
+
+describe('decidedBets : exclut les paris en cours ET les paris annules', () => {
+  const bets = [
+    { status: 'pending', stake: 10, profit: null },
+    { status: 'won', stake: 50, odds: 2, profit: 50 },
+    { status: 'lost', stake: 20, odds: 1.8, profit: -20 },
+    { status: 'cancelled', stake: 30, odds: 1.5, profit: 0 },
+  ];
+
+  test('decidedBets ne garde que won/lost', () => {
+    expect(decidedBets(bets)).toHaveLength(2);
+  });
+
+  test("computeTotalStaked/computeTotalReturn ignorent le pari annule (pas de denominateur gonfle)", () => {
+    expect(computeTotalStaked(bets)).toBe(70); // 50 + 20, PAS +30 (annule)
+    expect(computeTotalReturn(bets)).toBe(30); // 50 - 20
+  });
+
+  test('computeROI : le pari annule ne dilue jamais le ROI', () => {
+    expect(computeROI(bets)).toBeCloseTo((30 / 70) * 100, 5);
+  });
+
+  test('computeWinRate : le pari annule ne compte jamais comme une defaite', () => {
+    expect(computeWinRate(bets)).toBe(50); // 1 gagne sur 2 DECIDES (pas sur 3 regles)
+  });
+
+  test('computeAverageOdds : cote moyenne des paris decides uniquement', () => {
+    expect(computeAverageOdds(bets)).toBeCloseTo((2 + 1.8) / 2, 5);
+  });
+});
+
+describe("Solde : un pari annule rembourse integralement la mise (exemple chiffre de l'enonce)", () => {
+  test('depot 50$ + mise 50$ -> en cours 0$, annule 50$ (comme push/perdant remboursee)', () => {
+    const transactions = [{ type: 'deposit', amount: 50 }];
+    const betEnCours = [{ status: 'pending', stake: 50, profit: null }];
+    expect(computeAccountBalance(transactions, betEnCours)).toBe(0);
+
+    const betAnnule = [{ status: 'cancelled', stake: 50, profit: 0 }];
+    expect(computeAccountBalance(transactions, betAnnule)).toBe(50);
+  });
+});
+
+describe('refDateForBet', () => {
+  test('en cours -> date de mise ; decide -> date de reglement', () => {
+    expect(refDateForBet({ status: 'pending', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-01');
+    expect(refDateForBet({ status: 'won', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-03');
+    expect(refDateForBet({ status: 'cancelled', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-03');
   });
 });
