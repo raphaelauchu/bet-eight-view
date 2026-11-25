@@ -4,9 +4,9 @@
   "team": "EDM",
   "position": "D",
   "season": 2027,
-  "lastUpdated": "2026-11-24T20:35:47.345641",
+  "lastUpdated": "2026-11-25T19:50:42.089640",
   "reg": {
-    "totalGames": 24,
+    "totalGames": 25,
     "szn": {
       "lowSlot": {
         "shotsOnGoal": 1,
@@ -93,10 +93,10 @@
         "goalsPercentile": 0.9744
       },
       "outsideL": {
-        "shotsOnGoal": 2,
+        "shotsOnGoal": 3,
         "goals": 0,
         "shootingPctg": 0.0,
-        "sogPercentile": 0.8242,
+        "sogPercentile": 0.8828,
         "goalsPercentile": 0.978
       },
       "outsideR": {
@@ -121,18 +121,18 @@
         "goalsPercentile": 0.9927
       },
       "total": {
-        "shotsOnGoal": 25,
+        "shotsOnGoal": 26,
         "goals": 3,
-        "shootingPctg": 0.12
+        "shootingPctg": 0.1154
       },
       "totals": {
         "all": {
-          "shotsOnGoal": 28,
+          "shotsOnGoal": 29,
           "goals": 3,
-          "shootingPctg": 0.1071,
-          "sogPercentile": 0.7399,
+          "shootingPctg": 0.1034,
+          "sogPercentile": 0.7546,
           "goalsPercentile": 0.9011,
-          "sogLeagueAvg": 21.2125,
+          "sogLeagueAvg": 21.2564,
           "goalsLeagueAvg": 1.3663
         },
         "high": {
@@ -141,7 +141,7 @@
           "shootingPctg": 0.0,
           "sogPercentile": 0.6777,
           "goalsPercentile": 0.7949,
-          "sogLeagueAvg": 1.2674,
+          "sogLeagueAvg": 1.2637,
           "goalsLeagueAvg": 0.2491
         },
         "long": {
@@ -150,7 +150,7 @@
           "shootingPctg": 0.1333,
           "sogPercentile": 0.7692,
           "goalsPercentile": 0.978,
-          "sogLeagueAvg": 10.5385,
+          "sogLeagueAvg": 10.5641,
           "goalsLeagueAvg": 0.4139
         },
         "mid": {
@@ -159,7 +159,7 @@
           "shootingPctg": 0.1667,
           "sogPercentile": 0.7509,
           "goalsPercentile": 0.8645,
-          "sogLeagueAvg": 4.8022,
+          "sogLeagueAvg": 4.8168,
           "goalsLeagueAvg": 0.5311
         }
       }
