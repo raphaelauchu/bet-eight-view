@@ -322,6 +322,7 @@ describe('mapping sportsbook <-> kind de compte', () => {
   test('bookmakerDepuisKind retrouve le libelle exact utilise dans les formulaires', () => {
     expect(bookmakerDepuisKind('bet365')).toBe('Bet365');
     expect(bookmakerDepuisKind('sports_interaction')).toBe('Sports Interaction');
+    expect(bookmakerDepuisKind('mise_o_jeu')).toBe('Mise-o-jeu+');
   });
   test('kind inconnu -> null', () => {
     expect(bookmakerDepuisKind('other')).toBeNull();

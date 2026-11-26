@@ -10,6 +10,7 @@ import { useFavorisData, IconExpand, IconFilter, IconStarFilled, TablePicks, Tab
 import { ShareStatsButton } from './ShareStats';
 import { AddSportsbookButton, SportsbookWaitlistBody } from './SportsbookWaitlist';
 import { AddAccountBody } from './AddAccountBody';
+import { BANKROLL_SYNC_ENABLED } from './bankrollConfig';
 import { BottomSheet } from './BottomSheet';
 import { BetRow } from './BetRow';
 import { MaskedDots } from './MaskedDots';
@@ -215,17 +216,24 @@ function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
 }
 
 // Feuille ouverte par "Ajouter un sportsbook" (GreetingBanner) : une vraie creation de compte
-// manuel (src/AddAccountBody.js -- memes 4 sportsbooks reconnus + "Autre") en haut, et la liste
-// d'attente de synchronisation automatique (src/SportsbookWaitlist.js, aucune connexion reelle
-// n'existe encore) en dessous, sous le titre "Synchronisation automatique". `existingKinds`
-// (comptes deja crees par l'utilisateur) evite de proposer deux fois le meme sportsbook.
+// manuel (src/AddAccountBody.js -- memes 5 sportsbooks reconnus + "Autre") en haut, et -- tant
+// que BANKROLL_SYNC_ENABLED (src/bankrollConfig.js) est a `true` -- la liste d'attente de
+// synchronisation automatique (src/SportsbookWaitlist.js, aucune connexion reelle n'existe
+// encore) en dessous, sous le titre "Synchronisation automatique". Retiree de l'interface pour
+// le moment (BANKROLL_SYNC_ENABLED=false) : seule la creation manuelle reste visible.
+// `existingKinds` (comptes deja crees par l'utilisateur) evite de proposer deux fois le meme
+// sportsbook.
 function AddSportsbookSheet({ t, utilisateur, existingKinds, onClose, onAccountCreated }) {
   const corps = (
     <>
       <AddAccountBody t={t} utilisateur={utilisateur} existingKinds={existingKinds} onCreated={(compte) => { onAccountCreated(compte); onClose(); }} />
-      <div style={{ height: '1px', backgroundColor: 'var(--c-1a1a1a)', margin: '18px 0 14px' }} />
-      <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-555)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{t('sportsbook_auto_sync_heading')}</div>
-      <SportsbookWaitlistBody t={t} utilisateur={utilisateur} />
+      {BANKROLL_SYNC_ENABLED && (
+        <>
+          <div style={{ height: '1px', backgroundColor: 'var(--c-1a1a1a)', margin: '18px 0 14px' }} />
+          <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--c-555)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>{t('sportsbook_auto_sync_heading')}</div>
+          <SportsbookWaitlistBody t={t} utilisateur={utilisateur} />
+        </>
+      )}
     </>
   );
 

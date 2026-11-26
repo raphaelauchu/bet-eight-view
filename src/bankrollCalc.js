@@ -396,14 +396,17 @@ export function betsForDay(bets, dateStr) {
 // ===================== Mapping sportsbook <-> kind de compte =====================
 // BOOKMAKERS_SUPPORTES (src/bookmakers.js, libelles affiches dans les formulaires de pari) vs
 // `kind` de bankroll_accounts (valeurs stables utilisees par la migration/l'UI). Le mapping
-// couvre volontairement seulement les 4 sportsbooks reconnus par la migration -- tout le reste
-// ('Mise au jeu', 'DraftKings', ou aucun) releve d'un compte "Autre" cree par l'utilisateur
-// (aucun compte par defaut/cache n'existe, voir src/Bankroll.js).
+// couvre volontairement seulement les 5 sportsbooks reconnus par la migration -- tout le reste
+// ('DraftKings', ou aucun) releve d'un compte "Autre" cree par l'utilisateur (aucun compte par
+// defaut/cache n'existe, voir src/Bankroll.js). Mise-o-jeu+ n'a aucune cote en direct (voir
+// src/sportsbooksConfig.js/src/LineShopping.js, qui ne l'incluent pas) -- ses cotes restent
+// toujours saisies manuellement dans Add Bet.
 export const BOOKMAKER_VERS_KIND = {
   'Bet365': 'bet365',
   'Betway': 'betway',
   'Bet99': 'bet99',
   'Sports Interaction': 'sports_interaction',
+  'Mise-o-jeu+': 'mise_o_jeu',
 };
 
 export const KIND_VERS_BOOKMAKER = Object.fromEntries(Object.entries(BOOKMAKER_VERS_KIND).map(([k, v]) => [v, k]));

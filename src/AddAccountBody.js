@@ -12,6 +12,7 @@ const ACCOUNT_KIND_OPTIONS = [
   { kind: 'betway', label: 'Betway' },
   { kind: 'bet99', label: 'BET99' },
   { kind: 'sports_interaction', label: 'Sports Interaction' },
+  { kind: 'mise_o_jeu', label: 'Mise-o-jeu+' },
 ];
 
 const inputStyle = { width: '100%', padding: '11px 14px', backgroundColor: 'var(--c-0d0d0d)', border: '1px solid var(--c-222)', borderRadius: '12px', color: 'var(--c-white)', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };

@@ -311,16 +311,20 @@ test('desktop/tablette : le bouton Partager mes stats ouvre la feuille de partag
   expect(screen.getByText('Résumé')).toBeInTheDocument();
 });
 
-test('desktop/tablette : le bouton "Ajouter un sportsbook" (pilule + texte) est a cote de "Bonjour" et ouvre la liste d\'attente', async () => {
+test('desktop/tablette : le bouton "Ajouter un sportsbook" (pilule + texte) est a cote de "Bonjour" et ouvre la creation manuelle de compte (sync automatique retiree, BANKROLL_SYNC_ENABLED=false)', async () => {
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
   await waitFor(() => expect(screen.getByText('Ajouter un sportsbook')).toBeInTheDocument());
 
   fireEvent.click(screen.getByText('Ajouter un sportsbook'));
   await waitFor(() => expect(screen.getByText('bet365')).toBeInTheDocument());
-  expect(screen.getAllByText('Bientôt disponible').length).toBe(4);
+  expect(screen.getByText('Mise-o-jeu+')).toBeInTheDocument();
+  // La section "Synchronisation automatique" (liste d'attente) est retiree de l'interface --
+  // voir src/bankrollConfig.js:BANKROLL_SYNC_ENABLED.
+  expect(screen.queryByText('Synchronisation automatique')).not.toBeInTheDocument();
+  expect(screen.queryByText('Bientôt disponible')).not.toBeInTheDocument();
 });
 
-test('mobile : le bouton "Ajouter un sportsbook" (pilule texte complete, pas de rond "+") est sur la MEME ligne que "Bonjour"/le nom, a droite, et ouvre la liste d\'attente', async () => {
+test('mobile : le bouton "Ajouter un sportsbook" (pilule texte complete, pas de rond "+") est sur la MEME ligne que "Bonjour"/le nom, a droite, et ouvre la creation manuelle de compte', async () => {
   useIsMobile.mockReturnValue(true);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
   await waitFor(() => expect(screen.getByText('Ajouter un sportsbook')).toBeInTheDocument());

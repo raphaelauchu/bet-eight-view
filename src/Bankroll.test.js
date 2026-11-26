@@ -136,6 +136,45 @@ describe('nouvel utilisateur (aucun compte -- plus de "Principal" auto-cree)', (
     await waitFor(() => expect(screen.getByText('Comptes')).toBeInTheDocument());
     await waitFor(() => expect(screen.queryByText('Ajoute ton premier compte')).not.toBeInTheDocument());
   });
+
+  test('"Mise-o-jeu+" cree un compte de kind \'mise_o_jeu\', place juste avant "Autre" dans la liste', async () => {
+    const insertedAccounts = [];
+    supabase.from.mockImplementation((table) => {
+      if (table === 'bankroll_accounts') {
+        return {
+          select: () => mockQuery({ data: insertedAccounts.map((p, i) => ({ id: `new-acc-${i}`, archived_at: null, ...p })), error: null }),
+          insert: (payload) => {
+            insertedAccounts.push(payload);
+            return { select: () => ({ single: () => Promise.resolve({ data: { id: `new-acc-${insertedAccounts.length - 1}`, ...payload, archived_at: null }, error: null }) }) };
+          },
+        };
+      }
+      if (table === 'bankroll_transactions') return mockQuery({ data: [], error: null });
+      if (table === 'paris') return mockQuery({ data: [], error: null });
+      if (table === 'bets_auto') return mockQuery({ data: [], error: null });
+      return mockQuery({ data: [], error: null });
+    });
+
+    render(<BankrollPage utilisateur={{ id: 'u1' }} onBack={noop} lang="fr" />);
+    await waitFor(() => expect(screen.getByText('Ajoute ton premier compte')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByText('+ Ajouter un compte')[0]);
+    await waitFor(() => expect(screen.getByText('Mise-o-jeu+', { selector: 'button' })).toBeInTheDocument());
+
+    // L'option "Mise-o-jeu+" precede immediatement le bouton "Autre" (dernier des sportsbooks
+    // reconnus avant le bouton pointille, voir ACCOUNT_KIND_OPTIONS dans src/AddAccountBody.js).
+    const boutons = screen.getAllByRole('button').filter(b => ['bet365', 'Betway', 'BET99', 'Sports Interaction', 'Mise-o-jeu+', 'Autre'].includes(b.textContent));
+    expect(boutons[boutons.length - 2].textContent).toBe('Mise-o-jeu+');
+    expect(boutons[boutons.length - 1].textContent).toBe('Autre');
+
+    fireEvent.click(screen.getByText('Mise-o-jeu+', { selector: 'button' }));
+    await waitFor(() => expect(screen.getByText('Créer le compte')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Créer le compte'));
+
+    await waitFor(() => expect(insertedAccounts.length).toBe(1));
+    expect(insertedAccounts[0].name).toBe('Mise-o-jeu+');
+    expect(insertedAccounts[0].kind).toBe('mise_o_jeu');
+  });
 });
 
 describe('page de compte', () => {
