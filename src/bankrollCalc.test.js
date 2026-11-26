@@ -3,7 +3,8 @@ import {
   computeNetDeposits, computeAccountBalance, computeAtRisk, computeAvailable,
   computeTotalReturn, computeTotalStaked, computeTotalStakedAll, computeSettledReturns,
   computeROI, computeWinRate, computeAverageOdds, canPlaceBet,
-  computeBestDay, computeGlobalBankroll, computeBankrollSeries, computeVariation,
+  computeBestDay, computeGlobalBankroll, computeBalanceHistory, computeBankrollSeries, computeVariation,
+  computePeriodStats, computeUnrealizedProfit, signColor,
   formatCompactAmount, buildMonthCalendar, betsForDay, bookmakerDepuisKind,
 } from './bankrollCalc';
 
@@ -212,43 +213,57 @@ describe('bankroll globale', () => {
   });
 });
 
-describe('courbe de profit', () => {
+describe('computeBalanceHistory / courbe de profit', () => {
   const bets = [
     { status: 'won', profit: 50, stake: 100, datePlaced: '2026-01-04', dateSettlement: '2026-01-05' },
     { status: 'lost', profit: -20, stake: 50, datePlaced: '2026-01-09', dateSettlement: '2026-01-10' },
   ];
 
-  // mode='value' : coherent avec computeAccountBalance -- la mise sort au moment du pari
-  // (evenement -mise) et revient au reglement (evenement +mise+profit). Sequence chronologique
-  // attendue : -100 (mise bet1), +150 (retour bet1 : 100+50), -50 (mise bet2), +30 (retour bet2 :
-  // 50-20) -- cumul : -100, 50, 0, 30. La valeur FINALE (30) reste le meme profit net qu'avant
-  // (50-20=30), seule la trajectoire intermediaire differe (creuse pendant qu'un pari est en cours).
-  test('mode value = la mise sort au placement, revient au reglement (coherent avec le solde)', () => {
+  test('computeBalanceHistory : depot/retrait a leur date + mise retiree au placement + retour au reglement, solde ABSOLU', () => {
+    const transactions = [{ type: 'deposit', amount: 200, occurred_on: '2026-01-01' }];
+    const history = computeBalanceHistory(transactions, bets);
+    // 200 (depot), -100 (mise bet1), +150 (retour bet1 : 100+50), -50 (mise bet2), +30 (retour bet2 : 50-20)
+    expect(history.map(p => p.value)).toEqual([200, 100, 250, 200, 230]);
+    // Le dernier point egale EXACTEMENT le solde du compte (meme formule que computeAccountBalance).
+    expect(history[history.length - 1].value).toBe(computeAccountBalance(transactions, bets));
+  });
+
+  test('computeBalanceHistory : un retrait est bien une baisse', () => {
+    const transactions = [
+      { type: 'deposit', amount: 100, occurred_on: '2026-01-01' },
+      { type: 'withdrawal', amount: 40, occurred_on: '2026-01-02' },
+    ];
+    const history = computeBalanceHistory(transactions, []);
+    expect(history.map(p => p.value)).toEqual([100, 60]);
+  });
+
+  // mode='value' : coherent avec computeAccountBalance -- depot/retrait a leur date, mise
+  // retiree au placement, retour ajoute au reglement -- voir computeBalanceHistory ci-dessus.
+  // Le dernier point de la periode 'all' egale TOUJOURS exactement le solde reel du compte.
+  test('mode value = solde absolu reconstruit (depots/retraits + paris), dernier point = solde reel', () => {
     const now = new Date('2026-02-01');
-    const { values } = computeBankrollSeries(bets, 'all', 'value', now);
-    expect(values).toEqual([-100, 50, 0, 30]);
+    const transactions = [{ type: 'deposit', amount: 200, occurred_on: '2026-01-01' }];
+    const { values, finalValue } = computeBankrollSeries(transactions, bets, 'all', 'value', now);
+    expect(values).toEqual([200, 100, 250, 200, 230]);
+    expect(finalValue).toBe(computeAccountBalance(transactions, bets));
   });
 
   test('mode value : un pari encore en cours ne montre qu\'une baisse (sa mise), jamais un profit anticipe', () => {
     const now = new Date('2026-02-01');
     const enCours = [{ status: 'pending', profit: null, stake: 40, datePlaced: '2026-01-15' }];
-    const { values } = computeBankrollSeries(enCours, 'all', 'value', now);
+    const { values } = computeBankrollSeries([], enCours, 'all', 'value', now);
     expect(values).toEqual([-40]);
   });
 
-  test('mode return = rendement cumulatif (%), paris regles uniquement, inchange par la mise en cours', () => {
+  // mode='return' : profit CUMULE en $ (pas un pourcentage) des paris regles uniquement, jamais
+  // affecte par un depot/retrait ni par une mise en cours -- le dernier point sur 'all' egale
+  // exactement computeTotalReturn(bets) (meme paris, meme somme).
+  test('mode return = profit cumule en $ des paris regles, dernier point sur "all" = Total return', () => {
     const now = new Date('2026-02-01');
-    const { values } = computeBankrollSeries(bets, 'all', 'return', now);
-    expect(values[0]).toBeCloseTo(50, 5); // 50/100*100
-    expect(values[1]).toBeCloseTo((30 / 150) * 100, 5);
-  });
-
-  test('un depot/retrait n\'apparait jamais dans la courbe (seulement les paris)', () => {
-    const now = new Date('2026-02-01');
-    const serieAvant = computeBankrollSeries(bets, 'all', 'value', now);
-    // Aucune fonction de ce fichier ne prend de transactions en parametre pour la courbe --
-    // ajouter des transactions au compte ne peut donc pas modifier la serie.
-    expect(serieAvant.values).toEqual([-100, 50, 0, 30]);
+    const transactions = [{ type: 'deposit', amount: 500, occurred_on: '2026-01-01' }];
+    const { values, finalValue } = computeBankrollSeries(transactions, bets, 'all', 'return', now);
+    expect(values).toEqual([50, 30]); // cumul : 50, puis 50-20=30
+    expect(finalValue).toBe(computeTotalReturn(bets));
   });
 
   test('computeVariation = dernier - premier point', () => {
@@ -257,6 +272,98 @@ describe('courbe de profit', () => {
 
   test('computeVariation = 0 avec moins de 2 points', () => {
     expect(computeVariation([{ value: 10 }])).toBe(0);
+  });
+});
+
+describe('computePeriodStats', () => {
+  // Donnees de test de la refonte bankroll/performance (2026-11-26) : depot 50$ sur BET99, puis
+  // 4 paris -- 30$@2.25 perdu, 39$@2.9 perdu, 30$@2.3 gagne, 20$ perdu. Tous places ET regles
+  // "maintenant" (meme instant), donc meme resultat quelle que soit la periode testee ('all').
+  // Attendu : mises 119$, retours 69$ (30*2.3 du seul gagnant), profit -50$, ROI -42.0%, taux de
+  // reussite 25% (1-3).
+  const maintenant = new Date('2026-11-26T12:00:00Z');
+  const bets = [
+    { status: 'lost', stake: 30, odds: 2.25, profit: -30, datePlaced: maintenant.toISOString(), dateSettlement: maintenant.toISOString() },
+    { status: 'lost', stake: 39, odds: 2.9, profit: -39, datePlaced: maintenant.toISOString(), dateSettlement: maintenant.toISOString() },
+    { status: 'won', stake: 30, odds: 2.3, profit: 39, datePlaced: maintenant.toISOString(), dateSettlement: maintenant.toISOString() },
+    { status: 'lost', stake: 20, odds: 2, profit: -20, datePlaced: maintenant.toISOString(), dateSettlement: maintenant.toISOString() },
+  ];
+
+  test('profit/mises/retours/ROI/taux de reussite exacts sur le jeu de donnees de reference', () => {
+    const stats = computePeriodStats(bets, 'all', maintenant);
+    expect(stats.staked).toBe(119);
+    expect(stats.returns).toBe(69);
+    expect(stats.profit).toBe(-50);
+    expect(stats.roi).toBeCloseTo(-42.016806722689076, 5);
+    expect(stats.roi.toFixed(1)).toBe('-42.0');
+    expect(stats.winRate).toBe(25);
+    expect(stats.wonCount).toBe(1);
+    expect(stats.lostCount).toBe(3);
+    expect(stats.activeCount).toBe(0);
+  });
+
+  test('ROI = profit / mises, jamais retours / mises', () => {
+    const stats = computePeriodStats(bets, 'all', maintenant);
+    // retours/mises donnerait +58.0% (le bug corrige) -- le vrai ROI est negatif.
+    expect(69 / 119 * 100).toBeCloseTo(57.98, 1); // confirme le chiffre du bug, pour memoire
+    expect(stats.roi).toBeLessThan(0);
+  });
+
+  test('base de date : un pari decide est filtre par sa date de REGLEMENT, pas de placement', () => {
+    const placeHorsPeriode = [{ status: 'won', stake: 10, odds: 2, profit: 10, datePlaced: '2020-01-01', dateSettlement: maintenant.toISOString() }];
+    const stats = computePeriodStats(placeHorsPeriode, '1d', maintenant);
+    expect(stats.decidedCount).toBe(1); // compte bien : regle "aujourd'hui", peu importe quand il a ete place
+  });
+
+  test('un pari en cours est filtre par sa date de PLACEMENT (il n\'a pas de date de reglement)', () => {
+    const enCours = [{ status: 'pending', stake: 10, odds: 2, profit: null, datePlaced: maintenant.toISOString() }];
+    const stats = computePeriodStats(enCours, 'all', maintenant);
+    expect(stats.activeCount).toBe(1);
+  });
+
+  test('un pari annule n\'est ni gagne ni perdu, exclu du ROI/taux de reussite', () => {
+    const avecAnnule = [...bets, { status: 'cancelled', stake: 100, odds: 2, profit: 0, datePlaced: maintenant.toISOString(), dateSettlement: maintenant.toISOString() }];
+    const stats = computePeriodStats(avecAnnule, 'all', maintenant);
+    expect(stats.decidedCount).toBe(4); // toujours 4, pas 5
+    expect(stats.staked).toBe(119); // la mise annulee (100$) n'entre pas dans le ROI
+  });
+
+  test('aucun pari decide -> roi/winRate a 0, pas une division par zero', () => {
+    const stats = computePeriodStats([], 'all', maintenant);
+    expect(stats.roi).toBe(0);
+    expect(stats.winRate).toBe(0);
+  });
+});
+
+describe('computeUnrealizedProfit', () => {
+  test('mise x cote - mise, uniquement pour les paris en cours', () => {
+    const bets = [
+      { status: 'pending', stake: 50, odds: 3 }, // 150-50=100
+      { status: 'won', stake: 50, odds: 3, profit: 100 }, // deja regle : ignore
+    ];
+    expect(computeUnrealizedProfit(bets)).toBe(100);
+  });
+
+  test('aucun pari en cours -> 0', () => {
+    expect(computeUnrealizedProfit([{ status: 'won', stake: 10, odds: 2, profit: 10 }])).toBe(0);
+  });
+});
+
+describe('signColor', () => {
+  test('positif -> vert, negatif -> rouge, zero -> neutre (defaut blanc)', () => {
+    expect(signColor(50)).toBe('#22c55e');
+    expect(signColor(-42)).toBe('#ef4444');
+    expect(signColor(0)).toBe('var(--c-white)');
+  });
+
+  test('neutre personnalise', () => {
+    expect(signColor(0, 'var(--c-666)')).toBe('var(--c-666)');
+  });
+
+  test('NaN/null/undefined -> neutre (jamais vert ni rouge sur une valeur absente)', () => {
+    expect(signColor(NaN)).toBe('var(--c-white)');
+    expect(signColor(null)).toBe('var(--c-white)');
+    expect(signColor(undefined)).toBe('var(--c-white)');
   });
 });
 
@@ -402,5 +509,79 @@ describe('refDateForBet', () => {
     expect(refDateForBet({ status: 'pending', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-01');
     expect(refDateForBet({ status: 'won', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-03');
     expect(refDateForBet({ status: 'cancelled', datePlaced: '2026-11-01', dateSettlement: '2026-11-03' })).toBe('2026-11-03');
+  });
+});
+
+// ===================== Scenario de bout en bout : jeu de donnees de reference =====================
+// Depot 50$ sur BET99, puis 4 paris (places et regles le meme jour) : 30$@2.25 perdu,
+// 39$@2.9 perdu, 30$@2.3 gagne, 20$@2.0 perdu. Reproduit a partir de lignes brutes bets_auto (pas
+// d'objets deja normalises) pour exercer tout le pipeline normalizeAllBets -> betsForAccount ->
+// le reste de ce fichier, comme le ferait un vrai compte. Attendu (enonce de la refonte
+// bankroll/performance, 2026-11-26) : solde 0$, mises 119$, retours 69$, profit -50$, ROI -42.0%,
+// taux de reussite 25% (1-3), net deposits 50$.
+describe('scenario de reference bout en bout (depot 50$ BET99 + 4 paris)', () => {
+  const JOUR = '2026-11-25';
+  const transactions = [{ account_id: 'acc1', type: 'deposit', amount: 50, occurred_on: JOUR }];
+  const betsAutoBrut = [
+    { id: 'a1', account_id: 'acc1', statut: 'perdu', mise: 30, cote: 2.25, resultat: -30, verified_at: JOUR, game_date: JOUR },
+    { id: 'a2', account_id: 'acc1', statut: 'perdu', mise: 39, cote: 2.9, resultat: -39, verified_at: JOUR, game_date: JOUR },
+    { id: 'a3', account_id: 'acc1', statut: 'gagne', mise: 30, cote: 2.3, resultat: 39, verified_at: JOUR, game_date: JOUR },
+    { id: 'a4', account_id: 'acc1', statut: 'perdu', mise: 20, cote: 2.0, resultat: -20, verified_at: JOUR, game_date: JOUR },
+  ];
+  const now = new Date('2026-11-26T12:00:00Z');
+  const tousLesBets = normalizeAllBets([], betsAutoBrut);
+  const bets = betsForAccount(tousLesBets, 'acc1');
+
+  test('solde = 0$ (depots nets 50 - mises 119 + retours 69)', () => {
+    expect(computeAccountBalance(transactions, bets)).toBe(0);
+  });
+
+  test('mises (paris decides) = 119$', () => {
+    expect(computeTotalStaked(bets)).toBe(119);
+    expect(computeTotalStakedAll(bets)).toBe(119); // aucun pari en cours ici
+  });
+
+  test('retours (montant rendu par les paris regles) = 69$', () => {
+    expect(computeSettledReturns(bets)).toBe(69);
+  });
+
+  test('profit = -50$', () => {
+    expect(computeTotalReturn(bets)).toBe(-50);
+  });
+
+  test('ROI = -42.0% (profit/mises, jamais retours/mises qui donnerait +58.0%)', () => {
+    expect(computeROI(bets)).toBeCloseTo(-42.016806722689076, 5);
+    expect(computeROI(bets).toFixed(1)).toBe('-42.0');
+  });
+
+  test('taux de reussite = 25% (1 gagne sur 4 regles)', () => {
+    expect(computeWinRate(bets)).toBe(25);
+  });
+
+  test('net deposits = 50$', () => {
+    expect(computeNetDeposits(transactions)).toBe(50);
+  });
+
+  test('dernier point du graphique mode Valeur = solde reel (0$)', () => {
+    const { finalValue } = computeBankrollSeries(transactions, bets, 'all', 'value', now);
+    expect(finalValue).toBe(0);
+    expect(finalValue).toBe(computeAccountBalance(transactions, bets));
+  });
+
+  test('dernier point du graphique mode Rendement (sur "all") = Total return (-50$)', () => {
+    const { finalValue } = computeBankrollSeries(transactions, bets, 'all', 'return', now);
+    expect(finalValue).toBe(-50);
+    expect(finalValue).toBe(computeTotalReturn(bets));
+  });
+
+  test('couleurs : ROI negatif -> rouge, solde a 0 -> neutre (jamais vert ni rouge sur un solde nul)', () => {
+    expect(signColor(computeROI(bets))).toBe('#ef4444');
+    expect(signColor(computeAccountBalance(transactions, bets))).toBe('var(--c-white)');
+  });
+
+  test('computePeriodStats("all") expose exactement les memes chiffres que les fonctions individuelles', () => {
+    const stats = computePeriodStats(bets, 'all', now);
+    expect(stats).toMatchObject({ staked: 119, returns: 69, profit: -50, winRate: 25, wonCount: 1, lostCount: 3, activeCount: 0 });
+    expect(stats.roi.toFixed(1)).toBe('-42.0');
   });
 });

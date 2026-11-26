@@ -16,7 +16,7 @@ import {
   normalizeAllBets, betsForAccount, computeAccountBalance,
   computeAtRisk, computeAvailable, computeNetDeposits, computeROI, computeWinRate,
   computeAverageOdds, computeBestDay, computeTotalStakedAll, canPlaceBet,
-  computeGlobalBankroll, computeBankrollSeries, computeVariation, BANKROLL_PERIODS,
+  computeGlobalBankroll, computeBankrollSeries, computePeriodStats, signColor, BANKROLL_PERIODS,
 } from './bankrollCalc';
 
 // Refonte de l'onglet Bankroll : comptes multiples (un par sportsbook manuel + "Autre"),
@@ -256,14 +256,18 @@ function MiniSparkline({ points, color, height = 36 }) {
 
 // ===================== Carte de compte (vue d'ensemble) =====================
 
+// Fenetre fixe '1m' (apercu, pas de selecteur sur cette mini-carte) : variation = profit de la
+// periode (hors depots/retraits) et ROI = profit/mises de la MEME periode, via computePeriodStats
+// (src/bankrollCalc.js, source unique de verite -- meme fonction que BankrollHeroChart/
+// AccountDetail). Couleur de la pastille/sparkline = tendance du profit de la periode ; le solde
+// (gros chiffre) reste toujours blanc, un solde ne devenant rouge que s'il etait negatif.
 function AccountCard({ t, account, hideAmounts, onOpen, onRename, onArchive, onUnarchive, onDelete }) {
   const bets = account.bets;
   const balance = computeAccountBalance(account.transactions, bets);
-  const roi = computeROI(bets);
-  const { values, dates } = computeBankrollSeries(bets, '1m', 'value');
+  const periodStats = computePeriodStats(bets, '1m');
+  const { values, dates } = computeBankrollSeries(account.transactions, bets, '1m', 'value');
   const points = values.map((v, i) => ({ date: dates[i], value: v }));
-  const variation = computeVariation(points);
-  const couleur = variation >= 0 ? '#22c55e' : '#ef4444';
+  const couleur = signColor(periodStats.profit, 'var(--c-666)');
 
   return (
     <div onClick={onOpen} style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '18px', border: '1px solid var(--c-161616)', cursor: 'pointer', position: 'relative', opacity: account.archived_at ? 0.55 : 1 }}>
@@ -278,8 +282,8 @@ function AccountCard({ t, account, hideAmounts, onOpen, onRename, onArchive, onU
       </div>
       <MiniSparkline points={points} color={couleur} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-        <span style={{ fontSize: '12px', fontWeight: '700', color: couleur }}>{hideAmounts ? <MaskedDots t={t} count={3} size={5} /> : `${variation >= 0 ? '+' : ''}$${variation.toFixed(2)}`}</span>
-        <span style={{ fontSize: '11px', color: 'var(--c-555)' }}>{t('perf_roi')} {roi >= 0 ? '+' : ''}{roi.toFixed(1)}%</span>
+        <span style={{ fontSize: '12px', fontWeight: '700', color: couleur }}>{hideAmounts ? <MaskedDots t={t} count={3} size={5} /> : `${periodStats.profit >= 0 ? '+' : '-'}$${Math.abs(periodStats.profit).toFixed(2)}`}</span>
+        <span style={{ fontSize: '11px', color: 'var(--c-555)' }}>{t('perf_roi')} {periodStats.roi >= 0 ? '+' : ''}{periodStats.roi.toFixed(1)}%</span>
       </div>
     </div>
   );
@@ -294,22 +298,22 @@ export function BankrollOverview({ t, lang, utilisateur, accounts, archivedAccou
   const [showArchived, setShowArchived] = useState(false);
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
-  const [hoverPoint, setHoverPoint] = useState(null);
 
   function toggleHide() { setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; }); }
 
   const allBetsCombined = useMemo(() => accounts.flatMap(a => a.bets), [accounts]);
+  const allTransactionsCombined = useMemo(() => accounts.flatMap(a => a.transactions), [accounts]);
   const globalBalance = useMemo(() => computeGlobalBankroll(accounts), [accounts]);
-  const { values, dates } = useMemo(() => computeBankrollSeries(allBetsCombined, period, mode), [allBetsCombined, period, mode]);
+  const { values, dates } = useMemo(() => computeBankrollSeries(allTransactionsCombined, allBetsCombined, period, mode), [allTransactionsCombined, allBetsCombined, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
-  const pointActif = hoverPoint || (points.length ? points[points.length - 1] : { value: 0 });
-  const premierPoint = points.length ? points[0] : { value: 0 };
-  const variation = pointActif.value - premierPoint.value;
-  const hausse = variation >= 0;
-  const couleur = hausse ? '#22c55e' : '#ef4444';
+  // Stats de la periode affichee (meme periode/base de date que la courbe) : profit hors
+  // depots/retraits + ROI correct -- voir computePeriodStats (src/bankrollCalc.js).
+  const periodStats = useMemo(() => computePeriodStats(allBetsCombined, period), [allBetsCombined, period]);
+  const couleur = signColor(periodStats.profit, 'var(--c-666)');
   const existingKinds = useMemo(() => new Set(accounts.filter(a => a.kind !== 'other').map(a => a.kind)), [accounts]);
 
-  const grandeValeur = mode === 'return' ? `${pointActif.value >= 0 ? '+' : ''}${pointActif.value.toFixed(1)}%` : fmt(globalBalance);
+  const grandeValeur = mode === 'return' ? `${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}%` : fmt(globalBalance);
+  const grandeValeurCouleur = mode === 'return' ? signColor(periodStats.roi) : 'var(--c-white)';
 
   const hero = (
     <>
@@ -317,7 +321,7 @@ export function BankrollOverview({ t, lang, utilisateur, accounts, archivedAccou
         <p style={{ margin: 0, color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1.5px' }}>{t('home_bankroll')}</p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '10px 0 6px' }}>
-        <h1 style={{ margin: 0, fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: '900', color: mode === 'return' ? couleur : 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
+        <h1 style={{ margin: 0, fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: '900', color: grandeValeurCouleur, letterSpacing: '-2px', lineHeight: 1 }}>
           {hideAmounts ? <MaskedDots t={t} count={7} size={13} /> : grandeValeur}
         </h1>
         <button onClick={toggleHide} aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')} style={{ background: 'none', border: 'none', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex' }}>
@@ -325,7 +329,7 @@ export function BankrollOverview({ t, lang, utilisateur, accounts, archivedAccou
         </button>
       </div>
       <div style={{ marginBottom: '18px', fontSize: '14px', fontWeight: '800', color: hideAmounts ? 'var(--c-666)' : couleur }}>
-        {hideAmounts ? <MaskedDots t={t} count={4} size={6} /> : `${hausse ? '+' : ''}$${variation.toFixed(2)}`}
+        {hideAmounts ? <MaskedDots t={t} count={4} size={6} /> : `${periodStats.profit >= 0 ? '+' : '-'}$${Math.abs(periodStats.profit).toFixed(2)} (${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}% ${t('perf_roi')})`}
       </div>
       <WealthsimpleChart
         lang={lang} points={points}
@@ -334,7 +338,6 @@ export function BankrollOverview({ t, lang, utilisateur, accounts, archivedAccou
         modeOptions={[{ key: 'value', label: t('home_chart_mode_value') }, { key: 'return', label: t('home_chart_mode_return') }]}
         mode={mode} onSelectMode={setMode}
         emptyLabel={t('bank_empty_chart')} hauteur={150} color={couleur}
-        onHoverChange={setHoverPoint}
       />
     </>
   );
@@ -579,7 +582,6 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [period, setPeriod] = useState('1m');
   const [mode, setMode] = useState('value');
-  const [hoverPoint, setHoverPoint] = useState(null);
   const [sheet, setSheet] = useState(null); // 'deposit' | 'withdraw' | 'history' | 'rename' | 'addbet' | null
   const [toast, setToast] = useState('');
 
@@ -601,14 +603,14 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
     ? [...account.transactions].sort((a, b) => new Date(b.occurred_on) - new Date(a.occurred_on))[0].occurred_on
     : null;
 
-  const { values, dates } = useMemo(() => computeBankrollSeries(bets, period, mode), [bets, period, mode]);
+  const { values, dates } = useMemo(() => computeBankrollSeries(account.transactions, bets, period, mode), [account.transactions, bets, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
-  const pointActif = hoverPoint || (points.length ? points[points.length - 1] : { value: 0 });
-  const premierPoint = points.length ? points[0] : { value: 0 };
-  const variation = pointActif.value - premierPoint.value;
-  const hausse = variation >= 0;
-  const couleur = hausse ? '#22c55e' : '#ef4444';
-  const grandeValeur = mode === 'return' ? `${pointActif.value >= 0 ? '+' : ''}${pointActif.value.toFixed(1)}%` : fmt(balance);
+  // Stats de la periode affichee (meme periode/base de date que la courbe) : profit hors
+  // depots/retraits + ROI correct -- voir computePeriodStats (src/bankrollCalc.js).
+  const periodStats = useMemo(() => computePeriodStats(bets, period), [bets, period]);
+  const couleur = signColor(periodStats.profit, 'var(--c-666)');
+  const grandeValeur = mode === 'return' ? `${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}%` : fmt(balance);
+  const grandeValeurCouleur = mode === 'return' ? signColor(periodStats.roi) : 'var(--c-white)';
 
   function afterSaved(message) {
     setSheet(null);
@@ -643,7 +645,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
   const heroBlock = (
     <div data-testid="bank-block-hero" style={{ backgroundColor: 'var(--c-0a0a0a)', borderRadius: '18px', padding: '20px', border: '1px solid var(--c-1a1a1a)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 6px' }}>
-        <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 46px)', fontWeight: '900', color: mode === 'return' ? couleur : 'var(--c-white)', letterSpacing: '-2px', lineHeight: 1 }}>
+        <h1 style={{ margin: 0, fontSize: 'clamp(32px, 5vw, 46px)', fontWeight: '900', color: grandeValeurCouleur, letterSpacing: '-2px', lineHeight: 1 }}>
           {hideAmounts ? <MaskedDots t={t} count={7} size={13} /> : grandeValeur}
         </h1>
         <button onClick={toggleHide} aria-label={t(hideAmounts ? 'home_show_amounts' : 'home_hide_amounts')} style={{ background: 'none', border: 'none', padding: '6px', borderRadius: '50%', cursor: 'pointer', display: 'flex' }}>
@@ -651,7 +653,7 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
         </button>
       </div>
       <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: '800', color: hideAmounts ? 'var(--c-666)' : couleur }}>
-        {hideAmounts ? <MaskedDots t={t} count={4} size={6} /> : `${hausse ? '+' : ''}$${variation.toFixed(2)}`}
+        {hideAmounts ? <MaskedDots t={t} count={4} size={6} /> : `${periodStats.profit >= 0 ? '+' : '-'}$${Math.abs(periodStats.profit).toFixed(2)} (${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}% ${t('perf_roi')})`}
       </div>
       <WealthsimpleChart
         lang={lang} points={points}
@@ -660,7 +662,6 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
         modeOptions={[{ key: 'value', label: t('home_chart_mode_value') }, { key: 'return', label: t('home_chart_mode_return') }]}
         mode={mode} onSelectMode={setMode}
         emptyLabel={t('bank_empty_chart')} hauteur={140} color={couleur}
-        onHoverChange={setHoverPoint}
       />
     </div>
   );
@@ -733,11 +734,11 @@ export function AccountDetail({ t, lang, utilisateur, account, accounts, onBack,
       <div style={{ color: 'var(--c-555)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t('bank_stats_title')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {[
-          ['ROI', hideAmounts ? null : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`, roi >= 0 ? '#22c55e' : '#ef4444'],
+          ['ROI', hideAmounts ? null : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`, signColor(roi)],
           [t('bank_win_rate'), `${winRate}%`, 'var(--c-white)'],
           [t('bets_total_staked'), hideAmounts ? null : fmt(totalStaked), 'var(--c-white)'],
           [t('bank_avg_odds'), avgOdds ? avgOdds.toFixed(2) : '—', 'var(--c-white)'],
-          [t('bank_best_day'), hideAmounts ? null : (bestDay ? fmtSigned(bestDay.profit) : '—'), bestDay && bestDay.profit >= 0 ? '#22c55e' : bestDay ? '#ef4444' : 'var(--c-white)'],
+          [t('bank_best_day'), hideAmounts ? null : (bestDay ? fmtSigned(bestDay.profit) : '—'), bestDay ? signColor(bestDay.profit) : 'var(--c-white)'],
         ].map(([label, val, color], i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: 'var(--c-666)' }}>{label}</span>

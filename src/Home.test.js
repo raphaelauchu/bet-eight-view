@@ -291,6 +291,40 @@ test('desktop/tablette : nouvel utilisateur sans aucun compte -- bankroll a 0$, 
   expect(screen.queryByText(/ROI\)/)).not.toBeInTheDocument();
 });
 
+test('desktop/tablette : jeu de donnees de reference (depot 50$ BET99 + 4 paris) -- solde 0$, ROI -42.0% (jamais +58.0%), taux de reussite 25%, aucun pari actif', async () => {
+  writeHideAmounts(false);
+  const JOUR = new Date().toISOString();
+  supabase.from.mockImplementation((table) => {
+    if (table === 'bankroll_accounts') return mockQuery({ data: [{ id: 'acc1', user_id: 'u1', name: 'BET99', kind: 'bet99', archived_at: null }], error: null });
+    if (table === 'bankroll_transactions') return mockQuery({ data: [{ id: 'tx1', account_id: 'acc1', type: 'deposit', amount: 50, occurred_on: JOUR }], error: null });
+    if (table === 'bets_auto') {
+      return mockQuery({
+        data: [
+          { id: 'a1', account_id: 'acc1', statut: 'perdu', mise: 30, cote: 2.25, resultat: -30, verified_at: JOUR, game_date: JOUR },
+          { id: 'a2', account_id: 'acc1', statut: 'perdu', mise: 39, cote: 2.9, resultat: -39, verified_at: JOUR, game_date: JOUR },
+          { id: 'a3', account_id: 'acc1', statut: 'gagne', mise: 30, cote: 2.3, resultat: 39, verified_at: JOUR, game_date: JOUR },
+          { id: 'a4', account_id: 'acc1', statut: 'perdu', mise: 20, cote: 2.0, resultat: -20, verified_at: JOUR, game_date: JOUR },
+        ], error: null,
+      });
+    }
+    return mockQuery(tableResult(table));
+  });
+  render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);
+
+  // Solde = depots nets (50) - mises (119) + retours (69) = 0$.
+  await waitFor(() => expect(screen.getByText('$0.00')).toBeInTheDocument());
+  // Sous-titre : profit (-50$) et ROI (-42.0%), JAMAIS retours/mises (+$69.00 / +58.0% ROI, le bug corrige).
+  expect(screen.getByText('-$50.00 (-42.0% ROI) ce mois →')).toBeInTheDocument();
+  expect(screen.queryByText(/\+\$69\.00/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/\+58\.0%/)).not.toBeInTheDocument();
+  // Carte ROI : -42.0%, en rouge (couleur selon le signe du ROI lui-meme).
+  const carteRoi = screen.getByText('-42.0%');
+  expect(carteRoi).toHaveStyle({ color: '#ef4444' });
+  // Taux de reussite 25% (1 gagne / 3 perdus), aucun pari actif (les 4 sont regles).
+  expect(screen.getByText('25%')).toBeInTheDocument();
+  expect(screen.getByText('0')).toBeInTheDocument();
+});
+
 test('desktop/tablette : la carte "Meilleure serie" a ete retiree, 3 cartes stats seulement', async () => {
   writeHideAmounts(false);
   render(<HomeDashboard utilisateur={{ id: 'u1', email: 'alex@example.com' }} lang="fr" onGoToBets={noop} onOpenTeamFiche={noop} />);

@@ -263,61 +263,124 @@ export function isWithinPeriod(dateStr, period, now = new Date()) {
   return (now - d) / 86400000 <= jours;
 }
 
-// Serie {values,dates,finalValue} pour la courbe.
+// Historique CHRONOLOGIQUE COMPLET (jamais filtre par periode) du solde, evenement par
+// evenement : depot/retrait a sa date (tx.occurred_on), mise retiree a la date de PLACEMENT du
+// pari (evenement -mise), montant retourne ajoute a la date de REGLEMENT (evenement +montant
+// retourne, gagnant: mise*cote, perdant: 0, annule/push: mise remboursee -- voir
+// computeSettledReturns). cumul demarre a 0 avant le tout premier evenement. Comme chaque valeur
+// est un solde ABSOLU (pas une variation relative a une fenetre), le DERNIER point de l'historique
+// complet egale toujours exactement computeAccountBalance(transactions, bets) -- et selectionner
+// n'importe quel sous-ensemble chronologique final (voir computeBankrollSeries mode='value', qui
+// filtre ces points par periode) preserve cette egalite pour la periode 'all'.
+export function computeBalanceHistory(transactions, bets) {
+  const events = [];
+  for (const tx of transactions || []) {
+    if (tx.type === 'deposit') events.push({ date: tx.occurred_on, delta: Number(tx.amount) || 0 });
+    else if (tx.type === 'withdrawal') events.push({ date: tx.occurred_on, delta: -(Number(tx.amount) || 0) });
+  }
+  for (const b of bets || []) {
+    if (b.datePlaced) events.push({ date: b.datePlaced, delta: -(b.stake || 0) });
+    if (b.status !== 'pending' && b.dateSettlement) events.push({ date: b.dateSettlement, delta: (b.stake || 0) + (b.profit || 0) });
+  }
+  events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let cumul = 0;
+  return events.map(e => { cumul += e.delta; return { date: e.date, value: cumul }; });
+}
+
+// Serie {values,dates,finalValue} pour la courbe (src/Home.js:BankrollHeroChart,
+// src/Bankroll.js:BankrollOverview/AccountDetail/AccountCard -- SEULE source de cette courbe,
+// ne jamais recalculer une variante locale).
 //
-// mode='return' : rendement cumulatif (%) = profit cumule / mise cumulee, paris REGLES
-// uniquement (le "rendement" reste base sur les paris regles, jamais affecte par un pari en
-// cours -- memes composants que l'ancien src/Home.js computeChartSeries). Le depot/retrait
-// n'intervient jamais ici.
+// mode='value' : solde ABSOLU reconstruit par computeBalanceHistory ci-dessus, simplement
+// restreint aux points dont la date tombe dans la periode choisie -- PAS une serie qui repart de
+// zero a chaque periode. Consequence directe et voulue : le dernier point est TOUJOURS le solde
+// reel actuel (voir computeAccountBalance), quelle que soit la periode selectionnee, puisque le
+// dernier evenement chronologique de l'historique complet tombe forcement dans n'importe quelle
+// periode incluant "maintenant". Le sous-titre/ROI affiches par l'appelant ne doivent PAS etre
+// derives de la variation brute de cette courbe (un depot/retrait dans la periode y apparait
+// comme un saut qui n'est pas de la "performance") -- voir computePeriodStats, qui isole le
+// profit hors depots/retraits.
 //
-// mode='value' : coherent avec computeAccountBalance -- la mise sort du solde au moment du pari
-// (evenement -mise a la date de mise) et revient au reglement (evenement +montant retourne a la
-// date de reglement, voir computeSettledReturns). Un pari encore en cours a la fin de la periode
-// n'affiche donc qu'une baisse (sa mise), jamais le profit qu'il n'a pas encore genere -- un
-// pari place ET regle dans la periode redonne au total le meme profit net qu'avant (−mise puis
-// +mise+profit = +profit), seul l'etat intermediaire pendant qu'il est en cours differe.
-export function computeBankrollSeries(bets, period, mode, now = new Date()) {
+// mode='return' : profit CUMULE en $ (pas un pourcentage) des paris REGLES uniquement, a leur
+// date de REGLEMENT -- jamais de depot/retrait ici. Sur la periode 'all', le dernier point egale
+// exactement computeTotalReturn(bets) (= la carte "Total return"), puisque les deux sommes
+// portent sur exactement les memes paris decides.
+export function computeBankrollSeries(transactions, bets, period, mode, now = new Date()) {
   if (mode === 'return') {
     const filtered = settledBets(bets)
       .filter(b => isWithinPeriod(b.dateSettlement, period, now))
       .sort((a, b) => new Date(a.dateSettlement) - new Date(b.dateSettlement));
 
     let cumulProfit = 0;
-    let cumulStake = 0;
     const dates = [];
     const values = filtered.map(b => {
       cumulProfit += b.profit || 0;
-      cumulStake += b.stake || 0;
       dates.push(b.dateSettlement);
-      return cumulStake > 0 ? (cumulProfit / cumulStake) * 100 : 0;
+      return cumulProfit;
     });
     return { values, dates, finalValue: values.length ? values[values.length - 1] : 0 };
   }
 
-  const events = [];
-  for (const b of bets || []) {
-    if (isWithinPeriod(b.datePlaced, period, now)) {
-      events.push({ date: b.datePlaced, delta: -(b.stake || 0) });
-    }
-    if (b.status !== 'pending' && isWithinPeriod(b.dateSettlement, period, now)) {
-      events.push({ date: b.dateSettlement, delta: (b.stake || 0) + (b.profit || 0) });
-    }
-  }
-  events.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  let cumul = 0;
-  const dates = [];
-  const values = events.map(e => {
-    cumul += e.delta;
-    dates.push(e.date);
-    return cumul;
-  });
-  return { values, dates, finalValue: values.length ? values[values.length - 1] : 0 };
+  const history = computeBalanceHistory(transactions, bets).filter(p => isWithinPeriod(p.date, period, now));
+  return {
+    values: history.map(p => p.value),
+    dates: history.map(p => p.date),
+    finalValue: history.length ? history[history.length - 1].value : 0,
+  };
 }
 
 export function computeVariation(points) {
   if (!points || points.length < 2) return 0;
   return points[points.length - 1].value - points[0].value;
+}
+
+// ===================== Statistiques de performance pour UNE periode =====================
+// Source UNIQUE des cartes ROI / Taux de reussite / Paris actifs partout dans l'app (accueil
+// src/Home.js:StatsRow, page de compte src/Bankroll.js:AccountDetail, Performance insights
+// src/PerformanceInsights.js) -- memes periode ET base de date que la courbe du graphique
+// (computeBankrollSeries) : refDateForBet (date de REGLEMENT pour un pari decide, date de
+// PLACEMENT pour un pari encore en cours), jamais la date de placement d'un pari deja regle. Un
+// pari annule (push) n'est ni gagne ni perdu : exclu de decidedCount/winRate/roi, voir
+// decidedBets. "Active bets" compte les paris encore en jeu PLACES dans la periode (meme filtre
+// refDateForBet que le reste) -- changer la periode du graphique change donc aussi ce nombre,
+// par coherence avec le reste de cette fonction.
+export function computePeriodStats(bets, period, now = new Date()) {
+  const inPeriod = (bets || []).filter(b => isWithinPeriod(refDateForBet(b), period, now));
+  const decided = decidedBets(inPeriod);
+  const pending = inPeriod.filter(b => b.status === 'pending');
+
+  const profit = decided.reduce((a, b) => a + (b.profit || 0), 0);
+  const staked = decided.reduce((a, b) => a + (b.stake || 0), 0);
+  const returns = decided.reduce((a, b) => a + (b.stake || 0) + (b.profit || 0), 0);
+  const wonCount = decided.filter(b => b.status === 'won').length;
+  const lostCount = decided.length - wonCount;
+  const roi = staked > 0 ? (profit / staked) * 100 : 0;
+  const winRate = decided.length > 0 ? Math.round((wonCount / decided.length) * 100) : 0;
+  const unrealized = computeUnrealizedProfit(pending);
+
+  return {
+    profit, staked, returns, roi, winRate, wonCount, lostCount,
+    decidedCount: decided.length, activeCount: pending.length, unrealized,
+    totalWithUnrealized: profit + unrealized,
+  };
+}
+
+// Profit potentiel (pas encore gagne ni perdu) des paris EN COURS : mise x cote - mise. Toujours
+// 0 pour un pari sans cote renseignee. Separe de computePeriodStats pour pouvoir aussi calculer
+// un "profit non realise" global, non borne a une periode (voir PerformanceInsights.js).
+export function computeUnrealizedProfit(bets) {
+  return pendingBets(bets).reduce((a, b) => a + ((b.stake || 0) * (b.odds || 0) - (b.stake || 0)), 0);
+}
+
+// ===================== Couleur selon le signe =====================
+// Regle partagee par TOUT chiffre affiche (gros chiffre, sous-titre, badge ROI...) : la couleur
+// depend UNIQUEMENT du signe de CE chiffre (vert > 0, rouge < 0, `neutral` si exactement 0) --
+// jamais de la variation d'un graphique ou d'un autre chiffre. Voir computePeriodStats.profit
+// pour la couleur de la courbe elle-meme (tendance reelle de la periode affichee).
+export function signColor(value, neutral = 'var(--c-white)') {
+  if (!(value > 0) && !(value < 0)) return neutral; // couvre aussi NaN/undefined/null
+  return value > 0 ? '#22c55e' : '#ef4444';
 }
 
 // ===================== Formatage compact (calendrier) =====================

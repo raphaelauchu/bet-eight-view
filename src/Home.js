@@ -15,8 +15,8 @@ import { BottomSheet } from './BottomSheet';
 import { BetRow } from './BetRow';
 import { MaskedDots } from './MaskedDots';
 import {
-  normalizeAllBets, betsForAccount, settledBets, isWithinPeriod,
-  computeGlobalBankroll, computeBankrollSeries,
+  normalizeAllBets, betsForAccount,
+  computeGlobalBankroll, computeBankrollSeries, computePeriodStats, signColor,
 } from './bankrollCalc';
 
 // ===================== Persistance locale (masquer les montants) =====================
@@ -270,43 +270,39 @@ const PERIOD_SUFFIX_KEYS = {
 // Valeur (qui reste le solde reel actuel, independant de la periode). En mode Rendement, la
 // grande valeur ET la variation refletent toutes deux le gain/perte de la periode choisie.
 // Toujours affichee (meme a $0.00 sans aucun pari) -- jamais masquee faute de donnees.
-function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, betsGlobal, betsLoading, betsPourPartage, hasAccounts, onAddAccount }) {
-  const [period, setPeriod] = useState('1m');
-  const [mode, setMode] = useState('value');
-  const [hoverPoint, setHoverPoint] = useState(null);
+//
+// `period`/`setPeriod`/`mode`/`setMode` : CONTROLES par le parent (DesktopHomeDashboard/
+// MobileHomeDashboard), pas un etat interne -- StatsRow (carte ROI/Taux de reussite/Paris
+// actifs, meme rangee que ce graphique) doit utiliser EXACTEMENT la meme periode que la courbe
+// (voir computePeriodStats dans src/bankrollCalc.js, source unique de verite de ces deux blocs).
+function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, onToggleHide, onGoToPerformance, betsGlobal, transactionsGlobal, betsLoading, betsPourPartage, hasAccounts, onAddAccount, period, setPeriod, mode, setMode }) {
   const display = bankroll != null ? bankroll.toFixed(2) : null;
 
-  // Courbe = profit cumulatif des paris regles de TOUS les comptes non archives (src/Bankroll.js,
-  // src/bankrollCalc.js) -- jamais les depots/retraits, voir computeBankrollSeries. betsGlobal est
-  // deja la fusion paris+bets_auto normalisee, filtree aux comptes non archives (voir HomeDashboard).
-  const { values, dates } = useMemo(() => computeBankrollSeries(betsGlobal, period, mode), [betsGlobal, period, mode]);
+  // Courbe : solde absolu reconstruit jour par jour en mode Valeur, profit cumule ($) des paris
+  // regles en mode Rendement -- voir computeBankrollSeries (src/bankrollCalc.js, SEULE source de
+  // cette serie). betsGlobal/transactionsGlobal sont deja la fusion paris+bets_auto normalisee /
+  // les transactions, filtrees aux comptes non archives (voir HomeDashboard).
+  const { values, dates } = useMemo(() => computeBankrollSeries(transactionsGlobal, betsGlobal, period, mode), [transactionsGlobal, betsGlobal, period, mode]);
   const points = useMemo(() => values.map((v, i) => ({ date: dates[i], value: v })), [values, dates]);
-  const miseTotalePeriode = useMemo(() => {
-    const now = new Date();
-    return settledBets(betsGlobal).filter(b => isWithinPeriod(b.dateSettlement, period, now)).reduce((a, b) => a + (b.stake || 0), 0);
-  }, [betsGlobal, period]);
 
-  useEffect(() => { setHoverPoint(null); }, [period, mode]);
+  // Stats de LA PERIODE AFFICHEE (meme periode/base de date que la courbe ci-dessus) : profit
+  // hors depots/retraits + ROI correct (profit / mises, jamais retours / mises) -- voir
+  // computePeriodStats, qui documente la convention de date (reglement pour un pari decide).
+  const periodStats = useMemo(() => computePeriodStats(betsGlobal, period), [betsGlobal, period]);
 
-  const premierPoint = points.length ? points[0] : { value: 0 };
-  const dernierPoint = points.length ? points[points.length - 1] : { value: 0 };
-  const pointActif = hoverPoint || dernierPoint;
-  const variation = pointActif.value - premierPoint.value;
-  const hausse = variation >= 0;
-  const couleur = hausse ? '#22c55e' : '#ef4444';
   const suffixe = t(PERIOD_SUFFIX_KEYS[period] || 'home_period_suffix_all');
+  // Couleur de la courbe = tendance REELLE de la periode (signe du profit, hors depots/retraits)
+  // -- jamais le mouvement brut du solde (un depot/retrait a lui seul ne doit jamais "verdir" ou
+  // "rougir" la courbe). Couleur du gros chiffre = signe de CE chiffre uniquement (signColor) :
+  // les deux sont independantes, voir bankrollCalc.js.
+  const couleur = signColor(periodStats.profit, 'var(--c-666)');
 
-  const texteVariation = mode === 'return'
-    ? `${hausse ? '+' : ''}${variation.toFixed(1)}% ${suffixe} →`
-    : (() => {
-      const roiPct = miseTotalePeriode !== 0 ? (variation / miseTotalePeriode) * 100 : 0;
-      return `${hausse ? '+' : ''}$${variation.toFixed(2)} (${roiPct >= 0 ? '+' : ''}${roiPct.toFixed(1)}% ${t('perf_roi')}) ${suffixe} →`;
-    })();
+  const texteVariation = `${periodStats.profit >= 0 ? '+' : '-'}$${Math.abs(periodStats.profit).toFixed(2)} (${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}% ${t('perf_roi')}) ${suffixe} →`;
 
   const grandeValeurTexte = mode === 'return'
-    ? `${pointActif && pointActif.value >= 0 ? '+' : ''}${(pointActif?.value ?? 0).toFixed(1)}%`
+    ? `${periodStats.roi >= 0 ? '+' : ''}${periodStats.roi.toFixed(1)}%`
     : (display != null ? `$${display}` : null);
-  const grandeValeurCouleur = mode === 'return' ? couleur : 'var(--c-white)';
+  const grandeValeurCouleur = mode === 'return' ? signColor(periodStats.roi) : signColor(bankroll);
   const chargementValeur = mode === 'return' ? betsLoading : bankrollLoading;
 
   return (
@@ -368,7 +364,6 @@ function BankrollHeroChart({ t, lang, bankroll, bankrollLoading, hideAmounts, on
           emptyLabel={t('home_no_bets_period')}
           hauteur={150}
           color={couleur}
-          onHoverChange={setHoverPoint}
         />
       )}
     </div>
@@ -386,7 +381,10 @@ function StatCard({ label, value, color = 'var(--c-white)' }) {
   );
 }
 
-function StatsRow({ t, loading, roi, winRate, activeCount, hideAmounts }) {
+// `periodStats` = computePeriodStats(betsGlobal, period) -- MEME periode que BankrollHeroChart
+// (passee par le parent, voir DesktopHomeDashboard/MobileHomeDashboard) : changer la periode du
+// graphique change donc aussi ROI/Taux de reussite/Paris actifs, par coherence.
+function StatsRow({ t, loading, periodStats, hideAmounts }) {
   if (loading) {
     return (
       <div className="home-stats-grid">
@@ -394,10 +392,10 @@ function StatsRow({ t, loading, roi, winRate, activeCount, hideAmounts }) {
       </div>
     );
   }
-  const roiNum = parseFloat(roi);
+  const { roi, winRate, activeCount } = periodStats;
   return (
     <div className="home-stats-grid">
-      <StatCard label={t('home_stat_roi')} value={hideAmounts ? <MaskedDots t={t} /> : `${roiNum >= 0 ? '+' : ''}${roi}%`} color={roiNum >= 0 ? '#22c55e' : '#ef4444'} />
+      <StatCard label={t('home_stat_roi')} value={hideAmounts ? <MaskedDots t={t} /> : `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}%`} color={signColor(roi)} />
       <StatCard label={t('home_stat_win_rate')} value={`${winRate}%`} />
       <StatCard label={t('home_stat_active_bets')} value={activeCount} color="#f97316" />
     </div>
@@ -748,8 +746,8 @@ function ComingSoonOverlay({ t, onClose }) {
 
 function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, bankrollLoading, betsGlobal,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
+    displayName, bankroll, bankrollLoading, betsGlobal, transactionsGlobal,
+    recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
     accounts, hasAccounts, onAccountCreated,
   } = data;
@@ -757,13 +755,18 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [sportsbookOuvert, setSportsbookOuvert] = useState(false);
+  // Periode/mode du graphique Bankroll, CONTROLES ici (pas dans BankrollHeroChart) pour que
+  // StatsRow (ROI/Taux de reussite/Paris actifs) partage exactement la meme periode -- voir
+  // computePeriodStats dans src/bankrollCalc.js.
+  const [period, setPeriod] = useState('1m');
+  const [mode, setMode] = useState('value');
 
   function toggleHideAmounts() {
     setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; });
   }
 
   const todayStr = getDateStr(new Date());
-  const activeCount = parisActifs.length + betsAutoActifs.length;
+  const periodStats = useMemo(() => computePeriodStats(betsGlobal, period), [betsGlobal, period]);
 
   const selectedDayGames = useMemo(() => {
     const day = week.find(d => d.date === selectedDate);
@@ -786,10 +789,11 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
           <BankrollHeroChart
             t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
             hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-            betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+            betsGlobal={betsGlobal} transactionsGlobal={transactionsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
             hasAccounts={hasAccounts} onAddAccount={() => setSportsbookOuvert(true)}
+            period={period} setPeriod={setPeriod} mode={mode} setMode={setMode}
           />
-          <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
+          <StatsRow t={t} loading={betsLoading} periodStats={periodStats} hideAmounts={hideAmounts} />
           <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
         </div>
 
@@ -822,8 +826,8 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
 
 function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPerformance, onOpenTeamFiche }) {
   const {
-    displayName, bankroll, bankrollLoading, betsGlobal,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
+    displayName, bankroll, bankrollLoading, betsGlobal, transactionsGlobal,
+    recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
     accounts, hasAccounts, onAccountCreated,
   } = data;
@@ -831,13 +835,15 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [sportsbookOuvert, setSportsbookOuvert] = useState(false);
+  const [period, setPeriod] = useState('1m');
+  const [mode, setMode] = useState('value');
 
   function toggleHideAmounts() {
     setHideAmounts(prev => { writeHideAmounts(!prev); return !prev; });
   }
 
   const todayStr = getDateStr(new Date());
-  const activeCount = parisActifs.length + betsAutoActifs.length;
+  const periodStats = useMemo(() => computePeriodStats(betsGlobal, period), [betsGlobal, period]);
 
   const selectedDayGames = useMemo(() => {
     const day = week.find(d => d.date === selectedDate);
@@ -857,11 +863,12 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       <BankrollHeroChart
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
         hideAmounts={hideAmounts} onToggleHide={toggleHideAmounts} onGoToPerformance={onGoToPerformance}
-        betsGlobal={betsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
+        betsGlobal={betsGlobal} transactionsGlobal={transactionsGlobal} betsLoading={betsLoading} betsPourPartage={betsPourPartage}
         hasAccounts={hasAccounts} onAddAccount={() => setSportsbookOuvert(true)}
+        period={period} setPeriod={setPeriod} mode={mode} setMode={setMode}
       />
 
-      <StatsRow t={t} loading={betsLoading} roi={roi} winRate={winRate} activeCount={activeCount} hideAmounts={hideAmounts} />
+      <StatsRow t={t} loading={betsLoading} periodStats={periodStats} hideAmounts={hideAmounts} />
 
       <RecentBetsCard t={t} loading={betsLoading} recentCombines={recentCombines} onSeeAll={onGoToBets} hideAmounts={hideAmounts} />
 
@@ -952,15 +959,6 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   }, []);
 
   const displayName = firstName || utilisateur?.email?.split('@')[0] || 'there';
-  const parisActifs = paris.filter(p => p.statut === 'actif');
-  const parisTraites = paris.filter(p => p.statut !== 'actif');
-  const betsAutoActifs = betsAuto.filter(b => b.statut === 'pending');
-  const betsAutoTraites = betsAuto.filter(b => b.statut !== 'pending');
-  const profitTotal = parisTraites.reduce((acc, p) => acc + (p.profit || 0), 0);
-  const parisGagnes = parisTraites.filter(p => p.statut === 'gagne').length;
-  const winRate = parisTraites.length > 0 ? Math.round((parisGagnes / parisTraites.length) * 100) : 0;
-  const miseTotale = parisTraites.reduce((acc, p) => acc + (p.mise || 0), 0);
-  const roi = miseTotale > 0 ? ((profitTotal / miseTotale) * 100).toFixed(1) : '0.0';
   const recentCombines = [
     ...paris.map(p => ({ key: `m-${p.id}`, titre: p.match, bookmaker: p.bookmaker, cote: p.cote, statut: p.statut, profit: p.profit, mise: p.mise, date: p.date_pari })),
     ...betsAuto.map(b => ({ key: `a-${b.id}`, titre: titreBetAuto(b), bookmaker: b.bookmaker, cote: b.cote, statut: b.statut === 'pending' ? 'actif' : b.statut, profit: b.resultat, mise: b.mise, date: b.verified_at || b.created_at })),
@@ -972,8 +970,9 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   }).slice(0, 3);
 
   // Paris unifies (paris + bets_auto, avec type_bet) pour la carte de partage (src/ShareStats.js)
-  // -- meme fusion que PerformanceInsights.js (tousLesParis), independante des series du
-  // graphique de BankrollHeroChart (qui ne lit que `paris`, historique).
+  // -- forme differente de betsGlobal (normalizeAllBets), que BankrollHeroChart/StatsRow
+  // utilisent eux pour la courbe et les stats de periode (voir computeBankrollSeries/
+  // computePeriodStats dans src/bankrollCalc.js).
   const betsPourPartage = paris.map(p => ({ date: p.date_pari, profit: Number(p.profit) || 0, mise: Number(p.mise) || 0, statut: p.statut, type: null }))
     .concat(betsAuto.map(b => ({ date: b.verified_at || b.created_at, profit: Number(b.resultat) || 0, mise: Number(b.mise) || 0, statut: b.statut === 'pending' ? 'actif' : b.statut, type: b.type_bet || null })));
 
@@ -991,12 +990,16 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
   })), [accounts, transactions, allBets]);
   const bankroll = useMemo(() => computeGlobalBankroll(accountsWithData), [accountsWithData]);
   const betsGlobal = useMemo(() => allBets.filter(b => accountsNonArchivees.has(b.accountId)), [allBets, accountsNonArchivees]);
+  // Memes comptes non archives que betsGlobal (jamais les transactions d'un compte archive) --
+  // utilise par BankrollHeroChart pour reconstruire le solde jour par jour (mode Valeur, voir
+  // computeBankrollSeries/computeBalanceHistory dans src/bankrollCalc.js).
+  const transactionsGlobal = useMemo(() => transactions.filter(tx => accountsNonArchivees.has(tx.account_id)), [transactions, accountsNonArchivees]);
   const bankrollLoading = accountsLoading || betsLoading;
   const hasAccounts = accounts.length > 0;
 
   const sharedData = {
-    displayName, bankroll, bankrollLoading, paris, betsAuto, parisTraites, betsAutoTraites, betsGlobal,
-    recentCombines, roi, winRate, parisActifs, betsAutoActifs, betsLoading, betsPourPartage,
+    displayName, bankroll, bankrollLoading, betsGlobal, transactionsGlobal,
+    recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
     accounts, hasAccounts, onAccountCreated: (compte) => setAccounts(prev => [...prev, compte]),
   };

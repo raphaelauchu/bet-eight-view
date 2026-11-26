@@ -5,32 +5,25 @@ import { readHideAmounts, MaskedDots } from './Home';
 import { titreBetAuto } from './betDisplay';
 import { DropdownPill } from './DropdownPill';
 import { ShareStatsButton } from './ShareStats';
+import {
+  normalizeAllBets, betsForAccount, refDateForBet, isWithinPeriod, signColor,
+  computeGlobalBankroll, computeNetDeposits, computePeriodStats, computeUnrealizedProfit, computeTotalReturn,
+} from './bankrollCalc';
 
 // Page "Aperçu de la performance" (style Wealthsimple "Performance insights"), ouverte depuis
 // le bloc Bankroll de l'accueil (clic sur la ligne de variation, voir BankrollHeroChart dans
-// src/Home.js) avec la periode courante preselectionnee. Fusionne paris (table `paris`,
-// entrees manuelles historiques) et bets_auto (table `bets_auto`, imports) en une liste
-// uniforme pour les calculs -- memes deux sources que Home.js/Dashboard.js, jamais de donnee
-// inventee. Respecte le choix "masquer le solde" fait a l'accueil (meme cle localStorage,
-// lecture seule ici -- pas de bouton oeil sur cette page).
+// src/Home.js) avec la periode courante preselectionnee. MEME source de donnees et MEMES
+// fonctions de calcul que l'accueil/la page de compte (src/bankrollCalc.js, source unique de
+// verite -- voir computeGlobalBankroll/computeNetDeposits/computePeriodStats) : comptes
+// bankroll_accounts + transactions bankroll_transactions (jamais les anciennes tables
+// `bankroll`/`transactions`, retirees lors de la refonte multi-comptes du 2026-11-21 mais encore
+// interrogees ici par erreur avant ce correctif -- source du "924$" sans rapport et du "Net
+// deposits" toujours a 0$, voir le CHANGELOG de ce fichier). Fusionne paris (table `paris`,
+// entrees manuelles historiques) et bets_auto (table `bets_auto`, imports) via normalizeAllBets,
+// jamais de donnee inventee. Respecte le choix "masquer le solde" fait a l'accueil (meme cle
+// localStorage, lecture seule ici -- pas de bouton oeil sur cette page).
 
 const PERIODES = ['1d', '1w', '1m', '3m', '6m', 'ytd', '1y', 'all'];
-const JOURS_PAR_PERIODE = { '1d': 1, '1w': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 };
-
-function filtrerParPeriode(liste, periode) {
-  const maintenant = new Date();
-  return liste.filter(x => {
-    if (!x.date) return false;
-    if (periode === 'all') return true;
-    const d = new Date(x.date);
-    if (periode === 'ytd') return d.getFullYear() === maintenant.getFullYear();
-    return (maintenant - d) / 86400000 <= JOURS_PAR_PERIODE[periode];
-  });
-}
-
-function gainPotentiel(p) {
-  return p.mise && p.cote ? p.mise * p.cote - p.mise : 0;
-}
 
 function labelTypePari(type, t) {
   if (!type) return null;
@@ -77,7 +70,7 @@ const fmtMontantAbs = (v) => `$${v.toFixed(2)}`;
 export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialPeriod = 'all' }) {
   const t = getT(lang);
   const [hideAmounts] = useState(() => readHideAmounts());
-  const [bankroll, setBankroll] = useState(null);
+  const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [paris, setParis] = useState([]);
   const [betsAuto, setBetsAuto] = useState([]);
@@ -90,14 +83,14 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
     if (!utilisateur?.id) { setChargement(false); return; }
     let annule = false;
     (async () => {
-      const [bk, tx, pr, ba] = await Promise.all([
-        supabase.from('bankroll').select('montant').eq('user_id', utilisateur.id).maybeSingle(),
-        supabase.from('transactions').select('*').eq('user_id', utilisateur.id),
+      const [acc, tx, pr, ba] = await Promise.all([
+        supabase.from('bankroll_accounts').select('*').eq('user_id', utilisateur.id),
+        supabase.from('bankroll_transactions').select('*').eq('user_id', utilisateur.id),
         supabase.from('paris').select('*').eq('user_id', utilisateur.id),
         supabase.from('bets_auto').select('*').eq('user_id', utilisateur.id),
       ]);
       if (annule) return;
-      setBankroll(bk.data ? bk.data.montant : 0);
+      setAccounts(acc.data || []);
       setTransactions(tx.data || []);
       setParis(pr.data || []);
       setBetsAuto(ba.data || []);
@@ -106,68 +99,75 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
     return () => { annule = true; };
   }, [utilisateur?.id]);
 
-  // Fusionne les deux sources de paris en une liste uniforme pour les calculs et le tableau.
-  const tousLesParis = useMemo(() => [
-    ...paris.map(p => ({
-      id: `m-${p.id}`, date: p.date_pari, label: p.match || '—', bookmaker: p.bookmaker || null,
-      mise: Number(p.mise) || 0, cote: Number(p.cote) || 0, statut: p.statut, profit: Number(p.profit) || 0, type: null,
-    })),
-    ...betsAuto.map(b => ({
-      id: `a-${b.id}`, date: b.verified_at || b.created_at, label: titreBetAuto(b), bookmaker: b.bookmaker || null,
-      mise: Number(b.mise) || 0, cote: Number(b.cote) || 0, statut: b.statut === 'pending' ? 'actif' : b.statut,
-      profit: Number(b.resultat) || 0, type: b.type_bet || null,
-    })),
-  ], [paris, betsAuto]);
+  // Memes comptes/bets/transactions "globaux" que l'accueil (src/Home.js:HomeDashboard) et la
+  // page de compte (src/Bankroll.js) : comptes non archives uniquement, aucun pari sans compte
+  // (account_id NULL) ne compte dans aucun total tant qu'il n'est pas rattache.
+  const allBets = useMemo(() => normalizeAllBets(paris, betsAuto), [paris, betsAuto]);
+  const accountsNonArchivees = useMemo(() => new Set(accounts.filter(a => !a.archived_at).map(a => a.id)), [accounts]);
+  const accountsWithData = useMemo(() => accounts.map(a => ({
+    archivedAt: a.archived_at,
+    transactions: transactions.filter(tx => tx.account_id === a.id),
+    bets: betsForAccount(allBets, a.id),
+  })), [accounts, transactions, allBets]);
+  const betsGlobal = useMemo(() => allBets.filter(b => accountsNonArchivees.has(b.accountId)), [allBets, accountsNonArchivees]);
+  const transactionsGlobal = useMemo(() => transactions.filter(tx => accountsNonArchivees.has(tx.account_id)), [transactions, accountsNonArchivees]);
 
-  const bookmakersDisponibles = useMemo(() => [...new Set(tousLesParis.map(p => p.bookmaker).filter(Boolean))].sort(), [tousLesParis]);
-  const typesDisponibles = useMemo(() => [...new Set(tousLesParis.map(p => p.type).filter(Boolean))], [tousLesParis]);
+  // Bankroll globale = EXACTEMENT la meme fonction que l'accueil (computeGlobalBankroll) -- plus
+  // jamais lue depuis une colonne bankroll.montant separee qui pouvait diverger (voir le
+  // commentaire de tete de fichier).
+  const bankroll = useMemo(() => computeGlobalBankroll(accountsWithData), [accountsWithData]);
 
-  const parisPortee = useMemo(() => tousLesParis.filter(p => {
+  const bookmakersDisponibles = useMemo(() => [...new Set(betsGlobal.map(b => b.bookmaker).filter(Boolean))].sort(), [betsGlobal]);
+  const typesDisponibles = useMemo(() => [...new Set(betsGlobal.map(b => b.raw?.type_bet).filter(Boolean))], [betsGlobal]);
+
+  const betsPortee = useMemo(() => betsGlobal.filter(b => {
     if (portee === 'all' || portee === 'sport:nhl') return true;
-    if (portee.startsWith('book:')) return p.bookmaker === portee.slice(5);
-    if (portee.startsWith('type:')) return p.type === portee.slice(5);
+    if (portee.startsWith('book:')) return b.bookmaker === portee.slice(5);
+    if (portee.startsWith('type:')) return b.raw?.type_bet === portee.slice(5);
     return true;
-  }), [tousLesParis, portee]);
+  }), [betsGlobal, portee]);
 
-  const parisActifsTotal = parisPortee.filter(p => p.statut === 'actif');
-  const parisReglesTotal = parisPortee.filter(p => p.statut !== 'actif');
-
-  const totalDepose = transactions.filter(x => x.type === 'deposit').reduce((a, x) => a + (x.montant || 0), 0);
-  const totalRetire = transactions.filter(x => x.type === 'withdrawal').reduce((a, x) => a + (x.montant || 0), 0);
-  const depotsNets = totalDepose - totalRetire;
-  const rendementDepuisDebut = parisReglesTotal.reduce((a, p) => a + p.profit, 0);
-  const profitNonRealise = parisActifsTotal.reduce((a, p) => a + gainPotentiel(p), 0);
+  // Depots nets ET rendement total : TOUJOURS depuis toujours (jamais bornes a la periode), voir
+  // les 3 cartes du haut -- computeNetDeposits/computeTotalReturn/computeUnrealizedProfit, memes
+  // fonctions que src/Bankroll.js:AccountDetail.
+  const depotsNets = useMemo(() => computeNetDeposits(transactionsGlobal), [transactionsGlobal]);
+  const rendementDepuisDebut = useMemo(() => computeTotalReturn(betsPortee), [betsPortee]);
+  const profitNonRealise = useMemo(() => computeUnrealizedProfit(betsPortee), [betsPortee]);
 
   const periodeLabel = t(`perf_period_${periode}`);
-  const parisPeriode = useMemo(() => filtrerParPeriode(parisPortee, periode), [parisPortee, periode]);
-  const parisReglesPeriode = parisPeriode.filter(p => p.statut !== 'actif');
-  const parisActifsPeriode = parisPeriode.filter(p => p.statut === 'actif');
-  const profitRealisePeriode = parisReglesPeriode.reduce((a, p) => a + p.profit, 0);
-  const profitPotentielPeriode = parisActifsPeriode.reduce((a, p) => a + gainPotentiel(p), 0);
-  const rendementTotalPeriode = profitRealisePeriode + profitPotentielPeriode;
-  const miseTotaleReglesPeriode = parisReglesPeriode.reduce((a, p) => a + p.mise, 0);
+  // Stats de la PERIODE : meme fonction/meme base de date (reglement pour un pari decide,
+  // placement pour un pari encore en cours) que l'accueil et la page de compte -- voir
+  // computePeriodStats (src/bankrollCalc.js). Jamais retours/mises affiche comme un ROI : roi =
+  // profit/mises, deja correct dans computePeriodStats.
+  const periodStats = useMemo(() => computePeriodStats(betsPortee, periode), [betsPortee, periode]);
+  // "Rendement total (periode)" inclut aussi le gain potentiel des paris actifs PLACES durant la
+  // periode (voir perf_total_return_period_tooltip) -- deja calcule par computePeriodStats
+  // (totalWithUnrealized = profit + unrealized).
+  const rendementTotalPeriode = periodStats.totalWithUnrealized;
   const tauxRendementSimple = depotsNets !== 0 ? (rendementTotalPeriode / Math.abs(depotsNets)) * 100 : 0;
-  const roiPeriode = miseTotaleReglesPeriode !== 0 ? (profitRealisePeriode / miseTotaleReglesPeriode) * 100 : 0;
-  const gagnesPeriode = parisReglesPeriode.filter(p => p.statut === 'gagne').length;
-  const perdusPeriode = parisReglesPeriode.filter(p => p.statut === 'perdu').length;
-  const tauxReussitePeriode = parisReglesPeriode.length ? (gagnesPeriode / parisReglesPeriode.length) * 100 : 0;
 
+  // "Mises placees (periode)" compte TOUS les paris de la periode (decides + encore en jeu),
+  // meme filtre refDateForBet que computePeriodStats -- pas seulement les paris decides.
+  const parisPeriode = useMemo(() => {
+    const now = new Date();
+    return betsPortee.filter(b => isWithinPeriod(refDateForBet(b), periode, now));
+  }, [betsPortee, periode]);
   const nbMisesPeriode = parisPeriode.length;
-  const montantMisesPeriode = parisPeriode.reduce((a, p) => a + p.mise, 0);
-  const coteMoyennePeriode = nbMisesPeriode ? parisPeriode.reduce((a, p) => a + p.cote, 0) / nbMisesPeriode : 0;
+  const montantMisesPeriode = parisPeriode.reduce((a, b) => a + (b.stake || 0), 0);
+  const coteMoyennePeriode = nbMisesPeriode ? parisPeriode.reduce((a, b) => a + (b.odds || 0), 0) / nbMisesPeriode : 0;
 
-  const tableauDonnees = useMemo(() => [...parisPeriode].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)), [parisPeriode]);
+  const tableauDonnees = useMemo(() => [...parisPeriode].sort((a, b) => new Date(refDateForBet(b) || 0) - new Date(refDateForBet(a) || 0)), [parisPeriode]);
 
   function exporterCSV() {
     const entetes = [t('perf_table_col_date'), t('perf_table_col_bet'), t('perf_table_col_sportsbook'), t('perf_table_col_stake'), t('perf_table_col_odds'), t('perf_table_col_result'), t('perf_table_col_profit')];
-    const lignes = tableauDonnees.map(p => [
-      p.date ? new Date(p.date).toISOString().slice(0, 10) : '',
-      `"${(p.label || '').replace(/"/g, '""')}"`,
-      p.bookmaker || '',
-      p.mise.toFixed(2),
-      p.cote.toFixed(2),
-      t(p.statut === 'gagne' ? 'perf_result_won' : p.statut === 'perdu' ? 'perf_result_lost' : 'perf_result_active'),
-      p.statut === 'actif' ? '' : p.profit.toFixed(2),
+    const lignes = tableauDonnees.map(b => [
+      refDateForBet(b) ? new Date(refDateForBet(b)).toISOString().slice(0, 10) : '',
+      `"${(b.title || '').replace(/"/g, '""')}"`,
+      b.bookmaker || '',
+      (b.stake || 0).toFixed(2),
+      (b.odds || 0).toFixed(2),
+      t(b.status === 'won' ? 'perf_result_won' : b.status === 'lost' ? 'perf_result_lost' : 'perf_result_active'),
+      b.status === 'pending' ? '' : (b.profit || 0).toFixed(2),
     ].join(','));
     const csv = [entetes.join(','), ...lignes].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -190,7 +190,7 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
           <IconBack /> {t('back_btn').replace('← ', '')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShareStatsButton t={t} lang={lang} bets={tousLesParis} bankroll={bankroll} />
+          <ShareStatsButton t={t} lang={lang} bets={betsPourPartage(betsGlobal)} bankroll={bankroll} />
           <DropdownPill
             label={t('perf_scope_label')}
             value={portee}
@@ -206,7 +206,7 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
       </div>
 
       <h1 style={{ margin: '0 0 6px', fontSize: 'clamp(24px, 3vw, 30px)', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--c-white)' }}>{t('perf_title')}</h1>
-      <div style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '900', color: 'var(--c-white)', letterSpacing: '-1.5px', marginBottom: '24px' }}>
+      <div style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '900', color: signColor(bankroll, 'var(--c-white)'), letterSpacing: '-1.5px', marginBottom: '24px' }}>
         {hideAmounts ? <MaskedDots count={7} size={12} t={t} /> : `$${bankrollAffiche}`} <span style={{ fontSize: '16px', color: 'var(--c-555)', fontWeight: '700' }}>{t('perf_currency')}</span>
       </div>
 
@@ -217,7 +217,7 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
         </div>
         <div style={carteStyle}>
           <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '8px' }}>{t('perf_total_return')}</div>
-          <div style={{ fontSize: '20px', fontWeight: '800', color: rendementDepuisDebut >= 0 ? '#22c55e' : '#ef4444' }}><Montant hideAmounts={hideAmounts} valeur={rendementDepuisDebut} formatte={fmtMontant} t={t} /></div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: signColor(rendementDepuisDebut) }}><Montant hideAmounts={hideAmounts} valeur={rendementDepuisDebut} formatte={fmtMontant} t={t} /></div>
         </div>
         <div style={carteStyle}>
           <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
@@ -248,7 +248,7 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
                 <div style={{ fontSize: '12px', color: 'var(--c-555)', fontWeight: '600', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                   {t('perf_total_return_period').replace('{periode}', periodeLabel)}<InfoTooltip texte={t('perf_total_return_period_tooltip')} />
                 </div>
-                <div style={{ fontSize: '30px', fontWeight: '900', color: rendementTotalPeriode >= 0 ? '#22c55e' : '#ef4444' }}>
+                <div style={{ fontSize: '30px', fontWeight: '900', color: signColor(rendementTotalPeriode) }}>
                   <Montant hideAmounts={hideAmounts} valeur={rendementTotalPeriode} formatte={fmtMontant} t={t} />
                 </div>
               </div>
@@ -259,7 +259,7 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--c-555)', marginBottom: '4px' }}>{t('perf_roi')}</div>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--c-ccc)' }}><Montant hideAmounts={hideAmounts} valeur={roiPeriode} formatte={fmtPct} t={t} /></div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--c-ccc)' }}><Montant hideAmounts={hideAmounts} valeur={periodStats.roi} formatte={fmtPct} t={t} /></div>
                 </div>
               </div>
             </div>
@@ -268,13 +268,13 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
           <div className="perf-two-grid" style={{ marginBottom: '32px' }}>
             <div style={carteStyle}>
               <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '600', marginBottom: '8px' }}>{t('perf_realized_profit_period').replace('{periode}', periodeLabel)}</div>
-              <div style={{ fontSize: '20px', fontWeight: '800', color: profitRealisePeriode >= 0 ? '#22c55e' : '#ef4444' }}><Montant hideAmounts={hideAmounts} valeur={profitRealisePeriode} formatte={fmtMontant} t={t} /></div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: signColor(periodStats.profit) }}><Montant hideAmounts={hideAmounts} valeur={periodStats.profit} formatte={fmtMontant} t={t} /></div>
             </div>
             <div style={carteStyle}>
               <div style={{ fontSize: '11px', color: 'var(--c-555)', fontWeight: '600', marginBottom: '8px' }}>{t('perf_win_rate_period').replace('{periode}', periodeLabel)}</div>
               <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--c-white)' }}>
-                {hideAmounts ? <MaskedDots t={t} /> : `${tauxReussitePeriode.toFixed(0)}%`}
-                <span style={{ fontSize: '12px', color: 'var(--c-555)', fontWeight: '600', marginLeft: '8px' }}>{hideAmounts ? '' : `${gagnesPeriode}-${perdusPeriode}`}</span>
+                {hideAmounts ? <MaskedDots t={t} /> : `${periodStats.winRate.toFixed(0)}%`}
+                <span style={{ fontSize: '12px', color: 'var(--c-555)', fontWeight: '600', marginLeft: '8px' }}>{hideAmounts ? '' : `${periodStats.wonCount}-${periodStats.lostCount}`}</span>
               </div>
             </div>
           </div>
@@ -325,16 +325,16 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
                 <tbody>
                   {tableauDonnees.length === 0 ? (
                     <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center', color: 'var(--c-555)', fontSize: '13px' }}>{t('home_no_bets_period')}</td></tr>
-                  ) : tableauDonnees.map(p => (
-                    <tr key={p.id}>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{p.date ? new Date(p.date).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA') : '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-white)', fontWeight: '600', borderBottom: '1px solid var(--c-141414)' }}>{p.label}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{p.bookmaker || '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{hideAmounts ? <MaskedDots t={t} /> : `$${p.mise.toFixed(2)}`}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{p.cote ? p.cote.toFixed(2) : '—'}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{t(p.statut === 'gagne' ? 'perf_result_won' : p.statut === 'perdu' ? 'perf_result_lost' : 'perf_result_active')}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '700', color: p.statut === 'actif' ? 'var(--c-555)' : p.profit >= 0 ? '#22c55e' : '#ef4444', borderBottom: '1px solid var(--c-141414)' }}>
-                        {p.statut === 'actif' ? '—' : hideAmounts ? <MaskedDots t={t} /> : fmtMontant(p.profit)}
+                  ) : tableauDonnees.map(b => (
+                    <tr key={b.id}>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{refDateForBet(b) ? new Date(refDateForBet(b)).toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA') : '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-white)', fontWeight: '600', borderBottom: '1px solid var(--c-141414)' }}>{b.title}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{b.bookmaker || '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{hideAmounts ? <MaskedDots t={t} /> : `$${(b.stake || 0).toFixed(2)}`}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{b.odds ? b.odds.toFixed(2) : '—'}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--c-ccc)', borderBottom: '1px solid var(--c-141414)' }}>{t(b.status === 'won' ? 'perf_result_won' : b.status === 'lost' ? 'perf_result_lost' : 'perf_result_active')}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '700', color: b.status === 'pending' ? 'var(--c-555)' : signColor(b.profit), borderBottom: '1px solid var(--c-141414)' }}>
+                        {b.status === 'pending' ? '—' : hideAmounts ? <MaskedDots t={t} /> : fmtMontant(b.profit || 0)}
                       </td>
                     </tr>
                   ))}
@@ -346,4 +346,10 @@ export function PerformanceInsights({ utilisateur, lang = 'fr', onBack, initialP
       )}
     </div>
   );
+}
+
+// Paris unifies pour la carte de partage (src/ShareStats.js), memes champs qu'avant la refonte
+// (date/profit/mise/statut/type) -- ShareStats n'a pas besoin du reste de la forme normalisee.
+function betsPourPartage(betsGlobal) {
+  return betsGlobal.map(b => ({ date: refDateForBet(b), profit: b.profit || 0, mise: b.stake || 0, statut: b.status === 'won' ? 'gagne' : b.status === 'lost' ? 'perdu' : b.status === 'cancelled' ? 'annule' : 'actif', type: b.raw?.type_bet || null }));
 }
