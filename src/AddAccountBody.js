@@ -7,7 +7,9 @@ import { supabase } from './supabase';
 // Bankroll.js : Bankroll.js importe des utilitaires de Home.js (MaskedDots, readHideAmounts),
 // un import Home -> Bankroll aurait ferme un cycle (Home -> Bankroll -> Home).
 
-const ACCOUNT_KIND_OPTIONS = [
+// Exporte (pas seulement local) : src/Onboarding.js reutilise exactement la meme liste pour sa
+// grille de bookmakers (etape 1), pour ne jamais diverger de la liste de creation de compte.
+export const ACCOUNT_KIND_OPTIONS = [
   { kind: 'bet365', label: 'bet365' },
   { kind: 'betway', label: 'Betway' },
   { kind: 'bet99', label: 'BET99' },

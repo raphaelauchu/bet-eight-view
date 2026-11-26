@@ -17,6 +17,8 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { BottomSheet } from './BottomSheet';
 import { BankrollPage } from './Bankroll';
+import { OnboardingFlow } from './Onboarding';
+import { ONBOARDING_ENABLED } from './onboardingConfig';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -1208,6 +1210,19 @@ function App() {
   // jamais un non-admin ne la voit, meme furtivement.
   const [isAdmin, setIsAdmin] = useState(false);
   const [profilCharge, setProfilCharge] = useState(false);
+  // Onboarding (src/Onboarding.js) : null tant que le profil n'a pas charge -- voir
+  // showOnboarding plus bas, qui attend explicitement profilCharge avant de decider (jamais de
+  // flash du dashboard normal avant de basculer sur l'onboarding pour un nouvel utilisateur).
+  const [onboardingCompleted, setOnboardingCompleted] = useState(null);
+  // MODE APERCU (?onboarding=preview) : lu une seule fois a l'etat initial (pas recalcule a
+  // chaque rendu depuis window.location.search) -- a la fin de l'apercu, on le repasse a `false`
+  // explicitement (voir handleOnboardingComplete plus bas). Necessaire : `page` vaut deja 'home'
+  // par defaut, donc `setPage('home')` seul ne declenche aucun re-render (React ignore une mise a
+  // jour d'etat vers une valeur identique) -- sans cet etat dedie, rien ne forcerait React a
+  // ressortir de l'onboarding apres "Terminer" en mode apercu.
+  const [onboardingPreviewActive, setOnboardingPreviewActive] = useState(
+    () => new URLSearchParams(window.location.search).get('onboarding') === 'preview'
+  );
   const [showAuth, setShowAuth] = useState(() => !!poolJoinCode);
   const [authMode, setAuthMode] = useState('login');
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
@@ -1240,17 +1255,22 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setProfilCharge(false); return; }
+    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setOnboardingCompleted(null); setProfilCharge(false); return; }
     setProfilCharge(false);
-    supabase.from('profiles').select('avatar_url, username, first_name, last_name, is_admin').eq('id', utilisateur.id).single()
+    supabase.from('profiles').select('avatar_url, username, first_name, last_name, is_admin, onboarding_completed').eq('id', utilisateur.id).single()
       .then(({ data }) => {
         setAvatarUrl(data?.avatar_url || null);
         const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
         setDisplayName(nomComplet || '');
         setIsAdmin(!!data?.is_admin);
+        // `data` absent (profil introuvable/erreur) : jamais interprete comme "onboarding
+        // complete" -- voir showOnboarding plus bas, qui n'affiche l'onboarding que si cette
+        // valeur vaut explicitement `false` (pas juste falsy) pour ne jamais bloquer un
+        // utilisateur existant derriere une erreur reseau transitoire.
+        setOnboardingCompleted(data ? data.onboarding_completed !== false : true);
         setProfilCharge(true);
       })
-      .catch(() => setProfilCharge(true));
+      .catch(() => { setOnboardingCompleted(true); setProfilCharge(true); });
   }, [utilisateur?.id]);
 
   // Refuse l'acces direct a l'URL/au parametre admin (?admin=betrics2026) a un non-admin : des
@@ -1292,6 +1312,39 @@ function App() {
   // App connectée : sidebar gauche fixe (desktop/tablette) ou bottom nav (mobile)
   if (utilisateur) {
     const t = getT(lang);
+
+    // ===================== Onboarding (src/Onboarding.js) =====================
+    // MODE APERCU (?onboarding=preview) : affiche l'onboarding complet meme si deja complete,
+    // sans attendre profilCharge (fonctionne y compris si le profil n'a pas encore charge) --
+    // c'est un parametre d'URL explicite, jamais une condition sur les vraies donnees de
+    // l'utilisateur. Hors apercu : attend explicitement profilCharge avant de decider, pour ne
+    // jamais laisser un nouvel utilisateur voir le dashboard normal un court instant avant de
+    // basculer sur l'onboarding (ecran neutre, meme fond, le temps du chargement du profil).
+    function handleOnboardingComplete() {
+      if (onboardingPreviewActive) {
+        // Mode apercu : ne JAMAIS modifier l'etat "complete" -- seulement retirer le parametre
+        // d'URL (cosmetique, evite que l'apercu se redeclenche si l'URL est repartagee) et sortir
+        // du mode apercu localement (voir onboardingPreviewActive ci-dessus).
+        const url = new URL(window.location.href);
+        url.searchParams.delete('onboarding');
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        setOnboardingPreviewActive(false);
+      } else {
+        setOnboardingCompleted(true);
+      }
+      setPage('home');
+    }
+
+    if (ONBOARDING_ENABLED && onboardingPreviewActive) {
+      return <OnboardingFlow utilisateur={utilisateur} lang={lang} previewMode onComplete={handleOnboardingComplete} />;
+    }
+    if (ONBOARDING_ENABLED && !profilCharge) {
+      return <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-080808)' }} />;
+    }
+    if (ONBOARDING_ENABLED && onboardingCompleted === false) {
+      return <OnboardingFlow utilisateur={utilisateur} lang={lang} onComplete={handleOnboardingComplete} />;
+    }
+
     // Modeles n'est plus un onglet de navigation a part entiere (fusionne dans Analyses, voir le
     // controle segmente Matchs/Modeles plus bas). Pool rejoint ce premier groupe (icone etoile,
     // ex-icone de Modeles) directement sous Analyses, sans separateur entre les deux -- le

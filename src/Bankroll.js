@@ -237,7 +237,10 @@ function AccountActionsMenu({ t, account, allowDelete, onRename, onArchive, onUn
 
 // ===================== Mini-courbe (carte de compte) =====================
 
-function MiniSparkline({ points, color, height = 36 }) {
+// Exportee (pas seulement locale) : src/Onboarding.js reutilise ce meme composant pour la carte
+// de demonstration "courbe simple" du carrousel (donnees d'exemple statiques, jamais un vrai
+// compte).
+export function MiniSparkline({ points, color, height = 36 }) {
   if (!points || points.length < 2) {
     return <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center' }}><div style={{ width: '100%', height: '1.5px', backgroundColor: 'var(--c-222)' }} /></div>;
   }
