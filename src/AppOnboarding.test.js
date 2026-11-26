@@ -1,17 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from './App';
+import { LOCAL_STORAGE_KEY } from './Onboarding';
 
-// Test d'integration de l'onboarding (src/Onboarding.js) a travers App() en entier -- meme
-// technique que src/AppStatsNav.js (stubs d'AnalysesFlux/Modeles/HomeDashboard, voir ce fichier
-// pour le detail). Couvre : affichage conditionne a onboarding_completed, navigation
-// carrousel -> etapes -> creation des comptes bankroll, etape 1 sautee (compte "Other"), case
-// 18+ obligatoire, et le MODE APERCU (?onboarding=preview, aucune ecriture).
+// Test d'integration de l'onboarding (src/Onboarding.js, refonte du 26 nov 2026 -- les 5 etapes
+// passent AVANT la creation de compte) a travers App() en entier -- meme technique que
+// src/AppStatsNav.js (stubs d'AnalysesFlux/Modeles/HomeDashboard, voir ce fichier pour le detail).
 //
-// Gotcha : "Get started" existe AUSSI sur la landing page publique (src/PublicSite.js, affichee
-// tant que supabase.auth.getSession() n'a pas resolu). Attendre ce texte en premier peut donc se
-// resoudre par erreur sur la landing page encore affichee, avant meme la connexion -- tous les
-// tests passent systematiquement par "Skip" (texte unique au carrousel) pour confirmer qu'on est
-// bien dans l'onboarding avant d'interagir plus loin.
+// Gotcha : "Get started"/"Continue" peuvent exister ailleurs (landing publique, src/PublicSite.js)
+// -- tous les tests attendent d'abord un texte UNIQUE a l'ecran vise (ex. "Where do you bet?")
+// avant d'interagir, jamais un libelle generique partage.
 jest.mock('./supabase', () => ({
   supabase: {
     auth: { getSession: jest.fn(), getUser: jest.fn(), onAuthStateChange: jest.fn(), signOut: jest.fn() },
@@ -43,14 +40,21 @@ const { useIsMobile } = require('./Analyses');
 
 const UTILISATEUR = { id: 'u1', email: 'alex@example.com' };
 
-function mockConnecte({ onboardingCompleted = true } = {}) {
+// `connecteAuDepart` : simule soit un visiteur qui arrive deja connecte (rechargement de page,
+// retour OAuth -- getSession() resout immediatement), soit un visiteur anonyme qui ne se connecte
+// que plus tard dans le test (voir declencherConnexion ci-dessous, qui rejoue le callback
+// onAuthStateChange -- JAMAIS une dependance a un quelconque etat React du composant Onboarding).
+function mockSupabase({ onboardingCompleted = true, connecteAuDepart = true } = {}) {
   const accountInserts = [];
-  const txInserts = [];
   const profileUpserts = [];
+  let authStateCallback = null;
 
-  supabase.auth.getSession.mockResolvedValue({ data: { session: { user: UTILISATEUR } } });
+  supabase.auth.getSession.mockResolvedValue({ data: { session: connecteAuDepart ? { user: UTILISATEUR } : null } });
   supabase.auth.getUser.mockResolvedValue({ data: { user: UTILISATEUR } });
-  supabase.auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } });
+  supabase.auth.onAuthStateChange.mockImplementation((cb) => {
+    authStateCallback = cb;
+    return { data: { subscription: { unsubscribe: jest.fn() } } };
+  });
   supabase.from.mockImplementation((table) => {
     if (table === 'profiles') {
       return {
@@ -59,16 +63,7 @@ function mockConnecte({ onboardingCompleted = true } = {}) {
       };
     }
     if (table === 'bankroll_accounts') {
-      return {
-        insert: (payload) => {
-          const row = { id: `acc-${accountInserts.length}`, ...payload };
-          accountInserts.push(payload);
-          return { select: () => ({ single: () => Promise.resolve({ data: row, error: null }) }) };
-        },
-      };
-    }
-    if (table === 'bankroll_transactions') {
-      return { insert: (payload) => { txInserts.push(payload); return Promise.resolve({ error: null }); } };
+      return { insert: (payload) => { accountInserts.push(payload); return Promise.resolve({ error: null }); } };
     }
     if (table === 'saved_picks') {
       return { select: () => ({ eq: () => ({ eq: () => Promise.resolve({ count: 0 }) }) }) };
@@ -77,13 +72,16 @@ function mockConnecte({ onboardingCompleted = true } = {}) {
   });
   supabase.channel.mockReturnValue({ on: () => ({ subscribe: () => ({}) }) });
 
-  return { accountInserts, txInserts, profileUpserts };
+  return {
+    accountInserts, profileUpserts,
+    // Simule la connexion reussie APRES le montage (inscription + confirmation, ou connexion
+    // d'un compte existant) -- rejoue exactement ce que fait l'abonnement reel d'App().
+    declencherConnexion() { authStateCallback?.('SIGNED_IN', { user: UTILISATEUR }); },
+  };
 }
 
-// Quitte le carrousel vers l'etape 1 via "Skip" (texte unique, voir le commentaire de tete de
-// fichier) -- equivalent fonctionnel de "Get started" pour la navigation, sans l'ambiguite.
-async function allerAuxEtapes() {
-  fireEvent.click(await screen.findByText('Skip'));
+async function demarrerDepuisLaLanding() {
+  fireEvent.click(await screen.findByText('Get started'));
   await screen.findByText('Where do you bet?');
 }
 
@@ -91,155 +89,193 @@ beforeEach(() => {
   jest.clearAllMocks();
   useIsMobile.mockReturnValue(false);
   window.history.pushState({}, '', '/');
+  try { window.localStorage.clear(); } catch { /* ignore */ }
 });
 
-test('onboarding deja complete : le dashboard s\'affiche normalement, aucun carrousel', async () => {
-  mockConnecte({ onboardingCompleted: true });
+test('utilisateur deja onboarde : le dashboard s\'affiche normalement, aucun onboarding', async () => {
+  mockSupabase({ onboardingCompleted: true, connecteAuDepart: true });
   render(<App />);
   await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
-  expect(screen.queryByText('Skip')).not.toBeInTheDocument();
+  expect(screen.queryByText('Where do you bet?')).not.toBeInTheDocument();
 });
 
-test('onboarding non complete : le carrousel s\'affiche a la place du dashboard', async () => {
-  mockConnecte({ onboardingCompleted: false });
+test('carrousel desactive (ONBOARDING_INTRO_SLIDES_ENABLED=false) : "Get started" sur la landing mene directement a l\'etape 1, sans diapo', async () => {
+  mockSupabase({ connecteAuDepart: false });
   render(<App />);
-  await waitFor(() => expect(screen.getByText('Skip')).toBeInTheDocument());
-  expect(screen.queryByText('HOME_STUB')).not.toBeInTheDocument();
-  // Diapo 1 : titre en deux lignes.
-  expect(screen.getByText('Every bet,')).toBeInTheDocument();
-  expect(screen.getByText('always up to date')).toBeInTheDocument();
-  expect(screen.getAllByText('Example').length).toBeGreaterThan(0);
-});
-
-test('carrousel : "Skip" mene directement a l\'etape 1 des etapes', async () => {
-  mockConnecte({ onboardingCompleted: false });
-  render(<App />);
-  await allerAuxEtapes();
+  await demarrerDepuisLaLanding();
   expect(screen.getByText('1 OF 5')).toBeInTheDocument();
+  expect(screen.queryByText('Every bet,')).not.toBeInTheDocument(); // diapo du carrousel, jamais montee
 });
 
-test('etape 1 : aucun bouton retour ; Continue desactive tant qu\'aucun bookmaker n\'est choisi', async () => {
-  mockConnecte({ onboardingCompleted: false });
+test('visiteur non connecte : remplit les 5 etapes -> enchaine vers l\'inscription, reponses stockees en localStorage (pas d\'ecriture Supabase)', async () => {
+  const mocks = mockSupabase({ connecteAuDepart: false });
   render(<App />);
-  await allerAuxEtapes();
-
-  expect(screen.queryByLabelText('Back')).not.toBeInTheDocument();
-  expect(screen.getByText('Continue').closest('button')).toBeDisabled();
+  await demarrerDepuisLaLanding();
 
   fireEvent.click(screen.getByText('BET99'));
-  expect(screen.getByText('Continue').closest('button')).not.toBeDisabled();
-});
-
-test('etape 1 : "I don\'t have an account" saute l\'exigence et passe a l\'etape 2 (compte generique)', async () => {
-  mockConnecte({ onboardingCompleted: false });
-  render(<App />);
-  await allerAuxEtapes();
-
-  fireEvent.click(screen.getByText('I don\'t have an account'));
-  await waitFor(() => expect(screen.getByText('How much is in your bankroll?')).toBeInTheDocument());
-  expect(screen.getByText('Account')).toBeInTheDocument(); // libelle generique, pas un bookmaker precis
-  expect(screen.getByText('2 OF 5')).toBeInTheDocument();
-  // Etape 2 : toujours possible de continuer a 0$.
-  expect(screen.getByText('Continue').closest('button')).not.toBeDisabled();
-  // Retour en arriere possible (etapes 1 a 4).
-  fireEvent.click(screen.getByLabelText('Back'));
-  await waitFor(() => expect(screen.getByText('Where do you bet?')).toBeInTheDocument());
-});
-
-test('etape 5 : "Finish" reste desactive tant que la case 18+ n\'est pas cochee', async () => {
-  mockConnecte({ onboardingCompleted: false });
-  render(<App />);
-  await allerAuxEtapes();
-  fireEvent.click(screen.getByText('I don\'t have an account'));
-  await screen.findByText('How much is in your bankroll?');
-  fireEvent.click(screen.getByText('Continue')); // etape 2 -> 3
-  await screen.findByText('What do you want to do with Betrics?');
-  fireEvent.click(screen.getByText('Continue')); // etape 3 -> 4
-  await screen.findByText('What\'s your experience level?');
-  fireEvent.click(screen.getByText('Continue')); // etape 4 -> 5
-  await screen.findByText('How did you hear about us?');
-
-  expect(screen.getByText('Finish').closest('button')).toBeDisabled();
-  fireEvent.click(screen.getByText('I am 18 years of age or older'));
-  expect(screen.getByText('Finish').closest('button')).not.toBeDisabled();
-});
-
-test('flux complet (bookmaker choisi + montant) : cree le compte bankroll, le depot initial, marque l\'onboarding complete, puis affiche le dashboard', async () => {
-  const mocks = mockConnecte({ onboardingCompleted: false });
-  render(<App />);
-  await allerAuxEtapes();
-
-  fireEvent.click(screen.getByText('BET99'));
-  fireEvent.click(screen.getByText('Continue')); // -> etape 2
-  await screen.findByText('How much is in your bankroll?');
-  expect(screen.getByText('BET99')).toBeInTheDocument(); // libelle du bookmaker choisi, pas "Account"
-
-  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '150' } });
-  fireEvent.click(screen.getByText('Continue')); // -> etape 3
-  await screen.findByText('What do you want to do with Betrics?');
-  fireEvent.click(screen.getByText('Continue')); // -> etape 4
-  await screen.findByText('What\'s your experience level?');
-  fireEvent.click(screen.getByText('Continue')); // -> etape 5
-  await screen.findByText('How did you hear about us?');
-
-  fireEvent.click(screen.getByText('I am 18 years of age or older'));
-  fireEvent.click(screen.getByText('Finish'));
-
-  await waitFor(() => expect(mocks.accountInserts.length).toBe(1));
-  expect(mocks.accountInserts[0]).toMatchObject({ user_id: 'u1', name: 'BET99', kind: 'bet99' });
-  expect(mocks.txInserts.length).toBe(1);
-  expect(mocks.txInserts[0]).toMatchObject({ user_id: 'u1', account_id: 'acc-0', type: 'deposit', amount: 150 });
-  await waitFor(() => expect(mocks.profileUpserts.length).toBe(1));
-  expect(mocks.profileUpserts[0]).toMatchObject({ id: 'u1', onboarding_completed: true });
-  expect(mocks.profileUpserts[0].onboarding_answers).toMatchObject({ bookmakers: ['bet99'] });
-
-  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
-});
-
-test('aucun bookmaker choisi (etape sautee) : cree un seul compte "Other" sans depot si aucun montant saisi', async () => {
-  const mocks = mockConnecte({ onboardingCompleted: false });
-  render(<App />);
-  await allerAuxEtapes();
-  fireEvent.click(screen.getByText('I don\'t have an account'));
-  await screen.findByText('How much is in your bankroll?');
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('How much can you put in play?');
+  fireEvent.click(screen.getByText('Under $100'));
   fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('What do you want to do with Betrics?');
-  fireEvent.click(screen.getByText('Continue')); // etape 3 -> 4
+  fireEvent.click(screen.getByText('Track my bets'));
+  fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('What\'s your experience level?');
-  fireEvent.click(screen.getByText('Continue')); // etape 4 -> 5
+  fireEvent.click(screen.getByText('Beginner'));
+  fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('How did you hear about us?');
+  fireEvent.click(screen.getByText('Google'));
   fireEvent.click(screen.getByText('I am 18 years of age or older'));
-  fireEvent.click(screen.getByText('Finish'));
+  fireEvent.click(screen.getByText('Create my account'));
 
-  await waitFor(() => expect(mocks.accountInserts.length).toBe(1));
-  expect(mocks.accountInserts[0]).toMatchObject({ user_id: 'u1', kind: 'other' });
-  expect(mocks.txInserts.length).toBe(0); // aucun montant saisi -> pas de transaction
+  // Enchaine sur l'ecran d'inscription existant (src/Auth.js) -- jamais une ecriture Supabase.
+  await waitFor(() => expect(screen.getByText('Create your free account')).toBeInTheDocument());
+  expect(mocks.accountInserts.length).toBe(0);
+  expect(mocks.profileUpserts.length).toBe(0);
+
+  const stocke = JSON.parse(window.localStorage.getItem(LOCAL_STORAGE_KEY));
+  expect(stocke).toMatchObject({ bookmakers: ['bet99'], betSize: 'under_100', goals: ['track'], experience: 'beginner', source: 'google', ageConfirmed: true });
 });
 
-test('MODE APERCU (?onboarding=preview) : s\'affiche meme si deja complete, et ne fait AUCUNE ecriture a la fin', async () => {
-  const mocks = mockConnecte({ onboardingCompleted: true });
+test('premiere connexion apres inscription (reponses locales + utilisateur fraichement connecte) : cree les comptes a 0$ et marque l\'onboarding complete, puis vide le localStorage', async () => {
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ bookmakers: ['bet99', 'mise_o_jeu'], betSize: 'under_100', goals: ['track'], experience: 'beginner', source: 'google', ageConfirmed: true }));
+  const mocks = mockSupabase({ onboardingCompleted: false, connecteAuDepart: false });
+  render(<App />);
+  await waitFor(() => expect(screen.getByText('Get started')).toBeInTheDocument()); // encore anonyme
+
+  mocks.declencherConnexion();
+
+  await waitFor(() => expect(mocks.accountInserts.length).toBe(2));
+  expect(mocks.accountInserts.map(a => a.kind).sort()).toEqual(['bet99', 'mise_o_jeu']);
+  expect(mocks.accountInserts.every(a => a.user_id === 'u1')).toBe(true);
+  await waitFor(() => expect(mocks.profileUpserts.length).toBe(1));
+  expect(mocks.profileUpserts[0]).toMatchObject({ id: 'u1', onboarding_completed: true });
+  expect(mocks.profileUpserts[0].onboarding_answers).toMatchObject({ bookmakers: ['bet99', 'mise_o_jeu'] });
+
+  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
+  expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
+});
+
+test('application des reponses apres un RECHARGEMENT COMPLET de page (utilisateur deja authentifie au montage, composant Onboarding jamais monte dans ce test)', async () => {
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ bookmakers: ['bet365'], betSize: '100_500', goals: [], experience: 'intermediate', source: 'reddit', ageConfirmed: true }));
+  const mocks = mockSupabase({ onboardingCompleted: false, connecteAuDepart: true }); // deja connecte des le depart, comme apres un rechargement
+  render(<App />);
+
+  await waitFor(() => expect(mocks.accountInserts.length).toBe(1));
+  expect(mocks.accountInserts[0]).toMatchObject({ user_id: 'u1', kind: 'bet365' });
+  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
+  expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
+});
+
+test('"Je n\'ai aucun compte" : aucun compte bankroll n\'est cree a l\'application des reponses', async () => {
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ bookmakers: [], betSize: 'under_100', goals: [], experience: 'beginner', source: 'other', ageConfirmed: true }));
+  const mocks = mockSupabase({ onboardingCompleted: false, connecteAuDepart: true });
+  render(<App />);
+
+  await waitFor(() => expect(mocks.profileUpserts.length).toBe(1));
+  expect(mocks.accountInserts.length).toBe(0);
+  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
+});
+
+test('connexion d\'un compte EXISTANT (deja onboarde) avec des reponses locales perimees : les efface sans les appliquer', async () => {
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ bookmakers: ['betway'], betSize: 'under_100', goals: [], experience: 'beginner', source: 'other', ageConfirmed: true }));
+  const mocks = mockSupabase({ onboardingCompleted: true, connecteAuDepart: true }); // deja onboarde en base
+  render(<App />);
+
+  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
+  expect(mocks.accountInserts.length).toBe(0); // jamais applique
+  expect(mocks.profileUpserts.length).toBe(0); // deja complete, pas touche
+  expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull(); // mais efface
+});
+
+test('etape 5 : "Create my account" reste desactive tant que la case 18+ ET une source ne sont pas toutes les deux remplies', async () => {
+  mockSupabase({ connecteAuDepart: false });
+  render(<App />);
+  await demarrerDepuisLaLanding();
+  fireEvent.click(screen.getByText('I don\'t have an account'));
+  await screen.findByText('How much can you put in play?');
+  fireEvent.click(screen.getByText('Under $100'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('What do you want to do with Betrics?');
+  fireEvent.click(screen.getByText('Track my bets'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('What\'s your experience level?');
+  fireEvent.click(screen.getByText('Beginner'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('How did you hear about us?');
+
+  expect(screen.getByText('Create my account').closest('button')).toBeDisabled();
+  fireEvent.click(screen.getByText('I am 18 years of age or older'));
+  expect(screen.getByText('Create my account').closest('button')).toBeDisabled(); // case cochee seule : pas encore de source
+  fireEvent.click(screen.getByText('Google'));
+  expect(screen.getByText('Create my account').closest('button')).not.toBeDisabled();
+});
+
+test('MODE APERCU, visiteur NON connecte (?onboarding=preview) : fonctionne, pastille visible, AUCUNE ecriture', async () => {
+  const mocks = mockSupabase({ connecteAuDepart: false });
   window.history.pushState({}, '', '/?onboarding=preview');
   render(<App />);
 
   await waitFor(() => expect(screen.getByText('Preview mode')).toBeInTheDocument());
-  await allerAuxEtapes();
+  expect(screen.getByText('1 OF 5')).toBeInTheDocument(); // directement les etapes, carrousel desactive
+
   fireEvent.click(screen.getByText('I don\'t have an account'));
-  await screen.findByText('How much is in your bankroll?');
-  expect(screen.getByText('Preview mode')).toBeInTheDocument();
-  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '999' } });
+  await screen.findByText('How much can you put in play?');
+  fireEvent.click(screen.getByText('Under $100'));
   fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('What do you want to do with Betrics?');
+  fireEvent.click(screen.getByText('Track my bets'));
   fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('What\'s your experience level?');
+  fireEvent.click(screen.getByText('Beginner'));
   fireEvent.click(screen.getByText('Continue'));
   await screen.findByText('How did you hear about us?');
-
   fireEvent.click(screen.getByText('I am 18 years of age or older'));
-  fireEvent.click(screen.getByText('Finish'));
+  fireEvent.click(screen.getByText('Google'));
+  fireEvent.click(screen.getByText('Create my account'));
 
-  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
+  await waitFor(() => expect(window.location.search).toBe(''));
   expect(mocks.accountInserts.length).toBe(0);
-  expect(mocks.txInserts.length).toBe(0);
   expect(mocks.profileUpserts.length).toBe(0);
-  expect(window.location.search).toBe(''); // ?onboarding=preview retire apres la fin de l'apercu
+  expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
+});
+
+test('"Already have an account? Sign in" depuis les etapes vide les reponses locales et bascule vers la connexion', async () => {
+  mockSupabase({ connecteAuDepart: false });
+  render(<App />);
+  await demarrerDepuisLaLanding();
+  fireEvent.click(screen.getByText('BET99'));
+
+  fireEvent.click(screen.getByText(/Already have an account/));
+  await waitFor(() => expect(screen.getByText('Sign in to your account')).toBeInTheDocument());
+  expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
+});
+
+test('cas de secours : utilisateur deja connecte, onboarding non termine, AUCUNE reponse locale -> affiche les etapes apres connexion et ecrit directement', async () => {
+  const mocks = mockSupabase({ onboardingCompleted: false, connecteAuDepart: true });
+  render(<App />);
+  await waitFor(() => expect(screen.getByText('1 OF 5')).toBeInTheDocument());
+  // Pas de lien "Already have an account" : l'utilisateur est deja connecte.
+  expect(screen.queryByText(/Already have an account/)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('BET99'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('How much can you put in play?');
+  fireEvent.click(screen.getByText('Under $100'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('What do you want to do with Betrics?');
+  fireEvent.click(screen.getByText('Track my bets'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('What\'s your experience level?');
+  fireEvent.click(screen.getByText('Beginner'));
+  fireEvent.click(screen.getByText('Continue'));
+  await screen.findByText('How did you hear about us?');
+  fireEvent.click(screen.getByText('I am 18 years of age or older'));
+  fireEvent.click(screen.getByText('Google'));
+  fireEvent.click(screen.getByText('Create my account'));
+
+  await waitFor(() => expect(mocks.accountInserts.length).toBe(1));
+  expect(mocks.accountInserts[0]).toMatchObject({ user_id: 'u1', kind: 'bet99' });
+  await waitFor(() => expect(mocks.profileUpserts.length).toBe(1));
+  await waitFor(() => expect(screen.getByText('HOME_STUB')).toBeInTheDocument());
 });

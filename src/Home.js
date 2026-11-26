@@ -215,6 +215,20 @@ function GreetingBanner({ t, displayName, onAddSportsbook, mobile }) {
   );
 }
 
+// Message discret affiche UNE fois juste apres que l'onboarding (src/Onboarding.js) a cree des
+// comptes bankroll a 0$ (aucun depot invente) -- invite a faire un premier depot, jamais
+// insistant (une seule ligne, fermeture au clic, pas de reapparition une fois ferme : voir
+// onDismissDepositPrompt, qui vide l'etat cote App.js).
+function DepositPromptBanner({ t, comptes, onDismiss }) {
+  if (!comptes || comptes.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '14px', backgroundColor: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', marginBottom: '14px' }}>
+      <p style={{ margin: 0, fontSize: '13px', color: 'var(--c-ccc)' }}>{t('onboarding_deposit_prompt').replace('{comptes}', comptes.join(', '))}</p>
+      <button onClick={onDismiss} aria-label={t('home_coming_soon_close')} style={{ background: 'none', border: 'none', color: 'var(--c-666)', cursor: 'pointer', fontSize: '15px', flexShrink: 0, padding: '4px' }}>✕</button>
+    </div>
+  );
+}
+
 // Feuille ouverte par "Ajouter un sportsbook" (GreetingBanner) : une vraie creation de compte
 // manuel (src/AddAccountBody.js -- memes 5 sportsbooks reconnus + "Autre") en haut, et -- tant
 // que BANKROLL_SYNC_ENABLED (src/bankrollConfig.js) est a `true` -- la liste d'attente de
@@ -749,7 +763,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
     displayName, bankroll, bankrollLoading, betsGlobal, transactionsGlobal,
     recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
-    accounts, hasAccounts, onAccountCreated,
+    accounts, hasAccounts, onAccountCreated, pendingDepositAccounts, onDismissDepositPrompt,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -783,6 +797,7 @@ function DesktopHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPe
       `}</style>
 
       <GreetingBanner t={t} displayName={displayName} onAddSportsbook={() => setSportsbookOuvert(true)} mobile={false} />
+      <DepositPromptBanner t={t} comptes={pendingDepositAccounts} onDismiss={onDismissDepositPrompt} />
 
       <div className="home-grid">
         <div className="home-main-col">
@@ -829,7 +844,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
     displayName, bankroll, bankrollLoading, betsGlobal, transactionsGlobal,
     recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
-    accounts, hasAccounts, onAccountCreated,
+    accounts, hasAccounts, onAccountCreated, pendingDepositAccounts, onDismissDepositPrompt,
   } = data;
 
   const [hideAmounts, setHideAmounts] = useState(() => readHideAmounts());
@@ -859,6 +874,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
       `}</style>
 
       <GreetingBanner t={t} displayName={displayName} onAddSportsbook={() => setSportsbookOuvert(true)} mobile />
+      <DepositPromptBanner t={t} comptes={pendingDepositAccounts} onDismiss={onDismissDepositPrompt} />
 
       <BankrollHeroChart
         t={t} lang={lang} bankroll={bankroll} bankrollLoading={bankrollLoading}
@@ -899,7 +915,7 @@ function MobileHomeDashboard({ t, lang, utilisateur, data, onGoToBets, onGoToPer
 
 // ===================== Composant principal : donnees partagees + choix de mise en page =====================
 
-export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToPerformance, onOpenTeamFiche, lang = 'en' }) {
+export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoToBets, onGoToPerformance, onOpenTeamFiche, lang = 'en', pendingDepositAccounts, onDismissDepositPrompt }) {
   const t = getT(lang);
   const isMobile = useIsMobile();
 
@@ -1002,6 +1018,7 @@ export function HomeDashboard({ utilisateur, onGoToProps, onGoToAnalytics, onGoT
     recentCombines, betsLoading, betsPourPartage,
     week, weekLoading, selectedDate, setSelectedDate, dailyIdeas, ideasLoading,
     accounts, hasAccounts, onAccountCreated: (compte) => setAccounts(prev => [...prev, compte]),
+    pendingDepositAccounts, onDismissDepositPrompt,
   };
 
   if (isMobile) {

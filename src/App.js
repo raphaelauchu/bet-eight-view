@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import BetsPage from './Bets';
 import Auth from './Auth';
 import PublicSite from './PublicSite';
@@ -17,8 +17,9 @@ import { supabase } from './supabase';
 import { getT } from './i18n';
 import { BottomSheet } from './BottomSheet';
 import { BankrollPage } from './Bankroll';
-import { OnboardingFlow } from './Onboarding';
+import { OnboardingFlow, readLocalOnboardingAnswers, clearLocalOnboardingAnswers } from './Onboarding';
 import { ONBOARDING_ENABLED } from './onboardingConfig';
+import { ACCOUNT_KIND_OPTIONS } from './AddAccountBody';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -1223,10 +1224,23 @@ function App() {
   const [onboardingPreviewActive, setOnboardingPreviewActive] = useState(
     () => new URLSearchParams(window.location.search).get('onboarding') === 'preview'
   );
+  // Visiteur NON connecte qui a clique le bouton d'inscription ("Commencer"/nav_signup, voir
+  // onOpenAuth plus bas) : affiche les 5 etapes AVANT l'ecran d'inscription -- voir
+  // src/Onboarding.js (ecrit dans localStorage tant qu'aucun compte n'existe).
+  const [showOnboardingSteps, setShowOnboardingSteps] = useState(false);
+  // Noms des comptes bankroll venant d'etre crees par l'onboarding (a 0$, voir l'effet de
+  // chargement du profil plus bas) -- affiche une seule fois sur l'accueil (src/Home.js:
+  // DepositPromptBanner) une invitation discrete a faire un premier depot, puis se vide.
+  const [pendingDepositAccounts, setPendingDepositAccounts] = useState(null);
   const [showAuth, setShowAuth] = useState(() => !!poolJoinCode);
   const [authMode, setAuthMode] = useState('login');
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
   const [lang, setLang] = useState('en');
+  // Lu par l'effet de chargement du profil (voir plus bas), qui ne doit PAS re-executer a chaque
+  // changement de langue (seulement a la connexion) -- une ref evite d'ajouter `lang` a ses
+  // dependances tout en restant a jour.
+  const langRef = useRef(lang);
+  useEffect(() => { langRef.current = lang; }, [lang]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [displayName, setDisplayName] = useState('');
   const [mode, , themePref, setThemePref] = useWSTheme();
@@ -1256,21 +1270,66 @@ function App() {
 
   useEffect(() => {
     if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setOnboardingCompleted(null); setProfilCharge(false); return; }
+    let annule = false;
     setProfilCharge(false);
-    supabase.from('profiles').select('avatar_url, username, first_name, last_name, is_admin, onboarding_completed').eq('id', utilisateur.id).single()
-      .then(({ data }) => {
-        setAvatarUrl(data?.avatar_url || null);
-        const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
-        setDisplayName(nomComplet || '');
-        setIsAdmin(!!data?.is_admin);
-        // `data` absent (profil introuvable/erreur) : jamais interprete comme "onboarding
-        // complete" -- voir showOnboarding plus bas, qui n'affiche l'onboarding que si cette
-        // valeur vaut explicitement `false` (pas juste falsy) pour ne jamais bloquer un
-        // utilisateur existant derriere une erreur reseau transitoire.
-        setOnboardingCompleted(data ? data.onboarding_completed !== false : true);
-        setProfilCharge(true);
-      })
-      .catch(() => { setOnboardingCompleted(true); setProfilCharge(true); });
+    (async () => {
+      const { data } = await supabase.from('profiles')
+        .select('avatar_url, username, first_name, last_name, is_admin, onboarding_completed')
+        .eq('id', utilisateur.id).single();
+      if (annule) return;
+      setAvatarUrl(data?.avatar_url || null);
+      const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
+      setDisplayName(nomComplet || '');
+      setIsAdmin(!!data?.is_admin);
+
+      // `data` absent (profil introuvable/erreur) : jamais interprete comme "onboarding non
+      // complete" -- pour ne jamais bloquer un utilisateur existant derriere une erreur reseau
+      // transitoire. `dejaComplete` vaut `true` sauf si la colonne vaut explicitement `false`.
+      const dejaComplete = data ? data.onboarding_completed !== false : true;
+
+      // ===================== Application des reponses d'onboarding stockees localement =====
+      // Premiere connexion apres l'inscription (voir src/Onboarding.js : les 5 etapes, remplies
+      // AVANT la creation de compte, ecrivent uniquement dans localStorage) -- y compris apres un
+      // rechargement complet de page (confirmation d'email, retour d'un futur OAuth) : cette
+      // logique vit ici, dans l'effet qui reagit a `utilisateur?.id`, donc JAMAIS dependante de
+      // l'etat React du composant Onboarding (qui peut tres bien ne plus exister). Idempotente :
+      // le localStorage est vide des que les reponses ont ete appliquees une fois.
+      const reponsesLocales = readLocalOnboardingAnswers();
+      if (reponsesLocales && !dejaComplete) {
+        try {
+          const comptesCrees = [];
+          for (const kind of (reponsesLocales.bookmakers || [])) {
+            const label = kind === 'other' ? getT(langRef.current)('bank_account_other') : (ACCOUNT_KIND_OPTIONS.find(o => o.kind === kind)?.label || kind);
+            const { error } = await supabase.from('bankroll_accounts').insert({ user_id: utilisateur.id, name: label, kind });
+            if (!error) comptesCrees.push(label);
+          }
+          await supabase.from('profiles').upsert({
+            id: utilisateur.id, onboarding_completed: true, onboarding_answers: reponsesLocales, onboarding_completed_at: new Date().toISOString(),
+          });
+          clearLocalOnboardingAnswers();
+          if (!annule) {
+            setOnboardingCompleted(true);
+            if (comptesCrees.length > 0) setPendingDepositAccounts(comptesCrees);
+          }
+        } catch {
+          // Echec d'ecriture (reseau, RLS...) : on laisse les reponses locales en place pour
+          // reessayer a la prochaine connexion, et on retombe sur le chemin normal ci-dessous
+          // (cas de secours : les 5 etapes s'affichent apres la connexion, voir plus bas).
+          if (!annule) setOnboardingCompleted(dejaComplete);
+        }
+      } else if (reponsesLocales && dejaComplete) {
+        // Compte DEJA onboarde (ex. utilisateur existant qui a rempli les 5 etapes par
+        // curiosite puis s'est connecte a son compte habituel via "Se connecter") : ces reponses
+        // ne lui appartiennent pas -- on les efface silencieusement, jamais appliquees.
+        clearLocalOnboardingAnswers();
+        if (!annule) setOnboardingCompleted(true);
+      } else if (!annule) {
+        setOnboardingCompleted(dejaComplete);
+      }
+
+      if (!annule) setProfilCharge(true);
+    })().catch(() => { if (!annule) { setOnboardingCompleted(true); setProfilCharge(true); } });
+    return () => { annule = true; };
   }, [utilisateur?.id]);
 
   // Refuse l'acces direct a l'URL/au parametre admin (?admin=betrics2026) a un non-admin : des
@@ -1301,6 +1360,48 @@ function App() {
     return <EmailOAuthCallback provider="outlook" lang={lang} />;
   }
 
+  // ===================== Onboarding : MODE APERCU (src/Onboarding.js) =====================
+  // Verifie TRES TOT, avant tout branchement connecte/non-connecte : ?onboarding=preview
+  // fonctionne aussi bien pour un visiteur non connecte que pour un utilisateur deja onboarde,
+  // sans la moindre ecriture (ni Supabase, ni localStorage -- voir OnboardingFlow). La pastille
+  // "Mode apercu" reste visible sur tout le flux (carrousel si reactive + les 5 etapes).
+  if (ONBOARDING_ENABLED && onboardingPreviewActive) {
+    return (
+      <OnboardingFlow
+        utilisateur={utilisateur}
+        lang={lang}
+        previewMode
+        onComplete={() => {
+          // Ne JAMAIS modifier l'etat "complete" -- seulement retirer le parametre d'URL
+          // (cosmetique) et sortir du mode apercu localement (voir onboardingPreviewActive,
+          // necessaire car `page` vaut deja 'home' par defaut -- `setPage('home')` seul ne
+          // declencherait aucun re-render, voir le commentaire plus haut sur cet etat).
+          const url = new URL(window.location.href);
+          url.searchParams.delete('onboarding');
+          window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+          setOnboardingPreviewActive(false);
+          setPage('home');
+        }}
+      />
+    );
+  }
+
+  // ===================== Onboarding : les 5 etapes AVANT l'inscription =====================
+  // Visiteur NON connecte qui a clique le bouton d'inscription (onOpenAuth('signup'), voir plus
+  // bas -- "Commencer"/nav_signup partout dans src/PublicSite.js) : remplit les 5 etapes d'abord,
+  // les reponses restent en localStorage (voir src/Onboarding.js), puis enchaine vers l'ecran
+  // d'inscription existant. "J'ai deja un compte" (onSignIn) vide ces reponses et bascule plutot
+  // vers la connexion -- ce sont des reponses qui ne lui appartiennent pas.
+  if (ONBOARDING_ENABLED && showOnboardingSteps && !utilisateur) {
+    return (
+      <OnboardingFlow
+        lang={lang}
+        onComplete={() => { setShowOnboardingSteps(false); setAuthMode('signup'); setShowAuth(true); }}
+        onSignIn={() => { setShowOnboardingSteps(false); setAuthMode('login'); setShowAuth(true); }}
+      />
+    );
+  }
+
   if (showAuth && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
@@ -1313,36 +1414,29 @@ function App() {
   if (utilisateur) {
     const t = getT(lang);
 
-    // ===================== Onboarding (src/Onboarding.js) =====================
-    // MODE APERCU (?onboarding=preview) : affiche l'onboarding complet meme si deja complete,
-    // sans attendre profilCharge (fonctionne y compris si le profil n'a pas encore charge) --
-    // c'est un parametre d'URL explicite, jamais une condition sur les vraies donnees de
-    // l'utilisateur. Hors apercu : attend explicitement profilCharge avant de decider, pour ne
-    // jamais laisser un nouvel utilisateur voir le dashboard normal un court instant avant de
-    // basculer sur l'onboarding (ecran neutre, meme fond, le temps du chargement du profil).
-    function handleOnboardingComplete() {
-      if (onboardingPreviewActive) {
-        // Mode apercu : ne JAMAIS modifier l'etat "complete" -- seulement retirer le parametre
-        // d'URL (cosmetique, evite que l'apercu se redeclenche si l'URL est repartagee) et sortir
-        // du mode apercu localement (voir onboardingPreviewActive ci-dessus).
-        const url = new URL(window.location.href);
-        url.searchParams.delete('onboarding');
-        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-        setOnboardingPreviewActive(false);
-      } else {
-        setOnboardingCompleted(true);
-      }
-      setPage('home');
-    }
-
-    if (ONBOARDING_ENABLED && onboardingPreviewActive) {
-      return <OnboardingFlow utilisateur={utilisateur} lang={lang} previewMode onComplete={handleOnboardingComplete} />;
-    }
+    // ===================== Onboarding : chemin de repli (deja connecte) =====================
+    // N'arrive ici QUE si l'effet de chargement du profil (plus haut) n'a trouve AUCUNE reponse
+    // locale a appliquer -- un utilisateur deja authentifie dont l'onboarding n'est pas termine
+    // (ex. compte cree avant cette refonte). Ecrit alors directement (voir
+    // OnboardingFlow.finalize(), chemin `utilisateur` present) -- memes regles que la refonte
+    // (comptes a 0$, aucun depot invente).
     if (ONBOARDING_ENABLED && !profilCharge) {
       return <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-080808)' }} />;
     }
     if (ONBOARDING_ENABLED && onboardingCompleted === false) {
-      return <OnboardingFlow utilisateur={utilisateur} lang={lang} onComplete={handleOnboardingComplete} />;
+      return (
+        <OnboardingFlow
+          utilisateur={utilisateur}
+          lang={lang}
+          onComplete={(reponses) => {
+            setOnboardingCompleted(true);
+            if (reponses?.bookmakers?.length > 0) {
+              setPendingDepositAccounts(reponses.bookmakers.map(kind => kind === 'other' ? t('bank_account_other') : (ACCOUNT_KIND_OPTIONS.find(o => o.kind === kind)?.label || kind)));
+            }
+            setPage('home');
+          }}
+        />
+      );
     }
 
     // Modeles n'est plus un onglet de navigation a part entiere (fusionne dans Analyses, voir le
@@ -1446,6 +1540,7 @@ function App() {
         onGoToProps={() => { choisirStatsSousOnglet('modeles'); setPage('stats'); }} onGoToAnalytics={() => setPage('stats')} onGoToBets={() => setPage('bets')}
         onGoToPerformance={(periode) => { setPendingInsightsPeriod(periode || 'all'); setPage('performance'); }}
         onOpenTeamFiche={(equipe) => { if (equipe) { setJoueurFicheGlobal(null); setEquipeFicheGlobal({ equipe, skaters: [] }); } }}
+        pendingDepositAccounts={pendingDepositAccounts} onDismissDepositPrompt={() => setPendingDepositAccounts(null)}
       />
     );
 
@@ -1519,13 +1614,15 @@ function App() {
   }
 
   // App non connectée — site public (accueil, Pool, Tarifs, outils, guide -- voir
-  // src/PublicSite.js). La connexion/inscription (src/Auth.js) reste inchangee : seul le mode
-  // initial (login/signup) differe selon le bouton clique.
+  // src/PublicSite.js). "Se connecter" (mode='login') va toujours directement a l'ecran de
+  // connexion existant, inchange. "Commencer"/"Créer un compte" (mode='signup', tous les boutons
+  // d'inscription de ces pages) lance desormais les 5 etapes d'onboarding AVANT l'inscription --
+  // voir showOnboardingSteps plus haut.
   return (
     <PublicSite
       lang={lang}
       setLang={setLang}
-      onOpenAuth={(mode) => { setAuthMode(mode); setShowAuth(true); }}
+      onOpenAuth={(mode) => { if (mode === 'signup') { setShowOnboardingSteps(true); } else { setAuthMode(mode); setShowAuth(true); } }}
     />
   );
 }
