@@ -8,13 +8,27 @@ import App from './App';
 // "Matchs/Modeles" segmente dans Analyses et la redirection de l'ancienne route ?page=props.
 jest.mock('./supabase', () => ({
   supabase: {
-    auth: { getSession: jest.fn(), onAuthStateChange: jest.fn(), signOut: jest.fn() },
+    auth: { getSession: jest.fn(), getUser: jest.fn(), onAuthStateChange: jest.fn(), signOut: jest.fn() },
     from: jest.fn(),
     channel: jest.fn(),
     removeChannel: jest.fn(),
   },
 }));
 const { supabase } = require('./supabase');
+
+// Mock de requete chainable (select/eq/order/...) qui se resout en `result` -- meme pattern que
+// Bankroll.test.js/Home.test.js -- pour que BankrollPage/BetsPage (rendues en entier quand on
+// navigue vers "Bankroll"/"Bets" depuis le sheet "More", voir plus bas) ne plantent jamais sur un
+// enchainement de methodes non mocke (ex. .eq().order()), meme si le resultat reste vide.
+function mockQuery(result) {
+  const q = {
+    select: () => q, eq: () => q, order: () => q, neq: () => q, in: () => q, gt: () => q, gte: () => q, is: () => q,
+    single: () => Promise.resolve(result),
+    maybeSingle: () => Promise.resolve(result),
+    then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
+  };
+  return q;
+}
 
 jest.mock('./Analyses', () => ({
   AnalysesFlux: () => <div>ANALYSES_MATCHS_STUB</div>,
@@ -26,7 +40,15 @@ jest.mock('./Analyses', () => ({
   useIsMobile: jest.fn(() => false),
 }));
 jest.mock('./Modeles', () => () => <div>MODELES_STUB</div>);
-jest.mock('./Home', () => ({ HomeDashboard: () => <div>HOME_STUB</div> }));
+// BankrollPage/BetsPage (rendues en entier quand on navigue vers "Bankroll"/"Bets" depuis le
+// sheet "More", voir plus bas) importent aussi readHideAmounts/writeHideAmounts/MaskedDots de ce
+// module -- il faut les reexporter ici, sinon le mock de HomeDashboard les rend undefined.
+jest.mock('./Home', () => ({
+  HomeDashboard: () => <div>HOME_STUB</div>,
+  readHideAmounts: () => false,
+  writeHideAmounts: () => {},
+  MaskedDots: () => null,
+}));
 
 const { useIsMobile } = require('./Analyses');
 
@@ -34,6 +56,7 @@ const UTILISATEUR = { id: 'u1', email: 'alex@example.com' };
 
 function mockConnecte({ isAdmin = false } = {}) {
   supabase.auth.getSession.mockResolvedValue({ data: { session: { user: UTILISATEUR } } });
+  supabase.auth.getUser.mockResolvedValue({ data: { user: UTILISATEUR } });
   supabase.auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } });
   supabase.from.mockImplementation((table) => {
     if (table === 'profiles') {
@@ -42,7 +65,7 @@ function mockConnecte({ isAdmin = false } = {}) {
     if (table === 'saved_picks') {
       return { select: () => ({ eq: () => ({ eq: () => Promise.resolve({ count: 0 }) }) }) };
     }
-    return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
+    return mockQuery({ data: [], error: null });
   });
   supabase.channel.mockReturnValue({ on: () => ({ subscribe: () => ({}) }) });
 }
@@ -146,8 +169,83 @@ test('bottom nav mobile : Pool utilise la meme icone etoile, en 4e position (Hom
   const boutonPool = screen.getByLabelText('Pool');
   expect(boutonPool.querySelector('svg path[d^="M12 2.5"]')).toBeInTheDocument();
 
-  // La feuille "..." mobile ne liste plus que Bets/Bankroll (Pool n'y est plus).
+  // La feuille "More" (dernier onglet de la bottom nav, icone hamburger -- ex-bouton "..." de
+  // la top bar) ne liste plus que Bets/Bankroll (Pool n'y est plus).
   fireEvent.click(screen.getByLabelText('More'));
   expect(screen.getByText('Bets')).toBeInTheDocument();
   expect(screen.getByText('Bankroll')).toBeInTheDocument();
+});
+
+// ===================== Onglet "More" de la bottom nav mobile (ex-menu "..." de la top bar) =====
+
+test('bottom nav mobile : "More" est le dernier onglet (icone hamburger), inactif tant qu\'aucune page du sheet n\'est affichee', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('More')).toBeInTheDocument());
+
+  const libelles = screen.getAllByRole('button').map(b => b.getAttribute('aria-label')).filter(l => ['Home', 'Search', 'Analyses', 'Pool', 'More'].includes(l));
+  expect(libelles).toEqual(['Home', 'Search', 'Analyses', 'Pool', 'More']);
+  expect(screen.getByLabelText('More').querySelector('svg line')).toBeInTheDocument(); // icone hamburger (3 lignes), pas 3 points
+
+  expect(screen.getByLabelText('Home')).toHaveAttribute('aria-current', 'page'); // page par defaut
+  expect(screen.getByLabelText('More')).not.toHaveAttribute('aria-current');
+});
+
+test('bottom nav mobile : clic sur "More" ouvre un sheet (overlay + dialog), fermeture via le bouton X sans naviguer', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('More')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('More'));
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  expect(screen.getByText('Bets')).toBeInTheDocument();
+  expect(screen.getByText('Bankroll')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByLabelText('Fermer'));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('More')).not.toHaveAttribute('aria-current'); // aucune navigation
+  expect(screen.getByLabelText('Home')).toHaveAttribute('aria-current', 'page');
+});
+
+test('bottom nav mobile : clic sur "More" puis sur le fond (overlay) ferme le sheet sans naviguer', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('More')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('More'));
+  const dialog = screen.getByRole('dialog');
+  fireEvent.click(dialog.parentElement); // le fond semi-transparent, pas le contenu du sheet
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('More')).not.toHaveAttribute('aria-current');
+});
+
+test('bottom nav mobile : clic sur "Bankroll" dans le sheet "More" navigue vers Bankroll, ferme le sheet et active "More"', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('More')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('More'));
+  fireEvent.click(screen.getByText('Bankroll'));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); // sheet ferme apres la navigation
+  await waitFor(() => expect(screen.getByLabelText('More')).toHaveAttribute('aria-current', 'page'));
+  expect(screen.getByLabelText('Home')).not.toHaveAttribute('aria-current');
+});
+
+test('bottom nav mobile : clic sur "Bets" dans le sheet "More" navigue vers Paris, ferme le sheet et active "More"', async () => {
+  useIsMobile.mockReturnValue(true);
+  mockConnecte();
+  render(<App />);
+  await waitFor(() => expect(screen.getByLabelText('More')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByLabelText('More'));
+  fireEvent.click(screen.getByText('Bets'));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.getByLabelText('More')).toHaveAttribute('aria-current', 'page'));
 });

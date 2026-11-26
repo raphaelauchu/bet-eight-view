@@ -351,11 +351,13 @@ export function AppSidebar({ tabsPrincipaux, tabsSecondaires, activeId, onSelect
 }
 
 // Barre du bas mobile (<768px), style Wealthsimple : pilule flottante COMPACTE et centree
-// (~80% de la largeur, max 360px, ~64px de haut) -- pas pleine largeur. 4 onglets icones
-// seules (Accueil/Recherche/Analyses/Modeles -- Pool/Paris/Bankroll/Admin passent par le
-// bouton "..." de la top bar, voir MoreSheet). Onglet actif : grosse pastille arrondie claire
-// derriere l'icone, animee (transition + leger "pop" d'echelle) au changement d'onglet.
-// Cibles tactiles >=44px, marge de 12px au-dessus de la safe-area iOS.
+// (~80% de la largeur, max 360px, ~64px de haut) -- pas pleine largeur. 5 onglets icones
+// seules (Accueil/Recherche/Analyses/Pool, puis "Plus" en dernier -- icone hamburger, voir
+// IconHamburgerMenu -- qui ouvre MoreSheet avec les sections restantes, Paris/Bankroll). Onglet
+// actif : grosse pastille arrondie claire derriere l'icone, animee (transition + leger "pop"
+// d'echelle) au changement d'onglet -- "Plus" est actif des que la page courante est une des
+// sections de MoreSheet (voir activeIdMobile dans App()), pas seulement quand la feuille est
+// ouverte. Cibles tactiles >=44px, marge de 12px au-dessus de la safe-area iOS.
 export function BottomNav({ tabs, activeId, onSelectTab }) {
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 250, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -408,18 +410,22 @@ export function MoreSheet({ tabs, onSelectTab, onClose, t }) {
   );
 }
 
-function IconMoreDots({ color = 'currentColor', size = 18 }) {
+// Icone hamburger (3 lignes horizontales) du dernier onglet "Plus"/"More" de la bottom nav mobile
+// (voir BottomNav/tabsMobile dans App()) -- remplace l'ancien bouton "..." (3 points) qui vivait
+// dans la top bar (voir MobileTopBar ci-dessous, qui ne gere plus les sections secondaires).
+export function IconHamburgerMenu({ color = 'currentColor', size = 18 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   );
 }
 
 // Top bar mobile, style Wealthsimple : logo Betrics a gauche (cliquable vers l'accueil), titre
-// de la page au centre, "..." (sections secondaires, voir MoreSheet) + avatar de profil rond a
-// droite (feuille du bas, voir ProfileMenuButton isMobile). Le profil n'est donc plus dans la
-// bottom nav (voir BottomNav ci-dessus, reduite a 4 onglets).
+// de la page au centre, avatar de profil rond a droite (feuille du bas, voir ProfileMenuButton
+// isMobile). Les sections secondaires (Paris/Bankroll) ne passent plus par un bouton "..." ici --
+// elles sont accessibles depuis le dernier onglet "Plus" de la bottom nav (voir BottomNav/
+// MoreSheet/tabsMobile dans App()), comme le profil n'est deja plus dans la bottom nav.
 //
 // position:fixed (PAS sticky) : sticky cassait par intermittence sur mobile des que cette barre
 // avait un ancetre position:sticky + backdrop-filter combine a un re-render (comportement
@@ -427,8 +433,7 @@ function IconMoreDots({ color = 'currentColor', size = 18 }) {
 // qu'il arrive. Le contenu compense avec un padding-top egal a MOBILE_TOPBAR_HEIGHT (voir App()).
 export const MOBILE_TOPBAR_HEIGHT = 54;
 
-export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, isAdmin, onGoToAdmin }) {
-  const [moreOuvert, setMoreOuvert] = useState(false);
+export function MobileTopBar({ title, onGoHome, utilisateur, avatarUrl, displayName, themePref, setThemePref, lang, setLang, onGoToProfile, onLogout, t, isAdmin, onGoToAdmin }) {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', backgroundColor: 'rgba(8,8,8,0.95)', padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top))', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '8px', zIndex: 250, backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--c-161616)', boxSizing: 'border-box' }}>
       <button onClick={onGoHome} aria-label="Betrics" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifySelf: 'start' }}>
@@ -438,11 +443,6 @@ export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, ut
       <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-white)', letterSpacing: '-0.2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{title}</span>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', justifySelf: 'end' }}>
-        {tabsSecondaires.length > 0 && (
-          <button onClick={() => setMoreOuvert(true)} aria-label={t('nav_more_title')} style={{ width: '36px', height: '36px', minHeight: '36px', borderRadius: '50%', border: '1px solid var(--c-222)', backgroundColor: 'var(--c-111)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <IconMoreDots color="var(--c-888)" size={17} />
-          </button>
-        )}
         <ProfileMenuButton
           utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
           themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
@@ -450,10 +450,6 @@ export function MobileTopBar({ title, onGoHome, tabsSecondaires, onSelectTab, ut
           isAdmin={isAdmin} onGoToAdmin={onGoToAdmin}
         />
       </div>
-
-      {moreOuvert && (
-        <MoreSheet tabs={tabsSecondaires} onSelectTab={onSelectTab} onClose={() => setMoreOuvert(false)} t={t} />
-      )}
     </div>
   );
 }
@@ -1221,6 +1217,7 @@ function App() {
   const [mode, , themePref, setThemePref] = useWSTheme();
   useEffect(() => { document.documentElement.setAttribute('data-theme', mode); }, [mode]);
   const [showRecherche, setShowRecherche] = useState(false);
+  const [moreSheetOuvert, setMoreSheetOuvert] = useState(false);
   const [joueurFicheGlobal, setJoueurFicheGlobal] = useState(null);
   const [equipeFicheGlobal, setEquipeFicheGlobal] = useState(null);
   const [pendingOpenPoolId, setPendingOpenPoolId] = useState(null);
@@ -1315,16 +1312,27 @@ function App() {
       { id: 'bets', label: t('menu_bets'), Icon: IconTicket },
       { id: 'bankroll', label: t('menu_bankroll'), Icon: IconWallet },
     ];
-    // Bottom nav mobile : 4 onglets Accueil/Recherche/Analyses/Pool -- identique a tabsPrincipaux
-    // maintenant que Pool y est inclus.
-    const tabsMobile = tabsPrincipaux;
+    // Bottom nav mobile : tabsPrincipaux (Accueil/Recherche/Analyses/Pool) + un dernier onglet
+    // "Plus" (icone hamburger) qui ouvre MoreSheet avec tabsSecondaires (Paris/Bankroll) -- ancien
+    // bouton "..." de la top bar, retire (voir MobileTopBar). Id 'more' n'est jamais une page
+    // reelle : intercepte dans handleSelectBottomNavTab avant d'atteindre handleSelectTab/setPage.
+    const tabsMobile = [...tabsPrincipaux, { id: 'more', label: t('nav_more_title'), Icon: IconHamburgerMenu }];
     const activeId = joueurFicheGlobal || equipeFicheGlobal ? null : page;
+    // "Plus" doit apparaitre actif quand la page couramment affichee est une des sections de la
+    // feuille (Paris/Bankroll), meme si la feuille elle-meme n'est pas ouverte -- jamais les deux
+    // onglets distincts actifs en meme temps.
+    const activeIdMobile = activeId && tabsSecondaires.some(ts => ts.id === activeId) ? 'more' : activeId;
 
     function handleSelectTab(tab) {
       if (tab.id === 'search') { setShowRecherche(true); return; }
       setJoueurFicheGlobal(null);
       setEquipeFicheGlobal(null);
       setPage(tab.id);
+    }
+
+    function handleSelectBottomNavTab(tab) {
+      if (tab.id === 'more') { setMoreSheetOuvert(true); return; }
+      handleSelectTab(tab);
     }
 
     // Titre affiche au centre de la top bar mobile (pas d'equivalent desktop, la sidebar n'a pas
@@ -1403,7 +1411,6 @@ function App() {
         {isMobile && (
           <MobileTopBar
             title={pageTitle} onGoHome={() => handleSelectTab({ id: 'home' })}
-            tabsSecondaires={tabsSecondaires} onSelectTab={handleSelectTab}
             utilisateur={utilisateur} avatarUrl={avatarUrl} displayName={displayName}
             themePref={themePref} setThemePref={setThemePref} lang={lang} setLang={setLang}
             onGoToProfile={() => setPage('profile')} onLogout={handleDeconnexion} t={t}
@@ -1448,7 +1455,11 @@ function App() {
         </div>
 
         {isMobile && (
-          <BottomNav tabs={tabsMobile} activeId={activeId} onSelectTab={handleSelectTab} />
+          <BottomNav tabs={tabsMobile} activeId={activeIdMobile} onSelectTab={handleSelectBottomNavTab} />
+        )}
+
+        {isMobile && moreSheetOuvert && (
+          <MoreSheet tabs={tabsSecondaires} onSelectTab={handleSelectTab} onClose={() => setMoreSheetOuvert(false)} t={t} />
         )}
       </div>
     );
