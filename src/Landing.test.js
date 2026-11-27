@@ -23,6 +23,7 @@ test('rendu : toutes les sections attendues sont presentes (hero V2, blocs alter
   expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
   expect(screen.getByText('VOIS LES DONNÉES')).toBeInTheDocument();
   expect(screen.getByText('CHAQUE PARI.')).toBeInTheDocument();
+  expect(document.getElementById('fonctions')).toBeInTheDocument();
   expect(document.getElementById('analyses')).toBeInTheDocument();
   expect(document.getElementById('pool-apercu')).toBeInTheDocument();
   expect(document.getElementById('bankroll')).toBeInTheDocument();
@@ -73,7 +74,9 @@ test('bascule de langue : le contenu passe integralement au francais ou a l\'ang
 test('boutons d\'inscription : hero V2 ("Commencer") et CTA finale ("Créer un compte") ouvrent tous les deux Auth en mode inscription', () => {
   const { onOpenAuth } = setup('fr');
 
-  const boutonHero = screen.getByText('Commencer'); // hero V2 -- src/LandingHeroV2.js, reutilise nav_signup
+  // "Commencer" existe aussi dans la bande CTA de la section Fonctions (src/LandingFeaturesV2.js,
+  // meme reutilisation de nav_signup) -- le hero V2 est toujours le premier dans le DOM.
+  const boutonHero = screen.getAllByText('Commencer')[0]; // hero V2 -- src/LandingHeroV2.js
   const boutonFinal = screen.getByText('Créer un compte'); // CTA finale, inchangee -- landing_final_cta
 
   fireEvent.click(boutonHero);
@@ -122,12 +125,15 @@ test('FAQ : les 6 questions demandees sont toutes presentes', () => {
 
 test('contenu responsable : aucun chiffre de confiance ni temoignage, aucune mention de prix/forfait (hors donnees de demonstration du mockup de telephones)', () => {
   setup('fr');
-  // Le mockup de telephones (src/LandingPhoneDemo.js) affiche volontairement des montants --
-  // des donnees de DEMONSTRATION clairement etiquetees (pastille "Données de démonstration"),
-  // pas un chiffre de confiance ni un prix annonce -- exclu avant de verifier le reste de la page.
+  // Le mockup de telephones (src/LandingPhoneDemo.js) et les 3 cartes interactives de la section
+  // Fonctions (src/LandingFeaturesV2.js) affichent volontairement des montants/cotes -- des
+  // donnees de DEMONSTRATION clairement etiquetees (pastille "Données de démonstration" partout),
+  // pas un chiffre de confiance ni un prix annonce -- exclus avant de verifier le reste de la page.
   const bodyClone = document.body.cloneNode(true);
   const mockup = bodyClone.querySelector('.landing2-hero-visual');
   if (mockup) mockup.remove();
+  const features = bodyClone.querySelector('.landing2-features');
+  if (features) features.remove();
   const body = bodyClone.textContent;
   expect(body).not.toMatch(/99%/);
   expect(body).not.toMatch(/uptime/i);
@@ -139,9 +145,10 @@ test('contenu responsable : aucun chiffre de confiance ni temoignage, aucune men
   expect(screen.queryByText(/^NEW$/i)).not.toBeInTheDocument();
 });
 
-test('mockup de telephones : montants de demonstration clairement etiquetes, aucune note d\'App Store/nombre d\'utilisateurs/temoignage', () => {
+test('mockup de telephones et cartes Fonctions : montants de demonstration clairement etiquetes, aucune note d\'App Store/nombre d\'utilisateurs/temoignage', () => {
   setup('fr');
-  expect(screen.getByText('Données de démonstration')).toBeInTheDocument();
+  // 1 mockup de telephones (hero) + 3 cartes interactives (section Fonctions) = 4 pastilles.
+  expect(screen.getAllByText('Données de démonstration').length).toBe(4);
   expect(document.querySelectorAll('.landing-phone').length).toBe(2);
   expect(screen.queryByText(/★|⭐|note.*app store|app store.*note/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/utilisateurs/i)).not.toBeInTheDocument();

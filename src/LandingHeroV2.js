@@ -37,7 +37,7 @@ export default function LandingHeroV2({ lang, onOpenAuth }) {
             <button type="button" className="ws-btn ws-btn-primary ws-btn-lg" onClick={() => onOpenAuth('signup')}>
               {t('nav_signup')}
             </button>
-            <button type="button" className="ws-btn ws-btn-ghost ws-btn-lg" onClick={() => scrollToId('analyses')}>
+            <button type="button" className="ws-btn ws-btn-ghost ws-btn-lg" onClick={() => scrollToId('fonctions')}>
               {t('landing_hero_cta_secondary')}
             </button>
           </div>

@@ -16,4 +16,7 @@ test('ancien hero restaure quand le drapeau est desactive', () => {
   expect(document.querySelector('.ws-hero-shot-wrap')).toBeInTheDocument();
   expect(document.querySelectorAll('.landing-phone').length).toBe(0);
   expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  // Section Fonctions (src/LandingFeaturesV2.js) : meme drapeau, jamais montee quand il est faux.
+  expect(document.getElementById('fonctions')).not.toBeInTheDocument();
+  expect(document.querySelector('.landing2-features')).not.toBeInTheDocument();
 });
