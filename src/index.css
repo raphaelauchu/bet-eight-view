@@ -3415,3 +3415,283 @@ body {
     align-self: stretch;
   }
 }
+
+/* =====================================================================================
+   Landing V2 -- header + hero (src/LandingHeaderV2.js, src/LandingHeroV2.js,
+   src/LandingPhoneDemo.js), derriere src/landingConfig.js:LANDING_V2_ENABLED.
+   Structure/ergonomie proches de propsmadness.com, identite 100% Betrics (couleurs --ws-*
+   deja en place -- l'accueil public est deja sombre, voir --ws-bg plus haut -- + police Anton,
+   voir src/index.js). Breakpoint mobile = 767px, pour matcher exactement useIsMobile()
+   (`window.innerWidth < 768`) utilise par src/LandingHeaderV2.js.
+   ===================================================================================== */
+
+/* ----- Header ----- */
+
+.landing2-header-wrap {
+  padding: 16px 20px 0;
+}
+
+.landing2-header {
+  max-width: var(--ws-container);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 10px 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--ws-border);
+  background: rgba(13,13,13,0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.landing2-header-mobile {
+  border-radius: 20px;
+  padding: 10px 14px;
+}
+
+.landing2-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ws-text);
+  letter-spacing: -0.01em;
+}
+
+.landing2-header-logo img {
+  border-radius: 7px;
+  display: block;
+}
+
+.landing2-league-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.landing2-league-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.landing2-league-pill-active {
+  background: var(--ws-brand);
+  color: #ffffff;
+}
+
+.landing2-league-pill-soon {
+  background: var(--ws-surface);
+  color: var(--ws-text-faint);
+  cursor: default;
+}
+
+.landing2-header-actions, .landing2-header-mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing2-header-actions .ws-btn, .landing2-header-mobile-actions .ws-btn-primary {
+  min-height: 40px;
+  padding: 9px 20px;
+  font-size: 13px;
+}
+
+.landing2-link {
+  background: none;
+  border: none;
+  color: var(--ws-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.landing2-link:hover {
+  color: var(--ws-text);
+}
+
+/* ----- Hero ----- */
+
+.landing2-hero {
+  padding: clamp(40px, 8vw, 96px) 0 clamp(56px, 9vw, 110px);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing2-hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(32px, 5vw, 64px);
+  align-items: center;
+}
+
+.landing2-hero-copy {
+  min-width: 0;
+}
+
+.landing2-live-badge.ws-kicker::before {
+  background: var(--ws-positive);
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+}
+
+/* Anton : UNE seule graisse (400) disponible, deja tres grasse/condensee par construction du
+   dessin de caractere -- font-weight:400 ici est volontaire, pas un oubli. */
+.landing2-hero-title {
+  font-family: 'Anton', var(--ws-sans);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(44px, 9vw, 96px);
+  line-height: 0.98;
+  letter-spacing: 0.002em;
+  margin: 0 0 20px;
+  color: var(--ws-text);
+}
+
+.landing2-hero-title-line {
+  display: block;
+}
+
+.landing2-hero-title-accent {
+  color: var(--ws-brand);
+}
+
+.landing2-free-note {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ws-muted);
+}
+
+.landing2-responsible {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.landing2-responsible a {
+  color: var(--ws-text-faint);
+  text-decoration: underline;
+  text-decoration-color: var(--ws-border-strong);
+}
+
+.landing2-responsible a:hover {
+  color: var(--ws-muted);
+}
+
+.landing2-hero-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing2-demo-caption {
+  margin: 18px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ws-text-faint);
+}
+
+/* ----- Mockup de telephones (cadre CSS, aucune vraie capture) ----- */
+
+.landing-phones-stack {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 360 / 420;
+}
+
+.landing-phone {
+  position: absolute;
+  width: 220px;
+  aspect-ratio: 390 / 844;
+  border-radius: 42px;
+  background: #0b0b0d;
+  border: 2px solid rgba(255,255,255,0.14);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 30px 50px -18px rgba(0,0,0,0.65);
+  padding: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.landing-phone-front {
+  top: 6%;
+  left: 6%;
+  z-index: 2;
+}
+
+.landing-phone-back {
+  top: 0;
+  left: 38%;
+  z-index: 1;
+  filter: brightness(0.55) saturate(0.85);
+  opacity: 0.9;
+}
+
+.landing-phone-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 18px;
+  border-radius: 12px;
+  background: #000000;
+  z-index: 3;
+}
+
+.landing-phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 34px;
+  overflow: hidden;
+  background: #090909;
+  position: relative;
+}
+
+.landing-phone-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 42px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.10), transparent 42%);
+  pointer-events: none;
+}
+
+/* Reprend Reveal (src/PublicShared.js), seule la distance/duree differe de .ws-reveal (14px /
+   0.5s) -- specificite (2 classes) suffit a l'emporter sans !important. */
+.ws-reveal.landing-phone-reveal {
+  transform: translateY(12px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-reveal.landing-phone-reveal {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+}
+.ws-reveal-visible.landing-phone-reveal {
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  .landing2-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing2-hero-visual {
+    margin-top: 8px;
+  }
+  .landing-phones-stack {
+    max-width: 300px;
+  }
+  .landing-phone {
+    width: 180px;
+  }
+}

@@ -1396,6 +1396,20 @@ const translations = {
     onboarding_age_gambling_note: 'Le jeu doit rester un divertissement.',
 
     onboarding_deposit_prompt: 'Compte(s) ajouté(s) : {comptes}. Pense à faire un premier dépôt quand tu es prêt.',
+
+    // ===================== Landing V2 : header + hero (src/LandingHeaderV2.js, src/LandingHeroV2.js) =====
+    landing2_league_nhl: 'LNH',
+    landing2_league_nfl: 'NFL',
+    landing2_live_badge: 'En direct · LNH',
+    landing2_hero_title_line1: 'VOIS LES DONNÉES',
+    landing2_hero_title_line2: 'DERRIÈRE',
+    landing2_hero_title_accent: 'CHAQUE PARI.',
+    landing2_hero_subtitle: 'Stats LNH, comparateur de cotes et suivi de bankroll dans une seule app.',
+    landing2_free_tier_note: 'Gratuit pour commencer',
+    landing2_responsible_gambling: '18+ · Jeu responsable',
+    landing2_demo_data_caption: 'Données de démonstration',
+    landing2_phone_front_alt: 'Aperçu de l\'accueil Betrics (solde, courbe, ROI, taux de réussite, paris récents) -- données de démonstration',
+    landing2_phone_back_alt: 'Aperçu de la page Bankroll Betrics (comptes) -- données de démonstration',
   },
 
   en: {
@@ -2795,6 +2809,20 @@ const translations = {
     onboarding_age_gambling_note: 'Gambling should stay entertainment.',
 
     onboarding_deposit_prompt: 'Account(s) added: {comptes}. Remember to make a first deposit whenever you\'re ready.',
+
+    // ===================== Landing V2: header + hero (src/LandingHeaderV2.js, src/LandingHeroV2.js) =====
+    landing2_league_nhl: 'NHL',
+    landing2_league_nfl: 'NFL',
+    landing2_live_badge: 'Live · NHL',
+    landing2_hero_title_line1: 'SEE THE DATA',
+    landing2_hero_title_line2: 'BEHIND',
+    landing2_hero_title_accent: 'EVERY BET.',
+    landing2_hero_subtitle: 'NHL stats, odds comparison and bankroll tracking in one app.',
+    landing2_free_tier_note: 'Free to start',
+    landing2_responsible_gambling: '18+ · Gambling awareness',
+    landing2_demo_data_caption: 'Demo data',
+    landing2_phone_front_alt: 'Preview of the Betrics home screen (balance, chart, ROI, win rate, recent bets) -- demo data',
+    landing2_phone_back_alt: 'Preview of the Betrics Bankroll page (accounts) -- demo data',
   },
 };
 

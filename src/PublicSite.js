@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useRoute } from './routing';
 import { useDocumentMeta } from './useDocumentMeta';
 import Navbar from './Navbar';
+import LandingHeaderV2 from './LandingHeaderV2';
+import { LANDING_V2_ENABLED } from './landingConfig';
 import PublicFooter from './PublicFooter';
 import LegalPage from './LegalPage';
 import Landing, { homePageMeta } from './Landing';
@@ -54,9 +56,17 @@ export default function PublicSite({ lang, setLang, onOpenAuth }) {
   // (.landing-root, variables --landing-* distinctes) -- sans cette enveloppe commune, la nav
   // et le footer perdent leurs couleurs des qu'ils ne sont plus descendants d'une page qui
   // definit elle-meme .ws-root (ex. la page Pool, volontairement sombre).
+  // Nouveau header (src/LandingHeaderV2.js) UNIQUEMENT sur la route "accueil", derriere
+  // LANDING_V2_ENABLED -- les autres pages publiques (Pool/Tarifs/outils/guide) gardent l'ancienne
+  // Navbar complete (menu Outils/Pool/Tarifs/Ressources, qui n'existe pas dans le nouveau header,
+  // concu uniquement pour l'accueil).
+  const header = (LANDING_V2_ENABLED && route.key === 'accueil')
+    ? <LandingHeaderV2 lang={lang} onOpenAuth={onOpenAuth} />
+    : <Navbar lang={lang} setLang={setLang} navigate={navigate} onOpenAuth={onOpenAuth} />;
+
   return (
     <div className="ws-root">
-      <Navbar lang={lang} setLang={setLang} navigate={navigate} onOpenAuth={onOpenAuth} />
+      {header}
       {page}
       <PublicFooter lang={lang} onOpenLegal={setLegalPage} />
     </div>

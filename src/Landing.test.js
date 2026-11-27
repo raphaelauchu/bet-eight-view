@@ -16,9 +16,13 @@ function setup(lang = 'fr') {
 
 // ===================== Rendu des sections =====================
 
-test('rendu : toutes les sections attendues sont presentes (hero, blocs alternes, pour qui, faq, cta finale)', () => {
+test('rendu : toutes les sections attendues sont presentes (hero V2, blocs alternes, pour qui, faq, cta finale)', () => {
   setup('fr');
-  expect(screen.getByText('Transforme une décision émotionnelle en pari calculé.')).toBeInTheDocument();
+  // Hero V2 (src/LandingHeroV2.js, actif par defaut -- LANDING_V2_ENABLED, voir
+  // src/Landing.flagOff.test.js pour le repli vers l'ancien hero) : titre en 3 lignes.
+  expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  expect(screen.getByText('VOIS LES DONNÉES')).toBeInTheDocument();
+  expect(screen.getByText('CHAQUE PARI.')).toBeInTheDocument();
   expect(document.getElementById('analyses')).toBeInTheDocument();
   expect(document.getElementById('pool-apercu')).toBeInTheDocument();
   expect(document.getElementById('bankroll')).toBeInTheDocument();
@@ -53,30 +57,33 @@ test('rendu : "Pour qui" presente exactement trois profils', () => {
 
 test('bascule de langue : le contenu passe integralement au francais ou a l\'anglais', () => {
   const { rerender } = render(<Landing lang="en" onOpenAuth={() => {}} />);
-  expect(screen.getByText('Turn an emotional decision into a calculated bet.')).toBeInTheDocument();
+  expect(screen.getByText('SEE THE DATA')).toBeInTheDocument();
+  expect(screen.getByText('EVERY BET.')).toBeInTheDocument();
   expect(screen.getByText('Frequently asked questions')).toBeInTheDocument();
 
   rerender(<Landing lang="fr" onOpenAuth={() => {}} />);
-  expect(screen.getByText('Transforme une décision émotionnelle en pari calculé.')).toBeInTheDocument();
+  expect(screen.getByText('VOIS LES DONNÉES')).toBeInTheDocument();
+  expect(screen.getByText('CHAQUE PARI.')).toBeInTheDocument();
   expect(screen.getByText('Questions fréquentes')).toBeInTheDocument();
-  expect(screen.queryByText('Turn an emotional decision into a calculated bet.')).not.toBeInTheDocument();
+  expect(screen.queryByText('SEE THE DATA')).not.toBeInTheDocument();
 });
 
 // ===================== Boutons de connexion/inscription =====================
 
-test('boutons "Créer un compte" : ouvrent Auth en mode inscription (hero et cta finale)', () => {
+test('boutons d\'inscription : hero V2 ("Commencer") et CTA finale ("Créer un compte") ouvrent tous les deux Auth en mode inscription', () => {
   const { onOpenAuth } = setup('fr');
 
-  const ctaButtons = screen.getAllByText('Créer un compte'); // hero + CTA finale
-  expect(ctaButtons.length).toBe(2);
-  fireEvent.click(ctaButtons[0]);
+  const boutonHero = screen.getByText('Commencer'); // hero V2 -- src/LandingHeroV2.js, reutilise nav_signup
+  const boutonFinal = screen.getByText('Créer un compte'); // CTA finale, inchangee -- landing_final_cta
+
+  fireEvent.click(boutonHero);
   expect(onOpenAuth).toHaveBeenLastCalledWith('signup');
 
   fireEvent.click(screen.getByText(/Voir comment ça marche/));
   // navigation en page (ancre), ne doit pas ouvrir Auth une deuxieme fois.
   expect(onOpenAuth).toHaveBeenCalledTimes(1);
 
-  fireEvent.click(ctaButtons[1]);
+  fireEvent.click(boutonFinal);
   expect(onOpenAuth).toHaveBeenLastCalledWith('signup');
 });
 
@@ -113,9 +120,15 @@ test('FAQ : les 6 questions demandees sont toutes presentes', () => {
 
 // ===================== Contenu responsable : aucun chiffre/temoignage invente =====================
 
-test('contenu responsable : aucun chiffre de confiance ni temoignage, aucune mention de prix/forfait', () => {
+test('contenu responsable : aucun chiffre de confiance ni temoignage, aucune mention de prix/forfait (hors donnees de demonstration du mockup de telephones)', () => {
   setup('fr');
-  const body = document.body.textContent;
+  // Le mockup de telephones (src/LandingPhoneDemo.js) affiche volontairement des montants --
+  // des donnees de DEMONSTRATION clairement etiquetees (pastille "Données de démonstration"),
+  // pas un chiffre de confiance ni un prix annonce -- exclu avant de verifier le reste de la page.
+  const bodyClone = document.body.cloneNode(true);
+  const mockup = bodyClone.querySelector('.landing2-hero-visual');
+  if (mockup) mockup.remove();
+  const body = bodyClone.textContent;
   expect(body).not.toMatch(/99%/);
   expect(body).not.toMatch(/uptime/i);
   expect(body).not.toMatch(/40\+/);
@@ -124,6 +137,14 @@ test('contenu responsable : aucun chiffre de confiance ni temoignage, aucune men
   expect(screen.queryByText(/avis/i)).not.toBeInTheDocument();
   // Aucune pastille "nouveau"/badge gadget sur l'accueil.
   expect(screen.queryByText(/^NEW$/i)).not.toBeInTheDocument();
+});
+
+test('mockup de telephones : montants de demonstration clairement etiquetes, aucune note d\'App Store/nombre d\'utilisateurs/temoignage', () => {
+  setup('fr');
+  expect(screen.getByText('Données de démonstration')).toBeInTheDocument();
+  expect(document.querySelectorAll('.landing-phone').length).toBe(2);
+  expect(screen.queryByText(/★|⭐|note.*app store|app store.*note/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/utilisateurs/i)).not.toBeInTheDocument();
 });
 
 test('donnees d\'exemple : toutes les captures du theme clair portent une pastille "exemple"', () => {
@@ -137,10 +158,13 @@ test('donnees d\'exemple : toutes les captures du theme clair portent une pastil
 
 test('WindowFrame : si l\'image echoue, un emplacement propre (sans icone cassee) prend sa place', () => {
   setup('fr');
-  const heroFrame = document.querySelector('.ws-hero-shot-wrap .ws-window-frame');
-  const img = heroFrame.querySelector('.ws-window-img');
+  // Le hero V2 (src/LandingHeroV2.js) n'utilise plus WindowFrame (mockup de telephones a la
+  // place, voir le test dedie plus haut) -- WindowFrame reste utilise par les blocs alternes
+  // (inchanges), ex. la section "analyses".
+  const frame = document.querySelector('#analyses .ws-window-frame');
+  const img = frame.querySelector('.ws-window-img');
   expect(img).toBeInTheDocument();
   fireEvent.error(img);
-  expect(heroFrame.querySelector('.ws-window-img')).not.toBeInTheDocument();
-  expect(heroFrame.querySelector('.ws-window-placeholder')).toBeInTheDocument();
+  expect(frame.querySelector('.ws-window-img')).not.toBeInTheDocument();
+  expect(frame.querySelector('.ws-window-placeholder')).toBeInTheDocument();
 });

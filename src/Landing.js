@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { getT } from './i18n';
 import { Reveal, WindowFrame, scrollToId } from './PublicShared';
+import LandingHeroV2 from './LandingHeroV2';
+import { LANDING_V2_ENABLED } from './landingConfig';
 
 // ===================== Accueil public (visiteur non connecte) =====================
 // Direction visuelle "epure, style Wealthsimple" (voir docs/landing-inspiration.md pour les
@@ -189,9 +191,13 @@ export function homePageMeta(lang) {
 }
 
 export default function Landing({ lang, onOpenAuth }) {
+  // LANDING_V2_ENABLED (src/landingConfig.js) ne porte QUE sur le hero (premier ecran) --
+  // HomeAlternating/ForWho/HomeFaq/HomeFinalCta restent inchanges quel que soit ce drapeau,
+  // demande explicite de la refonte ("aujourd'hui, uniquement le header et le premier ecran").
+  const Hero = LANDING_V2_ENABLED ? LandingHeroV2 : HomeHero;
   return (
     <main className="ws-root">
-      <HomeHero lang={lang} onOpenAuth={onOpenAuth} />
+      <Hero lang={lang} onOpenAuth={onOpenAuth} />
       <HomeAlternating lang={lang} />
       <ForWho lang={lang} />
       <HomeFaq lang={lang} />

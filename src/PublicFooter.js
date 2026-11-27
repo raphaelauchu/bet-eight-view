@@ -6,14 +6,16 @@ import { getT } from './i18n';
 // inchange depuis la landing precedente (age legal par province, ressource quebecoise "Jeu :
 // aide et reference" -- 1 800 461-0140 / aidejeu.ca -- sourcee via Loto-Quebec et le repertoire
 // sante.gouv.qc.ca) : NE PAS modifier le numero sans verifier a nouveau aupres d'une source
-// officielle.
+// officielle. id="jeu-responsable" sur le bloc ci-dessous : cible de scroll du lien "18+ · Jeu
+// responsable" du nouveau hero (src/LandingHeroV2.js) -- reutilise cette ressource existante
+// plutot que d'en dupliquer une.
 
 export default function PublicFooter({ lang, onOpenLegal }) {
   const t = getT(lang);
   return (
     <footer className="ws-footer">
       <div className="ws-container">
-        <div className="ws-footer-responsible">
+        <div className="ws-footer-responsible" id="jeu-responsable">
           <p>{t('landing_footer_disclaimer')}</p>
           <p>{t('landing_footer_nhl_disclaimer')}</p>
           <p>{t('landing_footer_age')}</p>

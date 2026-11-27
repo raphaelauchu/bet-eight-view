@@ -81,7 +81,11 @@ function mockSupabase({ onboardingCompleted = true, connecteAuDepart = true } = 
 }
 
 async function demarrerDepuisLaLanding() {
-  fireEvent.click(await screen.findByText('Get started'));
+  // "Get started" existe maintenant a la fois dans le header V2 (src/LandingHeaderV2.js) et
+  // dans le hero V2 (src/LandingHeroV2.js) -- les deux appellent onOpenAuth('signup'), n'importe
+  // lequel convient, mais une requete non ambigue est necessaire (plusieurs correspondances).
+  const boutons = await screen.findAllByText('Get started');
+  fireEvent.click(boutons[0]);
   await screen.findByText('Where do you bet?');
 }
 
@@ -141,7 +145,7 @@ test('premiere connexion apres inscription (reponses locales + utilisateur fraic
   window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ bookmakers: ['bet99', 'mise_o_jeu'], betSize: 'under_100', goals: ['track'], experience: 'beginner', source: 'google', ageConfirmed: true }));
   const mocks = mockSupabase({ onboardingCompleted: false, connecteAuDepart: false });
   render(<App />);
-  await waitFor(() => expect(screen.getByText('Get started')).toBeInTheDocument()); // encore anonyme
+  await waitFor(() => expect(screen.getAllByText('Get started').length).toBeGreaterThan(0)); // encore anonyme
 
   mocks.declencherConnexion();
 
