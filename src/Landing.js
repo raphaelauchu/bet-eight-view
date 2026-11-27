@@ -192,15 +192,22 @@ export function homePageMeta(lang) {
 }
 
 export default function Landing({ lang, onOpenAuth }) {
-  // LANDING_V2_ENABLED (src/landingConfig.js) porte sur le hero (premier ecran) ET la nouvelle
-  // section Fonctions juste en dessous (src/LandingFeaturesV2.js) -- HomeAlternating/ForWho/
-  // HomeFaq/HomeFinalCta restent inchanges quel que soit ce drapeau, le reste de la page n'etant
-  // pas dans le perimetre de ces deux refontes.
-  const Hero = LANDING_V2_ENABLED ? LandingHeroV2 : HomeHero;
+  // LANDING_V2_ENABLED (src/landingConfig.js) : la V2 ne garde QUE le hero + la section
+  // Fonctions (qui porte deja sa propre bande CTA "Commencer") -- les anciennes sections
+  // (HomeAlternating, ForWho, HomeFaq, HomeFinalCta) ne sont plus montees sous ce drapeau, demande
+  // explicite du 27 nov 2026. Leur code reste intact et sert toujours a l'ancienne page complete
+  // quand le drapeau est a `false` (voir src/Landing.flagOff.test.js).
+  if (LANDING_V2_ENABLED) {
+    return (
+      <main className="ws-root">
+        <LandingHeroV2 lang={lang} onOpenAuth={onOpenAuth} />
+        <LandingFeaturesV2 lang={lang} onOpenAuth={onOpenAuth} />
+      </main>
+    );
+  }
   return (
     <main className="ws-root">
-      <Hero lang={lang} onOpenAuth={onOpenAuth} />
-      {LANDING_V2_ENABLED && <LandingFeaturesV2 lang={lang} onOpenAuth={onOpenAuth} />}
+      <HomeHero lang={lang} onOpenAuth={onOpenAuth} />
       <HomeAlternating lang={lang} />
       <ForWho lang={lang} />
       <HomeFaq lang={lang} />

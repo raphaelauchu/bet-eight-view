@@ -133,7 +133,7 @@ test('visiteur non connecte : remplit les 5 etapes -> enchaine vers l\'inscripti
   fireEvent.click(screen.getByText('Create my account'));
 
   // Enchaine sur l'ecran d'inscription existant (src/Auth.js) -- jamais une ecriture Supabase.
-  await waitFor(() => expect(screen.getByText('Create your free account')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('Create your account')).toBeInTheDocument());
   expect(mocks.accountInserts.length).toBe(0);
   expect(mocks.profileUpserts.length).toBe(0);
 
@@ -251,7 +251,7 @@ test('"Already have an account? Sign in" depuis les etapes vide les reponses loc
   fireEvent.click(screen.getByText('BET99'));
 
   fireEvent.click(screen.getByText(/Already have an account/));
-  await waitFor(() => expect(screen.getByText('Sign in to your account')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('Sign in to continue.')).toBeInTheDocument());
   expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
 });
 

@@ -1,12 +1,15 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import Landing from './Landing';
 
-// ===================== Accueil public (src/Landing.js) =====================
-// Contenu de l'accueil uniquement -- navigation (src/Navbar.js) et pied de page
-// (src/PublicFooter.js) sont testes separement (voir Navbar.test.js), ils vivent dans
-// src/PublicSite.js, pas ici. Aucune donnee reseau ni supabase ici (page statique) -- jsdom
-// n'a pas d'IntersectionObserver reel : les sections Reveal restent dans le DOM (seule leur
-// classe CSS d'opacite differe), donc testables normalement sans attendre l'animation.
+// ===================== Accueil public V2 (src/Landing.js, LANDING_V2_ENABLED=true par defaut) ===
+// Contenu de l'accueil V2 uniquement -- navigation (src/Navbar.js/src/LandingHeaderV2.js) et pied
+// de page (src/PublicFooter.js) sont testes separement, ils vivent dans src/PublicSite.js, pas
+// ici. La V2 ne garde QUE le hero + la section Fonctions (qui porte sa propre bande CTA) --
+// HomeAlternating/ForWho/HomeFaq/HomeFinalCta (ancienne page) ne sont plus montes ici, voir
+// src/Landing.flagOff.test.js pour ce contenu-la (toujours present derriere le drapeau a false).
+// Aucune donnee reseau ni supabase ici (page statique) -- jsdom n'a pas d'IntersectionObserver
+// reel : les sections Reveal restent dans le DOM (seule leur classe CSS d'opacite differe), donc
+// testables normalement sans attendre l'animation.
 
 function setup(lang = 'fr') {
   const onOpenAuth = jest.fn();
@@ -16,42 +19,31 @@ function setup(lang = 'fr') {
 
 // ===================== Rendu des sections =====================
 
-test('rendu : toutes les sections attendues sont presentes (hero V2, blocs alternes, pour qui, faq, cta finale)', () => {
+test('rendu : hero V2 + section Fonctions presents, un seul h1', () => {
   setup('fr');
-  // Hero V2 (src/LandingHeroV2.js, actif par defaut -- LANDING_V2_ENABLED, voir
-  // src/Landing.flagOff.test.js pour le repli vers l'ancien hero) : titre en 3 lignes.
-  expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  expect(screen.getAllByRole('heading', { level: 1 }).length).toBe(1);
   expect(screen.getByText('VOIS LES DONNÉES')).toBeInTheDocument();
   expect(screen.getByText('CHAQUE PARI.')).toBeInTheDocument();
   expect(document.getElementById('fonctions')).toBeInTheDocument();
-  expect(document.getElementById('analyses')).toBeInTheDocument();
-  expect(document.getElementById('pool-apercu')).toBeInTheDocument();
-  expect(document.getElementById('bankroll')).toBeInTheDocument();
-  expect(document.getElementById('outils')).toBeInTheDocument();
-  expect(document.getElementById('faq')).toBeInTheDocument();
-  expect(screen.getByText('Pour qui ?')).toBeInTheDocument();
-  expect(screen.getByText('Questions fréquentes')).toBeInTheDocument();
-  expect(screen.getByText('Prêt à parier avec ta tête ?')).toBeInTheDocument();
+  expect(screen.getByText('FONCTIONS')).toBeInTheDocument();
+  expect(screen.getByText('COMMENCER')).toBeInTheDocument();
 });
 
-test('rendu : les 4 blocs alternes (Analyses, Pool, Bankroll, Outils) sont presents', () => {
+test('rendu : les anciennes sections (blocs alternes, Pour qui, FAQ, CTA finale) ne sont plus montees', () => {
   setup('fr');
-  expect(screen.getByText('Chaque matchup, décortiqué.')).toBeInTheDocument();
-  expect(screen.getByText('Un pool qui tourne toute la saison.')).toBeInTheDocument();
-  expect(screen.getByText('Ta bankroll, suivie comme un portefeuille.')).toBeInTheDocument();
-  expect(screen.getByText('Des outils pour objectiver chaque décision.')).toBeInTheDocument();
-  // Les 7 points du pool explicitement demandes.
-  ['Formation en cartes', 'Échanges avec contre-offres', 'Classement en direct', 'Agents libres', 'Règles 100 % personnalisables', 'Plafond salarial optionnel', 'Repêchage en direct']
-    .forEach(label => expect(screen.getAllByText(label).length).toBeGreaterThan(0));
-});
-
-test('rendu : "Pour qui" presente exactement trois profils', () => {
-  setup('fr');
-  const grid = document.querySelector('.ws-forwho-grid');
-  expect(within(grid).getAllByRole('heading', { level: 3 }).length).toBe(3);
-  expect(screen.getByText('Le parieur du quotidien')).toBeInTheDocument();
-  expect(screen.getByText('L\'organisateur de pool')).toBeInTheDocument();
-  expect(screen.getByText('Le parieur méthodique')).toBeInTheDocument();
+  expect(document.getElementById('analyses')).not.toBeInTheDocument();
+  expect(document.getElementById('pool-apercu')).not.toBeInTheDocument();
+  expect(document.getElementById('bankroll')).not.toBeInTheDocument();
+  expect(document.getElementById('outils')).not.toBeInTheDocument();
+  expect(document.getElementById('faq')).not.toBeInTheDocument();
+  expect(screen.queryByText('Chaque matchup, décortiqué.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Un pool qui tourne toute la saison.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Ta bankroll, suivie comme un portefeuille.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Des outils pour objectiver chaque décision.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Pour qui ?')).not.toBeInTheDocument();
+  expect(screen.queryByText('Questions fréquentes')).not.toBeInTheDocument();
+  expect(screen.queryByText('Prêt à parier avec ta tête ?')).not.toBeInTheDocument();
+  expect(screen.queryByText('Créer un compte')).not.toBeInTheDocument(); // CTA finale retiree (landing_final_cta)
 });
 
 // ===================== Bascule FR/EN =====================
@@ -60,65 +52,37 @@ test('bascule de langue : le contenu passe integralement au francais ou a l\'ang
   const { rerender } = render(<Landing lang="en" onOpenAuth={() => {}} />);
   expect(screen.getByText('SEE THE DATA')).toBeInTheDocument();
   expect(screen.getByText('EVERY BET.')).toBeInTheDocument();
-  expect(screen.getByText('Frequently asked questions')).toBeInTheDocument();
+  expect(screen.getByText('FEATURES')).toBeInTheDocument();
 
   rerender(<Landing lang="fr" onOpenAuth={() => {}} />);
   expect(screen.getByText('VOIS LES DONNÉES')).toBeInTheDocument();
   expect(screen.getByText('CHAQUE PARI.')).toBeInTheDocument();
-  expect(screen.getByText('Questions fréquentes')).toBeInTheDocument();
+  expect(screen.getByText('FONCTIONS')).toBeInTheDocument();
   expect(screen.queryByText('SEE THE DATA')).not.toBeInTheDocument();
 });
 
 // ===================== Boutons de connexion/inscription =====================
 
-test('boutons d\'inscription : hero V2 ("Commencer") et CTA finale ("Créer un compte") ouvrent tous les deux Auth en mode inscription', () => {
+test('boutons d\'inscription : hero V2 et bande CTA de la section Fonctions ouvrent tous les deux Auth en mode inscription', () => {
   const { onOpenAuth } = setup('fr');
 
-  // "Commencer" existe aussi dans la bande CTA de la section Fonctions (src/LandingFeaturesV2.js,
-  // meme reutilisation de nav_signup) -- le hero V2 est toujours le premier dans le DOM.
-  const boutonHero = screen.getAllByText('Commencer')[0]; // hero V2 -- src/LandingHeroV2.js
-  const boutonFinal = screen.getByText('Créer un compte'); // CTA finale, inchangee -- landing_final_cta
+  // "Commencer" existe dans le hero (src/LandingHeroV2.js) ET dans la bande CTA de la section
+  // Fonctions (src/LandingFeaturesV2.js) -- meme reutilisation de nav_signup, DOM order garanti.
+  const boutons = screen.getAllByText('Commencer');
+  expect(boutons.length).toBe(2);
 
-  fireEvent.click(boutonHero);
+  fireEvent.click(boutons[0]); // hero
   expect(onOpenAuth).toHaveBeenLastCalledWith('signup');
 
   fireEvent.click(screen.getByText(/Voir comment ça marche/));
   // navigation en page (ancre), ne doit pas ouvrir Auth une deuxieme fois.
   expect(onOpenAuth).toHaveBeenCalledTimes(1);
 
-  fireEvent.click(boutonFinal);
+  fireEvent.click(boutons[1]); // bande CTA finale de la section Fonctions
   expect(onOpenAuth).toHaveBeenLastCalledWith('signup');
-});
 
-// ===================== FAQ accessible au clavier =====================
-
-test('FAQ : accessible au clavier (bouton natif, focusable), aria-expanded et contenu masque/affiche correctement', () => {
-  setup('fr');
-  const question = screen.getByText('Betrics place-t-il des paris pour moi ?').closest('button');
-  expect(question.tagName).toBe('BUTTON');
-  expect(question).toHaveAttribute('aria-expanded', 'false');
-
-  const answerId = question.getAttribute('aria-controls');
-  // eslint-disable-next-line testing-library/no-node-access
-  expect(document.getElementById(answerId)).toHaveAttribute('hidden');
-
-  question.focus();
-  expect(document.activeElement).toBe(question);
-  fireEvent.click(question);
-  expect(question).toHaveAttribute('aria-expanded', 'true');
-  // eslint-disable-next-line testing-library/no-node-access
-  const answerPanel = document.getElementById(answerId);
-  expect(answerPanel).not.toHaveAttribute('hidden');
-  expect(within(answerPanel).getByText(/toujours toi qui décides et qui places ton pari/)).toBeInTheDocument();
-
-  fireEvent.click(question);
-  expect(question).toHaveAttribute('aria-expanded', 'false');
-});
-
-test('FAQ : les 6 questions demandees sont toutes presentes', () => {
-  setup('fr');
-  ['Qu\'est-ce que Betrics ?', 'Est-ce gratuit ?', 'Le pool de hockey est-il gratuit ?', 'Betrics place-t-il des paris pour moi ?', 'Mes données sont-elles protégées ?', 'Betrics encourage-t-il le jeu responsable ?']
-    .forEach(q => expect(screen.getByText(q)).toBeInTheDocument());
+  fireEvent.click(screen.getByText('Se connecter'));
+  expect(onOpenAuth).toHaveBeenLastCalledWith('login');
 });
 
 // ===================== Contenu responsable : aucun chiffre/temoignage invente =====================
@@ -152,26 +116,4 @@ test('mockup de telephones et cartes Fonctions : montants de demonstration clair
   expect(document.querySelectorAll('.landing-phone').length).toBe(2);
   expect(screen.queryByText(/★|⭐|note.*app store|app store.*note/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/utilisateurs/i)).not.toBeInTheDocument();
-});
-
-test('donnees d\'exemple : toutes les captures du theme clair portent une pastille "exemple"', () => {
-  setup('fr');
-  const tags = document.querySelectorAll('.ws-window-example-tag');
-  expect(tags.length).toBeGreaterThan(0);
-  tags.forEach(tag => expect(tag).toHaveTextContent('Exemple'));
-});
-
-// ===================== Captures produit : repli propre si l'image est absente =====================
-
-test('WindowFrame : si l\'image echoue, un emplacement propre (sans icone cassee) prend sa place', () => {
-  setup('fr');
-  // Le hero V2 (src/LandingHeroV2.js) n'utilise plus WindowFrame (mockup de telephones a la
-  // place, voir le test dedie plus haut) -- WindowFrame reste utilise par les blocs alternes
-  // (inchanges), ex. la section "analyses".
-  const frame = document.querySelector('#analyses .ws-window-frame');
-  const img = frame.querySelector('.ws-window-img');
-  expect(img).toBeInTheDocument();
-  fireEvent.error(img);
-  expect(frame.querySelector('.ws-window-img')).not.toBeInTheDocument();
-  expect(frame.querySelector('.ws-window-placeholder')).toBeInTheDocument();
 });

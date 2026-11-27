@@ -87,14 +87,15 @@ function PreviewBadge({ t }) {
 
 // ===================== En-tete + barre de progression (chaque etape) =====================
 
-function StepHeader({ t, step, onBack, previewMode, onSignIn }) {
+function StepHeader({ t, step, onBack, previewMode, onSignIn, showBackAtStep1 }) {
+  const afficherRetour = step > 1 || showBackAtStep1;
   return (
     <div>
       {previewMode && <PreviewBadge t={t} />}
       <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 70px', alignItems: 'center', padding: '14px 16px 0', paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
         <div>
-          {step > 1 && (
-            <button onClick={onBack} aria-label={t('onboarding_back_aria')} style={{ background: 'none', border: 'none', color: 'var(--c-white)', cursor: 'pointer', padding: '8px', display: 'flex' }}>
+          {afficherRetour && (
+            <button onClick={onBack} aria-label={step > 1 ? t('onboarding_back_aria') : t('onboarding_back_home_aria')} style={{ background: 'none', border: 'none', color: 'var(--c-white)', cursor: 'pointer', padding: '8px', display: 'flex' }}>
               <IconBackArrow />
             </button>
           )}
@@ -517,10 +518,18 @@ function OnboardingCarousel({ t, previewMode, onDone }) {
 // l'inscription si `utilisateur` est absent, retourner a l'accueil sinon/en apercu).
 // `onSignIn` (optionnel) : "J'ai deja un compte" -- vide les reponses locales et bascule vers la
 // connexion, jamais vers l'inscription.
-export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, onComplete, onSignIn }) {
+// `step`/`onStepChange`/`onBackToHome` (tous optionnels, lies entre eux -- voir src/App.js) :
+// etape CONTROLEE par le parent pour brancher chaque etape sur l'historique du navigateur (bouton
+// retour du navigateur/telephone recule d'une etape, voir la refonte du 27 nov 2026). Sans ces
+// props (mode apercu, ?onboarding=preview -- voir src/App.js), l'etape reste un etat interne
+// classique, AUCUNE interaction avec l'historique : comportement du carrousel/des etapes en
+// apercu totalement inchange.
+export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, onComplete, onSignIn, step: controlledStep, onStepChange, onBackToHome }) {
   const t = getT(lang);
   const [phase, setPhase] = useState(ONBOARDING_INTRO_SLIDES_ENABLED ? 'carousel' : 'steps');
-  const [step, setStep] = useState(1);
+  const [internalStep, setInternalStep] = useState(1);
+  const estControlee = controlledStep != null;
+  const step = estControlee ? controlledStep : internalStep;
 
   const [province, setProvince] = useState('CA-QC');
   const [selectedKinds, setSelectedKinds] = useState([]);
@@ -534,13 +543,21 @@ export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, 
   const [submitting, setSubmitting] = useState(false);
   const [erreur, setErreur] = useState('');
 
+  // Avance vers l'etape `n` -- toujours une transition AVANT (y compris "Je n'ai aucun compte",
+  // qui saute l'etape 1 sans repondre) : en mode controle, c'est le parent (src/App.js) qui fait
+  // le pushState (nouvelle entree d'historique), jamais ce composant directement.
+  function irVersEtape(n) {
+    if (estControlee) onStepChange(n);
+    else setInternalStep(n);
+  }
+
   function toggleKind(kind) {
     setSelectedKinds(prev => prev.includes(kind) ? prev.filter(k => k !== kind) : [...prev, kind]);
   }
 
   function skipStep1() {
     setSelectedKinds([]);
-    setStep(2);
+    irVersEtape(2);
   }
 
   function toggleGoal(key) {
@@ -604,12 +621,21 @@ export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, 
     return <OnboardingCarousel t={t} previewMode={previewMode} onDone={() => setPhase('steps')} />;
   }
 
+  // Recule d'une etape : en mode controle, un vrai `history.back()` -- le parent (src/App.js)
+  // ecoute `popstate` et redescend la prop `step` en consequence, jamais un nouveau pushState ici
+  // (ce serait une entree d'historique AVANT, pas un retour). Etape 1 : pas de precedente, bascule
+  // vers `onBackToHome` si fourni (nouvelle fleche retour "accueil", demande explicite).
   function goBack() {
-    if (step > 1) setStep(step - 1);
+    if (step > 1) {
+      if (estControlee) window.history.back();
+      else setInternalStep(step - 1);
+    } else if (onBackToHome) {
+      onBackToHome();
+    }
   }
 
   function goNext() {
-    if (step < TOTAL_STEPS) setStep(step + 1);
+    if (step < TOTAL_STEPS) irVersEtape(step + 1);
     else finalize();
   }
 
@@ -634,7 +660,7 @@ export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, 
         @keyframes onboarding-step-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
         .onboarding-step-content { animation: onboarding-step-in 0.2s ease; }
       `}</style>
-      <StepHeader t={t} step={step} onBack={goBack} previewMode={previewMode} onSignIn={!utilisateur && onSignIn ? handleSignIn : null} />
+      <StepHeader t={t} step={step} onBack={goBack} previewMode={previewMode} onSignIn={!utilisateur && onSignIn ? handleSignIn : null} showBackAtStep1={!!onBackToHome} />
       <div key={step} className="onboarding-step-content" style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {contenuEtape}
         {erreur && <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '16px' }}>{erreur}</div>}

@@ -1176,6 +1176,38 @@ function useSavedPicksCount(utilisateur) {
   return count;
 }
 
+// ===================== Historique du navigateur pour l'auth/l'onboarding (refonte du 27 nov 2026) ====
+// L'ecran de connexion/inscription (src/Auth.js) et les 5 etapes d'onboarding (src/Onboarding.js,
+// AVANT l'inscription) vivent chacun derriere leur propre parametre d'URL -- ?auth=signin|signup
+// et ?onboarding=1&step=N -- pousse dans l'historique a chaque OUVERTURE/AVANCEE (pushState,
+// jamais replaceState) pour que le bouton retour du navigateur/telephone revienne correctement a
+// l'ecran precedent (accueil, ou etape precedente de l'onboarding) via l'ecouteur `popstate`
+// plus bas, au lieu de quitter l'app ou de rester bloque sur l'ecran courant. Les deux etats sont
+// TOUJOURS redecouverts depuis l'URL (jamais seulement mis a jour de maniere optimiste), y compris
+// au premier rendu -- un rechargement de page sur une etape/un ecran d'auth retombe exactement au
+// bon endroit. Ne concerne PAS ?onboarding=preview (mode apercu, inchange -- voir plus bas) ni les
+// autres parametres d'URL existants (?page=, ?admin=...).
+function authModeFromSearch(search) {
+  const v = new URLSearchParams(search).get('auth');
+  return v === 'signin' ? 'login' : v === 'signup' ? 'signup' : null;
+}
+function onboardingStepFromSearch(search) {
+  const params = new URLSearchParams(search);
+  if (params.get('onboarding') !== '1') return null;
+  const step = parseInt(params.get('step'), 10);
+  return step >= 1 && step <= 5 ? step : 1;
+}
+function pushAuthUrl(mode) {
+  const param = mode === 'login' ? 'signin' : 'signup';
+  window.history.pushState({}, '', `${window.location.pathname}?auth=${param}`);
+}
+function pushOnboardingStepUrl(step) {
+  window.history.pushState({}, '', `${window.location.pathname}?onboarding=1&step=${step}`);
+}
+function pushHomeUrl() {
+  window.history.pushState({}, '', window.location.pathname);
+}
+
 function App() {
   // Lien d'invitation /pool/join/:code — detecte une fois, utilise pour forcer l'auth
   // et atterrir directement sur l'onglet Pool (en mode "rejoindre") apres connexion.
@@ -1226,14 +1258,20 @@ function App() {
   );
   // Visiteur NON connecte qui a clique le bouton d'inscription ("Commencer"/nav_signup, voir
   // onOpenAuth plus bas) : affiche les 5 etapes AVANT l'ecran d'inscription -- voir
-  // src/Onboarding.js (ecrit dans localStorage tant qu'aucun compte n'existe).
-  const [showOnboardingSteps, setShowOnboardingSteps] = useState(false);
+  // src/Onboarding.js (ecrit dans localStorage tant qu'aucun compte n'existe). `onboardingStep`
+  // (1 a 5, ou null si l'onboarding n'est pas affiche) est CONTROLE et toujours redecouvert depuis
+  // l'URL (?onboarding=1&step=N, voir onboardingStepFromSearch plus haut) -- source unique de
+  // verite partagee avec l'ecouteur popstate plus bas, jamais un simple booleen local.
+  const [onboardingStep, setOnboardingStep] = useState(() => onboardingStepFromSearch(window.location.search));
   // Noms des comptes bankroll venant d'etre crees par l'onboarding (a 0$, voir l'effet de
   // chargement du profil plus bas) -- affiche une seule fois sur l'accueil (src/Home.js:
   // DepositPromptBanner) une invitation discrete a faire un premier depot, puis se vide.
   const [pendingDepositAccounts, setPendingDepositAccounts] = useState(null);
-  const [showAuth, setShowAuth] = useState(() => !!poolJoinCode);
-  const [authMode, setAuthMode] = useState('login');
+  // `authMode` ('login'|'signup', ou null si l'ecran d'auth n'est pas affiche) : meme principe que
+  // `onboardingStep` ci-dessus -- toujours redecouvert depuis l'URL (?auth=signin|signup), sauf le
+  // cas special du lien d'invitation /pool/join/:code qui force l'ecran de connexion des le depart
+  // (cette URL n'a pas de parametre ?auth, rien a redecouvrir).
+  const [authMode, setAuthMode] = useState(() => (poolJoinCode ? 'login' : authModeFromSearch(window.location.search)));
   const [ligueAnalyses, setLigueAnalyses] = useState(null);
   const [lang, setLang] = useState('en');
   // Lu par l'effet de chargement du profil (voir plus bas), qui ne doit PAS re-executer a chaque
@@ -1353,6 +1391,56 @@ function App() {
     setPage('home');
   }
 
+  // ===================== Bouton retour du navigateur/telephone : auth + onboarding =====================
+  // Seule source qui met a jour `authMode`/`onboardingStep` suite a une navigation arriere/avant
+  // (popstate) -- toujours redecouverts depuis l'URL (voir authModeFromSearch/
+  // onboardingStepFromSearch plus haut), jamais une transition optimiste : un popstate peut aussi
+  // bien venir du bouton retour physique que de `window.history.back()` appele depuis
+  // src/Onboarding.js (etapes 2 a 5, voir goBack() de ce fichier).
+  useEffect(() => {
+    function onPopState() {
+      setAuthMode(authModeFromSearch(window.location.search));
+      setOnboardingStep(onboardingStepFromSearch(window.location.search));
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Ouvre l'ecran de connexion/inscription (src/Auth.js) -- pushState AVANT de changer l'etat,
+  // jamais replaceState : c'est cette nouvelle entree d'historique que le bouton retour doit
+  // pouvoir depiler pour revenir a l'ecran precedent (accueil, ou l'etape d'onboarding depuis
+  // laquelle "J'ai deja un compte" a ete cliquee).
+  function openAuth(mode) {
+    pushAuthUrl(mode);
+    setOnboardingStep(null);
+    setAuthMode(mode);
+  }
+
+  // Lance la toute premiere etape d'onboarding (depuis l'accueil, "Commencer") -- meme principe.
+  function openOnboardingStep1() {
+    pushOnboardingStepUrl(1);
+    setAuthMode(null);
+    setOnboardingStep(1);
+  }
+
+  // Chaque avancee d'etape (src/Onboarding.js:irVersEtape, passee comme `onStepChange`) pousse sa
+  // propre entree -- le RECUL, lui, passe par un vrai `window.history.back()` cote Onboarding.js,
+  // jamais par cette fonction (voir le commentaire de goBack() dans ce fichier).
+  function goToOnboardingStep(step) {
+    pushOnboardingStepUrl(step);
+    setOnboardingStep(step);
+  }
+
+  // "Retour a l'accueil" garanti (etape 1 de l'onboarding, ecran d'auth) : un pushState plutot
+  // qu'un history.back(), pour rester correct meme si l'utilisateur a atterri directement sur
+  // cette URL (lien partage/rechargement) sans entree d'accueil derriere dans l'historique reel du
+  // navigateur -- cette fleche doit TOUJOURS ramener a l'accueil, jamais hors de l'app.
+  function goHome() {
+    pushHomeUrl();
+    setAuthMode(null);
+    setOnboardingStep(null);
+  }
+
   if (window.location.pathname === '/auth/gmail/callback') {
     return <EmailOAuthCallback provider="gmail" lang={lang} />;
   }
@@ -1390,22 +1478,33 @@ function App() {
   // Visiteur NON connecte qui a clique le bouton d'inscription (onOpenAuth('signup'), voir plus
   // bas -- "Commencer"/nav_signup partout dans src/PublicSite.js) : remplit les 5 etapes d'abord,
   // les reponses restent en localStorage (voir src/Onboarding.js), puis enchaine vers l'ecran
-  // d'inscription existant. "J'ai deja un compte" (onSignIn) vide ces reponses et bascule plutot
-  // vers la connexion -- ce sont des reponses qui ne lui appartiennent pas.
-  if (ONBOARDING_ENABLED && showOnboardingSteps && !utilisateur) {
+  // d'inscription existant (openAuth('signup'), nouvelle entree d'historique ?auth=signup). "J'ai
+  // deja un compte" (onSignIn) vide ces reponses et bascule plutot vers la connexion -- ce sont
+  // des reponses qui ne lui appartiennent pas. `step`/`onStepChange`/`onBackToHome` : etape
+  // CONTROLEE par l'URL (?onboarding=1&step=N), voir le commentaire au-dessus de
+  // authModeFromSearch plus haut -- bouton retour du navigateur = etape precedente.
+  if (ONBOARDING_ENABLED && onboardingStep != null && !utilisateur) {
     return (
       <OnboardingFlow
         lang={lang}
-        onComplete={() => { setShowOnboardingSteps(false); setAuthMode('signup'); setShowAuth(true); }}
-        onSignIn={() => { setShowOnboardingSteps(false); setAuthMode('login'); setShowAuth(true); }}
+        step={onboardingStep}
+        onStepChange={goToOnboardingStep}
+        onBackToHome={goHome}
+        onComplete={() => openAuth('signup')}
+        onSignIn={() => openAuth('login')}
       />
     );
   }
 
-  if (showAuth && !utilisateur) {
+  if (authMode != null && !utilisateur) {
     return (
       <div style={{ fontFamily: 'Arial', backgroundColor: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
-        <Auth onConnexion={() => { setShowAuth(false); setPage(poolJoinCode ? 'pooldraft' : 'home'); }} lang={lang} initialMode={authMode} />
+        <Auth
+          onConnexion={() => { window.history.replaceState({}, '', window.location.pathname); setAuthMode(null); setPage(poolJoinCode ? 'pooldraft' : 'home'); }}
+          onBackToHome={goHome}
+          lang={lang}
+          initialMode={authMode}
+        />
       </div>
     );
   }
@@ -1615,14 +1714,15 @@ function App() {
 
   // App non connectée — site public (accueil, Pool, Tarifs, outils, guide -- voir
   // src/PublicSite.js). "Se connecter" (mode='login') va toujours directement a l'ecran de
-  // connexion existant, inchange. "Commencer"/"Créer un compte" (mode='signup', tous les boutons
+  // connexion existant. "Commencer"/"Créer un compte" (mode='signup', tous les boutons
   // d'inscription de ces pages) lance desormais les 5 etapes d'onboarding AVANT l'inscription --
-  // voir showOnboardingSteps plus haut.
+  // voir onboardingStep plus haut. Les deux cas poussent une nouvelle entree d'historique (voir
+  // openAuth/openOnboardingStep1) pour que le bouton retour revienne a l'accueil.
   return (
     <PublicSite
       lang={lang}
       setLang={setLang}
-      onOpenAuth={(mode) => { if (mode === 'signup') { setShowOnboardingSteps(true); } else { setAuthMode(mode); setShowAuth(true); } }}
+      onOpenAuth={(mode) => { if (mode === 'signup') { openOnboardingStep1(); } else { openAuth(mode); } }}
     />
   );
 }
