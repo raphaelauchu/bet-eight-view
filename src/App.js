@@ -22,6 +22,8 @@ import { ONBOARDING_ENABLED } from './onboardingConfig';
 import { ACCOUNT_KIND_OPTIONS } from './AddAccountBody';
 import LegalPage, { legalPageMeta } from './LegalPage';
 import { useDocumentMeta } from './useDocumentMeta';
+import ProfileSetup from './ProfileSetup';
+import { PROFILE_SETUP_ENABLED } from './profileConfig';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -1272,6 +1274,16 @@ function App() {
   // connexion/onboarding en cours (voir le rendu tout en haut de ce composant, avant meme les
   // verifications d'auth/onboarding).
   const [legalRoute, setLegalRoute] = useState(() => legalRouteFromPath(window.location.pathname));
+  // Porte d'entree "Complete ton profil" (src/ProfileSetup.js, refonte du 27 nov 2026) -- null
+  // tant que le profil n'a pas charge (voir profilCharge plus bas), PUIS toujours verifiee AVANT
+  // onboardingCompleted ci-dessous (ordre fixe : profil -> onboarding -> app). Un compte Google
+  // n'a AUCUNE ligne `profiles` tant que ce formulaire n'a jamais ete soumis (rien ne cree cette
+  // ligne automatiquement a l'inscription Google, contrairement a l'inscription par courriel qui
+  // fait un upsert explicite -- voir src/Auth.js) : `data` absent de la requete ci-dessous DOIT
+  // donc se traduire par profileCompleted=false, jamais true (inverse du choix fait pour
+  // onboardingCompleted juste en dessous, ou l'absence de donnees retombe au contraire sur
+  // "deja complete" pour ne jamais re-bloquer un compte existant derriere une erreur reseau).
+  const [profileCompleted, setProfileCompleted] = useState(null);
   // Onboarding (src/Onboarding.js) : null tant que le profil n'a pas charge -- voir
   // showOnboarding plus bas, qui attend explicitement profilCharge avant de decider (jamais de
   // flash du dashboard normal avant de basculer sur l'onboarding pour un nouvel utilisateur).
@@ -1341,67 +1353,99 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Extrait en fonction nommee (plutot qu'une IIFE anonyme dans l'effet) : ProfileSetup.onComplete
+  // (porte d'entree "Complete ton profil", voir plus bas) doit pouvoir RE-executer exactement ce
+  // chargement une fois le profil sauvegarde -- sinon onboardingCompleted resterait bloque sur la
+  // valeur calculee AVANT que la ligne `profiles` existe (un compte Google n'en a aucune tant que
+  // ProfileSetup n'a jamais ete soumis, voir le commentaire de profileCompleted plus haut), ce qui
+  // sauterait l'onboarding par erreur pour tout nouveau compte Google au lieu de l'afficher apres
+  // le profil comme l'exige l'ordre fixe profil -> onboarding -> app.
+  async function chargerProfil(isAnnule = () => false) {
+    const { data } = await supabase.from('profiles')
+      .select('avatar_url, username, first_name, last_name, is_admin, onboarding_completed, profile_completed_at')
+      .eq('id', utilisateur.id).single();
+    if (isAnnule()) return;
+    setAvatarUrl(data?.avatar_url || null);
+    const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
+    setDisplayName(nomComplet || '');
+    setIsAdmin(!!data?.is_admin);
+    // `data` absent (profil introuvable) : AUCUNE ligne `profiles` n'existe encore pour ce
+    // compte -- cas normal d'un tout nouveau compte Google (voir le commentaire de profileCompleted
+    // plus haut) -- toujours interprete comme "profil non complete", jamais l'inverse.
+    setProfileCompleted(data ? data.profile_completed_at != null : false);
+
+    // `data` absent (profil introuvable/erreur) : jamais interprete comme "onboarding non
+    // complete" -- pour ne jamais bloquer un utilisateur existant derriere une erreur reseau
+    // transitoire. `dejaComplete` vaut `true` sauf si la colonne vaut explicitement `false`.
+    const dejaComplete = data ? data.onboarding_completed !== false : true;
+
+    // ===================== Application des reponses d'onboarding stockees localement =====
+    // Premiere connexion apres l'inscription (voir src/Onboarding.js : les 5 etapes, remplies
+    // AVANT la creation de compte, ecrivent uniquement dans localStorage) -- y compris apres un
+    // rechargement complet de page (confirmation d'email, retour d'un futur OAuth) : cette
+    // logique vit ici, dans la fonction appelee par l'effet qui reagit a `utilisateur?.id`, donc
+    // JAMAIS dependante de l'etat React du composant Onboarding (qui peut tres bien ne plus
+    // exister). Idempotente : le localStorage est vide des que les reponses ont ete appliquees.
+    const reponsesLocales = readLocalOnboardingAnswers();
+    if (reponsesLocales && !data) {
+      // AUCUNE ligne `profiles` du tout (compte Google tout neuf, voir le commentaire de
+      // profileCompleted plus haut) -- NE JAMAIS effacer les reponses locales ici : `dejaComplete`
+      // vaut `true` par defaut dans ce cas precis (choix volontaire pour le reseau transitoire
+      // d'un compte EXISTANT, voir plus haut), ce qui les traiterait a tort comme "deja
+      // onboarde" et les effacerait avant meme que ProfileSetup ait eu la chance de creer la
+      // ligne. On attend la prochaine execution de chargerProfil() (ProfileSetup.onComplete, la
+      // ligne existe desormais) pour les appliquer normalement via la branche ci-dessous.
+      if (!isAnnule()) setOnboardingCompleted(false);
+    } else if (reponsesLocales && !dejaComplete) {
+      try {
+        const comptesCrees = [];
+        for (const kind of (reponsesLocales.bookmakers || [])) {
+          const label = kind === 'other' ? getT(langRef.current)('bank_account_other') : (ACCOUNT_KIND_OPTIONS.find(o => o.kind === kind)?.label || kind);
+          const { error } = await supabase.from('bankroll_accounts').insert({ user_id: utilisateur.id, name: label, kind });
+          if (!error) comptesCrees.push(label);
+        }
+        await supabase.from('profiles').upsert({
+          id: utilisateur.id, onboarding_completed: true, onboarding_answers: reponsesLocales, onboarding_completed_at: new Date().toISOString(),
+        });
+        clearLocalOnboardingAnswers();
+        if (!isAnnule()) {
+          setOnboardingCompleted(true);
+          if (comptesCrees.length > 0) setPendingDepositAccounts(comptesCrees);
+        }
+      } catch {
+        // Echec d'ecriture (reseau, RLS...) : on laisse les reponses locales en place pour
+        // reessayer a la prochaine connexion, et on retombe sur le chemin normal ci-dessous
+        // (cas de secours : les 5 etapes s'affichent apres la connexion, voir plus bas).
+        if (!isAnnule()) setOnboardingCompleted(dejaComplete);
+      }
+    } else if (reponsesLocales && dejaComplete) {
+      // Compte DEJA onboarde (ex. utilisateur existant qui a rempli les 5 etapes par
+      // curiosite puis s'est connecte a son compte habituel via "Se connecter") : ces reponses
+      // ne lui appartiennent pas -- on les efface silencieusement, jamais appliquees.
+      clearLocalOnboardingAnswers();
+      if (!isAnnule()) setOnboardingCompleted(true);
+    } else if (!isAnnule()) {
+      setOnboardingCompleted(dejaComplete);
+    }
+
+    if (!isAnnule()) setProfilCharge(true);
+  }
+
   useEffect(() => {
-    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setOnboardingCompleted(null); setProfilCharge(false); return; }
+    if (!utilisateur?.id) { setAvatarUrl(null); setDisplayName(''); setIsAdmin(false); setOnboardingCompleted(null); setProfileCompleted(null); setProfilCharge(false); return; }
     let annule = false;
     setProfilCharge(false);
-    (async () => {
-      const { data } = await supabase.from('profiles')
-        .select('avatar_url, username, first_name, last_name, is_admin, onboarding_completed')
-        .eq('id', utilisateur.id).single();
-      if (annule) return;
-      setAvatarUrl(data?.avatar_url || null);
-      const nomComplet = data?.username || [data?.first_name, data?.last_name].filter(Boolean).join(' ').trim();
-      setDisplayName(nomComplet || '');
-      setIsAdmin(!!data?.is_admin);
-
-      // `data` absent (profil introuvable/erreur) : jamais interprete comme "onboarding non
-      // complete" -- pour ne jamais bloquer un utilisateur existant derriere une erreur reseau
-      // transitoire. `dejaComplete` vaut `true` sauf si la colonne vaut explicitement `false`.
-      const dejaComplete = data ? data.onboarding_completed !== false : true;
-
-      // ===================== Application des reponses d'onboarding stockees localement =====
-      // Premiere connexion apres l'inscription (voir src/Onboarding.js : les 5 etapes, remplies
-      // AVANT la creation de compte, ecrivent uniquement dans localStorage) -- y compris apres un
-      // rechargement complet de page (confirmation d'email, retour d'un futur OAuth) : cette
-      // logique vit ici, dans l'effet qui reagit a `utilisateur?.id`, donc JAMAIS dependante de
-      // l'etat React du composant Onboarding (qui peut tres bien ne plus exister). Idempotente :
-      // le localStorage est vide des que les reponses ont ete appliquees une fois.
-      const reponsesLocales = readLocalOnboardingAnswers();
-      if (reponsesLocales && !dejaComplete) {
-        try {
-          const comptesCrees = [];
-          for (const kind of (reponsesLocales.bookmakers || [])) {
-            const label = kind === 'other' ? getT(langRef.current)('bank_account_other') : (ACCOUNT_KIND_OPTIONS.find(o => o.kind === kind)?.label || kind);
-            const { error } = await supabase.from('bankroll_accounts').insert({ user_id: utilisateur.id, name: label, kind });
-            if (!error) comptesCrees.push(label);
-          }
-          await supabase.from('profiles').upsert({
-            id: utilisateur.id, onboarding_completed: true, onboarding_answers: reponsesLocales, onboarding_completed_at: new Date().toISOString(),
-          });
-          clearLocalOnboardingAnswers();
-          if (!annule) {
-            setOnboardingCompleted(true);
-            if (comptesCrees.length > 0) setPendingDepositAccounts(comptesCrees);
-          }
-        } catch {
-          // Echec d'ecriture (reseau, RLS...) : on laisse les reponses locales en place pour
-          // reessayer a la prochaine connexion, et on retombe sur le chemin normal ci-dessous
-          // (cas de secours : les 5 etapes s'affichent apres la connexion, voir plus bas).
-          if (!annule) setOnboardingCompleted(dejaComplete);
-        }
-      } else if (reponsesLocales && dejaComplete) {
-        // Compte DEJA onboarde (ex. utilisateur existant qui a rempli les 5 etapes par
-        // curiosite puis s'est connecte a son compte habituel via "Se connecter") : ces reponses
-        // ne lui appartiennent pas -- on les efface silencieusement, jamais appliquees.
-        clearLocalOnboardingAnswers();
-        if (!annule) setOnboardingCompleted(true);
-      } else if (!annule) {
-        setOnboardingCompleted(dejaComplete);
+    chargerProfil(() => annule).catch(() => {
+      if (!annule) {
+        setOnboardingCompleted(true);
+        // Echec total (reseau...), pas seulement "aucune ligne" (deja gere ci-dessus, qui
+        // retombe correctement sur false) : on laisse passer plutot que de bloquer
+        // indefiniment un compte existant derriere une panne transitoire -- un prochain
+        // chargement reussi corrigera ce statut si le profil est vraiment incomplet.
+        setProfileCompleted(true);
+        setProfilCharge(true);
       }
-
-      if (!annule) setProfilCharge(true);
-    })().catch(() => { if (!annule) { setOnboardingCompleted(true); setProfilCharge(true); } });
+    });
     return () => { annule = true; };
   }, [utilisateur?.id]);
 
@@ -1576,15 +1620,41 @@ function App() {
   if (utilisateur) {
     const t = getT(lang);
 
+    // Ecran de chargement tant que le statut du profil (profileCompleted) ET de l'onboarding
+    // (onboardingCompleted) ne sont pas tous les deux connus -- jamais de flash du dashboard
+    // normal avant de basculer sur ProfileSetup/OnboardingFlow pour un compte qui ne les a pas
+    // encore completes.
+    if ((PROFILE_SETUP_ENABLED || ONBOARDING_ENABLED) && !profilCharge) {
+      return <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-080808)' }} />;
+    }
+
+    // ===================== Porte d'entree "Complete ton profil" (src/ProfileSetup.js) =====
+    // TOUJOURS verifiee EN PREMIER, avant l'onboarding -- ordre fixe profil -> onboarding -> app,
+    // identique pour une inscription Google OU courriel, et pour un compte existant (qui la
+    // complete une seule fois). `onComplete` re-execute chargerProfil() (voir plus haut) plutot
+    // que de se contenter d'un setProfileCompleted(true) direct : c'est ce qui permet a
+    // onboardingCompleted de se mettre a jour correctement juste apres (la ligne `profiles`
+    // vient d'etre creee/mise a jour par ProfileSetup, onboarding_completed y est desormais
+    // visible pour la premiere fois). La deconnexion (onLogout) reste disponible sur cet ecran --
+    // un visiteur qui s'est trompe de compte Google peut toujours se deconnecter.
+    if (PROFILE_SETUP_ENABLED && profileCompleted === false) {
+      return (
+        <ProfileSetup
+          utilisateur={utilisateur}
+          lang={lang}
+          onComplete={() => { chargerProfil(); }}
+          onLogout={handleDeconnexion}
+          onOpenLegal={openLegalRoute}
+        />
+      );
+    }
+
     // ===================== Onboarding : chemin de repli (deja connecte) =====================
     // N'arrive ici QUE si l'effet de chargement du profil (plus haut) n'a trouve AUCUNE reponse
     // locale a appliquer -- un utilisateur deja authentifie dont l'onboarding n'est pas termine
-    // (ex. compte cree avant cette refonte). Ecrit alors directement (voir
-    // OnboardingFlow.finalize(), chemin `utilisateur` present) -- memes regles que la refonte
-    // (comptes a 0$, aucun depot invente).
-    if (ONBOARDING_ENABLED && !profilCharge) {
-      return <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-080808)' }} />;
-    }
+    // (ex. compte cree avant cette refonte, ou nouveau compte Google qui vient de completer
+    // ProfileSetup ci-dessus). Ecrit alors directement (voir OnboardingFlow.finalize(), chemin
+    // `utilisateur` present) -- memes regles que la refonte (comptes a 0$, aucun depot invente).
     if (ONBOARDING_ENABLED && onboardingCompleted === false) {
       return (
         <OnboardingFlow

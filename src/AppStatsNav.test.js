@@ -60,7 +60,7 @@ function mockConnecte({ isAdmin = false } = {}) {
   supabase.auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } });
   supabase.from.mockImplementation((table) => {
     if (table === 'profiles') {
-      return { select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { avatar_url: null, username: 'Alex', first_name: null, last_name: null, is_admin: isAdmin } }) }) }) };
+      return { select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { avatar_url: null, username: 'Alex', first_name: null, last_name: null, is_admin: isAdmin, profile_completed_at: '2026-01-01T00:00:00.000Z' } }) }) }) };
     }
     if (table === 'saved_picks') {
       return { select: () => ({ eq: () => ({ eq: () => Promise.resolve({ count: 0 }) }) }) };

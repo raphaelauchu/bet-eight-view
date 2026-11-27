@@ -44,7 +44,11 @@ const UTILISATEUR = { id: 'u1', email: 'alex@example.com' };
 // retour OAuth -- getSession() resout immediatement), soit un visiteur anonyme qui ne se connecte
 // que plus tard dans le test (voir declencherConnexion ci-dessous, qui rejoue le callback
 // onAuthStateChange -- JAMAIS une dependance a un quelconque etat React du composant Onboarding).
-function mockSupabase({ onboardingCompleted = true, connecteAuDepart = true } = {}) {
+// `profileCompleted` (porte d'entree "Complete ton profil", src/ProfileSetup.js) : `true` par
+// defaut ici -- ces tests portent sur l'onboarding, pas sur ProfileSetup (voir
+// src/AppProfileSetup.test.js pour profile_completed_at=null), donc un profil deja complete par
+// defaut pour ne pas intercepter ces scenarios derriere ce nouvel ecran.
+function mockSupabase({ onboardingCompleted = true, connecteAuDepart = true, profileCompleted = true } = {}) {
   const accountInserts = [];
   const profileUpserts = [];
   let authStateCallback = null;
@@ -58,7 +62,7 @@ function mockSupabase({ onboardingCompleted = true, connecteAuDepart = true } = 
   supabase.from.mockImplementation((table) => {
     if (table === 'profiles') {
       return {
-        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { avatar_url: null, username: 'Alex', first_name: null, last_name: null, is_admin: false, onboarding_completed: onboardingCompleted } }) }) }),
+        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { avatar_url: null, username: 'Alex', first_name: null, last_name: null, is_admin: false, onboarding_completed: onboardingCompleted, profile_completed_at: profileCompleted ? '2026-01-01T00:00:00.000Z' : null } }) }) }),
         upsert: (payload) => { profileUpserts.push(payload); return Promise.resolve({ error: null }); },
       };
     }
