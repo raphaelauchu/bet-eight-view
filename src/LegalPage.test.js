@@ -56,6 +56,18 @@ test('champs "[À CONFIRMER]" affiches de maniere discrete (pas en gros/en titre
   occurrences.forEach(el => expect(['P', 'LI']).toContain(el.closest('p, li, h1, h2')?.tagName));
 });
 
+test('confidentialite (FR) : la suppression de compte en libre-service est mentionnee (section 7), plus aucune phrase disant que ce n\'est pas encore possible', () => {
+  render(<LegalPage page="privacy" lang="fr" onBack={() => {}} />);
+  expect(screen.getByText(/Tu peux supprimer ton compte toi-même, à tout moment, depuis les paramètres/)).toBeInTheDocument();
+  expect(screen.queryByText(/n'est pas encore offerte/)).not.toBeInTheDocument();
+});
+
+test('confidentialite (EN) : self-service account deletion is mentioned (section 7), no more "not yet available" phrasing', () => {
+  render(<LegalPage page="privacy" lang="en" onBack={() => {}} />);
+  expect(screen.getByText(/You can delete your account yourself, at any time, from your profile settings/)).toBeInTheDocument();
+  expect(screen.queryByText(/isn't yet available/)).not.toBeInTheDocument();
+});
+
 test('legalPageMeta : titre et description distincts par page/langue', () => {
   const privacyFr = legalPageMeta('privacy', 'fr');
   const termsEn = legalPageMeta('terms', 'en');

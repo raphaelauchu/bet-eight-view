@@ -4,6 +4,7 @@ import { getT } from './i18n';
 import {
   COUNTRIES, REGIONS_BY_COUNTRY, USERNAME_REGEX, RESERVED_USERNAMES, minimumAgeFor, computeAge,
 } from './profileConfig';
+import DeleteAccountModal from './DeleteAccountModal';
 
 // ===================== Porte d'entree "Complete ton profil" (refonte du 27 nov 2026) =====
 // Meme style visuel que src/Onboarding.js (fond quasi noir, cartes bleu-gris tres sombre, accent
@@ -41,7 +42,7 @@ function nomsDepuisMetadata(utilisateur) {
   return { prenom: mots[0] || '', nom: mots.slice(1).join(' ') };
 }
 
-export default function ProfileSetup({ utilisateur, lang = 'fr', onComplete, onLogout, onOpenLegal }) {
+export default function ProfileSetup({ utilisateur, lang = 'fr', onComplete, onLogout, onOpenLegal, onDeleteAccount }) {
   const t = getT(lang);
   const prefill = useMemo(() => nomsDepuisMetadata(utilisateur), [utilisateur]);
 
@@ -57,6 +58,7 @@ export default function ProfileSetup({ utilisateur, lang = 'fr', onComplete, onL
   const [submitting, setSubmitting] = useState(false);
   const [erreur, setErreur] = useState('');
   const [chargementProfil, setChargementProfil] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Precharge un profil existant mais incomplet (compte cree avant cette refonte) -- ne remplace
   // les valeurs deduites de user_metadata que si la base a deja quelque chose de plus precis.
@@ -120,7 +122,15 @@ export default function ProfileSetup({ utilisateur, lang = 'fr', onComplete, onL
       updated_at: new Date().toISOString(),
     });
     if (error) {
-      setErreur(t('auth_error_generic'));
+      // Filet de securite cote base de donnees (profiles_birth_date_min_age, voir
+      // supabase/migrations/20261127_3_delete_account.sql) -- plancher absolu de 18 ans,
+      // contournable cote client. Si c'est bien cette contrainte qui a echoue, le MEME message
+      // de blocage d'age que la verification client s'affiche, jamais une erreur generique.
+      if (error.message && error.message.includes('profiles_birth_date_min_age')) {
+        setErreur(t('profile_setup_age_blocked').replace('{age}', 18));
+      } else {
+        setErreur(t('auth_error_generic'));
+      }
       setSubmitting(false);
       return;
     }
@@ -217,7 +227,21 @@ export default function ProfileSetup({ utilisateur, lang = 'fr', onComplete, onL
         <button type="submit" disabled={!peutContinuer} style={{ ...primaryBtnStyle, opacity: peutContinuer ? 1 : 0.4, cursor: peutContinuer ? 'pointer' : 'default', marginTop: '4px' }}>
           {submitting ? t('saving_text') : t('profile_setup_submit')}
         </button>
+
+        {/* Lien discret -- utile a une personne bloquee par la verification d'age (section 2 de
+            la tache) qui ne peut pas continuer autrement : reutilise la meme modale que la "Zone
+            dangereuse" de src/App.js:ProfilePage. */}
+        {onDeleteAccount && (
+          <button type="button" onClick={() => setShowDeleteModal(true)}
+            style={{ background: 'none', border: 'none', color: 'var(--c-666)', fontSize: '12.5px', cursor: 'pointer', padding: '6px', textAlign: 'center' }}>
+            {t('profile_setup_delete_account_link')}
+          </button>
+        )}
       </form>
+
+      {showDeleteModal && (
+        <DeleteAccountModal lang={lang} onConfirm={onDeleteAccount} onClose={() => setShowDeleteModal(false)} />
+      )}
     </div>
   );
 }

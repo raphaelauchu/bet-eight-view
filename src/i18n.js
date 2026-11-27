@@ -125,6 +125,25 @@ const translations = {
     profile_region_wy: 'Wyoming',
     profile_region_dc: 'District de Columbia',
 
+    // ===================== Suppression de compte (Loi 25, src/DeleteAccountModal.js) =====
+    delete_account_section_title: 'Zone dangereuse',
+    delete_account_section_desc: 'Supprimer ton compte efface définitivement tes données de Betrics.',
+    delete_account_btn: 'Supprimer mon compte',
+    delete_account_modal_title: 'Supprimer ton compte ?',
+    delete_account_modal_body: 'Cette action est définitive et supprimera ton profil, ta bankroll (comptes, dépôts, retraits), tes paris, ainsi que les pools de hockey dont tu es le seul membre. Pour les pools que tu as créés et qui ont d\'autres membres, la propriété sera transférée automatiquement au membre le plus ancien.',
+    delete_account_cancel: 'Annuler',
+    delete_account_continue: 'Continuer',
+    delete_account_confirm_title: 'Confirmation finale',
+    delete_account_confirm_instruction: 'Pour confirmer, tape {mot} ci-dessous.',
+    delete_account_confirm_word: 'SUPPRIMER',
+    delete_account_confirm_placeholder: 'SUPPRIMER',
+    delete_account_final_btn: 'Supprimer définitivement mon compte',
+    delete_account_deleting: 'Suppression...',
+    delete_account_error: 'La suppression a échoué. Réessaie dans un instant.',
+    delete_account_retry: 'Réessayer',
+    account_deleted_message: 'Ton compte a été supprimé.',
+    profile_setup_delete_account_link: 'Supprimer mon compte',
+
     // Pricing
     pricing_title: 'Choisis ton plan',
     pricing_sub: 'Commence gratuitement, upgrade quand tu es prêt.',
@@ -1455,7 +1474,7 @@ const translations = {
       {
         title: 'Conservation et suppression',
         blocks: [
-          'Nous conservons tes renseignements tant que ton compte existe. La suppression complète d\'un compte n\'est pas encore offerte directement dans l\'application. Pour demander la suppression de ton compte et de tes renseignements, écris-nous à {email} — nous traiterons ta demande dans un délai raisonnable.',
+          'Nous conservons tes renseignements tant que ton compte existe. Tu peux supprimer ton compte toi-même, à tout moment, depuis les paramètres de ton profil (section « Zone dangereuse ») : cette action efface définitivement ton profil, ta bankroll, tes paris et tes réponses d\'onboarding. Tu peux aussi nous écrire à {email} pour en faire la demande — nous traiterons alors ta demande dans un délai raisonnable.',
         ],
       },
       {
@@ -1862,6 +1881,25 @@ const translations = {
     profile_region_wi: 'Wisconsin',
     profile_region_wy: 'Wyoming',
     profile_region_dc: 'District of Columbia',
+
+    // ===================== Account deletion (Law 25, src/DeleteAccountModal.js) =====
+    delete_account_section_title: 'Danger zone',
+    delete_account_section_desc: 'Deleting your account permanently erases your Betrics data.',
+    delete_account_btn: 'Delete my account',
+    delete_account_modal_title: 'Delete your account?',
+    delete_account_modal_body: 'This action is permanent and will delete your profile, your bankroll (accounts, deposits, withdrawals), your bets, and any hockey pool where you are the only member. For pools you created that have other members, ownership will be transferred automatically to the oldest member.',
+    delete_account_cancel: 'Cancel',
+    delete_account_continue: 'Continue',
+    delete_account_confirm_title: 'Final confirmation',
+    delete_account_confirm_instruction: 'To confirm, type {mot} below.',
+    delete_account_confirm_word: 'DELETE',
+    delete_account_confirm_placeholder: 'DELETE',
+    delete_account_final_btn: 'Permanently delete my account',
+    delete_account_deleting: 'Deleting...',
+    delete_account_error: 'Deletion failed. Please try again in a moment.',
+    delete_account_retry: 'Try again',
+    account_deleted_message: 'Your account has been deleted.',
+    profile_setup_delete_account_link: 'Delete my account',
 
     // Pricing
     pricing_title: 'Choose your plan',
@@ -3186,7 +3224,7 @@ const translations = {
       {
         title: 'Retention and deletion',
         blocks: [
-          'We keep your information for as long as your account exists. Full account deletion isn\'t yet available directly in the app. To request deletion of your account and information, email us at {email} — we will process your request within a reasonable time.',
+          'We keep your information for as long as your account exists. You can delete your account yourself, at any time, from your profile settings (the "Danger zone" section): this permanently erases your profile, your bankroll, your bets and your onboarding answers. You can also email us at {email} to request it — we will then process your request within a reasonable time.',
         ],
       },
       {

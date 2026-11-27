@@ -24,6 +24,8 @@ import LegalPage, { legalPageMeta } from './LegalPage';
 import { useDocumentMeta } from './useDocumentMeta';
 import ProfileSetup from './ProfileSetup';
 import { PROFILE_SETUP_ENABLED } from './profileConfig';
+import DeleteAccountModal from './DeleteAccountModal';
+import { EMAIL_IMPORT_ENABLED } from './emailImportConfig';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -766,7 +768,7 @@ function PropsPage({ lang = 'en' }) {
   );
 }
 
-function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
+function ProfilePage({ utilisateur, onBack, lang = 'en', onDeleteAccount }) {
   const t = getT(lang);
   const [username, setUsername] = React.useState('');
   const [avatarUrl, setAvatarUrl] = React.useState(null);
@@ -791,7 +793,12 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
   const connexionOutlook = emailConnections.find(c => c.provider === 'outlook') || null;
   const connexionPrincipale = connexionGmail || connexionOutlook || null;
 
-  React.useEffect(() => { chargerProfil(); chargerConnexionEmail(); }, []);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+
+  // chargerConnexionEmail() seulement si le bloc "Mes Bookmakers" est reellement affiche --
+  // EMAIL_IMPORT_ENABLED (src/emailImportConfig.js) ne fait pas que masquer l'affichage, il evite
+  // aussi cette lecture Supabase devenue inutile tant que le bloc reste cache.
+  React.useEffect(() => { chargerProfil(); if (EMAIL_IMPORT_ENABLED) chargerConnexionEmail(); }, []);
 
   async function chargerProfil() {
     try {
@@ -1095,7 +1102,11 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
         </div>
       </div>
 
-      {/* Mes Bookmakers — connexion Gmail/Outlook + parsing automatique des paris */}
+      {/* Mes Bookmakers — connexion Gmail/Outlook + parsing automatique des paris. Retire de
+          l'affichage derriere EMAIL_IMPORT_ENABLED (src/emailImportConfig.js) -- aucune fonction
+          Edge, migration ou table supprimee, seulement cache, reactivable en repassant le
+          drapeau a `true`. */}
+      {EMAIL_IMPORT_ENABLED && (
       <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid var(--c-161616)', marginBottom: '24px' }}>
         <p style={{ margin: '0 0 4px', color: 'var(--c-555)', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('bookmakers_title')}</p>
         <p style={{ margin: '0 0 16px', color: 'var(--c-444)', fontSize: '12px', lineHeight: '1.5' }}>{t('bookmakers_sub')}</p>
@@ -1151,11 +1162,27 @@ function ProfilePage({ utilisateur, onBack, lang = 'en' }) {
           </div>
         </div>
       </div>
+      )}
 
       <button onClick={sauvegarderProfil} disabled={saving}
         style={{ width: '100%', padding: '14px', background: saved ? 'rgba(34,197,94,0.15)' : 'linear-gradient(135deg, #f97316, #ea580c)', color: saved ? '#22c55e' : 'white', border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
         {saved ? t('profile_saved') : saving ? t('saving_text') : t('profile_save')}
       </button>
+
+      {/* Zone dangereuse -- suppression de compte (Loi 25, droit a l'effacement). Section separee,
+          bordure rouge discrete, jamais au meme niveau visuel que les reglages normaux. */}
+      <div style={{ backgroundColor: 'var(--c-0d0d0d)', borderRadius: '16px', padding: '16px', border: '1px solid rgba(239,68,68,0.25)', marginTop: '24px' }}>
+        <p style={{ margin: '0 0 4px', color: '#ef4444', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('delete_account_section_title')}</p>
+        <p style={{ margin: '0 0 14px', color: 'var(--c-555)', fontSize: '12px', lineHeight: '1.5' }}>{t('delete_account_section_desc')}</p>
+        <button type="button" onClick={() => setShowDeleteModal(true)}
+          style={{ padding: '10px 18px', backgroundColor: 'transparent', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}>
+          {t('delete_account_btn')}
+        </button>
+      </div>
+
+      {showDeleteModal && (
+        <DeleteAccountModal lang={lang} onConfirm={onDeleteAccount} onClose={() => setShowDeleteModal(false)} />
+      )}
     </div>
   );
 }
@@ -1274,6 +1301,16 @@ function App() {
   // connexion/onboarding en cours (voir le rendu tout en haut de ce composant, avant meme les
   // verifications d'auth/onboarding).
   const [legalRoute, setLegalRoute] = useState(() => legalRouteFromPath(window.location.pathname));
+  // Bandeau "Ton compte a ete supprime" (?deleted=1, voir handleDeleteAccount plus bas) -- lu une
+  // seule fois a l'etat initial puis retire de l'URL (cosmetique, meme technique que
+  // onboardingPreviewActive pour ?onboarding=preview) pour ne pas le reafficher sur un simple
+  // rechargement de page ulterieur.
+  const [accountDeletedBanner, setAccountDeletedBanner] = useState(
+    () => new URLSearchParams(window.location.search).get('deleted') === '1'
+  );
+  useEffect(() => {
+    if (accountDeletedBanner) window.history.replaceState({}, '', '/');
+  }, [accountDeletedBanner]);
   // Porte d'entree "Complete ton profil" (src/ProfileSetup.js, refonte du 27 nov 2026) -- null
   // tant que le profil n'a pas charge (voir profilCharge plus bas), PUIS toujours verifiee AVANT
   // onboardingCompleted ci-dessous (ordre fixe : profil -> onboarding -> app). Un compte Google
@@ -1470,6 +1507,26 @@ function App() {
     setPage('home');
   }
 
+  // ===================== Suppression definitive de compte (Loi 25) =====================
+  // Reutilisee par src/DeleteAccountModal.js (ProfilePage ET ProfileSetup) comme `onConfirm` --
+  // si la RPC echoue, on jette l'erreur pour que la modale l'affiche SANS deconnecter ni fermer
+  // (l'utilisateur garde son compte intact, peut reessayer). Un rechargement complet
+  // (window.location.href, pas une navigation SPA) une fois la suppression reussie : garantit un
+  // etat React totalement neuf, aucun residu de `utilisateur`/`profileCompleted`/etc. a gerer
+  // apres avoir supprime le compte sous leurs pieds. ?deleted=1 affiche un message bref sur
+  // l'accueil (voir accountDeletedBanner plus haut et le rendu final de ce composant).
+  async function handleDeleteAccount() {
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) throw error;
+    await supabase.auth.signOut();
+    try {
+      Object.keys(window.localStorage)
+        .filter(k => k.startsWith('betrics_'))
+        .forEach(k => window.localStorage.removeItem(k));
+    } catch { /* ignore */ }
+    window.location.href = '/?deleted=1';
+  }
+
   // ===================== Bouton retour du navigateur/telephone : auth + onboarding =====================
   // Seule source qui met a jour `authMode`/`onboardingStep` suite a une navigation arriere/avant
   // (popstate) -- toujours redecouverts depuis l'URL (voir authModeFromSearch/
@@ -1645,6 +1702,7 @@ function App() {
           onComplete={() => { chargerProfil(); }}
           onLogout={handleDeconnexion}
           onOpenLegal={openLegalRoute}
+          onDeleteAccount={handleDeleteAccount}
         />
       );
     }
@@ -1742,7 +1800,7 @@ function App() {
           onSelectPlayer={(j) => { setEquipeFicheGlobal(null); setJoueurFicheGlobal(j); }} />
       </div>
     ) : page === 'profile' ? (
-      <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} />
+      <ProfilePage utilisateur={utilisateur} onBack={() => setPage('home')} lang={lang} onDeleteAccount={handleDeleteAccount} />
     ) : page === 'bets' ? (
       <BetsPage lang={lang} />
     ) : page === 'bankroll' ? (
@@ -1852,12 +1910,23 @@ function App() {
   // voir onboardingStep plus haut. Les deux cas poussent une nouvelle entree d'historique (voir
   // openAuth/openOnboardingStep1) pour que le bouton retour revienne a l'accueil.
   return (
-    <PublicSite
-      lang={lang}
-      setLang={setLang}
-      onOpenAuth={(mode) => { if (mode === 'signup') { openOnboardingStep1(); } else { openAuth(mode); } }}
-      onOpenLegal={openLegalRoute}
-    />
+    <>
+      {accountDeletedBanner && (
+        <div style={{ backgroundColor: 'rgba(34,197,94,0.12)', borderBottom: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', fontSize: '13px', fontWeight: '600', textAlign: 'center', padding: '10px 16px', position: 'relative' }}>
+          {getT(lang)('account_deleted_message')}
+          <button type="button" onClick={() => setAccountDeletedBanner(false)} aria-label="×"
+            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#22c55e', cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}>
+            ×
+          </button>
+        </div>
+      )}
+      <PublicSite
+        lang={lang}
+        setLang={setLang}
+        onOpenAuth={(mode) => { if (mode === 'signup') { openOnboardingStep1(); } else { openAuth(mode); } }}
+        onOpenLegal={openLegalRoute}
+      />
+    </>
   );
 }
  
