@@ -2752,10 +2752,11 @@ body {
   font-size: 12px;
 }
 
-/* ===================== Pages legales simples ===================== */
+/* ===================== Pages legales completes (src/LegalPage.js) ===================== */
 .ws-legal-page {
-  padding: 48px 24px 80px;
+  padding: 24px 24px 80px;
   max-width: 720px;
+  margin: 0 auto;
 }
 
 .ws-legal-body {
@@ -2764,6 +2765,59 @@ body {
   line-height: 1.7;
   margin-top: 16px;
   white-space: pre-line;
+}
+
+.ws-legal-draft-banner {
+  background: rgba(249,115,22,0.12);
+  border-bottom: 1px solid rgba(249,115,22,0.3);
+  color: var(--ws-brand);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 16px;
+}
+
+.ws-legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+  margin-bottom: 24px;
+}
+
+.ws-legal-logo {
+  border-radius: 9px;
+  display: block;
+}
+
+.ws-legal-title {
+  margin: 0 0 6px;
+}
+
+.ws-legal-updated {
+  color: var(--ws-text-faint);
+  font-size: 12.5px;
+  margin: 0 0 32px;
+}
+
+.ws-legal-section {
+  margin-bottom: 32px;
+}
+
+.ws-legal-section-title {
+  margin: 0 0 4px;
+}
+
+.ws-legal-list {
+  color: var(--ws-muted);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.ws-legal-list li {
+  margin-bottom: 6px;
 }
 
 /* ===================== Reveal au defilement (sobre, une seule fois) ===================== */

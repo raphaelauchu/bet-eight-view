@@ -21,8 +21,9 @@ const { supabase } = require('./supabase');
 function setup(props = {}) {
   const onConnexion = jest.fn();
   const onBackToHome = jest.fn();
-  const utils = render(<Auth onConnexion={onConnexion} onBackToHome={onBackToHome} lang="fr" initialMode="login" {...props} />);
-  return { ...utils, onConnexion, onBackToHome };
+  const onOpenLegal = jest.fn();
+  const utils = render(<Auth onConnexion={onConnexion} onBackToHome={onBackToHome} onOpenLegal={onOpenLegal} lang="fr" initialMode="login" {...props} />);
+  return { ...utils, onConnexion, onBackToHome, onOpenLegal };
 }
 
 // `react-scripts` active `resetMocks: true` : toute implementation passee a jest.fn(impl) dans la
@@ -155,6 +156,16 @@ test('fleche retour : depuis le formulaire courriel, revient a l\'ecran de choix
   fireEvent.click(screen.getByLabelText('Retour'));
   expect(onBackToHome).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeInTheDocument();
+});
+
+// ===================== Liens legaux =====================
+
+test('liens legaux : "Conditions d\'utilisation" et "Politique de confidentialité" appellent onOpenLegal', () => {
+  const { onOpenLegal } = setup();
+  fireEvent.click(screen.getByText('Conditions d\'utilisation'));
+  expect(onOpenLegal).toHaveBeenLastCalledWith('terms');
+  fireEvent.click(screen.getByText('Politique de confidentialité'));
+  expect(onOpenLegal).toHaveBeenLastCalledWith('privacy');
 });
 
 // ===================== Accessibilite =====================

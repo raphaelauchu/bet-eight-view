@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRoute } from './routing';
 import { useDocumentMeta } from './useDocumentMeta';
 import Navbar from './Navbar';
 import LandingHeaderV2 from './LandingHeaderV2';
 import { LANDING_V2_ENABLED } from './landingConfig';
 import PublicFooter from './PublicFooter';
-import LegalPage from './LegalPage';
 import Landing, { homePageMeta } from './Landing';
 import PoolShowcase, { poolPageMeta } from './PoolShowcase';
 import PricingPage, { pricingPageMeta } from './PricingPage';
@@ -14,9 +13,10 @@ import SimplePage, { toolPageMeta, guidePageMeta } from './SimplePage';
 // ===================== Orchestrateur du site public (visiteur non connecte) =====================
 // Resout le chemin courant en page + meta SEO (titre/description/canonical/OG, voir
 // useDocumentMeta.js), affiche la Navbar + la page + le pied de page sur toutes les routes
-// publiques. Les pages legales (CGU/Confidentialite) restent un etat local plutot qu'une
-// vraie route : elles s'ouvrent depuis le pied de page de n'importe quelle page et reviennent
-// a la page precedente, comme avant ce decoupage.
+// publiques. Les pages legales (/confidentialite, /conditions, /privacy, /terms) sont desormais de
+// VRAIES routes gerees au niveau de src/App.js (adresses publiques independantes, exigees par
+// Google) -- `onOpenLegal` (prop, voir PublicFooter.js) n'est qu'un simple relais vers
+// App.js:openLegalRoute, ce composant ne gere plus lui-meme cet etat.
 
 function resolve(path) {
   if (path === '/pool') return { key: 'pool' };
@@ -26,9 +26,8 @@ function resolve(path) {
   return { key: 'accueil' };
 }
 
-export default function PublicSite({ lang, setLang, onOpenAuth }) {
+export default function PublicSite({ lang, setLang, onOpenAuth, onOpenLegal }) {
   const [path, navigate] = useRoute();
-  const [legalPage, setLegalPage] = useState(null);
   const route = resolve(path);
 
   const meta =
@@ -39,10 +38,6 @@ export default function PublicSite({ lang, setLang, onOpenAuth }) {
     homePageMeta(lang);
 
   useDocumentMeta({ title: meta?.title, description: meta?.description, path });
-
-  if (legalPage) {
-    return <LegalPage lang={lang} page={legalPage} onBack={() => setLegalPage(null)} />;
-  }
 
   let page;
   if (route.key === 'pool') page = <PoolShowcase lang={lang} onOpenAuth={onOpenAuth} />;
@@ -68,7 +63,7 @@ export default function PublicSite({ lang, setLang, onOpenAuth }) {
     <div className="ws-root">
       {header}
       {page}
-      <PublicFooter lang={lang} onOpenLegal={setLegalPage} />
+      <PublicFooter lang={lang} onOpenLegal={onOpenLegal} />
     </div>
   );
 }

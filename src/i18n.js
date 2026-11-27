@@ -1283,13 +1283,177 @@ const translations = {
     landing_footer_contact: 'Contact',
     landing_footer_copyright: '© 2026 Betrics',
 
-    landing_legal_back: '← Retour',
     landing_legal_terms_title: 'Conditions d\'utilisation',
-    landing_legal_terms_body: 'Cette page sera complétée prochainement avec nos conditions d\'utilisation détaillées. Pour toute question en attendant, écris-nous via la page de contact.',
     landing_legal_privacy_title: 'Politique de confidentialité',
-    landing_legal_privacy_body: 'Cette page sera complétée prochainement avec notre politique de confidentialité détaillée. Tes données servent uniquement à faire fonctionner ton compte Betrics et ne sont jamais revendues. Pour toute question en attendant, écris-nous via la page de contact.',
-    landing_legal_nhl_title: 'Marques et affiliation',
-    landing_legal_nhl_body: 'Betrics n\'est affilié ni à la LNH ni à l\'Association des joueurs de la LNH (NHLPA), et n\'est pas endossé par eux. Les noms de joueurs et d\'équipes sont utilisés à titre informatif. Tant qu\'aucune licence n\'existe, aucune photo de joueur ni logo d\'équipe officiel n\'est affiché sur Betrics : des casques, chandails et badges génériques dessinés par Betrics les remplacent partout dans l\'application.',
+
+    // ===================== Pages legales completes (src/LegalPage.js, refonte du 27 nov 2026) =====
+    // Adresses dediees (/confidentialite, /conditions, /privacy, /terms -- voir src/App.js) --
+    // Google exige des adresses publiques independantes pour publier la connexion Google. Contenu
+    // base UNIQUEMENT sur ce que le code fait reellement (voir le commentaire de tete de
+    // src/legalConfig.js pour les 4 champs "[A CONFIRMER]" interpoles ci-dessous : {entity},
+    // {address}, {officer}, {region} -- jamais une valeur inventee). Rendu par src/LegalPage.js :
+    // chaque section -> titre (h2) + une liste de "blocks" (chaine = paragraphe, {list:[...]} =
+    // puces).
+    legal_back_home: '← Retour à l\'accueil',
+    legal_last_updated_label: 'Dernière mise à jour : {date}',
+    legal_draft_banner_text: 'Version initiale, en cours de validation juridique.',
+
+    legal_privacy_sections: [
+      {
+        title: 'Qui nous sommes et comment nous joindre',
+        blocks: [
+          'Betrics est exploité par {entity}, situé à {address}. Pour toute question sur tes renseignements personnels ou sur la présente politique, écris-nous à {email}.',
+          'La personne responsable de la protection des renseignements personnels chez Betrics est {officer}.',
+        ],
+      },
+      {
+        title: 'Renseignements que nous recueillons',
+        blocks: [
+          'Nous recueillons seulement les renseignements nécessaires au fonctionnement de ton compte Betrics :',
+          { list: [
+            'Ton courriel, et un nom ou nom d\'utilisateur, utilisés pour créer et identifier ton compte.',
+            'Si tu choisis de te connecter avec Google : le courriel, le nom et la photo de profil fournis par Google (voir la section 5 ci-dessous).',
+            'Une photo de profil, si tu en ajoutes une toi-même.',
+            'Ta province, utilisée pour déterminer quels comparateurs de cotes et bookmakers s\'appliquent à toi.',
+            'Les paris et les transactions de bankroll (dépôts, retraits, mises, résultats) que tu saisis toi-même ou qui sont importés depuis un courriel de confirmation que tu connectes.',
+            'Tes réponses au questionnaire d\'introduction (bookmakers utilisés, volume de mise, objectifs, niveau d\'expérience, comment tu as connu Betrics), si tu les remplis.',
+          ] },
+          'Nous ne conservons actuellement aucune préférence de langue de façon persistante : ton choix de langue s\'applique seulement pendant ta visite et n\'est pas enregistré.',
+          'Comme pour tout site web hébergé, nos fournisseurs techniques peuvent conserver des journaux techniques de base (adresse IP, type de navigateur, horodatage des requêtes) dans le cadre normal de l\'hébergement et de la sécurité. Nous n\'utilisons aucun outil d\'analyse ou de suivi publicitaire tiers.',
+        ],
+      },
+      {
+        title: 'Pourquoi nous les utilisons',
+        blocks: [
+          { list: [
+            'Créer, authentifier et sécuriser ton compte.',
+            'Faire fonctionner tes comptes de bankroll (calcul du solde, du rendement, du taux de réussite).',
+            'Afficher tes statistiques, tes paris et tes pools de hockey.',
+            'Répondre à tes demandes de soutien lorsque tu nous écris.',
+            'Assurer la sécurité de la plateforme (prévenir les accès non autorisés).',
+          ] },
+          'Nous n\'utilisons jamais tes renseignements pour faire de la publicité ciblée, et nous ne les revendons jamais.',
+        ],
+      },
+      {
+        title: 'Avec qui nous les partageons',
+        blocks: [
+          'Nous ne vendons jamais tes renseignements personnels. Nous les partageons uniquement avec les fournisseurs techniques nécessaires au fonctionnement de Betrics :',
+          { list: [
+            'Supabase : hébergement de notre base de données et service d\'authentification (gère ton mot de passe et tes sessions de connexion).',
+            'Vercel : hébergement et déploiement du site web Betrics.',
+            'Google : uniquement si tu choisis de te connecter avec Google (voir section 5).',
+          ] },
+          'Betrics ne gère actuellement aucun paiement ni abonnement : aucun renseignement financier ne transite par un processeur de paiement.',
+        ],
+      },
+      {
+        title: 'Connexion avec Google',
+        blocks: [
+          'Betrics offre la connexion avec un compte Google comme méthode d\'authentification optionnelle. Lorsque tu l\'utilises, nous recevons seulement les renseignements de base fournis par Google : ton courriel, ton nom et ta photo de profil. Ces renseignements servent uniquement à créer et gérer ton compte Betrics — rien de plus.',
+          'L\'utilisation par Betrics des renseignements reçus des API de Google respecte la politique de Google sur les données utilisateur des services d\'API (Google API Services User Data Policy), y compris les exigences d\'utilisation limitée.',
+        ],
+      },
+      {
+        title: 'Stockage local et témoins',
+        blocks: [
+          'Betrics conserve certaines informations directement sur ton appareil (le stockage local de ton navigateur), jamais sur un serveur tiers de suivi :',
+          { list: [
+            'Ta session de connexion, pour éviter de te reconnecter à chaque visite.',
+            'Tes réponses au questionnaire d\'introduction, temporairement, si tu les remplis avant de créer ton compte — elles sont transférées vers ton compte dès sa création, puis supprimées de ton appareil.',
+            'Tes préférences d\'affichage (thème sombre ou clair, onglets ouverts, masquage des montants).',
+          ] },
+          'Betrics n\'utilise aucun témoin (cookie) publicitaire ou de suivi tiers.',
+        ],
+      },
+      {
+        title: 'Conservation et suppression',
+        blocks: [
+          'Nous conservons tes renseignements tant que ton compte existe. La suppression complète d\'un compte n\'est pas encore offerte directement dans l\'application. Pour demander la suppression de ton compte et de tes renseignements, écris-nous à {email} — nous traiterons ta demande dans un délai raisonnable.',
+        ],
+      },
+      {
+        title: 'Tes droits',
+        blocks: [
+          'En vertu de la Loi sur la protection des renseignements personnels dans le secteur privé (Loi 25, Québec) et de la Loi sur la protection des renseignements personnels et les documents électroniques (LPRPDE), tu as le droit de :',
+          { list: [
+            'accéder aux renseignements personnels que nous détenons sur toi;',
+            'faire corriger un renseignement inexact ou incomplet;',
+            'retirer ton consentement à certains usages;',
+            'demander la suppression de tes renseignements, sous réserve d\'obligations légales de conservation;',
+            'recevoir une copie de tes renseignements dans un format structuré (portabilité).',
+          ] },
+          'Pour exercer l\'un de ces droits, écris-nous à {email}.',
+        ],
+      },
+      {
+        title: 'Sécurité, transferts, âge minimum, modifications et plaintes',
+        blocks: [
+          'Nous prenons des mesures raisonnables pour protéger tes renseignements, mais aucun système n\'est parfaitement sécurisé.',
+          'Nos fournisseurs techniques peuvent héberger tes renseignements à l\'extérieur du Québec (région d\'hébergement exacte : {region}). Dans ce cas, tes renseignements demeurent protégés par des mesures contractuelles et techniques appropriées.',
+          'Betrics est réservé aux personnes ayant atteint l\'âge légal du jeu dans leur province : 18 ans au Québec, en Alberta et au Manitoba; 19 ans dans le reste du Canada. Nous ne recueillons pas sciemment de renseignements auprès de mineurs.',
+          'Nous pouvons modifier cette politique; la date de la dernière mise à jour figure en haut de cette page.',
+          'Si tu as une plainte concernant le traitement de tes renseignements personnels, tu peux d\'abord nous écrire à {email}, puis, si nécessaire, t\'adresser à la Commission d\'accès à l\'information du Québec.',
+        ],
+      },
+    ],
+
+    legal_terms_sections: [
+      {
+        title: 'Acceptation et description du service',
+        blocks: [
+          'En utilisant Betrics, tu acceptes les présentes conditions d\'utilisation. Betrics est un outil d\'analyse et de suivi : il te montre des statistiques, des comparaisons de cotes et un suivi de bankroll pour t\'aider à prendre des décisions plus éclairées.',
+          'Betrics n\'est PAS un bookmaker : nous ne prenons aucun pari, ne détenons aucun argent et ne sommes affiliés à aucun site de paris. Les paris que tu enregistres dans Betrics sont placés par toi, directement chez le bookmaker de ton choix.',
+        ],
+      },
+      {
+        title: 'Admissibilité',
+        blocks: [
+          'L\'utilisation de Betrics est réservée aux personnes ayant atteint l\'âge légal du jeu dans leur province : 18 ans au Québec, en Alberta et au Manitoba; 19 ans dans le reste du Canada. En créant un compte, tu confirmes avoir atteint cet âge.',
+        ],
+      },
+      {
+        title: 'Aucun conseil financier ni garantie de résultat',
+        blocks: [
+          'Les statistiques, les modèles et les comparaisons affichés sur Betrics sont fournis à titre informatif seulement. Ils ne constituent ni un conseil financier, ni une recommandation de pari, ni une garantie de résultat. Aucune information sur Betrics ne garantit un gain.',
+          'Tu es seul responsable de tes décisions de pari et de leurs conséquences.',
+        ],
+      },
+      {
+        title: 'Jeu responsable',
+        blocks: [
+          'Le jeu doit rester un divertissement. Si le jeu devient un problème pour toi ou pour une personne de ton entourage, de l\'aide gratuite et confidentielle est disponible : Jeu : aide et référence — 1 800 461-0140 · aidejeu.ca — service québécois gratuit, confidentiel et offert 24 h/7j.',
+        ],
+      },
+      {
+        title: 'Ton compte, la sécurité et l\'utilisation acceptable',
+        blocks: [
+          'Tu es responsable de garder ton mot de passe confidentiel et de toute activité effectuée depuis ton compte. Tu t\'engages à fournir des renseignements exacts et à ne pas utiliser Betrics de façon frauduleuse, pour harceler autrui, ou pour contourner les mesures de sécurité de la plateforme.',
+          'Le contenu, le code et le design de Betrics sont la propriété de {entity} et ne peuvent être copiés ou redistribués sans autorisation.',
+        ],
+      },
+      {
+        title: 'Marques et affiliation',
+        blocks: [
+          'Betrics n\'est affilié ni à la LNH ni à l\'Association des joueurs de la LNH (NHLPA), et n\'est pas endossé par eux. Les noms de joueurs et d\'équipes sont utilisés à titre informatif. Tant qu\'aucune licence n\'existe, aucune photo de joueur ni logo d\'équipe officiel n\'est affiché sur Betrics : des casques, chandails et badges génériques dessinés par Betrics les remplacent partout dans l\'application.',
+        ],
+      },
+      {
+        title: 'Données de tiers',
+        blocks: [
+          'Les cotes, statistiques et autres données sportives affichées sur Betrics proviennent de sources tierces et sont fournies telles quelles, sans garantie d\'exactitude, de disponibilité ou d\'actualité. Betrics n\'est pas responsable des écarts entre les données affichées et celles réellement offertes par un bookmaker.',
+        ],
+      },
+      {
+        title: 'Suspension, responsabilité, modifications et droit applicable',
+        blocks: [
+          'Nous pouvons suspendre ou résilier ton accès à Betrics en cas de non-respect des présentes conditions.',
+          'Dans la mesure permise par la loi, Betrics et {entity} ne peuvent être tenus responsables des pertes financières liées à tes décisions de pari ou à l\'utilisation des renseignements affichés sur la plateforme.',
+          'Nous pouvons modifier ces conditions; la date de la dernière mise à jour figure en haut de cette page.',
+          'Les présentes conditions sont régies par les lois de la province de Québec, et tout litige sera soumis aux tribunaux du Québec. En cas de divergence entre les versions française et anglaise, la version française prévaut.',
+        ],
+      },
+    ],
 
     // Comparateur de cotes LNH (line shopping) — src/LineShopping.js
     comparateur_titre: 'Comparateur de cotes — LNH',
@@ -2771,13 +2935,170 @@ const translations = {
     landing_footer_contact: 'Contact',
     landing_footer_copyright: '© 2026 Betrics',
 
-    landing_legal_back: '← Back',
     landing_legal_terms_title: 'Terms of use',
-    landing_legal_terms_body: 'This page will be completed soon with our detailed terms of use. For any question in the meantime, reach us via the contact page.',
     landing_legal_privacy_title: 'Privacy policy',
-    landing_legal_privacy_body: 'This page will be completed soon with our detailed privacy policy. Your data is only used to run your Betrics account and is never sold. For any question in the meantime, reach us via the contact page.',
-    landing_legal_nhl_title: 'Trademarks and affiliation',
-    landing_legal_nhl_body: 'Betrics is not affiliated with, nor endorsed by, the NHL or the National Hockey League Players\' Association (NHLPA). Player and team names are used for informational purposes only. Until a license exists, no player photo or official team logo is shown on Betrics: generic helmets, jerseys and badges designed by Betrics replace them everywhere in the app.',
+
+    // ===================== Full legal pages (src/LegalPage.js) =====================
+    legal_back_home: '← Back to home',
+    legal_last_updated_label: 'Last updated: {date}',
+    legal_draft_banner_text: 'Initial version, pending legal review.',
+
+    legal_privacy_sections: [
+      {
+        title: 'Who we are and how to reach us',
+        blocks: [
+          'Betrics is operated by {entity}, located at {address}. For any question about your personal information or this policy, email us at {email}.',
+          'The person responsible for privacy at Betrics is {officer}.',
+        ],
+      },
+      {
+        title: 'Information we collect',
+        blocks: [
+          'We only collect the information needed to run your Betrics account:',
+          { list: [
+            'Your email, and a name or username, used to create and identify your account.',
+            'If you choose to sign in with Google: the email, name and profile photo provided by Google (see section 5 below).',
+            'A profile photo, if you add one yourself.',
+            'Your province, used to determine which odds comparisons and bookmakers apply to you.',
+            'The bets and bankroll transactions (deposits, withdrawals, stakes, results) you enter yourself or that are imported from a confirmation email you connect.',
+            'Your answers to the intro questionnaire (bookmakers used, bet size range, goals, experience level, how you heard about Betrics), if you fill it in.',
+          ] },
+          'We do not currently store any language preference persistently: your language choice only applies during your visit and is not saved.',
+          'As with any hosted website, our technical providers may keep basic technical logs (IP address, browser type, request timestamps) as part of normal hosting and security practice. We do not use any third-party analytics or advertising tracking tool.',
+        ],
+      },
+      {
+        title: 'Why we use it',
+        blocks: [
+          { list: [
+            'Create, authenticate and secure your account.',
+            'Run your bankroll accounts (balance, return and win-rate calculations).',
+            'Display your stats, bets and hockey pools.',
+            'Respond to support requests when you contact us.',
+            'Keep the platform secure (prevent unauthorized access).',
+          ] },
+          'We never use your information for targeted advertising, and we never resell it.',
+        ],
+      },
+      {
+        title: 'Who we share it with',
+        blocks: [
+          'We never sell your personal information. We only share it with the technical providers necessary to run Betrics:',
+          { list: [
+            'Supabase: hosts our database and handles authentication (manages your password and login sessions).',
+            'Vercel: hosts and deploys the Betrics website.',
+            'Google: only if you choose to sign in with Google (see section 5).',
+          ] },
+          'Betrics does not currently process any payments or subscriptions: no financial information goes through a payment processor.',
+        ],
+      },
+      {
+        title: 'Signing in with Google',
+        blocks: [
+          'Betrics offers Google sign-in as an optional authentication method. When you use it, we only receive the basic information provided by Google: your email, name and profile photo. This information is used solely to create and manage your Betrics account — nothing more.',
+          'Betrics\'s use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.',
+        ],
+      },
+      {
+        title: 'Local storage and cookies',
+        blocks: [
+          'Betrics keeps certain information directly on your device (your browser\'s local storage), never on a third-party tracking server:',
+          { list: [
+            'Your login session, so you don\'t have to sign in on every visit.',
+            'Your answers to the intro questionnaire, temporarily, if you fill them in before creating an account — they are transferred to your account once it\'s created, then removed from your device.',
+            'Your display preferences (dark or light theme, open tabs, hidden amounts).',
+          ] },
+          'Betrics does not use any advertising or third-party tracking cookies.',
+        ],
+      },
+      {
+        title: 'Retention and deletion',
+        blocks: [
+          'We keep your information for as long as your account exists. Full account deletion isn\'t yet available directly in the app. To request deletion of your account and information, email us at {email} — we will process your request within a reasonable time.',
+        ],
+      },
+      {
+        title: 'Your rights',
+        blocks: [
+          'Under Quebec\'s Act Respecting the Protection of Personal Information in the Private Sector (Law 25) and the federal Personal Information Protection and Electronic Documents Act (PIPEDA), you have the right to:',
+          { list: [
+            'access the personal information we hold about you;',
+            'have inaccurate or incomplete information corrected;',
+            'withdraw your consent to certain uses;',
+            'request deletion of your information, subject to legal retention obligations;',
+            'receive a copy of your information in a structured format (portability).',
+          ] },
+          'To exercise any of these rights, email us at {email}.',
+        ],
+      },
+      {
+        title: 'Security, transfers, minimum age, changes and complaints',
+        blocks: [
+          'We take reasonable measures to protect your information, but no system is perfectly secure.',
+          'Our technical providers may host your information outside Quebec (exact hosting region: {region}). When that\'s the case, your information remains protected by appropriate contractual and technical safeguards.',
+          'Betrics is restricted to people who have reached the legal gambling age in their province: 18 in Quebec, Alberta and Manitoba; 19 in the rest of Canada. We do not knowingly collect information from minors.',
+          'We may update this policy; the date of the last update appears at the top of this page.',
+          'If you have a complaint about how we handle your personal information, you can first email us at {email}, then, if needed, contact Quebec\'s Commission d\'accès à l\'information.',
+        ],
+      },
+    ],
+
+    legal_terms_sections: [
+      {
+        title: 'Acceptance and description of the service',
+        blocks: [
+          'By using Betrics, you agree to these terms of use. Betrics is an analysis and tracking tool: it shows you statistics, odds comparisons and bankroll tracking to help you make more informed decisions.',
+          'Betrics is NOT a sportsbook: we do not place any bets, hold any money, or are affiliated with any betting site. Bets you log in Betrics are placed by you, directly with the bookmaker of your choice.',
+        ],
+      },
+      {
+        title: 'Eligibility',
+        blocks: [
+          'Use of Betrics is restricted to people who have reached the legal gambling age in their province: 18 in Quebec, Alberta and Manitoba; 19 in the rest of Canada. By creating an account, you confirm you have reached that age.',
+        ],
+      },
+      {
+        title: 'No financial advice or guaranteed results',
+        blocks: [
+          'The statistics, models and comparisons shown on Betrics are provided for informational purposes only. They do not constitute financial advice, a betting recommendation, or a guarantee of results. Nothing on Betrics guarantees a win.',
+          'You are solely responsible for your betting decisions and their consequences.',
+        ],
+      },
+      {
+        title: 'Responsible gambling',
+        blocks: [
+          'Gambling should stay entertainment. If gambling becomes a problem for you or someone close to you, free and confidential help is available: Gambling: Help and Referral — 1-800-461-0140 · aidejeu.ca — free, confidential Quebec service, available 24/7.',
+        ],
+      },
+      {
+        title: 'Your account, security and acceptable use',
+        blocks: [
+          'You are responsible for keeping your password confidential and for any activity on your account. You agree to provide accurate information and not to use Betrics fraudulently, to harass others, or to bypass the platform\'s security measures.',
+          'Betrics\'s content, code and design are the property of {entity} and may not be copied or redistributed without permission.',
+        ],
+      },
+      {
+        title: 'Trademarks and affiliation',
+        blocks: [
+          'Betrics is not affiliated with, nor endorsed by, the NHL or the National Hockey League Players\' Association (NHLPA). Player and team names are used for informational purposes only. Until a license exists, no player photo or official team logo is shown on Betrics: generic helmets, jerseys and badges designed by Betrics replace them everywhere in the app.',
+        ],
+      },
+      {
+        title: 'Third-party data',
+        blocks: [
+          'Odds, statistics and other sports data shown on Betrics come from third-party sources and are provided as-is, without any guarantee of accuracy, availability or timeliness. Betrics is not responsible for discrepancies between the data shown and what a bookmaker actually offers.',
+        ],
+      },
+      {
+        title: 'Suspension, liability, changes and governing law',
+        blocks: [
+          'We may suspend or terminate your access to Betrics if you do not comply with these terms.',
+          'To the extent permitted by law, Betrics and {entity} are not liable for financial losses related to your betting decisions or your use of the information shown on the platform.',
+          'We may update these terms; the date of the last update appears at the top of this page.',
+          'These terms are governed by the laws of the province of Quebec, and any dispute will be submitted to the courts of Quebec. In case of any discrepancy between the French and English versions, the French version prevails.',
+        ],
+      },
+    ],
 
     // NHL odds comparator (line shopping) — src/LineShopping.js
     comparateur_titre: 'Odds comparison — NHL',

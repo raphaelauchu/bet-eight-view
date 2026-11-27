@@ -333,7 +333,7 @@ const SOURCE_KEYS = [
   ['other', 'onboarding_source_other'],
 ];
 
-function Step5Source({ t, source, onSelect, why, onWhyChange, ageConfirmed, onAgeChange }) {
+function Step5Source({ t, source, onSelect, why, onWhyChange, ageConfirmed, onAgeChange, onOpenLegal }) {
   return (
     <>
       <h1 style={titreStyle}>{t('onboarding_step5_title')}</h1>
@@ -368,6 +368,14 @@ function Step5Source({ t, source, onSelect, why, onWhyChange, ageConfirmed, onAg
           </span>
         </span>
       </label>
+      {onOpenLegal && (
+        <p style={{ color: 'var(--c-444)', fontSize: '11.5px', textAlign: 'center', margin: '16px 0 0', lineHeight: 1.5 }}>
+          {t('auth_legal_prefix')}{' '}
+          <button type="button" onClick={() => onOpenLegal('terms')} style={{ background: 'none', border: 'none', color: 'var(--c-666)', textDecoration: 'underline', cursor: 'pointer', fontSize: '11.5px', padding: 0 }}>{t('landing_footer_legal_terms')}</button>
+          {' '}{t('auth_legal_and')}{' '}
+          <button type="button" onClick={() => onOpenLegal('privacy')} style={{ background: 'none', border: 'none', color: 'var(--c-666)', textDecoration: 'underline', cursor: 'pointer', fontSize: '11.5px', padding: 0 }}>{t('landing_footer_legal_privacy')}</button>.
+        </p>
+      )}
     </>
   );
 }
@@ -524,7 +532,7 @@ function OnboardingCarousel({ t, previewMode, onDone }) {
 // props (mode apercu, ?onboarding=preview -- voir src/App.js), l'etape reste un etat interne
 // classique, AUCUNE interaction avec l'historique : comportement du carrousel/des etapes en
 // apercu totalement inchange.
-export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, onComplete, onSignIn, step: controlledStep, onStepChange, onBackToHome }) {
+export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, onComplete, onSignIn, step: controlledStep, onStepChange, onBackToHome, onOpenLegal }) {
   const t = getT(lang);
   const [phase, setPhase] = useState(ONBOARDING_INTRO_SLIDES_ENABLED ? 'carousel' : 'steps');
   const [internalStep, setInternalStep] = useState(1);
@@ -647,7 +655,7 @@ export function OnboardingFlow({ utilisateur, lang = 'fr', previewMode = false, 
     ? <Step3Goals t={t} goals={goals} onToggle={toggleGoal} />
     : step === 4
     ? <Step4Experience t={t} experience={experience} onSelect={setExperience} />
-    : <Step5Source t={t} source={source} onSelect={setSource} why={why} onWhyChange={setWhy} ageConfirmed={ageConfirmed} onAgeChange={setAgeConfirmed} />;
+    : <Step5Source t={t} source={source} onSelect={setSource} why={why} onWhyChange={setWhy} ageConfirmed={ageConfirmed} onAgeChange={setAgeConfirmed} onOpenLegal={onOpenLegal} />;
 
   function handleSignIn() {
     clearLocalOnboardingAnswers();

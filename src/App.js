@@ -20,6 +20,8 @@ import { BankrollPage } from './Bankroll';
 import { OnboardingFlow, readLocalOnboardingAnswers, clearLocalOnboardingAnswers } from './Onboarding';
 import { ONBOARDING_ENABLED } from './onboardingConfig';
 import { ACCOUNT_KIND_OPTIONS } from './AddAccountBody';
+import LegalPage, { legalPageMeta } from './LegalPage';
+import { useDocumentMeta } from './useDocumentMeta';
 
 // Icones SVG (style stroke, modernes)
 function IconProfile({ color = 'currentColor', size = 20 }) {
@@ -1205,7 +1207,28 @@ function pushOnboardingStepUrl(step) {
   window.history.pushState({}, '', `${window.location.pathname}?onboarding=1&step=${step}`);
 }
 function pushHomeUrl() {
-  window.history.pushState({}, '', window.location.pathname);
+  window.history.pushState({}, '', '/');
+}
+
+// ===================== Pages legales (confidentialite/conditions, refonte du 27 nov 2026) =========
+// Adresses publiques dediees, independantes de tout etat d'authentification -- exigees par Google
+// pour publier la connexion Google (voir src/LegalPage.js). Chaque page existe en FR et en EN sous
+// sa PROPRE adresse (jamais une bascule de langue sur une seule URL) : /confidentialite et
+// /conditions affichent toujours le francais, /privacy et /terms toujours l'anglais, quel que
+// soit le drapeau de langue courant de l'app -- essentiel pour que Google (et tout robot) voie un
+// contenu stable par URL. Les liens internes (pied de page, ecran d'auth, onboarding), eux,
+// pointent vers la version qui correspond a la langue actuellement choisie (voir openLegalRoute
+// plus bas).
+function legalRouteFromPath(pathname) {
+  if (pathname === '/confidentialite') return { page: 'privacy', lang: 'fr' };
+  if (pathname === '/conditions') return { page: 'terms', lang: 'fr' };
+  if (pathname === '/privacy') return { page: 'privacy', lang: 'en' };
+  if (pathname === '/terms') return { page: 'terms', lang: 'en' };
+  return null;
+}
+function legalUrlFor(page, lang) {
+  if (lang === 'fr') return page === 'privacy' ? '/confidentialite' : '/conditions';
+  return page === 'privacy' ? '/privacy' : '/terms';
 }
 
 function App() {
@@ -1243,6 +1266,12 @@ function App() {
   // jamais un non-admin ne la voit, meme furtivement.
   const [isAdmin, setIsAdmin] = useState(false);
   const [profilCharge, setProfilCharge] = useState(false);
+  // Pages legales (src/LegalPage.js) : /confidentialite, /conditions, /privacy, /terms --
+  // TOUJOURS redecouvert depuis le pathname (meme principe que authMode/onboardingStep plus bas),
+  // accessible sans connexion et SANS redirection vers l'accueil, quel que soit l'etat de
+  // connexion/onboarding en cours (voir le rendu tout en haut de ce composant, avant meme les
+  // verifications d'auth/onboarding).
+  const [legalRoute, setLegalRoute] = useState(() => legalRouteFromPath(window.location.pathname));
   // Onboarding (src/Onboarding.js) : null tant que le profil n'a pas charge -- voir
   // showOnboarding plus bas, qui attend explicitement profilCharge avant de decider (jamais de
   // flash du dashboard normal avant de basculer sur l'onboarding pour un nouvel utilisateur).
@@ -1295,6 +1324,12 @@ function App() {
   // deux rendus, un hook appele seulement dans la branche "if (utilisateur)" plus bas
   // changerait d'ordre d'appel entre les rendus. Le hook lui-meme gere deja utilisateur=null.
   const savedPicksCount = useSavedPicksCount(utilisateur);
+  // Titre/meta SEO d'une page legale (src/LegalPage.js) -- appele sans condition (regle des
+  // hooks, meme raison que useSavedPicksCount ci-dessus) : `legalRoute` peut passer de null a une
+  // valeur entre deux rendus (clic sur un lien legal) sans jamais changer l'ordre des hooks.
+  // legalPageMeta/useDocumentMeta n'appliquent rien quand title/description sont absents.
+  const legalMeta = legalRoute ? legalPageMeta(legalRoute.page, legalRoute.lang) : {};
+  useDocumentMeta({ title: legalMeta.title, description: legalMeta.description, path: window.location.pathname });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1401,6 +1436,7 @@ function App() {
     function onPopState() {
       setAuthMode(authModeFromSearch(window.location.search));
       setOnboardingStep(onboardingStepFromSearch(window.location.search));
+      setLegalRoute(legalRouteFromPath(window.location.pathname));
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -1413,6 +1449,7 @@ function App() {
   function openAuth(mode) {
     pushAuthUrl(mode);
     setOnboardingStep(null);
+    setLegalRoute(null);
     setAuthMode(mode);
   }
 
@@ -1420,6 +1457,7 @@ function App() {
   function openOnboardingStep1() {
     pushOnboardingStepUrl(1);
     setAuthMode(null);
+    setLegalRoute(null);
     setOnboardingStep(1);
   }
 
@@ -1431,14 +1469,37 @@ function App() {
     setOnboardingStep(step);
   }
 
-  // "Retour a l'accueil" garanti (etape 1 de l'onboarding, ecran d'auth) : un pushState plutot
-  // qu'un history.back(), pour rester correct meme si l'utilisateur a atterri directement sur
-  // cette URL (lien partage/rechargement) sans entree d'accueil derriere dans l'historique reel du
-  // navigateur -- cette fleche doit TOUJOURS ramener a l'accueil, jamais hors de l'app.
+  // "Retour a l'accueil" garanti (etape 1 de l'onboarding, ecran d'auth, pages legales) : un
+  // pushState plutot qu'un history.back(), pour rester correct meme si l'utilisateur a atterri
+  // directement sur cette URL (lien partage/rechargement) sans entree d'accueil derriere dans
+  // l'historique reel du navigateur -- cette fleche doit TOUJOURS ramener a l'accueil, jamais hors
+  // de l'app.
   function goHome() {
     pushHomeUrl();
     setAuthMode(null);
     setOnboardingStep(null);
+    setLegalRoute(null);
+  }
+
+  // Ouvre une page legale (src/LegalPage.js) depuis le pied de page public, l'ecran d'auth ou
+  // l'onboarding -- toujours la version dans la langue COURANTE de l'app (voir legalUrlFor),
+  // nouvelle entree d'historique : le bouton retour revient exactement a l'ecran d'ou le lien a
+  // ete clique (accueil, ecran d'auth, etape d'onboarding), jamais a l'accueil directement.
+  function openLegalRoute(page) {
+    const target = { page, lang };
+    window.history.pushState({}, '', legalUrlFor(page, lang));
+    setAuthMode(null);
+    setOnboardingStep(null);
+    setLegalRoute(target);
+  }
+
+  // ===================== Pages legales (src/LegalPage.js) =====================
+  // Verifiee EN PREMIER, avant meme les callbacks OAuth email et tout branchement connecte/non-
+  // connecte : accessible sans connexion, jamais de redirection vers l'accueil, quel que soit
+  // l'etat d'authentification/onboarding en cours (exigence de Google pour publier la connexion
+  // Google -- adresses publiques independantes).
+  if (legalRoute) {
+    return <LegalPage page={legalRoute.page} lang={legalRoute.lang} onBack={goHome} />;
   }
 
   if (window.location.pathname === '/auth/gmail/callback') {
@@ -1490,6 +1551,7 @@ function App() {
         step={onboardingStep}
         onStepChange={goToOnboardingStep}
         onBackToHome={goHome}
+        onOpenLegal={openLegalRoute}
         onComplete={() => openAuth('signup')}
         onSignIn={() => openAuth('login')}
       />
@@ -1502,6 +1564,7 @@ function App() {
         <Auth
           onConnexion={() => { window.history.replaceState({}, '', window.location.pathname); setAuthMode(null); setPage(poolJoinCode ? 'pooldraft' : 'home'); }}
           onBackToHome={goHome}
+          onOpenLegal={openLegalRoute}
           lang={lang}
           initialMode={authMode}
         />
@@ -1723,6 +1786,7 @@ function App() {
       lang={lang}
       setLang={setLang}
       onOpenAuth={(mode) => { if (mode === 'signup') { openOnboardingStep1(); } else { openAuth(mode); } }}
+      onOpenLegal={openLegalRoute}
     />
   );
 }

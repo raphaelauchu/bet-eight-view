@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { supabase } from './supabase';
 import { getT } from './i18n';
 import { AUTH_GOOGLE_ENABLED, AUTH_EMAIL_ENABLED } from './authConfig';
-import LegalPage from './LegalPage';
 
 // ===================== Ecran de connexion/inscription (refonte du 27 nov 2026) =====================
 // Un seul composant pour les deux (bascule "Créer un compte"/"J'ai déjà un compte", meme logique
@@ -41,7 +40,7 @@ function GoogleIcon({ size = 18 }) {
   );
 }
 
-function Auth({ onConnexion, onBackToHome, lang = 'en', initialMode = 'login' }) {
+function Auth({ onConnexion, onBackToHome, onOpenLegal, lang = 'en', initialMode = 'login' }) {
   const t = getT(lang);
   const [mode, setMode] = useState(initialMode === 'signup' ? 'signup' : 'login'); // login | signup | forgot
   const [subView, setSubView] = useState('choice'); // choice | email
@@ -53,7 +52,6 @@ function Auth({ onConnexion, onBackToHome, lang = 'en', initialMode = 'login' })
   const [confirmation, setConfirmation] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [legalPage, setLegalPage] = useState(null); // null | 'terms' | 'privacy'
 
   const isSignup = mode === 'signup';
 
@@ -128,10 +126,6 @@ function Auth({ onConnexion, onBackToHome, lang = 'en', initialMode = 'login' })
     } else {
       onBackToHome();
     }
-  }
-
-  if (legalPage) {
-    return <LegalPage lang={lang} page={legalPage} onBack={() => setLegalPage(null)} />;
   }
 
   const inp = {
@@ -313,9 +307,9 @@ function Auth({ onConnexion, onBackToHome, lang = 'en', initialMode = 'login' })
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             <p style={{ color: '#333', fontSize: '12px', margin: '0 0 8px', lineHeight: 1.5 }}>
               {t('auth_legal_prefix')}{' '}
-              <button type="button" onClick={() => setLegalPage('terms')} style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}>{t('landing_footer_legal_terms')}</button>
+              <button type="button" onClick={() => onOpenLegal('terms')} style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}>{t('landing_footer_legal_terms')}</button>
               {' '}{t('auth_legal_and')}{' '}
-              <button type="button" onClick={() => setLegalPage('privacy')} style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}>{t('landing_footer_legal_privacy')}</button>.
+              <button type="button" onClick={() => onOpenLegal('privacy')} style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px', padding: 0 }}>{t('landing_footer_legal_privacy')}</button>.
             </p>
             <p style={{ color: '#444', fontSize: '11.5px', margin: 0 }}>{t('landing2_responsible_gambling')}</p>
           </div>
